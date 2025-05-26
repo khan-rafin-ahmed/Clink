@@ -1,18 +1,22 @@
 import { useAuth } from '@/lib/auth-context'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { UserStats } from '@/components/UserStats'
 import { SessionCard } from '@/components/SessionCard'
 import { useUpcomingSessions } from '@/hooks/useUpcomingSessions'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus, Eye } from 'lucide-react'
+import { getUserProfile } from '@/lib/userService'
+import type { UserProfile } from '@/types'
 
 export function UserProfile() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   // Use the custom hook for upcoming sessions
   const {
@@ -26,6 +30,12 @@ export function UserProfile() {
       navigate('/login')
     }
   }, [user, loading, navigate])
+
+  useEffect(() => {
+    if (user) {
+      getUserProfile(user.id).then(setUserProfile).catch(console.error)
+    }
+  }, [user])
 
   const handleEventCreated = () => {
     // Trigger both stats and sessions refresh
@@ -48,7 +58,8 @@ export function UserProfile() {
     return null // Will redirect to login
   }
 
-  const username = user.email?.split('@')[0] || 'Champion'
+  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
+  const avatarFallback = displayName.charAt(0).toUpperCase()
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,14 +68,15 @@ export function UserProfile() {
           {/* Profile Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">
-                  {username.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={userProfile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                  {avatarFallback}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <h1 className="text-3xl font-display font-bold text-foreground">
-                  {username}'s Profile 🍻
+                  {displayName}'s Profile 🍻
                 </h1>
                 <p className="text-muted-foreground">
                   Ready to raise some hell? Let's get this party started!
@@ -87,7 +99,7 @@ export function UserProfile() {
 
           {/* Quick Actions */}
           <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-4 flex-wrap">
               <QuickEventModal
                 trigger={
                   <Button size="lg" className="text-lg px-8 py-4 font-semibold">

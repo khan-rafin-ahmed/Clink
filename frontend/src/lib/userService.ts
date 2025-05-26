@@ -4,21 +4,55 @@ import { withCache, CACHE_KEYS, invalidateUserCaches } from './cache'
 
 // User Profile Functions
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  // Temporarily disable caching to avoid issues
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
+  return withCache(
+    CACHE_KEYS.USER_PROFILE(userId),
+    async () => {
+      try {
+        // First try with all columns including favorite_drink
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') return null // No rows returned
-    throw error
-  }
-  return data
+        if (error) {
+          if (error.code === 'PGRST116') return null // No rows returned
+
+          // If error might be due to missing column, try with basic columns only
+          if (error.message?.includes('column') || error.message?.includes('Content-Length')) {
+            const { data: basicData, error: basicError } = await supabase
+              .from('user_profiles')
+              .select('id, user_id, display_name, bio, avatar_url, created_at, updated_at')
+              .eq('user_id', userId)
+              .single()
+
+            if (basicError) {
+              if (basicError.code === 'PGRST116') return null
+              throw basicError
+            }
+
+            // Return data with favorite_drink as null if column doesn't exist
+            return {
+              ...basicData,
+              favorite_drink: null
+            } as UserProfile
+          }
+
+          throw error
+        }
+
+        return data
+      } catch (error) {
+        console.error('getUserProfile error:', error)
+        throw error
+      }
+    },
+    2 * 60 * 1000 // Cache for 2 minutes
+  )
 }
 
 export async function updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+  // First try to update
   const { data, error } = await supabase
     .from('user_profiles')
     .update(updates)
@@ -26,7 +60,19 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
     .select()
     .single()
 
+  // If no rows were updated (profile doesn't exist), create it
+  if (error && error.code === 'PGRST116') {
+    console.log('Profile not found, creating new one...')
+    const result = await createUserProfile(userId, updates)
+    // Invalidate cache after creating
+    invalidateUserCaches(userId)
+    return result
+  }
+
   if (error) throw error
+
+  // Invalidate cache after successful update
+  invalidateUserCaches(userId)
   return data
 }
 

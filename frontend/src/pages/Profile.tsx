@@ -3,9 +3,45 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { getUserProfile, getFollowCounts, isFollowing, followUser, unfollowUser } from '@/lib/userService'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { Loader2, Users, UserPlus, UserMinus, Calendar, MapPin } from 'lucide-react'
 import type { UserProfile } from '@/types'
+
+// Helper functions for drink display
+function getDrinkEmoji(drinkType: string): string {
+  const drinkEmojis: Record<string, string> = {
+    beer: '🍺',
+    wine: '🍷',
+    cocktails: '🍸',
+    whiskey: '🥃',
+    vodka: '🍸',
+    rum: '🍹',
+    tequila: '🥃',
+    gin: '🍸',
+    champagne: '🥂',
+    sake: '🍶',
+    other: '🍻'
+  }
+  return drinkEmojis[drinkType] || '🍻'
+}
+
+function getDrinkLabel(drinkType: string): string {
+  const drinkLabels: Record<string, string> = {
+    beer: 'Beer',
+    wine: 'Wine',
+    cocktails: 'Cocktails',
+    whiskey: 'Whiskey',
+    vodka: 'Vodka',
+    rum: 'Rum',
+    tequila: 'Tequila',
+    gin: 'Gin',
+    champagne: 'Champagne',
+    sake: 'Sake',
+    other: 'Other'
+  }
+  return drinkLabels[drinkType] || 'Other'
+}
 
 export function Profile() {
   const { userId } = useParams<{ userId: string }>()
@@ -94,17 +130,12 @@ export function Profile() {
       <div className="bg-card rounded-xl p-8 border border-border">
         {/* Profile Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-8">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.display_name || 'User'}
-                className="w-24 h-24 rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-3xl">🍻</span>
-            )}
-          </div>
+          <Avatar className="w-24 h-24">
+            <AvatarImage src={profile.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-3xl">
+              {profile.display_name?.charAt(0)?.toUpperCase() || '🍻'}
+            </AvatarFallback>
+          </Avatar>
 
           <div className="flex-1">
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
@@ -112,6 +143,14 @@ export function Profile() {
             </h1>
             {profile.bio && (
               <p className="text-muted-foreground mb-4">{profile.bio}</p>
+            )}
+
+            {profile.favorite_drink && profile.favorite_drink !== 'none' && (
+              <div className="mb-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary">
+                  {getDrinkEmoji(profile.favorite_drink)} Favorite: {getDrinkLabel(profile.favorite_drink)}
+                </span>
+              </div>
             )}
 
             {/* Follow Stats */}
@@ -128,32 +167,30 @@ export function Profile() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            {isOwnProfile ? (
-              <Button onClick={() => navigate('/profile/edit')} variant="outline">
-                Edit Profile
-              </Button>
-            ) : currentUser ? (
-              <Button
-                onClick={handleFollowToggle}
-                disabled={followLoading}
-                variant={isFollowingUser ? "outline" : "default"}
-              >
-                {followLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : isFollowingUser ? (
-                  <UserMinus className="w-4 h-4 mr-2" />
-                ) : (
-                  <UserPlus className="w-4 h-4 mr-2" />
-                )}
-                {isFollowingUser ? 'Unfollow' : 'Follow'}
-              </Button>
-            ) : (
-              <Button onClick={() => navigate('/login')}>
-                Sign in to Follow
-              </Button>
-            )}
-          </div>
+          {!isOwnProfile && (
+            <div className="flex gap-3">
+              {currentUser ? (
+                <Button
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  variant={isFollowingUser ? "outline" : "default"}
+                >
+                  {followLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : isFollowingUser ? (
+                    <UserMinus className="w-4 h-4 mr-2" />
+                  ) : (
+                    <UserPlus className="w-4 h-4 mr-2" />
+                  )}
+                  {isFollowingUser ? 'Unfollow' : 'Follow'}
+                </Button>
+              ) : (
+                <Button onClick={() => navigate('/login')}>
+                  Sign in to Follow
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Profile Stats */}

@@ -98,7 +98,7 @@ export async function createCurrentUserProfile() {
     if (!user) throw new Error('No authenticated user')
 
     const displayName = user.email?.split('@')[0] || 'User'
-    
+
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({
@@ -117,5 +117,33 @@ export async function createCurrentUserProfile() {
   } catch (error) {
     console.error('Error creating user profile:', error)
     throw error
+  }
+}
+
+// Function to add favorite_drink column to user_profiles
+export async function addFavoriteDrinkColumn() {
+  try {
+    console.log('Adding favorite_drink column to user_profiles...')
+
+    // Add favorite_drink column
+    const addColumnQuery = `
+      ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS favorite_drink TEXT;
+    `
+
+    const { error } = await supabase.rpc('exec_sql', { sql: addColumnQuery })
+
+    if (error) {
+      console.error('Error adding favorite_drink column:', error)
+      // This might fail if we don't have the exec_sql function, which is fine
+      // The column will be added via the migration file
+    } else {
+      console.log('✅ favorite_drink column added successfully')
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in addFavoriteDrinkColumn:', error)
+    // Don't throw error as this is not critical
+    return false
   }
 }

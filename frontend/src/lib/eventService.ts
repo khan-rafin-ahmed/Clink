@@ -1,33 +1,7 @@
 import { supabase } from './supabase'
-import type { Event, RsvpStatus } from '@/types'
+import type { Event, RsvpStatus, UserProfile } from '@/types'
 
-export async function getMyEvents() {
-  // Get user once and reuse
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
 
-  // Simplified query without joins to avoid RLS issues
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      id,
-      title,
-      location,
-      date_time,
-      drink_type,
-      vibe,
-      notes,
-      is_public,
-      created_by,
-      created_at
-    `)
-    .eq('created_by', user.id)
-    .order('date_time', { ascending: false })
-    .limit(20)
-
-  if (error) throw error
-  return events || []
-}
 
 export async function getEventDetails(eventId: string) {
   const { data: event, error } = await supabase
@@ -177,22 +151,80 @@ export async function createEventWithShareableLink(eventData: {
   }
 }
 
-export async function getPublicEvents() {
+export async function getPublicEvents(): Promise<Event[]> {
+  // Get events with RSVP counts
   const { data: events, error } = await supabase
     .from('events')
     .select(`
       *,
-      rsvps (
-        id,
-        status,
-        user_id
-      )
+      rsvps(count)
     `)
     .eq('is_public', true)
-    .order('date_time', { ascending: true })
+    .gte('date_time', new Date().toISOString())
+    .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return events
+  if (error) {
+    console.error('Error fetching public events:', error)
+    throw new Error('Failed to fetch public events')
+  }
+
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If user is logged in, check which events they've joined
+  let userRsvps: any[] = []
+  if (user) {
+    const { data: rsvpData } = await supabase
+      .from('rsvps')
+      .select('event_id, status')
+      .eq('user_id', user.id)
+      .eq('status', 'going')
+
+    userRsvps = rsvpData || []
+  }
+
+  // Transform the data
+  return (events || []).map(event => ({
+    ...event,
+    rsvp_count: event.rsvps?.[0]?.count || 0,
+    user_has_joined: userRsvps.some(rsvp => rsvp.event_id === event.id)
+  }))
+}
+
+export async function joinEvent(eventId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('User not authenticated')
+  }
+
+  const { error } = await supabase
+    .from('rsvps')
+    .upsert({
+      event_id: eventId,
+      user_id: user.id,
+      status: 'going'
+    })
+
+  if (error) {
+    console.error('Error joining event:', error)
+    throw new Error('Failed to join event')
+  }
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user profile:', error)
+    throw new Error('Failed to fetch user profile')
+  }
+
+  return data
 }
 
 export async function getUserAccessibleEvents() {

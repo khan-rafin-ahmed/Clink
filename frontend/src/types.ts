@@ -7,6 +7,7 @@ export interface UserProfile {
   display_name: string | null
   bio: string | null
   avatar_url: string | null
+  favorite_drink: string | null
   created_at: string
   updated_at: string
 }

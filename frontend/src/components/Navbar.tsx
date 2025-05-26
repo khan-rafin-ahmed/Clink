@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,10 +10,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Calendar } from 'lucide-react'
+import { User, LogOut, Settings, Calendar, Edit } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { getUserProfile } from '@/lib/userService'
+import type { UserProfile } from '@/types'
 
 export function Navbar() {
   const { user, signOut } = useAuth()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      getUserProfile(user.id).then(setUserProfile).catch(console.error)
+    }
+  }, [user])
+
+  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User'
+  const avatarFallback = displayName.charAt(0).toUpperCase()
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -31,7 +45,7 @@ export function Navbar() {
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              to="/events"
+              to="/discover"
               className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               Discover
@@ -39,7 +53,7 @@ export function Navbar() {
 
             {user && (
               <Link
-                to="/my-events"
+                to="/my-sessions"
                 className="text-muted-foreground hover:text-foreground transition-colors font-medium"
               >
                 My Sessions
@@ -52,11 +66,14 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={userProfile?.avatar_url || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {avatarFallback}
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="hidden md:block text-sm font-medium">
-                        {user.email?.split('@')[0] || 'User'}
+                        {displayName}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
@@ -79,6 +96,12 @@ export function Navbar() {
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>My Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/edit" className="flex items-center">
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
