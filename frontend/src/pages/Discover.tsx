@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { RobustPageWrapper } from '@/components/PageWrapper'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,6 @@ import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
 import { InnerCircleBadge } from '@/components/InnerCircleBadge'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   FullPageSkeleton,
   ErrorFallback
@@ -145,8 +144,7 @@ function DiscoverContent() {
     isLoading,
     isError,
     error,
-    refetch,
-    isAuthReady
+    refetch
   } = useAuthDependentData<EventWithCreator[]>(
     fetchEventsData,
     {

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { Loader2, Globe, Lock, Users, Calendar, MapPin } from 'lucide-react'
+import { Globe, Lock, Users, Calendar, MapPin } from 'lucide-react'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import type { Event, RsvpStatus } from '@/types'
 

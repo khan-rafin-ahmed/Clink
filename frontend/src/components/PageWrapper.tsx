@@ -9,15 +9,13 @@ interface PageWrapperProps {
   children: ReactNode
   requireAuth?: boolean
   fallbackSkeleton?: ReactNode
-  title?: string
-  description?: string
 }
 
 /**
  * Robust page wrapper that handles all auth states and loading scenarios
  * Prevents rendering until auth is fully initialized
  * Handles hard refresh, direct access, and navigation scenarios
- * 
+ *
  * Usage:
  * - For public pages: <PageWrapper>{content}</PageWrapper>
  * - For protected pages: <PageWrapper requireAuth>{content}</PageWrapper>
@@ -25,9 +23,7 @@ interface PageWrapperProps {
 export function PageWrapper({
   children,
   requireAuth = false,
-  fallbackSkeleton,
-  title,
-  description
+  fallbackSkeleton
 }: PageWrapperProps) {
   const navigate = useNavigate()
 
@@ -58,10 +54,10 @@ export function PageWrapper({
   if (requireAuth && authState !== 'authenticated') {
     // Store current URL for redirect after login
     sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
-    
+
     toast.error('Please sign in to access this page')
     navigate('/login')
-    
+
     return <FullPageSkeleton />
   }
 
@@ -86,7 +82,7 @@ export function RobustPageWrapper(props: PageWrapperProps) {
 /**
  * Hook for pages that need to fetch data after auth is ready
  * Combines auth state management with data fetching
- * 
+ *
  * Usage:
  * const { data, isLoading, error, refetch } = usePageData(
  *   async (user) => fetchMyData(user),
@@ -105,17 +101,17 @@ export function usePageData<T>(
   } = {}
 ) {
   const { requireAuth = false } = options
-  
+
   // Use appropriate auth hook
   const authHook = requireAuth ? useRequireAuth() : useOptionalAuth()
-  const { user, shouldRender, authState } = authHook
+  const { shouldRender, authState } = authHook
 
   // Only fetch data when auth is ready and requirements are met
   const shouldFetch = shouldRender && (!requireAuth || authState === 'authenticated')
 
   // Import and use the enhanced auth-dependent data fetching
   const { useAuthDependentData } = require('@/hooks/useAuthState')
-  
+
   return useAuthDependentData(fetchFunction, {
     ...options,
     requireAuth,
