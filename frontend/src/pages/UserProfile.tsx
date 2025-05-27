@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/auth-context'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { QuickEventModal } from '@/components/QuickEventModal'
@@ -7,7 +7,7 @@ import { UserStats } from '@/components/UserStats'
 import { SessionCard } from '@/components/SessionCard'
 import { useUpcomingSessions } from '@/hooks/useUpcomingSessions'
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Eye } from 'lucide-react'
+import { Calendar, Plus } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import type { UserProfile } from '@/types'
 
@@ -111,13 +111,7 @@ export function UserProfile() {
                 onEventCreated={handleEventCreated}
               />
 
-              <Link to="/my-sessions" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
-                  <Eye className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline">View All Sessions</span>
-                  <span className="sm:hidden">My Sessions</span>
-                </Button>
-              </Link>
+
             </div>
           </div>
 
@@ -128,13 +122,7 @@ export function UserProfile() {
                 <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
                 Your Upcoming Hell
               </h2>
-              {upcomingSessions.length > 0 && (
-                <Link to="/my-sessions">
-                  <Button variant="outline" size="sm" className="w-fit">
-                    View All
-                  </Button>
-                </Link>
-              )}
+
             </div>
 
             {loadingSessions ? (

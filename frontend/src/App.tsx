@@ -6,7 +6,7 @@ import { LoginPage } from './pages/LoginPage'
 import { UserProfile } from './pages/UserProfile'
 import { EditProfile } from './pages/EditProfile'
 import { ProfileTest } from './pages/ProfileTest'
-import { MySessions } from './pages/MySessions'
+
 import { Events } from './pages/Events'
 import { Discover } from './pages/Discover'
 import { Profile } from './pages/Profile'
@@ -36,7 +36,7 @@ function App() {
 
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/profile/edit" element={<EditProfile />} />
-              <Route path="/my-sessions" element={<MySessions />} />
+
               <Route path="/events" element={<Events />} />
               <Route path="/discover" element={<Discover />} />
               <Route path="/events/:eventId" element={<EventDetails />} />

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Calendar, Edit } from 'lucide-react'
+import { User, LogOut, Settings, Edit } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
 import { NotificationCenter } from './NotificationCenter'
@@ -51,14 +51,7 @@ export function Navbar() {
               Discover
             </Link>
 
-            {user && (
-              <Link
-                to="/my-sessions"
-                className="text-muted-foreground hover:text-foreground transition-colors font-medium"
-              >
-                My Sessions
-              </Link>
-            )}
+
 
             {user ? (
               <>
@@ -107,12 +100,7 @@ export function Navbar() {
                         <span>Edit Profile</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/my-sessions" className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        <span>My Sessions</span>
-                      </Link>
-                    </DropdownMenuItem>
+
                     <DropdownMenuItem disabled>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>

@@ -134,7 +134,7 @@ export function Events() {
               No public sessions available right now. Check back later or create your own!
             </p>
           </div>
-          <Button onClick={() => navigate('/my-sessions')} size="lg" className="font-semibold">
+          <Button onClick={() => navigate('/profile')} size="lg" className="font-semibold">
             🍻 Create a Session
           </Button>
         </div>
