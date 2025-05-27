@@ -49,7 +49,7 @@ export function EventDetail() {
   const loadingRef = useRef(false)
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [participants, setParticipants] = useState<Array<{
+  const [participants] = useState<Array<{
     id: string
     status: RsvpStatus
     user_id: string
@@ -95,7 +95,6 @@ export function EventDetail() {
 
       // First try to find event by event_code, then fall back to id for backward compatibility
       let eventData = null
-      let dbError = null
 
       // Try finding by event_code first (basic event info only)
       const { data: eventByCode, error: codeError } = await supabase
@@ -106,17 +105,15 @@ export function EventDetail() {
 
       if (eventByCode && !codeError) {
         eventData = eventByCode
-        dbError = codeError
       } else {
         // Fall back to finding by id for backward compatibility
-        const { data: eventById, error: idError } = await supabase
+        const { data: eventById } = await supabase
           .from('events')
           .select('*')
           .eq('id', eventCode)
           .maybeSingle()
 
         eventData = eventById
-        dbError = idError
       }
 
       // If we found the event, load RSVPs separately
@@ -143,7 +140,7 @@ export function EventDetail() {
         if (error) {
           console.error('Error loading event:', error)
           // If it's a permission error and user is not logged in, suggest login
-          if (error.code === 'PGRST116' && !user) {
+          if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'PGRST116' && !user) {
             sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
             toast.error('Please sign in to view this event')
             navigate('/login')

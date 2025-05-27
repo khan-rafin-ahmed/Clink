@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    
+
     // You can also log the error to an error reporting service here
     // Example: logErrorToService(error, errorInfo)
   }
@@ -48,13 +48,13 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
           <div className="text-center space-y-6 max-w-md">
             <div className="flex justify-center mb-6">
-              <img 
-                src="/thirstee-logo.svg" 
-                alt="Thirstee" 
+              <img
+                src="/thirstee-logo.svg"
+                alt="Thirstee"
                 className="h-16 w-auto"
               />
             </div>
-            
+
             <div className="space-y-4">
               <h1 className="text-2xl font-display font-bold text-foreground">
                 Oops! Something went wrong
@@ -62,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-muted-foreground">
                 We encountered an unexpected error. Don't worry, it's not your fault!
               </p>
-              
+
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="text-left bg-destructive/10 border border-destructive/20 rounded-lg p-4 mt-4">
                   <summary className="cursor-pointer text-sm font-medium text-destructive mb-2">
@@ -78,14 +78,14 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
+              <Button
                 onClick={this.handleReset}
                 variant="outline"
                 className="w-full sm:w-auto"
               >
                 Try Again
               </Button>
-              <Button 
+              <Button
                 onClick={this.handleReload}
                 className="w-full sm:w-auto"
               >

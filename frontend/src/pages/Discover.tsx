@@ -14,10 +14,7 @@ import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   FullPageSkeleton,
-  EventsGridSkeleton,
-  ErrorFallback,
-  PageHeaderSkeleton,
-  FilterControlsSkeleton
+  ErrorFallback
 } from '@/components/SkeletonLoaders'
 import {
   Search,
@@ -129,7 +126,7 @@ const loadEventsData = async (currentUser: any): Promise<EventWithCreator[]> => 
 
 // Enhanced Discover component with proper state management
 function DiscoverContent() {
-  const { user, isAuthenticated, shouldRender } = useOptionalAuth()
+  const { user, shouldRender } = useOptionalAuth()
   const [filteredEvents, setFilteredEvents] = useState<EventWithCreator[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
@@ -236,7 +233,7 @@ function DiscoverContent() {
     }
   )
 
-  const handleJoinChange = useCallback((eventId: string, joined: boolean) => {
+  const handleJoinChange = useCallback((_eventId: string, _joined: boolean) => {
     // Update the specific event's join status without full reload
     // Note: This would need access to setEvents which we don't have here
     // For now, we'll just trigger a refetch
@@ -264,7 +261,7 @@ function DiscoverContent() {
   if (isError) {
     return (
       <ErrorFallback
-        error={error}
+        error={error || 'Unknown error'}
         onRetry={refetch}
         title="Failed to load events"
         description="We couldn't load the events. Please try again."

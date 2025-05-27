@@ -1,5 +1,5 @@
 import { useRequireAuth } from '@/hooks/useAuthState'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { SessionCard } from '@/components/SessionCard'
 import { QuickEventModal } from '@/components/QuickEventModal'
@@ -9,14 +9,13 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useAllSessions } from '@/hooks/useAllSessions'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { FullPageSkeleton, SessionCardSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
+import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 
 type FilterType = 'all' | 'upcoming' | 'past'
 
 // Enhanced MySessions component with proper state management
 function MySessionsContent() {
-  const { user, isLoading, shouldRender } = useRequireAuth()
-  const navigate = useNavigate()
+  const { shouldRender } = useRequireAuth()
   const [filter, setFilter] = useState<FilterType>('all')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
