@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Glass with drink -->
+  <g transform="translate(20, 50)">
+    <!-- Glass outline -->
+    <path d="M10 10 L10 80 Q10 90 20 90 L50 90 Q60 90 60 80 L60 10 Z" 
+          stroke="#D4AF37" stroke-width="3" fill="none"/>
+    
+    <!-- Drink inside glass -->
+    <rect x="13" y="30" width="44" height="50" rx="2" fill="#D4AF37" opacity="0.6"/>
+    
+    <!-- Bubbles -->
+    <circle cx="25" cy="45" r="1.5" fill="#D4AF37"/>
+    <circle cx="35" cy="55" r="1" fill="#D4AF37"/>
+    <circle cx="45" cy="40" r="1.2" fill="#D4AF37"/>
+    
+    <!-- Lemon slice -->
+    <g transform="translate(45, 5)">
+      <circle cx="0" cy="0" r="12" stroke="#D4AF37" stroke-width="2" fill="none"/>
+      <path d="M-8 0 L8 0 M0 -8 L0 8 M-6 -6 L6 6 M-6 6 L6 -6" 
+            stroke="#D4AF37" stroke-width="1.5"/>
+    </g>
+  </g>
+  
+  <!-- THIRSTEE Text -->
+  <g transform="translate(100, 50)">
+    <text x="0" y="40" font-family="Arial Black, sans-serif" font-size="48" font-weight="900" fill="#D4AF37">THIRSTEE</text>
+  </g>
+</svg>

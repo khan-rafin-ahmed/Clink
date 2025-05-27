@@ -145,6 +145,11 @@ export function AuthCallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center space-y-4">
+        <img
+          src="/thirstee-logo.svg"
+          alt="Thirstee"
+          className="h-16 w-auto mx-auto mb-4"
+        />
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
         <p className="text-muted-foreground">Completing authentication...</p>
         <p className="text-xs text-muted-foreground">

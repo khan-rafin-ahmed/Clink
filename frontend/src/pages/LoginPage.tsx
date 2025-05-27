@@ -86,7 +86,15 @@ export function LoginPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -95,7 +103,15 @@ export function LoginPage() {
   if (user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
       </div>
     )
   }
@@ -104,8 +120,15 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <img
+              src="/thirstee-logo.svg"
+              alt="Thirstee"
+              className="h-16 w-auto"
+            />
+          </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-            Welcome to Thirstee
+            Welcome Back!
           </h1>
           <p className="mt-2 text-sm sm:text-base text-muted-foreground">
             Time to raise some hell! 🍻
