@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useRobustAuthData } from '@/hooks/useDataFetching'
+import { useAuthDependentData } from '@/hooks/useAuthState'
+import { RobustPageWrapper } from '@/components/PageWrapper'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -133,6 +134,35 @@ function DiscoverContent() {
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
 
+  // Create a stable fetch function that will receive the user from the hook
+  const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
+    return loadEventsData(currentUser)
+  }, [])
+
+  // Use the enhanced auth-dependent data fetching
+  const {
+    data: events,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isAuthReady
+  } = useAuthDependentData<EventWithCreator[]>(
+    fetchEventsData,
+    {
+      requireAuth: false, // Public data - doesn't require auth
+      onSuccess: (data: EventWithCreator[]) => {
+        console.log('✅ Events loaded successfully:', data?.length || 0, 'events')
+      },
+      onError: (error: Error) => {
+        console.error('❌ Failed to load events:', error)
+        toast.error('Failed to load events. Please try again.')
+      },
+      retryCount: 2,
+      retryDelay: 1000
+    }
+  )
+
   // All hooks must be called before any early returns
   const applyFiltersAndSort = useCallback((eventsData: EventWithCreator[]) => {
     let filtered = [...eventsData]
@@ -207,35 +237,6 @@ function DiscoverContent() {
     setFilteredEvents(filtered)
   }, [searchQuery, sortBy, filterBy, drinkFilter])
 
-  // Create a stable fetch function that will receive the user from the hook
-  const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
-    return loadEventsData(currentUser)
-  }, [])
-
-  // Use the robust auth-dependent data fetching
-  const {
-    data: events,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isAuthReady
-  } = useRobustAuthData<EventWithCreator[]>(
-    fetchEventsData,
-    {
-      requireAuth: false, // Public data - doesn't require auth
-      onSuccess: (data: EventWithCreator[]) => {
-        console.log('✅ Events loaded successfully:', data?.length || 0, 'events')
-      },
-      onError: (error: Error) => {
-        console.error('❌ Failed to load events:', error)
-        toast.error('Failed to load events. Please try again.')
-      },
-      retryCount: 2,
-      retryDelay: 1000
-    }
-  )
-
   const handleJoinChange = useCallback((_eventId: string, _joined: boolean) => {
     // Update the specific event's join status without full reload
     // Note: This would need access to setEvents which we don't have here
@@ -250,8 +251,8 @@ function DiscoverContent() {
     }
   }, [events, searchQuery, sortBy, filterBy, drinkFilter, applyFiltersAndSort])
 
-  // Don't render until auth is ready and data is loaded
-  if (!isAuthReady || isLoading) {
+  // Handle loading state
+  if (isLoading) {
     return <FullPageSkeleton />
   }
 
@@ -602,13 +603,11 @@ function DiscoverContent() {
   )
 }
 
-// Main export with error boundary and suspense
+// Main export with robust page wrapper
 export function Discover() {
   return (
-    <ErrorBoundary>
-      <Suspense fallback={<FullPageSkeleton />}>
-        <DiscoverContent />
-      </Suspense>
-    </ErrorBoundary>
+    <RobustPageWrapper requireAuth={false}>
+      <DiscoverContent />
+    </RobustPageWrapper>
   )
 }

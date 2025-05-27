@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/lib/auth-context'
+import { useAuthDependentData } from '@/hooks/useAuthState'
+import { RobustPageWrapper } from '@/components/PageWrapper'
 import { getUserAccessibleEvents } from '@/lib/eventService'
 import { updateRsvp } from '@/lib/eventService'
 import { Button } from '@/components/ui/button'
@@ -8,61 +9,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Loader2, Globe, Lock, Users, Calendar, MapPin } from 'lucide-react'
+import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import type { Event, RsvpStatus } from '@/types'
 
-export function Events() {
-  const { user, loading: authLoading } = useAuth()
+// Data loading function (outside component for stability)
+const loadEventsData = async (user: any): Promise<Event[]> => {
+  if (!user) {
+    throw new Error('User authentication required')
+  }
+
+  try {
+    console.log('🔍 Loading user accessible events for:', user.id)
+    const data = await getUserAccessibleEvents()
+    console.log('✅ Loaded events:', data?.length || 0)
+    return data || []
+  } catch (error) {
+    console.error('❌ Error loading events:', error)
+    throw error
+  }
+}
+
+function EventsContent() {
   const navigate = useNavigate()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
   const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!user && !authLoading) {
-      navigate('/login')
-      return
-    }
-    if (user) {
-      loadEvents()
-    }
-  }, [user, authLoading, navigate])
+  // Create stable fetch function
+  const fetchEventsData = useCallback(async (user: any): Promise<Event[]> => {
+    return loadEventsData(user)
+  }, [])
 
-  const loadEvents = async () => {
-    try {
-      const data = await getUserAccessibleEvents()
-      setEvents(data)
-    } catch (error) {
-      console.error('Error loading events:', error)
-      toast.error('Failed to load events')
-    } finally {
-      setLoading(false)
+  // Use enhanced auth-dependent data fetching
+  const {
+    data: events,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    user
+  } = useAuthDependentData<Event[]>(
+    fetchEventsData,
+    {
+      requireAuth: true, // This page requires authentication
+      onSuccess: (data: Event[]) => {
+        console.log('✅ Events loaded successfully:', data?.length || 0, 'events')
+      },
+      onError: (error: Error) => {
+        console.error('❌ Failed to load events:', error)
+        toast.error('Failed to load events. Please try again.')
+      },
+      retryCount: 2,
+      retryDelay: 1000
     }
-  }
+  )
 
   const handleRsvpUpdate = async (eventId: string, status: RsvpStatus) => {
     if (!user) return
 
     setUpdatingRsvp(eventId)
     try {
-      // Optimistic update - update UI immediately
-      setEvents(prevEvents =>
-        prevEvents.map(event => {
-          if (event.id === eventId) {
-            const updatedRsvps = event.rsvps?.filter(r => r.user_id !== user.id) || []
-            updatedRsvps.push({ id: 'temp', status, user_id: user.id, users: null })
-            return { ...event, rsvps: updatedRsvps }
-          }
-          return event
-        })
-      )
-
       await updateRsvp(eventId, user.id, status)
       toast.success(`RSVP updated to ${status}!`)
+      // Refetch data to get updated state
+      refetch()
     } catch (error) {
       console.error('Error updating RSVP:', error)
       toast.error('Failed to update RSVP')
-      // Revert optimistic update on error
-      await loadEvents()
     } finally {
       setUpdatingRsvp(null)
     }
@@ -92,27 +103,20 @@ export function Events() {
     return emojis[vibe] || '😎'
   }
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
+  // Handle loading state
+  if (isLoading) {
+    return <FullPageSkeleton />
   }
 
-  if (!user) {
+  // Handle error state
+  if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <ErrorFallback
+        error={error || 'Unknown error'}
+        onRetry={refetch}
+        title="Failed to load events"
+        description="We couldn't load your events. Please try again."
+      />
     )
   }
 
@@ -123,7 +127,7 @@ export function Events() {
         <p className="text-muted-foreground mt-1">Find drinking sessions to join</p>
       </div>
 
-      {events.length === 0 ? (
+      {!events || events.length === 0 ? (
         <div className="text-center py-16">
           <div className="mb-8">
             <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -219,5 +223,14 @@ export function Events() {
         </div>
       )}
     </div>
+  )
+}
+
+// Main export with robust page wrapper
+export function Events() {
+  return (
+    <RobustPageWrapper requireAuth={true}>
+      <EventsContent />
+    </RobustPageWrapper>
   )
 }
