@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
@@ -27,7 +26,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { getPublicEvents, joinEvent, getUserProfile } from '@/lib/eventService'
+import { getPublicEvents } from '@/lib/eventService'
 import type { Event, UserProfile } from '@/types'
 import { Link } from 'react-router-dom'
 
@@ -92,11 +91,23 @@ export function Discover() {
       }
 
       // Map events with their creators and join status
-      const eventsWithCreators = publicEvents.map(event => ({
-        ...event,
-        creator: profiles?.find(p => p.user_id === event.created_by) || null,
-        user_has_joined: userJoinStatuses.get(event.id) || false
-      }))
+      const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
+        const profile = profiles?.find(p => p.user_id === event.created_by)
+        return {
+          ...event,
+          creator: profile ? {
+            id: profile.user_id,
+            user_id: profile.user_id,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            bio: null,
+            favorite_drink: null,
+            created_at: '',
+            updated_at: ''
+          } : undefined,
+          user_has_joined: userJoinStatuses.get(event.id) || false
+        }
+      })
 
       setEvents(eventsWithCreators)
     } catch (error) {

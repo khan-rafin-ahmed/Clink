@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { UserAvatar } from '@/components/UserAvatar'
 import {
   Popover,
   PopoverContent,
@@ -30,7 +29,7 @@ export function NotificationCenter() {
   useEffect(() => {
     loadNotifications()
     loadUnreadCount()
-    
+
     // Poll for new notifications every 30 seconds
     const interval = setInterval(() => {
       loadUnreadCount()
@@ -60,7 +59,7 @@ export function NotificationCenter() {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markNotificationAsRead(notificationId)
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -88,13 +87,13 @@ export function NotificationCenter() {
     try {
       await respondToFollowRequest(followId, response)
       await handleMarkAsRead(notificationId)
-      
+
       if (response === 'accepted') {
         toast.success('Added to your Inner Circle! 🎉')
       } else {
         toast.success('Follow request declined')
       }
-      
+
       // Remove the notification from the list
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
     } catch (error) {
@@ -125,7 +124,7 @@ export function NotificationCenter() {
           <div className="flex-shrink-0 mt-1">
             {getNotificationIcon(notification.type)}
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -133,7 +132,7 @@ export function NotificationCenter() {
                 <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                 <p className="text-xs text-muted-foreground mt-2">{timeAgo}</p>
               </div>
-              
+
               {!notification.read && (
                 <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
               )}
@@ -145,8 +144,8 @@ export function NotificationCenter() {
                 <Button
                   size="sm"
                   onClick={() => handleFollowResponse(
-                    notification.id, 
-                    notification.data.follow_id, 
+                    notification.id,
+                    notification.data.follow_id,
                     'accepted'
                   )}
                   className="h-7 px-3"
@@ -158,8 +157,8 @@ export function NotificationCenter() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleFollowResponse(
-                    notification.id, 
-                    notification.data.follow_id, 
+                    notification.id,
+                    notification.data.follow_id,
                     'rejected'
                   )}
                   className="h-7 px-3"
@@ -193,8 +192,8 @@ export function NotificationCenter() {
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -202,7 +201,7 @@ export function NotificationCenter() {
           )}
         </Button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-80 p-0" align="end">
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
@@ -221,7 +220,7 @@ export function NotificationCenter() {
               )}
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-0">
             <ScrollArea className="h-96">
               {notifications.length === 0 ? (

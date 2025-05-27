@@ -5,7 +5,7 @@ import { GoogleAuthDebug } from '@/components/GoogleAuthDebug'
 import { useState, useEffect } from 'react'
 
 export function TestAuth() {
-  const { user, loading, signInWithGoogle, signOut } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const [session, setSession] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,7 +33,7 @@ export function TestAuth() {
   const testGoogleAuth = async () => {
     try {
       setError('Attempting Google sign in...')
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`

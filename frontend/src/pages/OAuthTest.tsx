@@ -133,7 +133,7 @@ export function OAuthTest() {
       addLog('Starting Google OAuth...')
       addLog(`Using redirect: ${window.location.origin}/oauth-test`)
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/oauth-test`
@@ -155,7 +155,7 @@ export function OAuthTest() {
       addLog('Starting Google OAuth with direct Supabase callback...')
       addLog('This will redirect to Supabase directly (no custom callback)')
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google'
         // No custom redirectTo - uses Supabase default
       })

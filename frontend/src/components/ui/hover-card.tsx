@@ -21,7 +21,7 @@ interface HoverCardContentProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const HoverCard: React.FC<HoverCardProps> = ({ children, open, onOpenChange }) => {
   const [isOpen, setIsOpen] = React.useState(false)
-  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const handleOpen = () => {
     if (timeoutRef.current) {

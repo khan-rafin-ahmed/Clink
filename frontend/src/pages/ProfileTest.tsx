@@ -56,7 +56,7 @@ export function ProfileTest() {
 
     try {
       // Try to update favorite_drink
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_profiles')
         .update({ favorite_drink: 'beer' })
         .eq('user_id', user.id)

@@ -101,7 +101,7 @@ export function AuthCallback() {
         // For magic links (no code parameter), check session immediately
         const { data: { session }, error } = await supabase.auth.getSession()
 
-        console.log('Session data:', data)
+        console.log('Session data:', session)
         console.log('Session error:', error)
 
         if (error) {

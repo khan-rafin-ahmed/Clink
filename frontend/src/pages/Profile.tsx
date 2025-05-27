@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
-import { getUserProfile, getFollowCounts, isFollowing, followUser, unfollowUser } from '@/lib/userService'
+import { getUserProfile, getFollowCounts } from '@/lib/userService'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
-import { Loader2, Users, UserPlus, UserMinus, Calendar, MapPin } from 'lucide-react'
+import { Loader2, Users } from 'lucide-react'
 import { FollowButton } from '@/components/FollowButton'
 import { getInnerCircleCount } from '@/lib/followService'
 import type { UserProfile } from '@/types'
@@ -52,9 +52,9 @@ export function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 })
   const [innerCircleCount, setInnerCircleCount] = useState(0)
-  const [isFollowingUser, setIsFollowingUser] = useState(false)
+
   const [loading, setLoading] = useState(true)
-  const [followLoading, setFollowLoading] = useState(false)
+
 
   useEffect(() => {
     if (userId) {
@@ -66,17 +66,15 @@ export function Profile() {
     if (!userId) return
 
     try {
-      const [profileData, countsData, innerCircleCountData, followingStatus] = await Promise.all([
+      const [profileData, countsData, innerCircleCountData] = await Promise.all([
         getUserProfile(userId),
         getFollowCounts(userId),
-        getInnerCircleCount(userId),
-        currentUser ? isFollowing(userId) : Promise.resolve(false)
+        getInnerCircleCount(userId)
       ])
 
       setProfile(profileData)
       setFollowCounts(countsData)
       setInnerCircleCount(innerCircleCountData)
-      setIsFollowingUser(followingStatus)
     } catch (error) {
       console.error('Error loading profile:', error)
       toast.error('Failed to load profile')
@@ -85,29 +83,7 @@ export function Profile() {
     }
   }
 
-  const handleFollowToggle = async () => {
-    if (!currentUser || !userId) return
 
-    setFollowLoading(true)
-    try {
-      if (isFollowingUser) {
-        await unfollowUser(userId)
-        setIsFollowingUser(false)
-        setFollowCounts(prev => ({ ...prev, followers: prev.followers - 1 }))
-        toast.success('Unfollowed user')
-      } else {
-        await followUser(userId)
-        setIsFollowingUser(true)
-        setFollowCounts(prev => ({ ...prev, followers: prev.followers + 1 }))
-        toast.success('Following user!')
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error)
-      toast.error('Failed to update follow status')
-    } finally {
-      setFollowLoading(false)
-    }
-  }
 
   if (loading) {
     return (

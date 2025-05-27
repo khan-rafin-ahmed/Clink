@@ -6,7 +6,7 @@ export function ConfigChecker() {
   const [results, setResults] = useState<any>(null)
 
   const checkConfig = async () => {
-    const checks = {
+    const checks: any = {
       timestamp: new Date().toISOString(),
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
       expectedGoogleRedirect: `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/callback`,
@@ -15,7 +15,7 @@ export function ConfigChecker() {
 
     // Test Supabase connection
     try {
-      const { data, error } = await supabase.auth.getSession()
+      const { error } = await supabase.auth.getSession()
       checks.supabaseConnection = error ? `Error: ${error.message}` : 'Connected'
     } catch (err: any) {
       checks.supabaseConnection = `Exception: ${err.message}`
@@ -31,7 +31,7 @@ export function ConfigChecker() {
           skipBrowserRedirect: true // Don't actually redirect
         }
       })
-      
+
       checks.googleProvider = error ? `Error: ${error.message}` : 'Provider available'
       checks.googleProviderData = data
     } catch (err: any) {
@@ -45,11 +45,11 @@ export function ConfigChecker() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold">Configuration Checker</h1>
-        
+
         <Button onClick={checkConfig} className="w-full">
           Check Configuration
         </Button>
-        
+
         {results && (
           <div className="bg-card p-4 rounded-lg border">
             <h2 className="text-lg font-semibold mb-4">Configuration Results</h2>
@@ -68,7 +68,7 @@ export function ConfigChecker() {
                 {import.meta.env.VITE_SUPABASE_URL}/auth/v1/callback
               </code>
             </div>
-            
+
             <div>
               <h3 className="font-medium">Authorized JavaScript origins:</h3>
               <code className="bg-muted px-2 py-1 rounded block mt-1">

@@ -9,7 +9,7 @@ export function DatabaseChecker() {
 
   const checkDatabase = async () => {
     setIsChecking(true)
-    const checks = {
+    const checks: any = {
       timestamp: new Date().toISOString(),
       tables: {},
       permissions: {},
@@ -58,7 +58,7 @@ export function DatabaseChecker() {
 
         if (error) {
           // Fallback: try to describe table structure by querying with limit 0
-          const { data: structureData, error: structureError } = await supabase
+          const { error: structureError } = await supabase
             .from('events')
             .select('*')
             .limit(0)

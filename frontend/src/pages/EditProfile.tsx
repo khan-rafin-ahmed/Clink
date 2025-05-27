@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AvatarUpload } from '@/components/AvatarUpload'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, User, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, User, Save, Loader2 } from 'lucide-react'
 import type { UserProfile } from '@/types'
 
 const DRINK_OPTIONS = [

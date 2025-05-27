@@ -5,7 +5,7 @@ export async function addFavoriteDrinkColumn() {
     console.log('🔄 Attempting to add favorite_drink column...')
 
     // First, check if the column already exists by trying to select it
-    const { data: testData, error: testError } = await supabase
+    const { error: testError } = await supabase
       .from('user_profiles')
       .select('favorite_drink')
       .limit(1)
@@ -19,13 +19,13 @@ export async function addFavoriteDrinkColumn() {
 
     // Try to add the column using a direct SQL query
     // Note: This requires the user to have appropriate permissions
-    const { data, error } = await supabase.rpc('exec_sql', {
+    const { error } = await supabase.rpc('exec_sql', {
       sql: 'ALTER TABLE user_profiles ADD COLUMN favorite_drink TEXT;'
     })
 
     if (error) {
       console.error('❌ Failed to add column via RPC:', error)
-      
+
       // If RPC fails, provide instructions for manual addition
       return {
         success: false,
@@ -62,7 +62,7 @@ export async function addFavoriteDrinkColumn() {
 
 export async function checkFavoriteDrinkColumn() {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('user_profiles')
       .select('favorite_drink')
       .limit(1)

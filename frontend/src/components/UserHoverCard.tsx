@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { UserAvatar } from './UserAvatar'
 import { FollowButton } from './FollowButton'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
 import { getUserProfile } from '@/lib/userService'
 import { getInnerCircleCount } from '@/lib/followService'
-import { Calendar, MapPin, Users, Crown } from 'lucide-react'
+import { Calendar, Users, Crown } from 'lucide-react'
 import type { UserProfile } from '@/types'
 
 interface UserHoverCardProps {

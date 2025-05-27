@@ -41,7 +41,7 @@ export function validateFile(file: File, options: UploadOptions = DEFAULT_OPTION
  * Generates a unique file path for upload
  * Format: {userId}/avatar_{timestamp}_{random}.{ext}
  */
-export function generateFilePath(file: File, userId: string, folder?: string): string {
+export function generateFilePath(file: File, userId: string): string {
   const timestamp = Date.now()
   const randomString = Math.random().toString(36).substring(2, 15)
   const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
@@ -69,7 +69,7 @@ export async function uploadFile(
   }
 
   // Generate unique file path
-  const filePath = generateFilePath(file, userId, options.folder)
+  const filePath = generateFilePath(file, userId)
   console.log('[uploadFile] Generated file path:', filePath)
 
   try {

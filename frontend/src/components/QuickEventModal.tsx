@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,7 +11,7 @@ import { createEventWithShareableLink } from '@/lib/eventService'
 import { getInnerCircle, type InnerCircleMember } from '@/lib/followService'
 import { bulkInviteUsers } from '@/lib/memberService'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Copy, ExternalLink, Share2, Users, Check, Search } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Check, Search } from 'lucide-react'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void
@@ -25,9 +25,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [step, setStep] = useState(1)
   const [createdEvent, setCreatedEvent] = useState<{ share_url: string; event_code: string } | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [innerCircleMembers, setInnerCircleMembers] = useState<InnerCircleMember[]>([])
   const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
-  const [loadingInnerCircle, setLoadingInnerCircle] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InnerCircleMember[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -230,22 +228,11 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     setStep(1)
     setCreatedEvent(null)
     setSelectedInvitees([])
-    setInnerCircleMembers([])
     setSearchQuery('')
     setSearchResults([])
   }
 
-  const handleCopyLink = async () => {
-    if (createdEvent?.share_url) {
-      try {
-        await navigator.clipboard.writeText(createdEvent.share_url)
-        toast.success('📋 Share link copied to clipboard!')
-      } catch (error) {
-        console.error('Error copying to clipboard:', error)
-        toast.error('Failed to copy link')
-      }
-    }
-  }
+
 
   const handleCloseModal = (newOpen: boolean) => {
     if (newOpen !== open) {

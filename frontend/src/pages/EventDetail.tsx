@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar, UserAvatarWithName } from '@/components/UserAvatar'
@@ -29,6 +28,7 @@ interface EventWithRsvps extends Event {
     id: string
     status: RsvpStatus
     user_id: string
+    users: { email: string } | null
   }>
   host?: {
     id: string
@@ -44,8 +44,7 @@ export function EventDetail() {
   const navigate = useNavigate()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
   const [loading, setLoading] = useState(true)
-  const [userRsvp, setUserRsvp] = useState<RsvpStatus | null>(null)
-  const [rsvpLoading, setRsvpLoading] = useState(false)
+
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [participants, setParticipants] = useState<Array<{
     id: string
@@ -68,10 +67,8 @@ export function EventDetail() {
     // Update join status when user changes
     if (user && event) {
       const userRsvpData = event.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-      setUserRsvp(userRsvpData?.status || null)
       setIsJoined(userRsvpData?.status === 'going')
     } else {
-      setUserRsvp(null)
       setIsJoined(false)
     }
   }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
@@ -156,7 +153,6 @@ export function EventDetail() {
       // Check user's RSVP status
       if (user) {
         const userRsvpData = eventData.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-        setUserRsvp(userRsvpData?.status || null)
         setIsJoined(userRsvpData?.status === 'going')
       }
 
@@ -235,57 +231,13 @@ export function EventDetail() {
 
   const handleJoinChange = (joined: boolean) => {
     setIsJoined(joined)
-    if (joined) {
-      setUserRsvp('going')
-    } else {
-      setUserRsvp(null)
-    }
     // Reload participants only, not the entire event
     if (event) {
       loadParticipants(event.rsvps || [])
     }
   }
 
-  const handleRsvp = async (status: RsvpStatus) => {
-    if (!user) {
-      toast.error('Please log in to RSVP')
-      navigate('/login')
-      return
-    }
 
-    if (!event) return
-
-    try {
-      setRsvpLoading(true)
-
-      const { error } = await supabase
-        .from('rsvps')
-        .upsert({
-          event_id: event.id,
-          user_id: user.id,
-          status,
-        }, {
-          onConflict: 'event_id,user_id'
-        })
-
-      if (error) {
-        console.error('Error updating RSVP:', error)
-        toast.error('Failed to update RSVP')
-        return
-      }
-
-      setUserRsvp(status)
-      toast.success(`RSVP updated to ${status}!`)
-
-      // Reload event to get updated RSVP counts
-      loadEvent()
-    } catch (error) {
-      console.error('Error updating RSVP:', error)
-      toast.error('Failed to update RSVP')
-    } finally {
-      setRsvpLoading(false)
-    }
-  }
 
 
 
