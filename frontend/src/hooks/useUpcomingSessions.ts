@@ -89,6 +89,10 @@ export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpco
       console.log('Basic events access successful, found', testData?.length || 0, 'events')
 
       // Now get upcoming sessions created by user
+      // Use a more lenient time filter - show events from 1 hour ago to future
+      const oneHourAgo = new Date()
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1)
+
       const { data: events, error: eventsError } = await supabase
         .from('events')
         .select(`
@@ -100,7 +104,7 @@ export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpco
           created_by
         `)
         .eq('created_by', user.id)
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', oneHourAgo.toISOString())
         .order('date_time', { ascending: true })
         .limit(limit)
 
@@ -116,6 +120,9 @@ export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpco
       }
 
       console.log('Found', events?.length || 0, 'upcoming events')
+      console.log('Events data:', events)
+      console.log('Filter time (1 hour ago):', oneHourAgo.toISOString())
+      console.log('Current time:', new Date().toISOString())
 
       // For now, skip RSVP counts to isolate the issue
       const eventsWithRSVPs = (events || []).map(event => ({
