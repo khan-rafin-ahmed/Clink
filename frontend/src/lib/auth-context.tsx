@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { toast } from 'sonner'
@@ -6,8 +6,10 @@ import { toast } from 'sonner'
 type AuthContextType = {
   user: User | null
   loading: boolean
+  error: string | null
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  clearError: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -15,16 +17,47 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
+  const initializingRef = useRef(false)
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    mountedRef.current = true
+
+    // Prevent multiple initializations
+    if (initializingRef.current) return
+    initializingRef.current = true
+
+    const initializeAuth = async () => {
+      try {
+        // Check active sessions and sets the user
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          setError(sessionError.message)
+        }
+
+        if (mountedRef.current) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+          setError(null)
+        }
+      } catch (err: any) {
+        console.error('Auth initialization error:', err)
+        if (mountedRef.current) {
+          setError(err.message || 'Authentication initialization failed')
+          setLoading(false)
+        }
+      }
+    }
+
+    initializeAuth()
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mountedRef.current) return
+
       const newUser = session?.user ?? null
 
       // Show welcome message on sign in
@@ -50,10 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(newUser)
       setLoading(false)
+      setError(null)
     })
 
-    return () => subscription.unsubscribe()
-  }, [user])
+    return () => {
+      subscription.unsubscribe()
+      mountedRef.current = false
+      initializingRef.current = false
+    }
+  }, [])
 
   const signInWithGoogle = async () => {
     try {
@@ -105,15 +143,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      setLoading(true)
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing out:', error)
+      setError(error.message || 'Sign out failed')
+      toast.error('Failed to sign out. Please try again.')
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
   }
 
+  const clearError = () => {
+    setError(null)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, signInWithGoogle, signOut, clearError }}>
       {children}
     </AuthContext.Provider>
   )

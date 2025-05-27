@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -40,10 +40,13 @@ interface EventWithRsvps extends Event {
 
 export function EventDetail() {
   const { eventCode } = useParams<{ eventCode: string }>()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, error: authError } = useAuth()
   const navigate = useNavigate()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
+  const loadingRef = useRef(false)
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [participants, setParticipants] = useState<Array<{
@@ -56,6 +59,14 @@ export function EventDetail() {
     }
   }>>([])
   const [isJoined, setIsJoined] = useState(false)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (eventCode) {
@@ -73,13 +84,18 @@ export function EventDetail() {
     }
   }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
 
-  const loadEvent = async () => {
+  const loadEvent = useCallback(async () => {
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current || !mountedRef.current) return
+
     try {
+      loadingRef.current = true
       setLoading(true)
+      setError(null)
 
       // First try to find event by event_code, then fall back to id for backward compatibility
       let eventData = null
-      let error = null
+      let dbError = null
 
       // Try finding by event_code first (basic event info only)
       const { data: eventByCode, error: codeError } = await supabase
@@ -90,7 +106,7 @@ export function EventDetail() {
 
       if (eventByCode && !codeError) {
         eventData = eventByCode
-        error = codeError
+        dbError = codeError
       } else {
         // Fall back to finding by id for backward compatibility
         const { data: eventById, error: idError } = await supabase
@@ -100,7 +116,7 @@ export function EventDetail() {
           .maybeSingle()
 
         eventData = eventById
-        error = idError
+        dbError = idError
       }
 
       // If we found the event, load RSVPs separately
@@ -281,12 +297,63 @@ export function EventDetail() {
     return vibeEmojis[vibe || ''] || '✨'
   }
 
+  // Show auth error
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-md">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
+          <h2 className="text-xl font-semibold text-foreground">Authentication Error</h2>
+          <p className="text-muted-foreground">{authError}</p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground">Loading event...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-md">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
+          <h2 className="text-xl font-semibold text-foreground">Error Loading Event</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => loadEvent()} variant="outline">
+              Try Again
+            </Button>
+            <Button onClick={() => navigate('/')}>
+              Go Home
+            </Button>
+          </div>
         </div>
       </div>
     )
