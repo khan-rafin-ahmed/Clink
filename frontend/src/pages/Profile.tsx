@@ -5,13 +5,11 @@ import { getUserProfile, getFollowCounts } from '@/lib/userService'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
-import { Loader2, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { FollowButton } from '@/components/FollowButton'
 import { getInnerCircleCount } from '@/lib/followService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
-import { FullPageSkeleton } from '@/components/SkeletonLoaders'
-import { ErrorFallback } from '@/components/ErrorFallback'
-import type { UserProfile } from '@/types'
+import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 
 // Helper functions for drink display
 function getDrinkEmoji(drinkType: string): string {
@@ -49,7 +47,7 @@ function getDrinkLabel(drinkType: string): string {
 }
 
 // Data loading function (outside component for stability)
-const loadProfileData = async (user: any, userId: string) => {
+const loadProfileData = async (_user: any, userId: string) => {
   console.log('🔍 loadProfileData: Loading profile data for userId:', userId)
 
   try {
@@ -99,12 +97,11 @@ export function Profile() {
     isLoading,
     isError,
     error,
-    refetch,
-    authState
+    refetch
   } = useAuthDependentData(fetchProfileData, {
     requireAuth: false, // Profile viewing doesn't require auth
     onSuccess: (data) => console.log('✅ Profile data loaded:', data?.profile?.display_name),
-    onError: (error) => toast.error('Failed to load profile')
+    onError: () => toast.error('Failed to load profile')
   })
 
   // Show loading skeleton while auth or data is loading
@@ -116,7 +113,7 @@ export function Profile() {
   if (isError) {
     return (
       <ErrorFallback
-        error={error}
+        error={String(error || 'Unknown error')}
         onRetry={refetch}
         title="Failed to Load Profile"
         description="There was a problem loading this profile. Please try again."

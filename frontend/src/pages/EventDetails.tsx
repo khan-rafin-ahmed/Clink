@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
-import type { Event, RsvpStatus } from '@/types'
+import type { RsvpStatus } from '@/types'
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import { toast } from 'sonner'
 
 // Data loading function (outside component for stability)
-const loadEventDetailsData = async (user: any, eventId: string) => {
+const loadEventDetailsData = async (_user: any, eventId: string) => {
   console.log('🔍 loadEventDetailsData: Loading event details for eventId:', eventId)
 
   try {
@@ -68,7 +68,7 @@ export function EventDetails() {
   } = useAuthDependentData(fetchEventData, {
     requireAuth: false, // Event viewing doesn't require auth
     onSuccess: (data) => console.log('✅ Event details loaded:', data?.title),
-    onError: (error) => toast.error('Failed to load event details')
+    onError: () => toast.error('Failed to load event details')
   })
 
   const handleRsvpChange = async (status: RsvpStatus) => {
@@ -117,11 +117,11 @@ export function EventDetails() {
     )
   }
 
-  const userRsvp = event.rsvps?.find(r => r.user_id === user?.id)
+  const userRsvp = event.rsvps?.find((r: any) => r.user_id === user?.id)
   const rsvpCounts = {
-    going: event.rsvps?.filter(r => r.status === 'going').length ?? 0,
-    maybe: event.rsvps?.filter(r => r.status === 'maybe').length ?? 0,
-    not_going: event.rsvps?.filter(r => r.status === 'not_going').length ?? 0,
+    going: event.rsvps?.filter((r: any) => r.status === 'going').length ?? 0,
+    maybe: event.rsvps?.filter((r: any) => r.status === 'maybe').length ?? 0,
+    not_going: event.rsvps?.filter((r: any) => r.status === 'not_going').length ?? 0,
   }
 
   const eventUrl = `${window.location.origin}/events/${event.id}`
@@ -197,7 +197,7 @@ export function EventDetails() {
             <h2 className="text-lg font-semibold">RSVP List</h2>
           </div>
           <div className="divide-y">
-            {event.rsvps?.map(rsvp => (
+            {event.rsvps?.map((rsvp: any) => (
               <div key={rsvp.id} className="p-4 flex justify-between items-center">
                 <span className="text-foreground">{rsvp.users?.email}</span>
                 <span className={cn(
