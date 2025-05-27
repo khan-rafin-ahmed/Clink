@@ -86,7 +86,7 @@ serve(async (req) => {
         .from('events')
         .select('id')
         .eq('event_code', eventCode)
-        .single()
+        .maybeSingle()
 
       if (!existingEvent) {
         isUnique = true

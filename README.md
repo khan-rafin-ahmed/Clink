@@ -1,183 +1,124 @@
-# Supabase CLI
+# Clink
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+## Project Description
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+Clink is a web application designed to help users manage and RSVP to social "drinking sessions." It provides a platform for users to create events, view upcoming and past sessions, manage their attendance, and see who else is joining.
 
-This repository contains all the functionality for Supabase CLI.
+## Features
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+-   **User Authentication:** Secure sign-up and login using Supabase Auth.
+-   **Session Management:** Create, view, and manage drinking sessions.
+-   **RSVP System:** Users can mark themselves as "Going" to sessions.
+-   **Live Attendee List:** See who is attending a session in real-time (via the RSVP feature).
+-   **Session Details:** View details for each session, including date, time, location, and notes.
+-   **Session Filtering:** Filter sessions by upcoming, past, or all.
 
-## Getting started
+## Technologies Used
 
-### Install the CLI
+-   **Frontend:** React
+-   **Styling:** Tailwind CSS
+-   **Backend & Database:** Supabase (Database, Authentication)
+-   **Routing:** React Router
+-   **UI Components:** Shadcn UI
+-   **Icons:** Lucide React
+-   **Toast Notifications:** Sonner
+-   **Local Development:** Supabase CLI, Docker
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+## Prerequisites
 
-```bash
-npm i supabase --save-dev
-```
+Before you begin, ensure you have the following installed:
 
-To install the beta release channel:
+-   Node.js (v14 or later)
+-   npm or Yarn
+-   Docker Desktop (required for Supabase local development)
+-   Supabase CLI
 
-```bash
-npm i supabase@beta --save-dev
-```
+## Installation
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+1.  Clone the repository:
 
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
+    ```bash
+    git clone https://github.com/khan-rafin-ahmed/Clink.git
+    cd Clink
+    ```
 
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+2.  Navigate to the frontend directory:
 
-<details>
-  <summary><b>macOS</b></summary>
+    ```bash
+    cd frontend
+    ```
 
-  Available via [Homebrew](https://brew.sh). To install:
+3.  Install frontend dependencies:
 
-  ```sh
-  brew install supabase/tap/supabase
-  ```
+    ```bash
+    npm install
+    # or yarn install
+    ```
 
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
+## Supabase Setup (Local Development)
 
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
+Clink uses Supabase for its backend. For local development, you can use the Supabase CLI.
 
-<details>
-  <summary><b>Windows</b></summary>
+1.  Navigate back to the project root directory:
 
-  Available via [Scoop](https://scoop.sh). To install:
+    ```bash
+    cd ..
+    ```
 
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
+2.  Ensure Docker Desktop is running.
 
-  To upgrade:
+3.  Start the Supabase local development environment:
 
-  ```powershell
-  scoop update supabase
-  ```
-</details>
+    ```bash
+    supabase start
+    ```
 
-<details>
-  <summary><b>Linux</b></summary>
+    This will start the necessary Docker containers and provide you with local Supabase URLs and keys (including anon key and service role key). Keep these handy.
 
-  Available via [Homebrew](https://brew.sh) and Linux packages.
+4.  Set up your database schema. Currently, the application expects an `events` table and an `rsvps` table. You will need to apply your migrations or manually create these tables based on your project's schema.
+    *   The `rsvps` table structure we discussed is:
+        ```sql
+        create table rsvps (
+          id uuid default uuid_generate_v4() primary key,
+          event_id uuid references events(id) on delete cascade,
+          user_id uuid references auth.users(id) on delete cascade,
+          status text check (status in ('going', 'maybe', 'not_going')),
+          created_at timestamp with time zone default timezone('utc'::text, now()),
+          unique(event_id, user_id)
+        );
+        ```
+    *   Ensure you have appropriate Row Level Security (RLS) policies configured for both `events` and `rsvps` tables to allow users to read events and manage their own RSVPs.
 
-  #### via Homebrew
+5.  Create a `.env.local` file in the `frontend` directory with your local Supabase credentials:
 
-  To install:
+    ```env
+    VITE_SUPABASE_URL=YOUR_LOCAL_SUPABASE_URL
+    VITE_SUPABASE_ANON_KEY=YOUR_LOCAL_SUPABASE_ANON_KEY
+    VITE_GOOGLE_OAUTH_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID # Required for Google OAuth, if configured
+    ```
+    Replace the placeholder values with the URLs and keys provided by `supabase start`. Google OAuth is optional if you are not using it.
 
-  ```sh
-  brew install supabase/tap/supabase
-  ```
+## Running Locally
 
-  To upgrade:
+1.  Navigate to the `frontend` directory:
 
-  ```sh
-  brew upgrade supabase
-  ```
+    ```bash
+    cd frontend
+    ```
 
-  #### via Linux packages
+2.  Start the development server:
 
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+    ```bash
+    npm run dev
+    # or yarn dev
+    ```
 
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
+    The application should open in your default browser, usually at `http://localhost:5173` (Vite's default port) or similar.
 
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
+## Contributing
 
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
+If you'd like to contribute, please fork the repository and create a pull request. Follow the commit message guidelines and ensure your code adheres to the project's coding standards.
 
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
+## License
 
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
-
-```bash
-supabase bootstrap
-```
-
-Or using npx:
-
-```bash
-npx supabase bootstrap
-```
-
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
-
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
-```
+[Specify your project's license here, e.g., MIT, Apache 2.0, etc.]

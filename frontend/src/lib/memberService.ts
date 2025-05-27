@@ -14,14 +14,22 @@ export async function inviteUserToEvent(eventId: string, userId: string) {
       invited_by: user.id,
       status: 'pending'
     })
-    .select(`
-      *,
-      user:user_profiles!event_members_user_id_fkey(*)
-    `)
+    .select()
     .single()
 
   if (error) throw error
-  return data
+
+  // Get user profile separately
+  const { data: userProfile } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  return {
+    ...data,
+    user: userProfile
+  }
 }
 
 export async function updateMemberStatus(eventId: string, status: MemberStatus) {
@@ -53,14 +61,25 @@ export async function removeEventMember(eventId: string, userId: string) {
 export async function getEventMembers(eventId: string): Promise<EventMember[]> {
   const { data, error } = await supabase
     .from('event_members')
-    .select(`
-      *,
-      user:user_profiles!event_members_user_id_fkey(*)
-    `)
+    .select('*')
     .eq('event_id', eventId)
 
   if (error) throw error
-  return data || []
+
+  if (!data || data.length === 0) return []
+
+  // Get user profiles for all members
+  const userIds = data.map(member => member.user_id)
+  const { data: userProfiles } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .in('user_id', userIds)
+
+  // Combine the data
+  return data.map(member => ({
+    ...member,
+    user: userProfiles?.find(profile => profile.user_id === member.user_id)
+  }))
 }
 
 export async function getUserEventInvitations(): Promise<EventMember[]> {
@@ -94,11 +113,21 @@ export async function bulkInviteUsers(eventId: string, userIds: string[]) {
   const { data, error } = await supabase
     .from('event_members')
     .insert(invitations)
-    .select(`
-      *,
-      user:user_profiles!event_members_user_id_fkey(*)
-    `)
+    .select()
 
   if (error) throw error
-  return data || []
+
+  if (!data || data.length === 0) return []
+
+  // Get user profiles for all invited users
+  const { data: userProfiles } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .in('user_id', userIds)
+
+  // Combine the data
+  return data.map(member => ({
+    ...member,
+    user: userProfiles?.find(profile => profile.user_id === member.user_id)
+  }))
 }

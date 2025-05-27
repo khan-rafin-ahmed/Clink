@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ShareModal } from '@/components/ShareModal'
+import { JoinEventButton } from '@/components/JoinEventButton'
+import { UserAvatar, UserAvatarWithName } from '@/components/UserAvatar'
+import { UserHoverCard } from '@/components/UserHoverCard'
 import { toast } from 'sonner'
 import {
   Calendar,
@@ -25,10 +29,13 @@ interface EventWithRsvps extends Event {
     id: string
     status: RsvpStatus
     user_id: string
-    users: {
-      email: string
-    } | null
   }>
+  host?: {
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+    email?: string
+  }
 }
 
 export function EventDetail() {
@@ -39,6 +46,17 @@ export function EventDetail() {
   const [loading, setLoading] = useState(true)
   const [userRsvp, setUserRsvp] = useState<RsvpStatus | null>(null)
   const [rsvpLoading, setRsvpLoading] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [participants, setParticipants] = useState<Array<{
+    id: string
+    status: RsvpStatus
+    user_id: string
+    profile?: {
+      display_name: string | null
+      avatar_url: string | null
+    }
+  }>>([])
+  const [isJoined, setIsJoined] = useState(false)
 
   useEffect(() => {
     if (eventCode) {
@@ -46,31 +64,90 @@ export function EventDetail() {
     }
   }, [eventCode])
 
+  useEffect(() => {
+    // Update join status when user changes
+    if (user && event) {
+      const userRsvpData = event.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
+      setUserRsvp(userRsvpData?.status || null)
+      setIsJoined(userRsvpData?.status === 'going')
+    } else {
+      setUserRsvp(null)
+      setIsJoined(false)
+    }
+  }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
+
   const loadEvent = async () => {
     try {
       setLoading(true)
 
-      // For now, treat eventCode as eventId since we don't have event_code column yet
-      const { data: eventData, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          rsvps (
-            id,
-            status,
-            user_id,
-            users (
-              email
-            )
-          )
-        `)
-        .eq('id', eventCode)
-        .single()
+      // First try to find event by event_code, then fall back to id for backward compatibility
+      let eventData = null
+      let error = null
 
-      if (error) {
-        console.error('Error loading event:', error)
+      // Try finding by event_code first (basic event info only)
+      const { data: eventByCode, error: codeError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('event_code', eventCode)
+        .maybeSingle()
+
+      if (eventByCode && !codeError) {
+        eventData = eventByCode
+        error = codeError
+      } else {
+        // Fall back to finding by id for backward compatibility
+        const { data: eventById, error: idError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', eventCode)
+          .maybeSingle()
+
+        eventData = eventById
+        error = idError
+      }
+
+      // If we found the event, load RSVPs separately
+      if (eventData && !error) {
+        try {
+          const { data: rsvpData, error: rsvpError } = await supabase
+            .from('rsvps')
+            .select('id, status, user_id')
+            .eq('event_id', eventData.id)
+
+          if (!rsvpError) {
+            eventData.rsvps = rsvpData || []
+          } else {
+            console.warn('Could not load RSVPs:', rsvpError)
+            eventData.rsvps = []
+          }
+        } catch (rsvpErr) {
+          console.warn('Error loading RSVPs:', rsvpErr)
+          eventData.rsvps = []
+        }
+      }
+
+      if (!eventData) {
+        if (error) {
+          console.error('Error loading event:', error)
+          // If it's a permission error and user is not logged in, suggest login
+          if (error.code === 'PGRST116' && !user) {
+            sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+            toast.error('Please sign in to view this event')
+            navigate('/login')
+            return
+          }
+        }
         toast.error('Event not found')
         navigate('/')
+        return
+      }
+
+      // Check if event is public or user has access
+      if (!eventData.is_public && !user) {
+        // Store current URL for redirect after login
+        sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+        toast.error('Please sign in to view this private event')
+        navigate('/login')
         return
       }
 
@@ -78,14 +155,94 @@ export function EventDetail() {
 
       // Check user's RSVP status
       if (user) {
-        const userRsvpData = eventData.rsvps?.find(rsvp => rsvp.user_id === user.id)
+        const userRsvpData = eventData.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
         setUserRsvp(userRsvpData?.status || null)
+        setIsJoined(userRsvpData?.status === 'going')
       }
+
+      // Load host information
+      await loadHostInfo(eventData.created_by)
+
+      // Load participant profiles
+      await loadParticipants(eventData.rsvps || [])
     } catch (error) {
       console.error('Error loading event:', error)
       toast.error('Failed to load event')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadHostInfo = async (hostId: string) => {
+    try {
+      const { data: hostProfile, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, avatar_url')
+        .eq('user_id', hostId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading host info:', error)
+        return
+      }
+
+      if (hostProfile) {
+        setEvent(prev => prev ? {
+          ...prev,
+          host: {
+            id: hostProfile.user_id,
+            display_name: hostProfile.display_name,
+            avatar_url: hostProfile.avatar_url
+          }
+        } : null)
+      }
+    } catch (error) {
+      console.error('Error loading host info:', error)
+    }
+  }
+
+  const loadParticipants = async (rsvps: any[]) => {
+    if (!rsvps.length) {
+      setParticipants([])
+      return
+    }
+
+    try {
+      const userIds = rsvps.map(rsvp => rsvp.user_id)
+
+      const { data: profiles, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds)
+
+      if (error) {
+        console.error('Error loading participant profiles:', error)
+        setParticipants(rsvps)
+        return
+      }
+
+      const participantsWithProfiles = rsvps.map(rsvp => ({
+        ...rsvp,
+        profile: profiles?.find(p => p.user_id === rsvp.user_id) || null
+      }))
+
+      setParticipants(participantsWithProfiles)
+    } catch (error) {
+      console.error('Error loading participants:', error)
+      setParticipants(rsvps)
+    }
+  }
+
+  const handleJoinChange = (joined: boolean) => {
+    setIsJoined(joined)
+    if (joined) {
+      setUserRsvp('going')
+    } else {
+      setUserRsvp(null)
+    }
+    // Reload participants only, not the entire event
+    if (event) {
+      loadParticipants(event.rsvps || [])
     }
   }
 
@@ -130,17 +287,7 @@ export function EventDetail() {
     }
   }
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/event/${eventCode}`
 
-    try {
-      await navigator.clipboard.writeText(shareUrl)
-      toast.success('Share link copied to clipboard!')
-    } catch (error) {
-      console.error('Error copying to clipboard:', error)
-      toast.error('Failed to copy link')
-    }
-  }
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime)
@@ -222,7 +369,7 @@ export function EventDetail() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <Button variant="outline" onClick={handleShare}>
+            <Button variant="outline" onClick={() => setIsShareModalOpen(true)}>
               <Share2 className="w-4 h-4 mr-2" />
               Share Event
             </Button>
@@ -290,88 +437,106 @@ export function EventDetail() {
                 </div>
               )}
 
-              {/* RSVP Buttons */}
-              {user && (
+              {/* Host Information */}
+              {event.host && (
                 <div className="space-y-3">
-                  <h3 className="font-medium">Will you be there?</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={userRsvp === 'going' ? 'default' : 'outline'}
-                      onClick={() => handleRsvp('going')}
-                      disabled={rsvpLoading}
-                      className="flex-1"
-                    >
-                      ✅ Going
-                    </Button>
-                    <Button
-                      variant={userRsvp === 'maybe' ? 'default' : 'outline'}
-                      onClick={() => handleRsvp('maybe')}
-                      disabled={rsvpLoading}
-                      className="flex-1"
-                    >
-                      🤔 Maybe
-                    </Button>
-                    <Button
-                      variant={userRsvp === 'not_going' ? 'default' : 'outline'}
-                      onClick={() => handleRsvp('not_going')}
-                      disabled={rsvpLoading}
-                      className="flex-1"
-                    >
-                      ❌ Can't Make It
-                    </Button>
-                  </div>
+                  <h3 className="font-medium">Host</h3>
+                  <UserHoverCard
+                    userId={event.host.id}
+                    displayName={event.host.display_name}
+                    avatarUrl={event.host.avatar_url}
+                    isHost={true}
+                  >
+                    <UserAvatarWithName
+                      userId={event.host.id}
+                      displayName={event.host.display_name}
+                      avatarUrl={event.host.avatar_url}
+                      email={event.host.email}
+                      size="md"
+                    />
+                  </UserHoverCard>
                 </div>
               )}
 
-              {!user && (
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-muted-foreground mb-3">
-                    Log in to RSVP and see who's coming!
+              {/* Join Event Button */}
+              <div className="space-y-3">
+                <h3 className="font-medium">Will you be there?</h3>
+                <JoinEventButton
+                  eventId={event.id}
+                  initialJoined={isJoined}
+                  onJoinChange={handleJoinChange}
+                  className="w-full"
+                  size="lg"
+                />
+                {!user && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Sign in to join this event and see who's coming!
                   </p>
-                  <Button onClick={() => navigate('/login')}>
-                    Log In
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Attendees */}
-              {event.rsvps && event.rsvps.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="font-medium">Who's Coming</h3>
-                  <div className="space-y-2">
-                    {['going', 'maybe'].map(status => {
-                      const attendees = event.rsvps?.filter(rsvp => rsvp.status === status) || []
-                      if (attendees.length === 0) return null
+              {/* Who's Coming */}
+              <div className="space-y-3">
+                <h3 className="font-medium">Who's Coming</h3>
+                {(['going', 'maybe'] as const).map(status => {
+                  const attendees = participants.filter(p => p.status === status)
+                  if (attendees.length === 0 && status === 'going') {
+                    return (
+                      <div key={status} className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          ✅ Going (0)
+                        </h4>
+                        <p className="text-sm text-muted-foreground italic">
+                          Be the first to join! 🎉
+                        </p>
+                      </div>
+                    )
+                  }
+                  if (attendees.length === 0) return null
 
-                      return (
-                        <div key={status} className="space-y-2">
-                          <h4 className="text-sm font-medium text-muted-foreground capitalize">
-                            {status === 'going' ? '✅ Going' : '🤔 Maybe'} ({attendees.length})
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {attendees.map(rsvp => (
-                              <div key={rsvp.id} className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarFallback className="text-xs">
-                                    {rsvp.users?.email?.charAt(0).toUpperCase() || '?'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm">
-                                  {rsvp.users?.email?.split('@')[0] || 'Anonymous'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+                  return (
+                    <div key={status} className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground capitalize">
+                        {status === 'going' ? '✅ Going' : '🤔 Maybe'} ({attendees.length})
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {attendees.map(participant => (
+                          <UserHoverCard
+                            key={participant.id}
+                            userId={participant.user_id}
+                            displayName={participant.profile?.display_name}
+                            avatarUrl={participant.profile?.avatar_url}
+                          >
+                            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full hover:bg-muted/80 transition-colors">
+                              <UserAvatar
+                                userId={participant.user_id}
+                                displayName={participant.profile?.display_name}
+                                avatarUrl={participant.profile?.avatar_url}
+                                size="xs"
+                              />
+                              <span className="text-sm">
+                                {participant.profile?.display_name || `User ${participant.user_id?.slice(-4) || 'Anonymous'}`}
+                              </span>
+                            </div>
+                          </UserHoverCard>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title={event?.title || 'Event'}
+        url={`${window.location.origin}/event/${eventCode}`}
+      />
     </div>
   )
 }

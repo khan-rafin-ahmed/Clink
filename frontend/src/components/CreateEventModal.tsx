@@ -74,6 +74,7 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
         date_time: values.date_time.toISOString(),
         location: values.location,
         notes: values.notes || null,
+        is_public: true,
         created_by: user.id
       }
       await createEvent(eventData)
@@ -210,4 +211,4 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
       </DialogContent>
     </Dialog>
   )
-} 
+}

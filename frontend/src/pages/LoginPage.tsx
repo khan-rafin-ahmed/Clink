@@ -104,10 +104,10 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            Welcome to Clink
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+            Welcome to Thirstee
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-sm sm:text-base text-muted-foreground">
             Time to raise some hell! 🍻
           </p>
         </div>

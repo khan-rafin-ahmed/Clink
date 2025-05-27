@@ -67,25 +67,25 @@ export function UserProfile() {
         <div className="space-y-8">
           {/* Profile Header */}
           <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <Avatar className="w-16 h-16">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Avatar className="w-14 h-14 sm:w-16 sm:h-16">
                 <AvatarImage src={userProfile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                <AvatarFallback className="bg-primary/10 text-primary text-xl sm:text-2xl font-bold">
                   {avatarFallback}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-3xl font-display font-bold text-foreground">
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
                   {displayName}'s Profile 🍻
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Ready to raise some hell? Let's get this party started!
                 </p>
               </div>
             </div>
 
-            <div className="bg-primary/10 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-sm text-muted-foreground">
+            <div className="bg-primary/10 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 <strong>Signed in as:</strong> {user.email}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -99,21 +99,23 @@ export function UserProfile() {
 
           {/* Quick Actions */}
           <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-4 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <QuickEventModal
                 trigger={
-                  <Button size="lg" className="text-lg px-8 py-4 font-semibold">
-                    <Plus className="mr-2 h-5 w-5" />
-                    Create New Session
+                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
+                    <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Create New Session</span>
+                    <span className="sm:hidden">Raise Some Hell</span>
                   </Button>
                 }
                 onEventCreated={handleEventCreated}
               />
 
-              <Link to="/my-sessions">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-4 font-semibold">
-                  <Eye className="mr-2 h-5 w-5" />
-                  View All Sessions
+              <Link to="/my-sessions" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
+                  <Eye className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">View All Sessions</span>
+                  <span className="sm:hidden">My Sessions</span>
                 </Button>
               </Link>
             </div>
@@ -121,14 +123,14 @@ export function UserProfile() {
 
           {/* Upcoming Sessions Preview */}
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Calendar className="h-6 w-6" />
-                Your Upcoming Sessions
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
+                Your Upcoming Hell
               </h2>
               {upcomingSessions.length > 0 && (
                 <Link to="/my-sessions">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-fit">
                     View All
                   </Button>
                 </Link>
@@ -167,15 +169,15 @@ export function UserProfile() {
             ) : (
               <div className="text-center py-12 bg-card rounded-xl border border-border">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Upcoming Sessions</h3>
-                <p className="text-muted-foreground mb-4">
-                  You haven't created any upcoming drinking sessions yet.
+                <h3 className="text-lg font-semibold mb-2">No Upcoming Hell</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
+                  You haven't created any upcoming hell-raising sessions yet.
                 </p>
                 <QuickEventModal
                   trigger={
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                       <Plus className="mr-2 h-4 w-4" />
-                      Create Your First Session
+                      Start Raising Hell
                     </Button>
                   }
                   onEventCreated={handleEventCreated}
@@ -185,35 +187,35 @@ export function UserProfile() {
           </div>
 
           {/* App Features */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-card rounded-xl p-6 text-center border border-border">
-              <div className="text-4xl mb-3">⚡</div>
-              <h3 className="text-lg font-semibold mb-2">60-Second Setup</h3>
-              <p className="text-sm text-muted-foreground">
-                Create drinking sessions in under a minute
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+            <div className="bg-card rounded-xl p-4 sm:p-6 text-center border border-border">
+              <div className="text-3xl sm:text-4xl mb-3">⚡</div>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">60-Second Setup</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Create hell-raising sessions in under a minute
               </p>
             </div>
 
-            <div className="bg-card rounded-xl p-6 text-center border border-border">
-              <div className="text-4xl mb-3">📱</div>
-              <h3 className="text-lg font-semibold mb-2">Instant Sharing</h3>
-              <p className="text-sm text-muted-foreground">
+            <div className="bg-card rounded-xl p-4 sm:p-6 text-center border border-border">
+              <div className="text-3xl sm:text-4xl mb-3">📱</div>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Rally the Stable</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Share via WhatsApp, SMS, or any app
               </p>
             </div>
 
-            <div className="bg-card rounded-xl p-6 text-center border border-border">
-              <div className="text-4xl mb-3">🍻</div>
-              <h3 className="text-lg font-semibold mb-2">One-Tap RSVP</h3>
-              <p className="text-sm text-muted-foreground">
-                Friends can join with just one click
+            <div className="bg-card rounded-xl p-4 sm:p-6 text-center border border-border sm:col-span-2 md:col-span-1">
+              <div className="text-3xl sm:text-4xl mb-3">🍻</div>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">One-Tap Hell</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Your stable can join with just one click
               </p>
             </div>
           </div>
 
           {/* Stone Cold Quote */}
           <div className="text-center pt-8">
-            <p className="text-lg text-muted-foreground italic">
+            <p className="text-base sm:text-lg text-muted-foreground italic px-4">
               "And that's the bottom line, 'cause Stone Cold said so!" 🥃
             </p>
           </div>

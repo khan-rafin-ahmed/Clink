@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ShareModal } from '@/components/ShareModal'
+import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import { toast } from 'sonner'
 
 export function EventDetails() {
@@ -48,8 +49,9 @@ export function EventDetails() {
 
     setRsvpLoading(true)
     try {
-      const updatedEvent = await updateRsvp(eventId, status)
-      setEvent(updatedEvent)
+      await updateRsvp(eventId, user.id, status)
+      // Reload the event to get updated data
+      loadEventDetails()
       toast.success('RSVP updated!')
     } catch (error) {
       toast.error('Failed to update RSVP.')
@@ -106,7 +108,10 @@ export function EventDetails() {
             />
           </button>
         </div>
-        <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
+          <InnerCircleBadge userId={event.created_by} />
+        </div>
         <div className="mt-4 space-y-2 text-muted-foreground">
           <p>📅 {format(new Date(event.date_time), 'PPP p')}</p>
           <p>📍 {event.location}</p>
@@ -178,4 +183,4 @@ export function EventDetails() {
       </div>
     </div>
   )
-} 
+}

@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Share2, Link, MessageCircle, MessageSquare } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -17,22 +18,29 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      toast.success('📋 Link copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+      toast.error('Failed to copy link');
     }
   };
 
-  const handleShare = async () => {
+  const handleNativeShare = async () => {
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({
-          title,
+          title: `Join me at ${title}`,
+          text: `Hey! I'm organizing a drinking session. Come join us!`,
           url,
         });
       } catch (err) {
         console.error("Failed to share:", err);
+        toast.error('Failed to share');
       }
+    } else {
+      // Fallback to copy link
+      handleCopyLink();
     }
   };
 
@@ -54,6 +62,12 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
     const message = `🍻 Join me for "${title}"! ${url}`;
     const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
     window.open(smsUrl, "_blank");
+  };
+
+  const handleInstagramShare = () => {
+    // Instagram doesn't have direct URL sharing, so we copy the link and show instructions
+    handleCopyLink();
+    toast.info('📱 Link copied! Paste it in your Instagram story or DM');
   };
 
   return (
@@ -86,7 +100,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
                 variant="outline"
                 size="icon"
                 className="h-10 w-10"
-                onClick={handleShare}
+                onClick={handleNativeShare}
               >
                 <Share2 className="h-4 w-4" />
               </Button>
@@ -146,6 +160,23 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               <p className="text-sm font-medium">Facebook</p>
               <p className="text-sm text-muted-foreground">
                 Share on Facebook
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              onClick={handleInstagramShare}
+            >
+              <span className="text-pink-500 font-bold text-sm">📷</span>
+            </Button>
+            <div className="flex-1">
+              <p className="text-sm font-medium">Instagram</p>
+              <p className="text-sm text-muted-foreground">
+                Copy link for Instagram story/DM
               </p>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { Calendar, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RSVPButton } from '@/components/RSVPButton'
+import { ShareModal } from '@/components/ShareModal'
+import { useState } from 'react'
 
 interface SessionCardProps {
   event: {
@@ -14,6 +16,7 @@ interface SessionCardProps {
     created_by: string
     rsvp_count?: number
     user_rsvp_status?: 'going' | 'maybe' | 'not_going' | null
+    event_code?: string
     attendees?: Array<{
       id: string
       name: string
@@ -27,6 +30,8 @@ interface SessionCardProps {
 export function SessionCard({ event, showRSVPStatus = false, compact = false }: SessionCardProps) {
   const eventDate = new Date(event.date_time)
   const now = new Date()
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const eventUrl = `${window.location.origin}/event/${event.event_code || event.id}`
 
   // Calculate date badge
   const getDateBadge = () => {
@@ -152,8 +157,14 @@ export function SessionCard({ event, showRSVPStatus = false, compact = false }: 
           <span className="sr-only">Session ID: {event.id}</span>
         </div>
         <div className="flex items-center gap-4">
-          <RSVPButton 
-            eventId={event.id} 
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+          >
+            📤 Share
+          </button>
+          <RSVPButton
+            eventId={event.id}
             initialAttendees={event.attendees}
           />
           <Link to={`/events/${event.id}`}>
@@ -163,6 +174,13 @@ export function SessionCard({ event, showRSVPStatus = false, compact = false }: 
           </Link>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title={event.title}
+        url={eventUrl}
+      />
     </div>
   )
 }

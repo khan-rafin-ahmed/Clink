@@ -31,6 +31,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_IN' && newUser && !user) {
         const username = newUser.email?.split('@')[0] || 'Champion'
         toast.success(`Welcome back, ${username}! 🍻 Ready to raise some hell?`)
+
+        // Check for redirect after login
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+        if (redirectPath) {
+          sessionStorage.removeItem('redirectAfterLogin')
+          // Use setTimeout to ensure the auth state is fully updated
+          setTimeout(() => {
+            window.location.href = redirectPath
+          }, 100)
+        }
       }
 
       // Show goodbye message on sign out

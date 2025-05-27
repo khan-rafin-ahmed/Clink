@@ -155,9 +155,9 @@ export function Events() {
                     <span className="text-2xl">{getDrinkEmoji(event.drink_type || 'beer')}</span>
                     <span className="text-lg">{getVibeEmoji(event.vibe || 'casual')}</span>
                     {event.is_public ? (
-                      <Globe className="w-4 h-4 text-green-500" title="Public Event" />
+                      <Globe className="w-4 h-4 text-green-500" />
                     ) : (
-                      <Lock className="w-4 h-4 text-orange-500" title="Private Event" />
+                      <Lock className="w-4 h-4 text-orange-500" />
                     )}
                   </div>
                   <Button

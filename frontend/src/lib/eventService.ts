@@ -90,8 +90,8 @@ export async function createEventWithShareableLink(eventData: {
     const { data: existingEvent } = await supabase
       .from('events')
       .select('id')
-      .eq('title', `${eventData.title}-${eventCode}`) // Use title+code as a temporary unique check
-      .single()
+      .eq('event_code', eventCode)
+      .maybeSingle()
 
     if (!existingEvent) {
       isUnique = true
@@ -105,8 +105,7 @@ export async function createEventWithShareableLink(eventData: {
     throw new Error('Failed to generate unique event code')
   }
 
-  // Create the event with a modified title that includes the event code for now
-  // This is a temporary solution until we can add the event_code column
+  // Create the event with the event_code
   const { data: event, error } = await supabase
     .from('events')
     .insert({
@@ -115,9 +114,10 @@ export async function createEventWithShareableLink(eventData: {
       date_time: eventData.date_time,
       drink_type: eventData.drink_type,
       vibe: eventData.vibe,
-      notes: eventData.notes ? `${eventData.notes}\n\nEvent Code: ${eventCode}` : `Event Code: ${eventCode}`,
+      notes: eventData.notes,
       is_public: eventData.is_public,
       created_by: user.id,
+      event_code: eventCode,
     })
     .select()
     .single()
@@ -136,9 +136,9 @@ export async function createEventWithShareableLink(eventData: {
       status: 'going',
     })
 
-  // Generate shareable link using the event ID for now
+  // Generate shareable link using the event code
   const baseUrl = window.location.origin
-  const shareUrl = `${baseUrl}/event/${event.id}`
+  const shareUrl = `${baseUrl}/event/${eventCode}`
 
   return {
     success: true,
@@ -243,7 +243,10 @@ export async function getUserAccessibleEvents() {
       vibe,
       notes,
       is_public,
-      created_by
+      created_by,
+      created_at,
+      updated_at,
+      event_code
     `)
     .eq('is_public', true)
     .gte('date_time', new Date().toISOString())

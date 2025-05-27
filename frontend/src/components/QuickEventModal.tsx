@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { ShareModal } from '@/components/ShareModal'
+import { UserAvatar } from '@/components/UserAvatar'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
+import { getInnerCircle, type InnerCircleMember } from '@/lib/followService'
+import { bulkInviteUsers } from '@/lib/memberService'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Copy, ExternalLink } from 'lucide-react'
+import { Loader2, Globe, Lock, Copy, ExternalLink, Share2, Users, Check, Search } from 'lucide-react'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void
@@ -20,16 +24,61 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
   const [createdEvent, setCreatedEvent] = useState<{ share_url: string; event_code: string } | null>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [innerCircleMembers, setInnerCircleMembers] = useState<InnerCircleMember[]>([])
+  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
+  const [loadingInnerCircle, setLoadingInnerCircle] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<InnerCircleMember[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Search Inner Circle members
+  const searchInnerCircle = async (query: string) => {
+    if (!user || !query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const members = await getInnerCircle()
+      const filtered = members.filter(member =>
+        member.display_name?.toLowerCase().includes(query.toLowerCase()) ||
+        member.user_id.toLowerCase().includes(query.toLowerCase())
+      )
+      setSearchResults(filtered)
+    } catch (error) {
+      console.error('Error searching Inner Circle members:', error)
+      toast.error('Failed to search your stable')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim() && user) {
+        searchInnerCircle(searchQuery)
+      } else {
+        setSearchResults([])
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, user?.id])
+
+
   const [formData, setFormData] = useState({
     title: '',
     location: '',
     time: 'now',
-    drinkType: 'beer',
+    drink_type: 'beer',
     vibe: 'casual',
     notes: '',
-    customTime: '',
-    isPublic: true,
-    invitedUsers: [] as string[]
+    custom_time: '',
+    is_public: true,
+    invited_users: [] as string[]
   })
 
   const drinkTypes = [
@@ -76,8 +125,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       let eventDateTime = new Date()
       if (formData.time === 'tonight') {
         eventDateTime.setHours(20, 0, 0, 0) // 8 PM tonight
-      } else if (formData.time === 'custom' && formData.customTime) {
-        eventDateTime = new Date(formData.customTime)
+      } else if (formData.time === 'custom' && formData.custom_time) {
+        eventDateTime = new Date(formData.custom_time)
       }
 
       console.log('Creating event:', formData)
@@ -87,10 +136,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         title: formData.title,
         location: formData.location,
         date_time: eventDateTime.toISOString(),
-        drink_type: formData.drinkType,
+        drink_type: formData.drink_type,
         vibe: formData.vibe,
         notes: formData.notes || undefined,
-        is_public: formData.isPublic
+        is_public: formData.is_public
       }
 
       console.log('Creating event with data:', eventData)
@@ -99,20 +148,45 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       console.log('✅ Event created successfully:', result)
 
-      // Store the created event data for the success step
-      setCreatedEvent({
-        share_url: result.share_url,
-        event_code: result.event_code
-      })
+      // Invite selected Inner Circle members if any
+      if (selectedInvitees.length > 0 && result.event?.id) {
+        try {
+          await bulkInviteUsers(result.event.id, selectedInvitees)
+          console.log('✅ Inner Circle members invited successfully')
+        } catch (error) {
+          console.error('Error inviting Inner Circle members:', error)
+          // Don't fail the whole process, just log the error
+        }
+      }
 
-      // Move to success step (step 4)
-      setStep(4)
+      // Show success message and close modal
+      const inviteMessage = selectedInvitees.length > 0
+        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} stable members invited!`
+        : '🍺 Hell yeah! Session created! Time to raise some hell!'
+      toast.success(inviteMessage)
+
+      // Close modal and reset
+      setOpen(false)
+      setTimeout(resetModal, 300)
 
       // Call the callback
       onEventCreated?.()
     } catch (error: any) {
       console.error('Error creating event:', error)
-      toast.error(error.message || 'Failed to create event')
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create event'
+      if (error.message?.includes('NetworkError')) {
+        errorMessage = 'Network error - please check your internet connection and try again'
+      } else if (error.message?.includes('JWT')) {
+        errorMessage = 'Authentication error - please sign out and sign back in'
+      } else if (error.message?.includes('permission')) {
+        errorMessage = 'Permission denied - please check your account permissions'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -131,7 +205,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       case 1:
         return formData.title.trim() && formData.location.trim()
       case 2:
-        return formData.time && formData.drinkType
+        return formData.time && formData.drink_type
       case 3:
         return true
       case 4:
@@ -146,15 +220,19 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       title: '',
       location: '',
       time: 'now',
-      drinkType: 'beer',
+      drink_type: 'beer',
       vibe: 'casual',
       notes: '',
-      customTime: '',
-      isPublic: true,
-      invitedUsers: []
+      custom_time: '',
+      is_public: true,
+      invited_users: []
     })
     setStep(1)
     setCreatedEvent(null)
+    setSelectedInvitees([])
+    setInnerCircleMembers([])
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   const handleCopyLink = async () => {
@@ -169,10 +247,14 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     }
   }
 
-  const handleCloseModal = () => {
-    setOpen(false)
-    // Reset after a short delay to avoid visual glitch
-    setTimeout(resetModal, 300)
+  const handleCloseModal = (newOpen: boolean) => {
+    if (newOpen !== open) {
+      setOpen(newOpen)
+      if (!newOpen) {
+        // Reset after a short delay to avoid visual glitch
+        setTimeout(resetModal, 300)
+      }
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -186,32 +268,44 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     }
   }
 
+  const handleTriggerClick = () => {
+    setOpen(true)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleCloseModal}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="lg" className="font-heading font-bold">
-            🍺 Start a Session
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+    <>
+      {/* Trigger Button */}
+      {trigger ? (
+        <div onClick={handleTriggerClick}>
+          {trigger}
+        </div>
+      ) : (
+        <Button
+          size="lg"
+          className="font-heading font-bold"
+          onClick={handleTriggerClick}
+        >
+          🍺 Start a Session
+        </Button>
+      )}
+
+      {/* Modal */}
+      <Dialog open={open} onOpenChange={handleCloseModal}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle className="text-2xl font-display font-bold text-foreground">
-            {step === 4 ? '🎉 Session Created!' : 'Create Your Session'}
+            Time to Raise Some Hell! 🍺
           </DialogTitle>
-          {step < 4 && (
-            <div className="flex space-x-2 mt-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className={`h-2 flex-1 rounded-full ${
-                    i <= step ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex space-x-2 mt-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`h-2 flex-1 rounded-full ${
+                  i <= step ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -219,10 +313,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="title" className="text-sm font-medium">What's the occasion?</Label>
+                <Label htmlFor="title" className="text-sm font-medium">What's the session?</Label>
                 <Input
                   id="title"
-                  placeholder="Beer O'Clock, Wine Wednesday, etc."
+                  placeholder="Happy Hour Hangout, Stone Cold Sunday, etc."
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   onKeyDown={handleKeyDown}
@@ -235,7 +329,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 <Label htmlFor="location" className="text-sm font-medium">Where's the party?</Label>
                 <Input
                   id="location"
-                  placeholder="My place, The Local Bar, etc."
+                  placeholder="The Local Pub, Downtown Bar, etc."
                   value={formData.location}
                   onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   onKeyDown={handleKeyDown}
@@ -250,8 +344,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium">When?</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
+                <Label className="text-sm font-medium">When's the party?</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                   {timeOptions.map(option => (
                     <button
                       key={option.value}
@@ -271,8 +365,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 {formData.time === 'custom' && (
                   <Input
                     type="datetime-local"
-                    value={formData.customTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, customTime: e.target.value }))}
+                    value={formData.custom_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, custom_time: e.target.value }))}
                     onKeyDown={handleKeyDown}
                     className="mt-2"
                     min={new Date().toISOString().slice(0, 16)}
@@ -281,15 +375,15 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
               </div>
 
               <div>
-                <Label className="text-sm font-medium">What are we drinking?</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
+                <Label className="text-sm font-medium">What's your poison?</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                   {drinkTypes.map(drink => (
                     <button
                       key={drink.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, drinkType: drink.value }))}
+                      onClick={() => setFormData(prev => ({ ...prev, drink_type: drink.value }))}
                       className={`p-3 rounded-lg border text-center transition-colors ${
-                        formData.drinkType === drink.value
+                        formData.drink_type === drink.value
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border hover:border-primary/50'
                       }`}
@@ -332,9 +426,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, isPublic: true }))}
+                    onClick={() => setFormData(prev => ({ ...prev, is_public: true }))}
                     className={`p-3 rounded-lg border text-center transition-colors ${
-                      formData.isPublic
+                      formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:border-primary/50'
                     }`}
@@ -345,9 +439,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, isPublic: false }))}
+                    onClick={() => setFormData(prev => ({ ...prev, is_public: false }))}
                     className={`p-3 rounded-lg border text-center transition-colors ${
-                      !formData.isPublic
+                      !formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:border-primary/50'
                     }`}
@@ -371,68 +465,103 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   className="mt-1"
                 />
               </div>
+
+              {/* Inner Circle Invitations */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <Label className="text-sm font-medium">Invite the Stable</Label>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search your stable members..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Search Results */}
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Searching your stable...</span>
+                  </div>
+                ) : searchQuery.trim() && searchResults.length === 0 ? (
+                  <div className="text-center py-4 space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      No stable members found for "{searchQuery}"
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Try a different search term or add more people to your stable!
+                    </div>
+                  </div>
+                ) : searchQuery.trim() && searchResults.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Found {searchResults.length} members ({selectedInvitees.length} selected)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                      {searchResults.map(member => (
+                        <button
+                          key={member.user_id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvitees(prev =>
+                              prev.includes(member.user_id)
+                                ? prev.filter(id => id !== member.user_id)
+                                : [...prev, member.user_id]
+                            )
+                          }}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
+                            selectedInvitees.includes(member.user_id)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <UserAvatar
+                            userId={member.user_id}
+                            displayName={member.display_name}
+                            avatarUrl={member.avatar_url}
+                            size="xs"
+                          />
+                          <span className="text-xs font-medium truncate">
+                            {member.display_name || 'Anonymous'}
+                          </span>
+                          {selectedInvitees.includes(member.user_id) && (
+                            <Check className="w-3 h-3 ml-auto" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      Start typing to search your stable members
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedInvitees.length > 0 && `${selectedInvitees.length} members selected for invitation`}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Step 4: Success */}
-          {step === 4 && createdEvent && (
-            <div className="space-y-6 text-center">
-              <div className="space-y-4">
-                <div className="text-6xl">🍻</div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-foreground">
-                    Your session is live!
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Share this link with your friends to let them know about your session.
-                  </p>
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="p-4 bg-muted rounded-lg border">
-                  <div className="text-sm text-muted-foreground mb-2">Event Code</div>
-                  <div className="text-2xl font-mono font-bold text-primary">
-                    {createdEvent.event_code}
-                  </div>
-                </div>
-
-                <div className="p-4 bg-muted rounded-lg border">
-                  <div className="text-sm text-muted-foreground mb-2">Share Link</div>
-                  <div className="text-sm font-mono break-all text-foreground">
-                    {createdEvent.share_url}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleCopyLink}
-                    className="flex-1"
-                    variant="outline"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy Link
-                  </Button>
-                  <Button
-                    onClick={() => window.open(createdEvent.share_url, '_blank')}
-                    className="flex-1"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Event
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Navigation */}
-          <div className="flex gap-3">
-            {step > 1 && step < 4 && (
+          <div className="flex flex-col sm:flex-row gap-3">
+            {step > 1 && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={prevStep}
-                className="px-6"
+                className="px-6 order-2 sm:order-1"
               >
                 Back
               </Button>
@@ -443,16 +572,16 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 type="button"
                 onClick={nextStep}
                 disabled={!isStepValid()}
-                className="flex-1 font-semibold"
+                className="flex-1 font-semibold order-1 sm:order-2"
               >
                 Next
               </Button>
-            ) : step === 3 ? (
+            ) : (
               <Button
                 type="button"
                 onClick={() => handleSubmit()}
                 disabled={isSubmitting}
-                className="flex-1 font-semibold"
+                className="flex-1 font-semibold order-1 sm:order-2"
               >
                 {isSubmitting ? (
                   <>
@@ -460,21 +589,25 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                     Creating...
                   </>
                 ) : (
-                  '🍻 Let\'s Do This!'
+                  'Gimme a Hell Yeah! 🍺'
                 )}
               </Button>
-            ) : step === 4 ? (
-              <Button
-                type="button"
-                onClick={handleCloseModal}
-                className="flex-1 font-semibold"
-              >
-                Done
-              </Button>
-            ) : null}
+            )}
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+
+      </Dialog>
+
+      {/* Share Modal */}
+      {createdEvent && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={formData.title}
+          url={createdEvent.share_url}
+        />
+      )}
+    </>
   )
 }

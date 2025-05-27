@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { Loader2, Users, UserPlus, UserMinus, Calendar, MapPin } from 'lucide-react'
+import { FollowButton } from '@/components/FollowButton'
+import { getInnerCircleCount } from '@/lib/followService'
 import type { UserProfile } from '@/types'
 
 // Helper functions for drink display
@@ -49,6 +51,7 @@ export function Profile() {
   const navigate = useNavigate()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 })
+  const [innerCircleCount, setInnerCircleCount] = useState(0)
   const [isFollowingUser, setIsFollowingUser] = useState(false)
   const [loading, setLoading] = useState(true)
   const [followLoading, setFollowLoading] = useState(false)
@@ -63,14 +66,16 @@ export function Profile() {
     if (!userId) return
 
     try {
-      const [profileData, countsData, followingStatus] = await Promise.all([
+      const [profileData, countsData, innerCircleCountData, followingStatus] = await Promise.all([
         getUserProfile(userId),
         getFollowCounts(userId),
+        getInnerCircleCount(userId),
         currentUser ? isFollowing(userId) : Promise.resolve(false)
       ])
 
       setProfile(profileData)
       setFollowCounts(countsData)
+      setInnerCircleCount(innerCircleCountData)
       setIsFollowingUser(followingStatus)
     } catch (error) {
       console.error('Error loading profile:', error)
@@ -163,32 +168,20 @@ export function Profile() {
                 <div className="text-2xl font-bold text-primary">{followCounts.following}</div>
                 <div className="text-muted-foreground">Following</div>
               </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{innerCircleCount}</div>
+                <div className="text-muted-foreground">Inner Circle</div>
+              </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          {!isOwnProfile && (
+          {!isOwnProfile && userId && (
             <div className="flex gap-3">
-              {currentUser ? (
-                <Button
-                  onClick={handleFollowToggle}
-                  disabled={followLoading}
-                  variant={isFollowingUser ? "outline" : "default"}
-                >
-                  {followLoading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : isFollowingUser ? (
-                    <UserMinus className="w-4 h-4 mr-2" />
-                  ) : (
-                    <UserPlus className="w-4 h-4 mr-2" />
-                  )}
-                  {isFollowingUser ? 'Unfollow' : 'Follow'}
-                </Button>
-              ) : (
-                <Button onClick={() => navigate('/login')}>
-                  Sign in to Follow
-                </Button>
-              )}
+              <FollowButton
+                userId={userId}
+                className="flex-1"
+              />
             </div>
           )}
         </div>

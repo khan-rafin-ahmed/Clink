@@ -44,6 +44,7 @@ export interface Event {
   created_by: string
   created_at: string
   updated_at: string
+  event_code?: string
   rsvps?: {
     id: string
     status: RsvpStatus

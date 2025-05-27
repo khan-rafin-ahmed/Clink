@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,6 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { ShareModal } from '@/components/ShareModal'
+import { JoinEventButton } from '@/components/JoinEventButton'
+import { UserAvatar } from '@/components/UserAvatar'
+import { UserHoverCard } from '@/components/UserHoverCard'
+import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import {
   Search,
   Filter,
@@ -17,9 +22,11 @@ import {
   Wine,
   Beer,
   Martini,
-  Coffee
+  Coffee,
+  Share2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 import { getPublicEvents, joinEvent, getUserProfile } from '@/lib/eventService'
 import type { Event, UserProfile } from '@/types'
 import { Link } from 'react-router-dom'
@@ -42,11 +49,12 @@ export function Discover() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [drinkFilter, setDrinkFilter] = useState<string>('all')
-  const [joiningEvents, setJoiningEvents] = useState<Set<string>>(new Set())
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
 
   useEffect(() => {
     loadEvents()
-  }, [])
+  }, [user?.id]) // Reload when user login status changes
 
   useEffect(() => {
     applyFiltersAndSort()
@@ -57,18 +65,38 @@ export function Discover() {
       setLoading(true)
       const publicEvents = await getPublicEvents()
 
-      // Fetch creator profiles for each event
-      const eventsWithCreators = await Promise.all(
-        publicEvents.map(async (event) => {
-          try {
-            const creator = await getUserProfile(event.created_by)
-            return { ...event, creator }
-          } catch (error) {
-            console.error('Error fetching creator profile:', error)
-            return event
-          }
-        })
-      )
+      // Get unique creator IDs to batch fetch profiles
+      const creatorIds = [...new Set(publicEvents.map(event => event.created_by))]
+
+      // Batch fetch all creator profiles
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', creatorIds)
+
+      // Batch fetch user's join statuses if logged in
+      let userJoinStatuses = new Map()
+      if (user) {
+        const eventIds = publicEvents.map(event => event.id)
+        const { data: rsvps } = await supabase
+          .from('rsvps')
+          .select('event_id, status')
+          .eq('user_id', user.id)
+          .in('event_id', eventIds)
+
+        if (rsvps) {
+          rsvps.forEach(rsvp => {
+            userJoinStatuses.set(rsvp.event_id, rsvp.status === 'going')
+          })
+        }
+      }
+
+      // Map events with their creators and join status
+      const eventsWithCreators = publicEvents.map(event => ({
+        ...event,
+        creator: profiles?.find(p => p.user_id === event.created_by) || null,
+        user_has_joined: userJoinStatuses.get(event.id) || false
+      }))
 
       setEvents(eventsWithCreators)
     } catch (error) {
@@ -152,31 +180,23 @@ export function Discover() {
     setFilteredEvents(filtered)
   }
 
-  const handleJoinEvent = async (eventId: string) => {
-    if (!user) {
-      toast.error('Please sign in to join events')
-      return
-    }
+  const handleJoinChange = useCallback((eventId: string, joined: boolean) => {
+    // Update the specific event's join status without full reload
+    setEvents(prevEvents =>
+      prevEvents.map(event =>
+        event.id === eventId
+          ? { ...event, user_has_joined: joined }
+          : event
+      )
+    )
+  }, [])
 
-    setJoiningEvents(prev => new Set([...prev, eventId]))
-    try {
-      await joinEvent(eventId)
-      toast.success('Successfully joined the event! 🎉')
-      // Refresh events to update RSVP counts
-      loadEvents()
-    } catch (error) {
-      console.error('Error joining event:', error)
-      toast.error('Failed to join event')
-    } finally {
-      setJoiningEvents(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(eventId)
-        return newSet
-      })
-    }
+  const handleShareEvent = (event: EventWithCreator) => {
+    setSelectedEventForShare(event)
+    setShareModalOpen(true)
   }
 
-  const getDrinkIcon = (drinkType: string) => {
+  const getDrinkIcon = (drinkType?: string) => {
     switch (drinkType) {
       case 'beer': return <Beer className="w-4 h-4" />
       case 'wine': return <Wine className="w-4 h-4" />
@@ -186,7 +206,7 @@ export function Discover() {
     }
   }
 
-  const getVibeColor = (vibe: string) => {
+  const getVibeColor = (vibe?: string) => {
     switch (vibe) {
       case 'energetic': return 'bg-red-500/10 text-red-500 border-red-500/20'
       case 'chill': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
@@ -239,23 +259,23 @@ export function Discover() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-foreground mb-4">
-            Discover Events 🍻
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
+            Discover Epic Sessions 🍻
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Find amazing drinking sessions happening near you. Join the fun and meet new people!
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+            Find amazing drinking sessions happening near you. Join the party and make some memories!
           </p>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-card rounded-xl p-6 border border-border mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Search events, locations, or hosts..."
+                  placeholder="Search sessions, locations, or hosts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -302,7 +322,7 @@ export function Discover() {
                 <SelectValue placeholder="When" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Events</SelectItem>
+                <SelectItem value="all">All Sessions</SelectItem>
                 <SelectItem value="tonight">Tonight</SelectItem>
                 <SelectItem value="tomorrow">Tomorrow</SelectItem>
                 <SelectItem value="weekend">This Weekend</SelectItem>
@@ -327,9 +347,9 @@ export function Discover() {
         </div>
 
         {/* Results Count */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <p className="text-muted-foreground">
-            Found {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
+            Found {filteredEvents.length} session{filteredEvents.length !== 1 ? 's' : ''}
           </p>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-muted-foreground" />
@@ -346,9 +366,9 @@ export function Discover() {
         {filteredEvents.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">No events found</h3>
+            <h3 className="text-xl font-semibold mb-2">No sessions found</h3>
             <p className="text-muted-foreground mb-4">
-              Try adjusting your filters or search terms
+              Try adjusting your filters or search terms to find the perfect party
             </p>
             <Button onClick={() => {
               setSearchQuery('')
@@ -359,15 +379,17 @@ export function Discover() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                        {event.title}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-lg line-clamp-2">
+                          {event.title}
+                        </h3>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <Calendar className="w-4 h-4" />
                         {formatEventTime(event.date_time)}
@@ -398,7 +420,7 @@ export function Discover() {
                       <Users className="w-4 h-4" />
                       {event.rsvp_count === 0 ? (
                         <span className="text-primary font-medium animate-pulse">
-                          Be the first to join! ✨
+                          Be the first to raise hell! ✨
                         </span>
                       ) : (
                         <span className="text-muted-foreground">
@@ -409,42 +431,58 @@ export function Discover() {
                   </div>
 
                   {/* Host Info */}
-                  <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={event.creator?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {event.creator?.display_name?.charAt(0) || 'H'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-muted-foreground">
-                      Hosted by {event.creator?.display_name || 'Anonymous'}
-                    </span>
-                  </div>
+                  <UserHoverCard
+                    userId={event.created_by}
+                    displayName={event.creator?.display_name}
+                    avatarUrl={event.creator?.avatar_url}
+                    isHost={true}
+                  >
+                    <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
+                      <UserAvatar
+                        userId={event.created_by}
+                        displayName={event.creator?.display_name}
+                        avatarUrl={event.creator?.avatar_url}
+                        size="xs"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Hosted by {event.creator?.display_name || 'Anonymous'}
+                        </span>
+                        {event.creator && (
+                          <InnerCircleBadge
+                            userId={event.creator.user_id}
+                            variant="inline"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </UserHoverCard>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    {event.user_has_joined ? (
-                      <Button
-                        disabled
-                        variant="secondary"
-                        className="flex-1 bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/10"
-                      >
-                        ✓ Joined
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleJoinEvent(event.id)}
-                        disabled={joiningEvents.has(event.id) || !user}
+                  <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <JoinEventButton
+                        eventId={event.id}
+                        initialJoined={event.user_has_joined}
+                        onJoinChange={(joined) => handleJoinChange(event.id, joined)}
                         className="flex-1"
-                      >
-                        {joiningEvents.has(event.id) ? 'Joining...' : !user ? 'Sign in to Join' : 'Join Event'}
-                      </Button>
-                    )}
-                    <Link to={`/events/${event.id}`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        View Details
-                      </Button>
-                    </Link>
+                      />
+                      <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
+                        <Button variant="outline" className="w-full">
+                          <span className="hidden sm:inline">View Details</span>
+                          <span className="sm:hidden">Details</span>
+                        </Button>
+                      </Link>
+                    </div>
+                    <Button
+                      onClick={() => handleShareEvent(event)}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-muted-foreground hover:text-primary"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Session
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -452,6 +490,19 @@ export function Discover() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {selectedEventForShare && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false)
+            setSelectedEventForShare(null)
+          }}
+          title={selectedEventForShare.title}
+          url={`${window.location.origin}/event/${selectedEventForShare.event_code || selectedEventForShare.id}`}
+        />
+      )}
     </div>
   )
 }

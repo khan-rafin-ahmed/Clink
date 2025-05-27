@@ -75,6 +75,7 @@ export function useAllSessions(filter: FilterType = 'all', refreshTrigger?: numb
     try {
       console.log('Fetching fresh sessions for user:', user.id, 'filter:', filter)
 
+      // Get events first
       let query = supabase
         .from('events')
         .select(`
@@ -103,29 +104,44 @@ export function useAllSessions(filter: FilterType = 'all', refreshTrigger?: numb
         throw eventsError
       }
 
-      // Get RSVP counts for each event (in parallel)
-      const eventsWithRSVPs = await Promise.all(
-        (events || []).map(async (event) => {
-          try {
-            const { count } = await supabase
-              .from('rsvps')
-              .select('*', { count: 'exact', head: true })
-              .eq('event_id', event.id)
-              .eq('status', 'going')
-
-            return {
-              ...event,
-              rsvp_count: count || 0
-            }
-          } catch (rsvpError) {
-            console.warn('Failed to get RSVP count for event:', event.id, rsvpError)
-            return {
-              ...event,
-              rsvp_count: 0
-            }
-          }
+      if (!events || events.length === 0) {
+        // Cache empty result
+        allSessionsCache.set(cacheKey, {
+          data: [],
+          timestamp: Date.now()
         })
-      )
+        if (mountedRef.current) {
+          setSessions([])
+        }
+        return
+      }
+
+      // Get RSVP counts for all events in a single query
+      const eventIds = events.map(e => e.id)
+      const { data: rsvpCounts, error: rsvpError } = await supabase
+        .from('rsvps')
+        .select('event_id')
+        .in('event_id', eventIds)
+        .eq('status', 'going')
+
+      if (rsvpError) {
+        console.warn('Failed to get RSVP counts:', rsvpError)
+      }
+
+      // Count RSVPs per event
+      const rsvpCountMap = new Map<string, number>()
+      if (rsvpCounts) {
+        rsvpCounts.forEach(rsvp => {
+          const count = rsvpCountMap.get(rsvp.event_id) || 0
+          rsvpCountMap.set(rsvp.event_id, count + 1)
+        })
+      }
+
+      // Combine events with RSVP counts
+      const eventsWithRSVPs = events.map(event => ({
+        ...event,
+        rsvp_count: rsvpCountMap.get(event.id) || 0
+      }))
 
       // Cache the result
       allSessionsCache.set(cacheKey, {

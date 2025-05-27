@@ -12,7 +12,7 @@ interface EventCardProps {
 
 export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
   const rsvpCount = event.rsvps?.filter(r => r.status === 'going').length ?? 0
-  const eventUrl = `${window.location.origin}/events/${event.id}`
+  const eventUrl = `${window.location.origin}/event/${event.event_code || event.id}`
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   return (
@@ -41,13 +41,11 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
           <span className="text-sm text-muted-foreground">
             {rsvpCount} {rsvpCount === 1 ? 'RSVP' : 'RSVPs'}
           </span>
-          <button onClick={() => setIsShareModalOpen(true)}>
-            <ShareModal
-              isOpen={isShareModalOpen}
-              onClose={() => setIsShareModalOpen(false)}
-              title={event.title}
-              url={eventUrl}
-            />
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+          >
+            📤 Share
           </button>
           {onEdit && (
             <button
@@ -67,6 +65,13 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
           )}
         </div>
       </div>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title={event.title}
+        url={eventUrl}
+      />
     </div>
   )
-} 
+}

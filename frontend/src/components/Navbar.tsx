@@ -13,6 +13,7 @@ import {
 import { User, LogOut, Settings, Calendar, Edit } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
+import { NotificationCenter } from './NotificationCenter'
 import type { UserProfile } from '@/types'
 
 export function Navbar() {
@@ -34,11 +35,11 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">C</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-xs sm:text-sm">T</span>
             </div>
-            <span className="text-xl font-display font-bold text-foreground">
-              Clink
+            <span className="text-lg sm:text-xl font-display font-bold text-foreground">
+              Thirstee
             </span>
           </Link>
 
@@ -62,6 +63,9 @@ export function Navbar() {
 
             {user ? (
               <>
+                {/* Notifications */}
+                <NotificationCenter />
+
                 {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
