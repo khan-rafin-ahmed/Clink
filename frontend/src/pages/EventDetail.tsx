@@ -173,84 +173,85 @@ export function EventDetail() {
       }
 
       // Load host information
-      await loadHostInfo(eventData.created_by)
+      // await loadHostInfo(eventData.created_by)
 
       // Load participant profiles
-      await loadParticipants(eventData.rsvps || [])
+      // await loadParticipants(eventData.rsvps || [])
     } catch (error) {
       console.error('Error loading event:', error)
       toast.error('Failed to load event')
     } finally {
       setLoading(false)
+      loadingRef.current = false
     }
-  }
+  }, [eventCode, mountedRef])
 
-  const loadHostInfo = async (hostId: string) => {
-    try {
-      const { data: hostProfile, error } = await supabase
-        .from('user_profiles')
-        .select('user_id, display_name, avatar_url')
-        .eq('user_id', hostId)
-        .single()
+  // const loadHostInfo = async (hostId: string) => {
+  //   try {
+  //     const { data: hostProfile, error } = await supabase
+  //       .from('user_profiles')
+  //       .select('user_id, display_name, avatar_url')
+  //       .eq('user_id', hostId)
+  //       .single()
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading host info:', error)
-        return
-      }
+  //     if (error && error.code !== 'PGRST116') {
+  //       console.error('Error loading host info:', error)
+  //       return
+  //     }
 
-      if (hostProfile) {
-        setEvent(prev => prev ? {
-          ...prev,
-          host: {
-            id: hostProfile.user_id,
-            display_name: hostProfile.display_name,
-            avatar_url: hostProfile.avatar_url
-          }
-        } : null)
-      }
-    } catch (error) {
-      console.error('Error loading host info:', error)
-    }
-  }
+  //     if (hostProfile) {
+  //       setEvent(prev => prev ? {
+  //         ...prev,
+  //         host: {
+  //           id: hostProfile.user_id,
+  //           display_name: hostProfile.display_name,
+  //           avatar_url: hostProfile.avatar_url
+  //         }
+  //       } : null)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading host info:', error)
+  //   }
+  // }
 
-  const loadParticipants = async (rsvps: any[]) => {
-    if (!rsvps.length) {
-      setParticipants([])
-      return
-    }
+  // const loadParticipants = async (rsvps: any[]) => {
+  //   if (!rsvps.length) {
+  //     setParticipants([])
+  //     return
+  //   }
 
-    try {
-      const userIds = rsvps.map(rsvp => rsvp.user_id)
+  //   try {
+  //     const userIds = rsvps.map(rsvp => rsvp.user_id)
 
-      const { data: profiles, error } = await supabase
-        .from('user_profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', userIds)
+  //     const { data: profiles, error } = await supabase
+  //       .from('user_profiles')
+  //       .select('user_id, display_name, avatar_url')
+  //       .in('user_id', userIds)
 
-      if (error) {
-        console.error('Error loading participant profiles:', error)
-        setParticipants(rsvps)
-        return
-      }
+  //     if (error) {
+  //       console.error('Error loading participant profiles:', error)
+  //       setParticipants(rsvps)
+  //       return
+  //     }
 
-      const participantsWithProfiles = rsvps.map(rsvp => ({
-        ...rsvp,
-        profile: profiles?.find(p => p.user_id === rsvp.user_id) || null
-      }))
+  //     const participantsWithProfiles = rsvps.map(rsvp => ({
+  //       ...rsvp,
+  //       profile: profiles?.find(p => p.user_id === rsvp.user_id) || null
+  //     }))
 
-      setParticipants(participantsWithProfiles)
-    } catch (error) {
-      console.error('Error loading participants:', error)
-      setParticipants(rsvps)
-    }
-  }
+  //     setParticipants(participantsWithProfiles)
+  //   } catch (error) {
+  //     console.error('Error loading participants:', error)
+  //     setParticipants(rsvps)
+  //   }
+  // }
 
   const handleJoinChange = (joined: boolean) => {
     setIsJoined(joined)
     // Reload participants only, not the entire event
-    if (event) {
-      loadParticipants(event.rsvps || [])
-    }
+    // if (event) {
+    //   loadParticipants(event.rsvps || [])
+    // }
   }
 
 

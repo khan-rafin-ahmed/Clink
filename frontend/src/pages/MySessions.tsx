@@ -1,18 +1,21 @@
-import { useAuth } from '@/lib/auth-context'
+import { useRequireAuth } from '@/hooks/useAuthState'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { SessionCard } from '@/components/SessionCard'
 import { QuickEventModal } from '@/components/QuickEventModal'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { Calendar, Plus, ArrowLeft, Filter } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useAllSessions } from '@/hooks/useAllSessions'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { FullPageSkeleton, SessionCardSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 
 type FilterType = 'all' | 'upcoming' | 'past'
 
-export function MySessions() {
-  const { user, loading } = useAuth()
+// Enhanced MySessions component with proper state management
+function MySessionsContent() {
+  const { user, isLoading, shouldRender } = useRequireAuth()
   const navigate = useNavigate()
   const [filter, setFilter] = useState<FilterType>('all')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -22,11 +25,10 @@ export function MySessions() {
   // Get all sessions for stats calculation
   const { sessions: allSessions } = useAllSessions('all', refreshTrigger)
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login')
-    }
-  }, [user, loading, navigate])
+  // Don't render until auth is ready and user is authenticated
+  if (!shouldRender) {
+    return <FullPageSkeleton />
+  }
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -40,19 +42,16 @@ export function MySessions() {
     setRefreshTrigger(prev => prev + 1)
   }
 
-  if (loading) {
+  // Handle error state
+  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading your sessions...</p>
-        </div>
-      </div>
+      <ErrorFallback
+        error={error}
+        onRetry={() => setRefreshTrigger(prev => prev + 1)}
+        title="Failed to load sessions"
+        description="We couldn't load your sessions. Please try again."
+      />
     )
-  }
-
-  if (!user) {
-    return null // Will redirect to login
   }
 
   const upcomingSessions = allSessions.filter(s => new Date(s.date_time) > new Date())
@@ -190,5 +189,16 @@ export function MySessions() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Main export with error boundary and suspense
+export function MySessions() {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<FullPageSkeleton />}>
+        <MySessionsContent />
+      </Suspense>
+    </ErrorBoundary>
   )
 }

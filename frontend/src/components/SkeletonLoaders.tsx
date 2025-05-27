@@ -1,0 +1,220 @@
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// Generic skeleton component
+export function SkeletonBox({ className = '', ...props }: { className?: string; [key: string]: any }) {
+  return <Skeleton className={`bg-muted animate-pulse ${className}`} {...props} />
+}
+
+// Event card skeleton for Discover page
+export function EventCardSkeleton() {
+  return (
+    <Card className="hover:shadow-lg transition-shadow duration-200">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2">
+            <SkeletonBox className="h-6 w-3/4" />
+            <div className="flex items-center gap-2">
+              <SkeletonBox className="h-4 w-4 rounded-full" />
+              <SkeletonBox className="h-4 w-24" />
+            </div>
+            <div className="flex items-center gap-2">
+              <SkeletonBox className="h-4 w-4 rounded-full" />
+              <SkeletonBox className="h-4 w-32" />
+            </div>
+          </div>
+          <SkeletonBox className="h-6 w-16 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <SkeletonBox className="h-8 w-8 rounded-full" />
+          <SkeletonBox className="h-4 w-24" />
+        </div>
+        <SkeletonBox className="h-3 w-full" />
+        <SkeletonBox className="h-3 w-2/3" />
+        <div className="flex items-center justify-between pt-2">
+          <SkeletonBox className="h-4 w-20" />
+          <SkeletonBox className="h-8 w-24 rounded-md" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Events grid skeleton
+export function EventsGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <EventCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
+
+// Page header skeleton
+export function PageHeaderSkeleton() {
+  return (
+    <div className="text-center mb-8 space-y-4">
+      <SkeletonBox className="h-10 w-64 mx-auto" />
+      <SkeletonBox className="h-6 w-96 mx-auto" />
+    </div>
+  )
+}
+
+// Filter controls skeleton
+export function FilterControlsSkeleton() {
+  return (
+    <div className="space-y-6 mb-8">
+      {/* Search and filters row */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <SkeletonBox className="h-10 flex-1" />
+        <SkeletonBox className="h-10 w-32" />
+        <SkeletonBox className="h-10 w-32" />
+        <SkeletonBox className="h-10 w-32" />
+      </div>
+      
+      {/* Stats row */}
+      <div className="flex items-center justify-between">
+        <SkeletonBox className="h-5 w-32" />
+        <SkeletonBox className="h-5 w-24" />
+      </div>
+    </div>
+  )
+}
+
+// Profile skeleton
+export function ProfileSkeleton() {
+  return (
+    <div className="bg-card rounded-xl p-8 border border-border">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-8">
+        <SkeletonBox className="w-24 h-24 rounded-full" />
+        <div className="flex-1 space-y-3">
+          <SkeletonBox className="h-8 w-48" />
+          <SkeletonBox className="h-4 w-64" />
+          <div className="flex gap-4">
+            <SkeletonBox className="h-6 w-20" />
+            <SkeletonBox className="h-6 w-20" />
+            <SkeletonBox className="h-6 w-20" />
+          </div>
+        </div>
+        <SkeletonBox className="h-10 w-32 rounded-md" />
+      </div>
+    </div>
+  )
+}
+
+// Session card skeleton
+export function SessionCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="space-y-2 flex-1">
+            <SkeletonBox className="h-6 w-3/4" />
+            <div className="flex items-center gap-2">
+              <SkeletonBox className="h-4 w-4" />
+              <SkeletonBox className="h-4 w-32" />
+            </div>
+          </div>
+          <SkeletonBox className="h-6 w-16 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <SkeletonBox className="h-4 w-4" />
+            <SkeletonBox className="h-4 w-24" />
+          </div>
+          <div className="flex items-center gap-2">
+            <SkeletonBox className="h-4 w-4" />
+            <SkeletonBox className="h-4 w-20" />
+          </div>
+          <SkeletonBox className="h-3 w-full" />
+          <div className="flex justify-between items-center pt-2">
+            <SkeletonBox className="h-4 w-16" />
+            <SkeletonBox className="h-8 w-20 rounded-md" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Full page loading skeleton
+export function FullPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeaderSkeleton />
+        <FilterControlsSkeleton />
+        <EventsGridSkeleton />
+      </div>
+    </div>
+  )
+}
+
+// Error fallback component
+export function ErrorFallback({ 
+  error, 
+  onRetry, 
+  title = "Something went wrong",
+  description = "We encountered an error while loading this page."
+}: {
+  error?: string
+  onRetry?: () => void
+  title?: string
+  description?: string
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="text-center space-y-6 max-w-md">
+        <div className="flex justify-center mb-6">
+          <img 
+            src="/thirstee-logo.svg" 
+            alt="Thirstee" 
+            className="h-16 w-auto"
+          />
+        </div>
+        
+        <div className="space-y-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            {title}
+          </h1>
+          <p className="text-muted-foreground">
+            {description}
+          </p>
+          
+          {error && (
+            <details className="text-left bg-destructive/10 border border-destructive/20 rounded-lg p-4 mt-4">
+              <summary className="cursor-pointer text-sm font-medium text-destructive mb-2">
+                Error Details
+              </summary>
+              <pre className="text-xs text-destructive whitespace-pre-wrap overflow-auto">
+                {error}
+              </pre>
+            </details>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {onRetry && (
+            <button 
+              onClick={onRetry}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Try Again
+            </button>
+          )}
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

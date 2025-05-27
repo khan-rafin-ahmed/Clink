@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/lib/auth-context'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useOptionalAuth } from '@/hooks/useAuthState'
+import { useAuthDependentData } from '@/hooks/useDataFetching'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -10,6 +11,14 @@ import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
 import { InnerCircleBadge } from '@/components/InnerCircleBadge'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import {
+  FullPageSkeleton,
+  EventsGridSkeleton,
+  ErrorFallback,
+  PageHeaderSkeleton,
+  FilterControlsSkeleton
+} from '@/components/SkeletonLoaders'
 import {
   Search,
   Filter,
@@ -39,11 +48,89 @@ interface EventWithCreator extends Event {
   user_has_joined?: boolean
 }
 
-export function Discover() {
-  const { user } = useAuth()
-  const [events, setEvents] = useState<EventWithCreator[]>([])
+// Extracted data loading function with better error handling
+const loadEventsData = async (currentUser: any): Promise<EventWithCreator[]> => {
+  try {
+    console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
+
+    // Try to get public events
+    const publicEvents = await getPublicEvents()
+    console.log('📅 Found public events:', publicEvents.length)
+
+    if (!publicEvents || publicEvents.length === 0) {
+      console.log('⚠️ No public events found')
+      return []
+    }
+
+    // Get unique creator IDs to batch fetch profiles
+    const creatorIds = [...new Set(publicEvents.map(event => event.created_by))]
+    console.log('👥 Loading profiles for creators:', creatorIds.length)
+
+    // Batch fetch all creator profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', creatorIds)
+
+    if (profilesError) {
+      console.error('❌ Error loading profiles:', profilesError)
+    } else {
+      console.log('✅ Loaded profiles:', profiles?.length || 0)
+    }
+
+    // Batch fetch user's join statuses if logged in
+    let userJoinStatuses = new Map()
+    if (currentUser) {
+      const eventIds = publicEvents.map(event => event.id)
+      const { data: rsvps, error: rsvpError } = await supabase
+        .from('rsvps')
+        .select('event_id, status')
+        .eq('user_id', currentUser.id)
+        .in('event_id', eventIds)
+
+      if (rsvpError) {
+        console.error('❌ Error loading RSVPs:', rsvpError)
+      } else {
+        console.log('✅ Loaded RSVPs:', rsvps?.length || 0)
+        if (rsvps) {
+          rsvps.forEach(rsvp => {
+            userJoinStatuses.set(rsvp.event_id, rsvp.status === 'going')
+          })
+        }
+      }
+    }
+
+    // Map events with their creators and join status
+    const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
+      const profile = profiles?.find(p => p.user_id === event.created_by)
+      return {
+        ...event,
+        creator: profile ? {
+          id: profile.user_id,
+          user_id: profile.user_id,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+          bio: null,
+          favorite_drink: null,
+          created_at: '',
+          updated_at: ''
+        } : undefined,
+        user_has_joined: userJoinStatuses.get(event.id) || false
+      }
+    })
+
+    console.log('🎉 Successfully loaded events with creators:', eventsWithCreators.length)
+    return eventsWithCreators
+  } catch (error) {
+    console.error('💥 Error in loadEventsData:', error)
+    throw error
+  }
+}
+
+// Enhanced Discover component with proper state management
+function DiscoverContent() {
+  const { user, isAuthenticated, shouldRender } = useOptionalAuth()
   const [filteredEvents, setFilteredEvents] = useState<EventWithCreator[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
@@ -51,75 +138,9 @@ export function Discover() {
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
 
-  useEffect(() => {
-    loadEvents()
-  }, [user?.id]) // Reload when user login status changes
-
-  useEffect(() => {
-    applyFiltersAndSort()
-  }, [events, searchQuery, sortBy, filterBy, drinkFilter])
-
-  const loadEvents = async () => {
-    try {
-      setLoading(true)
-      const publicEvents = await getPublicEvents()
-
-      // Get unique creator IDs to batch fetch profiles
-      const creatorIds = [...new Set(publicEvents.map(event => event.created_by))]
-
-      // Batch fetch all creator profiles
-      const { data: profiles } = await supabase
-        .from('user_profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', creatorIds)
-
-      // Batch fetch user's join statuses if logged in
-      let userJoinStatuses = new Map()
-      if (user) {
-        const eventIds = publicEvents.map(event => event.id)
-        const { data: rsvps } = await supabase
-          .from('rsvps')
-          .select('event_id, status')
-          .eq('user_id', user.id)
-          .in('event_id', eventIds)
-
-        if (rsvps) {
-          rsvps.forEach(rsvp => {
-            userJoinStatuses.set(rsvp.event_id, rsvp.status === 'going')
-          })
-        }
-      }
-
-      // Map events with their creators and join status
-      const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
-        const profile = profiles?.find(p => p.user_id === event.created_by)
-        return {
-          ...event,
-          creator: profile ? {
-            id: profile.user_id,
-            user_id: profile.user_id,
-            display_name: profile.display_name,
-            avatar_url: profile.avatar_url,
-            bio: null,
-            favorite_drink: null,
-            created_at: '',
-            updated_at: ''
-          } : undefined,
-          user_has_joined: userJoinStatuses.get(event.id) || false
-        }
-      })
-
-      setEvents(eventsWithCreators)
-    } catch (error) {
-      console.error('Error loading events:', error)
-      toast.error('Failed to load events')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const applyFiltersAndSort = () => {
-    let filtered = [...events]
+  // All hooks must be called before any early returns
+  const applyFiltersAndSort = useCallback((eventsData: EventWithCreator[]) => {
+    let filtered = [...eventsData]
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -189,18 +210,96 @@ export function Discover() {
     }
 
     setFilteredEvents(filtered)
-  }
+  }, [searchQuery, sortBy, filterBy, drinkFilter])
+
+  // Use a stable callback for data loading with stable dependencies
+  const userId = user?.id
+  const stableLoadEventsData = useCallback(() => loadEventsData(user), [userId])
+
+  // Fetch events with proper auth dependency
+  const {
+    data: events,
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useAuthDependentData(
+    stableLoadEventsData,
+    shouldRender, // Only fetch when auth state is determined
+    false, // Don't require auth (public events)
+    !!user, // Pass user existence for user-specific data
+    {
+      onError: (error) => {
+        console.error('Error loading events:', error)
+        toast.error('Failed to load events')
+      }
+    }
+  )
 
   const handleJoinChange = useCallback((eventId: string, joined: boolean) => {
     // Update the specific event's join status without full reload
-    setEvents(prevEvents =>
-      prevEvents.map(event =>
-        event.id === eventId
-          ? { ...event, user_has_joined: joined }
-          : event
-      )
+    // Note: This would need access to setEvents which we don't have here
+    // For now, we'll just trigger a refetch
+    refetch()
+  }, [refetch])
+
+  // Apply filters and sorting when data or filters change
+  useEffect(() => {
+    if (events) {
+      applyFiltersAndSort(events)
+    }
+  }, [events, searchQuery, sortBy, filterBy, drinkFilter, applyFiltersAndSort])
+
+  // Don't render until auth state is determined
+  if (!shouldRender) {
+    return <FullPageSkeleton />
+  }
+
+  // Handle loading state
+  if (isLoading) {
+    return <FullPageSkeleton />
+  }
+
+  // Handle error state
+  if (isError) {
+    return (
+      <ErrorFallback
+        error={error}
+        onRetry={refetch}
+        title="Failed to load events"
+        description="We couldn't load the events. Please try again."
+      />
     )
-  }, [])
+  }
+
+  // Handle empty state
+  if (!events || events.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
+              Discover Epic Sessions 🍻
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Find amazing drinking sessions happening near you. Join the party and make some memories!
+            </p>
+          </div>
+
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🍻</div>
+            <h3 className="text-xl font-semibold mb-2">No events yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Be the first to create an epic drinking session!
+            </p>
+            <Link to="/">
+              <Button>Create First Event</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleShareEvent = (event: EventWithCreator) => {
     setSelectedEventForShare(event)
@@ -254,17 +353,7 @@ export function Discover() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Discovering amazing events...</p>
-        </div>
-      </div>
-    )
-  }
-
+  // Main content render
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -515,5 +604,16 @@ export function Discover() {
         />
       )}
     </div>
+  )
+}
+
+// Main export with error boundary and suspense
+export function Discover() {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<FullPageSkeleton />}>
+        <DiscoverContent />
+      </Suspense>
+    </ErrorBoundary>
   )
 }
