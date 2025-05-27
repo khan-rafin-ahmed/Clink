@@ -15,7 +15,7 @@ interface UseAuthStateReturn {
  * Prevents components from rendering before auth state is determined
  */
 export function useAuthState(): UseAuthStateReturn {
-  const { user, loading, error } = useAuth()
+  const { user, loading, error, isInitialized } = useAuth()
   const [authState, setAuthState] = useState<AuthState>('loading')
   const mountedRef = useRef(true)
 
@@ -29,6 +29,12 @@ export function useAuthState(): UseAuthStateReturn {
   useEffect(() => {
     if (!mountedRef.current) return
 
+    // Don't update state until auth is fully initialized
+    if (!isInitialized) {
+      setAuthState('loading')
+      return
+    }
+
     if (error) {
       setAuthState('error')
     } else if (loading) {
@@ -38,13 +44,13 @@ export function useAuthState(): UseAuthStateReturn {
     } else {
       setAuthState('unauthenticated')
     }
-  }, [user, loading, error])
+  }, [user, loading, error, isInitialized])
 
   return {
     authState,
     user,
     error,
-    isReady: authState !== 'loading'
+    isReady: isInitialized && authState !== 'loading'
   }
 }
 
@@ -54,7 +60,7 @@ export function useAuthState(): UseAuthStateReturn {
  */
 export function useRequireAuth() {
   const { authState, user, error } = useAuthState()
-  
+
   return {
     user: authState === 'authenticated' ? user : null,
     isAuthenticated: authState === 'authenticated',
@@ -70,7 +76,7 @@ export function useRequireAuth() {
  */
 export function useOptionalAuth() {
   const { authState, user, error } = useAuthState()
-  
+
   return {
     user: authState === 'authenticated' ? user : null,
     isAuthenticated: authState === 'authenticated',

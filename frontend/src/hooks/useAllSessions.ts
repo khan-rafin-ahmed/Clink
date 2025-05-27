@@ -27,7 +27,7 @@ const activeAllSessionsRequests = new Set<string>()
 const ALL_SESSIONS_CACHE_TTL = 3 * 60 * 1000 // 3 minutes
 
 export function useAllSessions(filter: FilterType = 'all', refreshTrigger?: number): UseAllSessionsReturn {
-  const { user } = useAuth()
+  const { user, isInitialized } = useAuth()
   const [sessions, setSessions] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +41,11 @@ export function useAllSessions(filter: FilterType = 'all', refreshTrigger?: numb
   }, [])
 
   const fetchSessions = async (forceRefresh = false) => {
+    // Don't fetch until auth is initialized
+    if (!isInitialized) {
+      return
+    }
+
     if (!user?.id) {
       setSessions([])
       setLoading(false)
@@ -169,10 +174,10 @@ export function useAllSessions(filter: FilterType = 'all', refreshTrigger?: numb
     }
   }
 
-  // Load sessions when user, filter, or refresh trigger changes
+  // Load sessions when auth is initialized and user, filter, or refresh trigger changes
   useEffect(() => {
     fetchSessions()
-  }, [user?.id, filter, refreshTrigger])
+  }, [isInitialized, user?.id, filter, refreshTrigger])
 
   const refresh = () => {
     fetchSessions(true)

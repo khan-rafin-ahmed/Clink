@@ -7,6 +7,7 @@ type AuthContextType = {
   user: User | null
   loading: boolean
   error: string | null
+  isInitialized: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   clearError: () => void
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
   const mountedRef = useRef(true)
   const initializingRef = useRef(false)
 
@@ -42,12 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null)
           setLoading(false)
           setError(null)
+          setIsInitialized(true)
         }
       } catch (err: any) {
         console.error('Auth initialization error:', err)
         if (mountedRef.current) {
           setError(err.message || 'Authentication initialization failed')
           setLoading(false)
+          setIsInitialized(true) // Still mark as initialized even on error
         }
       }
     }
@@ -162,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signInWithGoogle, signOut, clearError }}>
+    <AuthContext.Provider value={{ user, loading, error, isInitialized, signInWithGoogle, signOut, clearError }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useAuth } from '@/lib/auth-context'
 
 export type DataState = 'idle' | 'loading' | 'success' | 'error'
 
@@ -194,4 +195,70 @@ export function useAuthDependentData<T>(
     immediate: shouldFetch,
     dependencies: [authReady, userExists, ...(options.dependencies || [])]
   })
+}
+
+/**
+ * Enhanced hook for robust auth-dependent data fetching
+ * Prevents queries until Supabase session is fully initialized
+ * Handles all edge cases for hard refresh, direct access, etc.
+ */
+export function useRobustAuthData<T>(
+  fetchFunction: (user: any) => Promise<T>,
+  options: {
+    requireAuth?: boolean
+    enabled?: boolean
+    onSuccess?: (data: T) => void
+    onError?: (error: Error) => void
+    retryCount?: number
+    retryDelay?: number
+  } = {}
+) {
+  const { user, loading, error: authError, isInitialized } = useAuth()
+  const {
+    requireAuth = false,
+    enabled = true,
+    ...fetchOptions
+  } = options
+
+  // Store the fetch function in a ref to avoid circular dependencies
+  const fetchFunctionRef = useRef(fetchFunction)
+  fetchFunctionRef.current = fetchFunction
+
+  // Determine if we should fetch data
+  const shouldFetch = useMemo(() => {
+    // Never fetch if disabled
+    if (!enabled) return false
+
+    // Never fetch if auth isn't initialized yet
+    if (!isInitialized) return false
+
+    // Never fetch if there's an auth error
+    if (authError) return false
+
+    // If auth is required, only fetch when user exists
+    if (requireAuth) return !!user
+
+    // For public data, fetch once auth state is determined
+    return true
+  }, [enabled, isInitialized, authError, requireAuth, user])
+
+  const stableFetchFunction = useCallback(() => {
+    return fetchFunctionRef.current(user)
+  }, [user?.id])
+
+  const result = useDataFetching(stableFetchFunction, {
+    ...fetchOptions,
+    immediate: shouldFetch,
+    dependencies: [shouldFetch, user?.id]
+  })
+
+  // Enhanced return with auth state info
+  return {
+    ...result,
+    isAuthReady: isInitialized,
+    authError,
+    user,
+    // Override loading to include auth loading
+    isLoading: !isInitialized || loading || result.isLoading
+  }
 }

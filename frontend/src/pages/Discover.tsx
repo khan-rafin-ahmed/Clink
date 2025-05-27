@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useOptionalAuth } from '@/hooks/useAuthState'
-import { useAuthDependentData } from '@/hooks/useDataFetching'
+import { useRobustAuthData } from '@/hooks/useDataFetching'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -46,7 +45,7 @@ interface EventWithCreator extends Event {
 }
 
 // Extracted data loading function with better error handling
-const loadEventsData = async (currentUser: any): Promise<EventWithCreator[]> => {
+const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator[]> => {
   try {
     console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
 
@@ -124,9 +123,8 @@ const loadEventsData = async (currentUser: any): Promise<EventWithCreator[]> => 
   }
 }
 
-// Enhanced Discover component with proper state management
+// Enhanced Discover component with robust auth handling
 function DiscoverContent() {
-  const { user, shouldRender } = useOptionalAuth()
   const [filteredEvents, setFilteredEvents] = useState<EventWithCreator[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
@@ -209,27 +207,32 @@ function DiscoverContent() {
     setFilteredEvents(filtered)
   }, [searchQuery, sortBy, filterBy, drinkFilter])
 
-  // Use a stable callback for data loading with stable dependencies
-  const userId = user?.id
-  const stableLoadEventsData = useCallback(() => loadEventsData(user), [userId])
+  // Create a stable fetch function that will receive the user from the hook
+  const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
+    return loadEventsData(currentUser)
+  }, [])
 
-  // Fetch events with proper auth dependency
+  // Use the robust auth-dependent data fetching
   const {
     data: events,
     isLoading,
     isError,
     error,
-    refetch
-  } = useAuthDependentData(
-    stableLoadEventsData,
-    shouldRender, // Only fetch when auth state is determined
-    false, // Don't require auth (public events)
-    !!user, // Pass user existence for user-specific data
+    refetch,
+    isAuthReady
+  } = useRobustAuthData<EventWithCreator[]>(
+    fetchEventsData,
     {
-      onError: (error) => {
-        console.error('Error loading events:', error)
-        toast.error('Failed to load events')
-      }
+      requireAuth: false, // Public data - doesn't require auth
+      onSuccess: (data: EventWithCreator[]) => {
+        console.log('✅ Events loaded successfully:', data?.length || 0, 'events')
+      },
+      onError: (error: Error) => {
+        console.error('❌ Failed to load events:', error)
+        toast.error('Failed to load events. Please try again.')
+      },
+      retryCount: 2,
+      retryDelay: 1000
     }
   )
 
@@ -242,18 +245,13 @@ function DiscoverContent() {
 
   // Apply filters and sorting when data or filters change
   useEffect(() => {
-    if (events) {
+    if (events && Array.isArray(events)) {
       applyFiltersAndSort(events)
     }
   }, [events, searchQuery, sortBy, filterBy, drinkFilter, applyFiltersAndSort])
 
-  // Don't render until auth state is determined
-  if (!shouldRender) {
-    return <FullPageSkeleton />
-  }
-
-  // Handle loading state
-  if (isLoading) {
+  // Don't render until auth is ready and data is loaded
+  if (!isAuthReady || isLoading) {
     return <FullPageSkeleton />
   }
 
@@ -270,7 +268,7 @@ function DiscoverContent() {
   }
 
   // Handle empty state
-  if (!events || events.length === 0) {
+  if (!events || !Array.isArray(events) || events.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

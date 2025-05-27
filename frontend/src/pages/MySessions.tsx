@@ -1,4 +1,4 @@
-import { useRequireAuth } from '@/hooks/useAuthState'
+import { useAuthState } from '@/hooks/useAuthState'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { SessionCard } from '@/components/SessionCard'
@@ -13,9 +13,9 @@ import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 
 type FilterType = 'all' | 'upcoming' | 'past'
 
-// Enhanced MySessions component with proper state management
+// Enhanced MySessions component with robust auth handling
 function MySessionsContent() {
-  const { shouldRender } = useRequireAuth()
+  const { authState, isReady } = useAuthState()
   const [filter, setFilter] = useState<FilterType>('all')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
@@ -25,7 +25,15 @@ function MySessionsContent() {
   const { sessions: allSessions } = useAllSessions('all', refreshTrigger)
 
   // Don't render until auth is ready and user is authenticated
-  if (!shouldRender) {
+  if (!isReady) {
+    return <FullPageSkeleton />
+  }
+
+  // Redirect to login if not authenticated
+  if (authState !== 'authenticated') {
+    // Store current URL for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+    window.location.href = '/login'
     return <FullPageSkeleton />
   }
 
