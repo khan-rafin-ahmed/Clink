@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
+import { useAuthDependentData } from '@/hooks/useAuthState'
+import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import type { Event, RsvpStatus } from '@/types'
 import {
   Select,
@@ -17,32 +19,57 @@ import { ShareModal } from '@/components/ShareModal'
 import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import { toast } from 'sonner'
 
+// Data loading function (outside component for stability)
+const loadEventDetailsData = async (user: any, eventId: string) => {
+  console.log('🔍 loadEventDetailsData: Loading event details for eventId:', eventId)
+
+  try {
+    const eventData = await getEventDetails(eventId)
+    console.log('✅ loadEventDetailsData: Event details loaded successfully')
+    return eventData
+  } catch (error) {
+    console.error('🚨 loadEventDetailsData: Error loading event details:', error)
+    throw error
+  }
+}
+
 export function EventDetails() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [event, setEvent] = useState<Event | null>(null)
-  const [loading, setLoading] = useState(true)
   const [updatingRsvp, setUpdatingRsvp] = useState(false)
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
-  useEffect(() => {
-    if (eventId) {
-      loadEventDetails()
-    }
+  // STRONGEST GUARD: Validate eventId from URL params
+  if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Event URL</h2>
+          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Create stable fetch function
+  const fetchEventData = useCallback(async (user: any) => {
+    return loadEventDetailsData(user, eventId)
   }, [eventId])
 
-  async function loadEventDetails() {
-    try {
-      const data = await getEventDetails(eventId!)
-      setEvent(data)
-    } catch (error) {
-      console.error('Error loading event details:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Use strengthened auth-dependent data hook
+  const {
+    data: event,
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useAuthDependentData(fetchEventData, {
+    requireAuth: false, // Event viewing doesn't require auth
+    onSuccess: (data) => console.log('✅ Event details loaded:', data?.title),
+    onError: (error) => toast.error('Failed to load event details')
+  })
 
   const handleRsvpChange = async (status: RsvpStatus) => {
     if (!eventId || !user) return
@@ -51,7 +78,7 @@ export function EventDetails() {
     try {
       await updateRsvp(eventId, user.id, status)
       // Reload the event to get updated data
-      loadEventDetails()
+      refetch()
       toast.success('RSVP updated!')
     } catch (error) {
       toast.error('Failed to update RSVP.')
@@ -61,20 +88,30 @@ export function EventDetails() {
     }
   }
 
-  if (loading) {
+  // Show loading skeleton while auth or data is loading
+  if (isLoading) {
+    return <FullPageSkeleton />
+  }
+
+  // Show error fallback if there's an error
+  if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <ErrorFallback
+        error={String(error || 'Unknown error')}
+        onRetry={refetch}
+        title="Failed to Load Event"
+        description="There was a problem loading this event. Please try again."
+      />
     )
   }
 
+  // Show not found if no event data
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h2>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
         </div>
       </div>
     )

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useDataFetching } from '@/hooks/useDataFetching'
 
@@ -95,6 +95,7 @@ export function useOptionalAuth() {
  * Enhanced hook for data fetching that depends on auth state
  * Prevents any data fetching until auth is fully initialized
  * Handles both authenticated and public data scenarios
+ * STRONGEST GUARDS: Ensures no queries with invalid/null user.id
  */
 export function useAuthDependentData<T>(
   fetchFunction: (user: any) => Promise<T>,
@@ -107,33 +108,100 @@ export function useAuthDependentData<T>(
     retryDelay?: number
   } = {}
 ) {
-  const { user, shouldRender, authState } = useOptionalAuth()
+  const { user, shouldRender, authState, error: authError } = useOptionalAuth()
   const {
     requireAuth = false,
     enabled = true,
+    onError,
     ...fetchOptions
   } = options
 
-  // Determine if we should fetch data
+  // Enhanced error handler that logs auth issues
+  const enhancedErrorHandler = useCallback((error: Error) => {
+    console.error('🚨 useAuthDependentData Error:', {
+      error: error.message,
+      authState,
+      userId: user?.id,
+      requireAuth,
+      enabled,
+      shouldRender
+    })
+
+    // Call original error handler if provided
+    if (onError) {
+      onError(error)
+    }
+  }, [onError, authState, user?.id, requireAuth, enabled, shouldRender])
+
+  // STRONGEST GUARDS: Determine if we should fetch data
   const shouldFetch = useMemo(() => {
     // Never fetch if disabled
-    if (!enabled) return false
+    if (!enabled) {
+      console.log('🔒 useAuthDependentData: Fetch disabled')
+      return false
+    }
 
     // Never fetch if auth isn't ready
-    if (!shouldRender) return false
+    if (!shouldRender) {
+      console.log('🔒 useAuthDependentData: Auth not ready, shouldRender =', shouldRender)
+      return false
+    }
 
-    // If auth is required, only fetch when user exists
-    if (requireAuth && authState !== 'authenticated') return false
+    // Never fetch if there's an auth error
+    if (authError) {
+      console.log('🔒 useAuthDependentData: Auth error present:', authError)
+      return false
+    }
 
-    // For public data, fetch once auth state is determined
+    // If auth is required, STRICTLY validate user exists and has valid ID
+    if (requireAuth) {
+      if (authState !== 'authenticated') {
+        console.log('🔒 useAuthDependentData: Auth required but not authenticated, authState =', authState)
+        return false
+      }
+
+      if (!user || !user.id) {
+        console.log('🔒 useAuthDependentData: Auth required but user/user.id missing:', { user: !!user, userId: user?.id })
+        return false
+      }
+    }
+
+    // For public data, fetch once auth state is determined (but still validate if user exists)
+    if (!requireAuth && user && !user.id) {
+      console.log('🔒 useAuthDependentData: User exists but missing ID, blocking fetch')
+      return false
+    }
+
+    console.log('✅ useAuthDependentData: All guards passed, proceeding with fetch')
     return true
-  }, [enabled, shouldRender, requireAuth, authState])
+  }, [enabled, shouldRender, authError, requireAuth, authState, user])
+
+  // Enhanced fetch function with additional validation
+  const safeFetchFunction = useCallback(async () => {
+    // Double-check guards before executing
+    if (requireAuth && (!user || !user.id)) {
+      throw new Error('Authentication required: User or user.id is missing')
+    }
+
+    if (!requireAuth && user && !user.id) {
+      throw new Error('Invalid user state: User exists but missing ID')
+    }
+
+    console.log('🚀 useAuthDependentData: Executing fetch with user:', {
+      userId: user?.id,
+      requireAuth,
+      authState
+    })
+
+    return await fetchFunction(user)
+  }, [fetchFunction, user, requireAuth, authState])
 
   // Use existing useDataFetching hook with auth-aware conditions
-  const result = useDataFetching(() => fetchFunction(user), {
+  const result = useDataFetching(safeFetchFunction, {
     ...fetchOptions,
+    onError: enhancedErrorHandler,
     immediate: shouldFetch,
-    dependencies: [shouldFetch, user?.id]
+    dependencies: [shouldFetch, user?.id, authState]
   })
 
   return {
@@ -141,7 +209,8 @@ export function useAuthDependentData<T>(
     isAuthReady: shouldRender,
     authState,
     user,
-    // Override loading to include auth loading
+    authError,
+    // Enhanced loading state that includes auth loading
     isLoading: !shouldRender || result.isLoading
   }
 }

@@ -4,24 +4,48 @@ import type { Event, RsvpStatus, UserProfile } from '@/types'
 
 
 export async function getEventDetails(eventId: string) {
-  const { data: event, error } = await supabase
-    .from('events')
-    .select(`
-      *,
-      rsvps (
-        id,
-        status,
-        user_id,
-        users (
-          email
-        )
-      )
-    `)
-    .eq('id', eventId)
-    .single()
+  // STRONGEST GUARD: Validate input parameters
+  if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
+    console.error('🚨 getEventDetails: Invalid eventId provided:', eventId)
+    throw new Error('Invalid event ID provided')
+  }
 
-  if (error) throw error
-  return event
+  console.log('🔍 getEventDetails: Fetching event details for eventId:', eventId)
+
+  try {
+    const { data: event, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        rsvps (
+          id,
+          status,
+          user_id,
+          users (
+            email
+          )
+        )
+      `)
+      .eq('id', eventId)
+      .single()
+
+    if (error) {
+      console.error('🚨 getEventDetails: Supabase error:', error)
+
+      if (error.code === 'PGRST116') {
+        console.log('📭 getEventDetails: No event found for eventId:', eventId)
+        throw new Error('Event not found')
+      }
+
+      throw error
+    }
+
+    console.log('✅ getEventDetails: Event loaded for eventId:', eventId)
+    return event
+  } catch (error) {
+    console.error('🚨 getEventDetails: Unexpected error:', error)
+    throw error
+  }
 }
 
 export async function updateRsvp(eventId: string, userId: string, status: RsvpStatus) {
@@ -152,43 +176,68 @@ export async function createEventWithShareableLink(eventData: {
 }
 
 export async function getPublicEvents(): Promise<Event[]> {
-  // Get events with RSVP counts
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      *,
-      rsvps(count)
-    `)
-    .eq('is_public', true)
-    .gte('date_time', new Date().toISOString())
-    .order('created_at', { ascending: false })
+  console.log('🔍 getPublicEvents: Fetching public events')
 
-  if (error) {
-    console.error('Error fetching public events:', error)
-    throw new Error('Failed to fetch public events')
+  try {
+    // Get events with RSVP counts
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        rsvps(count)
+      `)
+      .eq('is_public', true)
+      .gte('date_time', new Date().toISOString())
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('🚨 getPublicEvents: Supabase error:', error)
+      throw new Error('Failed to fetch public events')
+    }
+
+    console.log('✅ getPublicEvents: Loaded public events:', events?.length || 0)
+
+    // Get current user (this is optional for public events)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError) {
+      console.warn('⚠️ getPublicEvents: Could not get user (proceeding without user data):', userError)
+    }
+
+    // If user is logged in and has valid ID, check which events they've joined
+    let userRsvps: any[] = []
+    if (user && user.id) {
+      console.log('🔍 getPublicEvents: Checking user RSVPs for user:', user.id)
+
+      const { data: rsvpData, error: rsvpError } = await supabase
+        .from('rsvps')
+        .select('event_id, status')
+        .eq('user_id', user.id)
+        .eq('status', 'going')
+
+      if (rsvpError) {
+        console.warn('⚠️ getPublicEvents: Could not fetch user RSVPs (proceeding without RSVP data):', rsvpError)
+      } else {
+        userRsvps = rsvpData || []
+        console.log('✅ getPublicEvents: User RSVPs loaded:', userRsvps.length)
+      }
+    } else {
+      console.log('📭 getPublicEvents: No authenticated user, proceeding without RSVP data')
+    }
+
+    // Transform the data
+    const transformedEvents = (events || []).map(event => ({
+      ...event,
+      rsvp_count: event.rsvps?.[0]?.count || 0,
+      user_has_joined: userRsvps.some(rsvp => rsvp.event_id === event.id)
+    }))
+
+    console.log('✅ getPublicEvents: Events transformed successfully')
+    return transformedEvents
+  } catch (error) {
+    console.error('🚨 getPublicEvents: Unexpected error:', error)
+    throw error
   }
-
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // If user is logged in, check which events they've joined
-  let userRsvps: any[] = []
-  if (user) {
-    const { data: rsvpData } = await supabase
-      .from('rsvps')
-      .select('event_id, status')
-      .eq('user_id', user.id)
-      .eq('status', 'going')
-
-    userRsvps = rsvpData || []
-  }
-
-  // Transform the data
-  return (events || []).map(event => ({
-    ...event,
-    rsvp_count: event.rsvps?.[0]?.count || 0,
-    user_has_joined: userRsvps.some(rsvp => rsvp.event_id === event.id)
-  }))
 }
 
 export async function joinEvent(eventId: string): Promise<void> {
@@ -228,33 +277,52 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 }
 
 export async function getUserAccessibleEvents() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  console.log('🔍 getUserAccessibleEvents: Fetching user accessible events')
 
-  // Simplified - just get public events for now to avoid RLS issues
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      id,
-      title,
-      location,
-      date_time,
-      drink_type,
-      vibe,
-      notes,
-      is_public,
-      created_by,
-      created_at,
-      updated_at,
-      event_code
-    `)
-    .eq('is_public', true)
-    .gte('date_time', new Date().toISOString())
-    .order('date_time', { ascending: true })
-    .limit(20)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (error) throw error
-  return events || []
+    // STRONGEST GUARD: Validate user authentication
+    if (!user || !user.id) {
+      console.error('🚨 getUserAccessibleEvents: User not authenticated or missing ID:', { user: !!user, userId: user?.id })
+      throw new Error('User authentication required')
+    }
+
+    console.log('🔍 getUserAccessibleEvents: Authenticated user:', user.id)
+
+    // Simplified - just get public events for now to avoid RLS issues
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        id,
+        title,
+        location,
+        date_time,
+        drink_type,
+        vibe,
+        notes,
+        is_public,
+        created_by,
+        created_at,
+        updated_at,
+        event_code
+      `)
+      .eq('is_public', true)
+      .gte('date_time', new Date().toISOString())
+      .order('date_time', { ascending: true })
+      .limit(20)
+
+    if (error) {
+      console.error('🚨 getUserAccessibleEvents: Supabase error:', error)
+      throw error
+    }
+
+    console.log('✅ getUserAccessibleEvents: Loaded events:', events?.length || 0)
+    return events || []
+  } catch (error) {
+    console.error('🚨 getUserAccessibleEvents: Unexpected error:', error)
+    throw error
+  }
 }
 
 export async function updateEvent(id: string, event: Partial<Event>) {

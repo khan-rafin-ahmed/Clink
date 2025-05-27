@@ -4,6 +4,14 @@ import { withCache, CACHE_KEYS, invalidateUserCaches } from './cache'
 
 // User Profile Functions
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  // STRONGEST GUARD: Validate input parameters
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    console.error('🚨 getUserProfile: Invalid userId provided:', userId)
+    throw new Error('Invalid user ID provided')
+  }
+
+  console.log('🔍 getUserProfile: Fetching profile for userId:', userId)
+
   return withCache(
     CACHE_KEYS.USER_PROFILE(userId),
     async () => {
@@ -16,10 +24,17 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
           .single()
 
         if (error) {
-          if (error.code === 'PGRST116') return null // No rows returned
+          console.error('🚨 getUserProfile: Supabase error:', error)
+
+          if (error.code === 'PGRST116') {
+            console.log('📭 getUserProfile: No profile found for userId:', userId)
+            return null // No rows returned
+          }
 
           // If error might be due to missing column, try with basic columns only
           if (error.message?.includes('column') || error.message?.includes('Content-Length')) {
+            console.log('🔄 getUserProfile: Retrying with basic columns due to column error')
+
             const { data: basicData, error: basicError } = await supabase
               .from('user_profiles')
               .select('id, user_id, display_name, bio, avatar_url, created_at, updated_at')
@@ -27,10 +42,15 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
               .single()
 
             if (basicError) {
-              if (basicError.code === 'PGRST116') return null
+              if (basicError.code === 'PGRST116') {
+                console.log('📭 getUserProfile: No profile found (basic query) for userId:', userId)
+                return null
+              }
+              console.error('🚨 getUserProfile: Basic query failed:', basicError)
               throw basicError
             }
 
+            console.log('✅ getUserProfile: Basic profile loaded for userId:', userId)
             // Return data with favorite_drink as null if column doesn't exist
             return {
               ...basicData,
@@ -41,9 +61,10 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
           throw error
         }
 
+        console.log('✅ getUserProfile: Full profile loaded for userId:', userId)
         return data
       } catch (error) {
-        console.error('getUserProfile error:', error)
+        console.error('🚨 getUserProfile: Unexpected error:', error)
         throw error
       }
     },

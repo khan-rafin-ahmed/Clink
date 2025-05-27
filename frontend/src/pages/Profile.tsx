@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { getUserProfile, getFollowCounts } from '@/lib/userService'
@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { Loader2, Users } from 'lucide-react'
 import { FollowButton } from '@/components/FollowButton'
 import { getInnerCircleCount } from '@/lib/followService'
+import { useAuthDependentData } from '@/hooks/useAuthState'
+import { FullPageSkeleton } from '@/components/SkeletonLoaders'
+import { ErrorFallback } from '@/components/ErrorFallback'
 import type { UserProfile } from '@/types'
 
 // Helper functions for drink display
@@ -45,65 +48,95 @@ function getDrinkLabel(drinkType: string): string {
   return drinkLabels[drinkType] || 'Other'
 }
 
+// Data loading function (outside component for stability)
+const loadProfileData = async (user: any, userId: string) => {
+  console.log('🔍 loadProfileData: Loading profile data for userId:', userId)
+
+  try {
+    const [profileData, countsData, innerCircleCountData] = await Promise.all([
+      getUserProfile(userId),
+      getFollowCounts(userId),
+      getInnerCircleCount(userId)
+    ])
+
+    console.log('✅ loadProfileData: Profile data loaded successfully')
+    return {
+      profile: profileData,
+      followCounts: countsData,
+      innerCircleCount: innerCircleCountData
+    }
+  } catch (error) {
+    console.error('🚨 loadProfileData: Error loading profile data:', error)
+    throw error
+  }
+}
+
 export function Profile() {
   const { userId } = useParams<{ userId: string }>()
   const { user: currentUser } = useAuth()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 })
-  const [innerCircleCount, setInnerCircleCount] = useState(0)
 
-  const [loading, setLoading] = useState(true)
-
-
-  useEffect(() => {
-    if (userId) {
-      loadProfile()
-    }
-  }, [userId, currentUser])
-
-  const loadProfile = async () => {
-    if (!userId) return
-
-    try {
-      const [profileData, countsData, innerCircleCountData] = await Promise.all([
-        getUserProfile(userId),
-        getFollowCounts(userId),
-        getInnerCircleCount(userId)
-      ])
-
-      setProfile(profileData)
-      setFollowCounts(countsData)
-      setInnerCircleCount(innerCircleCountData)
-    } catch (error) {
-      console.error('Error loading profile:', error)
-      toast.error('Failed to load profile')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    )
-  }
-
-  if (!profile) {
+  // STRONGEST GUARD: Validate userId from URL params
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Profile Not Found</h2>
-          <Button onClick={() => navigate('/events')}>Back to Events</Button>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Profile URL</h2>
+          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
         </div>
       </div>
     )
   }
 
+  // Create stable fetch function
+  const fetchProfileData = useCallback(async (user: any) => {
+    return loadProfileData(user, userId)
+  }, [userId])
+
+  // Use strengthened auth-dependent data hook
+  const {
+    data: profileData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    authState
+  } = useAuthDependentData(fetchProfileData, {
+    requireAuth: false, // Profile viewing doesn't require auth
+    onSuccess: (data) => console.log('✅ Profile data loaded:', data?.profile?.display_name),
+    onError: (error) => toast.error('Failed to load profile')
+  })
+
+  // Show loading skeleton while auth or data is loading
+  if (isLoading) {
+    return <FullPageSkeleton />
+  }
+
+  // Show error fallback if there's an error
+  if (isError) {
+    return (
+      <ErrorFallback
+        error={error}
+        onRetry={refetch}
+        title="Failed to Load Profile"
+        description="There was a problem loading this profile. Please try again."
+      />
+    )
+  }
+
+  // Show not found if no profile data
+  if (!profileData?.profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Profile Not Found</h2>
+          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const { profile, followCounts, innerCircleCount } = profileData
   const isOwnProfile = currentUser?.id === userId
 
   return (
