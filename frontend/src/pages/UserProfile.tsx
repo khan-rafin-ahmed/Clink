@@ -59,60 +59,68 @@ export function UserProfile() {
 
     setLoadingEnhanced(true)
     try {
-      // Fetch upcoming sessions
-      const { data: upcomingData, error: upcomingError } = await supabase
-        .from('events')
-        .select(`
-          *,
-          user_profiles!events_created_by_fkey (
-            display_name,
-            avatar_url,
-            user_id
-          ),
-          rsvps (
-            status
-          )
-        `)
-        .eq('created_by', user.id)
-        .gte('date_time', new Date().toISOString())
-        .order('date_time', { ascending: true })
+      // Get the user's profile for creator info first (single fetch)
+      const { data: userProfileData } = await supabase
+        .from('user_profiles')
+        .select('display_name, avatar_url, user_id')
+        .eq('user_id', user.id)
+        .single()
 
-      if (upcomingError) {
-        console.error('Error fetching upcoming sessions:', upcomingError)
+      const creatorInfo = userProfileData || {
+        display_name: user.email?.split('@')[0] || 'You',
+        avatar_url: null,
+        user_id: user.id
+      }
+
+      // Fetch upcoming and past sessions in parallel
+      const [upcomingResult, pastResult] = await Promise.all([
+        // Upcoming sessions
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              status
+            )
+          `)
+          .eq('created_by', user.id)
+          .gte('date_time', new Date().toISOString())
+          .order('date_time', { ascending: true }),
+
+        // Past sessions
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              status
+            )
+          `)
+          .eq('created_by', user.id)
+          .lt('date_time', new Date().toISOString())
+          .order('date_time', { ascending: false })
+          .limit(6)
+      ])
+
+      // Process upcoming sessions
+      if (upcomingResult.error) {
+        console.error('Error fetching upcoming sessions:', upcomingResult.error)
       } else {
-        const enhancedUpcoming = (upcomingData || []).map(event => ({
+        const enhancedUpcoming = (upcomingResult.data || []).map(event => ({
           ...event,
-          creator: event.user_profiles,
+          creator: creatorInfo,
           rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
         }))
         setEnhancedSessions(enhancedUpcoming)
       }
 
-      // Fetch past sessions
-      const { data: pastData, error: pastError } = await supabase
-        .from('events')
-        .select(`
-          *,
-          user_profiles!events_created_by_fkey (
-            display_name,
-            avatar_url,
-            user_id
-          ),
-          rsvps (
-            status
-          )
-        `)
-        .eq('created_by', user.id)
-        .lt('date_time', new Date().toISOString())
-        .order('date_time', { ascending: false })
-        .limit(6)
-
-      if (pastError) {
-        console.error('Error fetching past sessions:', pastError)
+      // Process past sessions
+      if (pastResult.error) {
+        console.error('Error fetching past sessions:', pastResult.error)
       } else {
-        const enhancedPast = (pastData || []).map(event => ({
+        const enhancedPast = (pastResult.data || []).map(event => ({
           ...event,
-          creator: event.user_profiles,
+          creator: creatorInfo,
           rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
         }))
         setPastSessions(enhancedPast)
