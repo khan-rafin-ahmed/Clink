@@ -274,49 +274,21 @@ export function CrewDetail() {
     const instructions = `
 🔧 Notification Fix Required
 
-The crew invitation system has a notification error. Please follow these steps:
+The crew invitation system has a notification constraint error. Please follow these steps:
 
 1. Go to Supabase Dashboard: https://supabase.com/dashboard
 2. Select your project: Thirstee
 3. Go to SQL Editor
 4. Copy and paste this SQL command:
 
-CREATE OR REPLACE FUNCTION handle_crew_invitation_notification()
-RETURNS TRIGGER AS $$
-DECLARE
-  crew_name TEXT;
-  inviter_name TEXT;
-  notifications_exists BOOLEAN;
-BEGIN
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_name = 'notifications'
-  ) INTO notifications_exists;
-
-  IF notifications_exists THEN
-    SELECT name INTO crew_name FROM crews WHERE id = NEW.crew_id;
-    SELECT COALESCE(display_name, 'Someone') INTO inviter_name
-    FROM user_profiles WHERE user_id = NEW.invited_by;
-
-    IF EXISTS (
-      SELECT 1 FROM information_schema.routines
-      WHERE routine_name = 'create_notification'
-    ) THEN
-      PERFORM create_notification(
-        NEW.user_id, 'crew_invitation', 'New Crew Invitation',
-        inviter_name || ' invited you to join "' || crew_name || '" crew',
-        jsonb_build_object('crew_id', NEW.crew_id, 'crew_member_id', NEW.id)
-      );
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+CHECK (type IN ('follow_request', 'follow_accepted', 'event_invitation', 'event_update', 'crew_invitation'));
 
 5. Click "Run" to execute
 6. Refresh this page and try inviting again
 
-This fixes the "relation notification doesn't exist" error.
+This adds 'crew_invitation' to the allowed notification types.
     `
 
     // Copy instructions to clipboard

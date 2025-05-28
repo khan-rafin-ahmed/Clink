@@ -1,9 +1,9 @@
 -- ========================================
--- FIX CREW INVITATION RLS POLICY
+-- FIX CREW INVITATION NOTIFICATION ERROR
 -- ========================================
 --
--- PROBLEM: Crew creators cannot invite other users due to restrictive RLS policy
--- SOLUTION: Update policy to allow crew creators to invite others
+-- PROBLEM: "new row violates check constraint notifications_type_check"
+-- SOLUTION: Add 'crew_invitation' to allowed notification types
 --
 -- INSTRUCTIONS:
 -- 1. Go to Supabase Dashboard: https://supabase.com/dashboard
@@ -14,6 +14,11 @@
 -- 6. Test crew invitations - they should work now!
 --
 -- ========================================
+
+-- Add 'crew_invitation' to the allowed notification types
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+CHECK (type IN ('follow_request', 'follow_accepted', 'event_invitation', 'event_update', 'crew_invitation'));
 
 -- Drop the existing restrictive policy
 DROP POLICY IF EXISTS "Users can join crews when invited" ON crew_members;
