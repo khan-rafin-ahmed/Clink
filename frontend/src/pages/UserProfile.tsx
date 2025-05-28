@@ -7,7 +7,6 @@ import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { UserStats } from '@/components/UserStats'
 import { EventCard } from '@/components/EventCard'
-import { useUpcomingSessions } from '@/hooks/useUpcomingSessions'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
@@ -35,12 +34,12 @@ export function UserProfile() {
   const [pastSessions, setPastSessions] = useState<EnhancedEvent[]>([])
   const [loadingEnhanced, setLoadingEnhanced] = useState(false)
 
-  // Use the custom hook for upcoming sessions
-  const {
-    sessions: upcomingSessions,
-    loading: loadingSessions,
-    error: sessionsError
-  } = useUpcomingSessions(sessionsRefresh, 3)
+  // We're now using enhanced sessions instead of the basic hook
+  // const {
+  //   sessions: upcomingSessions,
+  //   loading: loadingSessions,
+  //   error: sessionsError
+  // } = useUpcomingSessions(sessionsRefresh, 3)
 
   useEffect(() => {
     if (!loading && !user) {
