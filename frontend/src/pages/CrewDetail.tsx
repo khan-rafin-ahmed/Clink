@@ -10,6 +10,7 @@ import {
   getCrewById,
   getCrewMembers,
   inviteUserByIdentifier,
+  inviteUserWithFallback,
   createCrewInviteLink,
   searchUsersForInvite,
   type Crew,
@@ -28,7 +29,9 @@ import {
   Loader2,
   ArrowLeft,
   UserPlus,
-  Share2
+  Share2,
+  Copy,
+  ExternalLink
 } from 'lucide-react'
 import {
   Dialog,
@@ -49,6 +52,8 @@ export function CrewDetail() {
   const [isInviting, setIsInviting] = useState(false)
   const [searchResults, setSearchResults] = useState<Array<{ user_id: string; display_name: string; avatar_url: string | null }>>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [shareLink, setShareLink] = useState('')
+  const [inviteResult, setInviteResult] = useState<{ success: boolean; shareLink?: string; message: string } | null>(null)
 
   const vibeIcons = {
     casual: Coffee,
@@ -116,24 +121,38 @@ export function CrewDetail() {
     if (!crewId) return
 
     setIsInviting(true)
+    setInviteResult(null)
+
     try {
       if (userId) {
-        // Invite by user ID from search results
+        // Invite by user ID from search results (direct invite)
         await inviteUserByIdentifier(crewId, userId)
+        toast.success('🍻 Invite sent!')
+        setInviteIdentifier('')
+        setSearchResults([])
+        setShowInviteModal(false)
+        loadCrewData() // Refresh data
       } else {
-        // Invite by identifier (username/email)
+        // Invite by identifier with fallback to share link
         if (!inviteIdentifier.trim()) {
-          toast.error('Please enter a username or email')
+          toast.error('Please enter a username')
           return
         }
-        await inviteUserByIdentifier(crewId, inviteIdentifier)
-      }
 
-      toast.success('🍻 Invite sent!')
-      setInviteIdentifier('')
-      setSearchResults([])
-      setShowInviteModal(false)
-      loadCrewData() // Refresh data
+        const result = await inviteUserWithFallback(crewId, inviteIdentifier)
+        setInviteResult(result)
+
+        if (result.success) {
+          toast.success('🍻 Invite sent!')
+          setInviteIdentifier('')
+          setSearchResults([])
+          setShowInviteModal(false)
+          loadCrewData() // Refresh data
+        } else {
+          // User not found, show share options
+          setShareLink(result.shareLink || '')
+        }
+      }
     } catch (error: any) {
       console.error('Error inviting user:', error)
       toast.error(error.message || 'Failed to send invite')
@@ -152,6 +171,39 @@ export function CrewDetail() {
     } catch (error: any) {
       console.error('Error creating invite link:', error)
       toast.error('Failed to create invite link')
+    }
+  }
+
+  const handleCopyShareLink = async () => {
+    if (!shareLink) return
+
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      toast.success('📋 Link copied to clipboard!')
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      toast.error('Failed to copy link')
+    }
+  }
+
+  const handleNativeShare = async () => {
+    if (!shareLink || !crew) return
+
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: `Join ${crew.name} crew on Thirstee`,
+          text: `Hey! I'm inviting you to join my crew "${crew.name}". Come join us!`,
+          url: shareLink,
+        })
+      } catch (error) {
+        console.error('Failed to share:', error)
+        // Fallback to copy
+        handleCopyShareLink()
+      }
+    } else {
+      // Fallback to copy link
+      handleCopyShareLink()
     }
   }
 
@@ -267,11 +319,11 @@ export function CrewDetail() {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="invite-input">Username or Email</Label>
+                          <Label htmlFor="invite-input">Username</Label>
                           <div className="flex gap-2 mt-1">
                             <Input
                               id="invite-input"
-                              placeholder="Enter username or email..."
+                              placeholder="Enter username..."
                               value={inviteIdentifier}
                               onChange={(e) => {
                                 setInviteIdentifier(e.target.value)
@@ -322,6 +374,55 @@ export function CrewDetail() {
                                   </Button>
                                 </div>
                               ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* User Not Found - Share Options */}
+                        {inviteResult && !inviteResult.success && (
+                          <div className="space-y-4 p-4 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                            <div className="text-center space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">
+                                ❌ We didn't find anyone with that username.
+                              </p>
+                              <p className="text-sm font-bold">
+                                Wanna bring them to the party?
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Share this invite link to Thirstee 👉
+                              </p>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={handleCopyShareLink}
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <Copy className="w-4 h-4 mr-2" />
+                                Copy Link
+                              </Button>
+                              <Button
+                                onClick={handleNativeShare}
+                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Share
+                              </Button>
+                            </div>
+
+                            <div className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setInviteResult(null)
+                                  setInviteIdentifier('')
+                                  setShareLink('')
+                                }}
+                              >
+                                Try Another Username
+                              </Button>
                             </div>
                           </div>
                         )}

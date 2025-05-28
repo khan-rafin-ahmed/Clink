@@ -223,17 +223,38 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
 
 // Invite user to crew by username/email
 export async function inviteUserByIdentifier(crewId: string, identifier: string): Promise<void> {
-  // First, find the user by display name or email
+  // Search for user by display name in user_profiles
+  // Note: We can't directly query auth.users from client for security reasons
+  // So we only search by display name for now
   const { data: userProfile, error: profileError } = await supabase
     .from('user_profiles')
     .select('user_id')
-    .or(`display_name.ilike.%${identifier}%,email.ilike.%${identifier}%`)
+    .ilike('display_name', `%${identifier}%`)
     .maybeSingle()
 
   if (profileError) throw profileError
   if (!userProfile) throw new Error('User not found')
 
   await inviteUserToCrew(crewId, userProfile.user_id)
+}
+
+// Enhanced invite function with fallback to share link
+export async function inviteUserWithFallback(crewId: string, identifier: string): Promise<{ success: boolean; shareLink?: string; message: string }> {
+  try {
+    await inviteUserByIdentifier(crewId, identifier)
+    return { success: true, message: 'Invite sent successfully!' }
+  } catch (error: any) {
+    if (error.message === 'User not found') {
+      // User doesn't exist, create a shareable invite link
+      const shareLink = await createCrewInviteLink(crewId, 7) // 7 days expiry
+      return {
+        success: false,
+        shareLink,
+        message: `We didn't find anyone with that username.\nWanna bring them to the party?\nShare this invite link to Thirstee 👉`
+      }
+    }
+    throw error
+  }
 }
 
 // Respond to crew invitation
@@ -412,14 +433,18 @@ export async function removeMemberFromCrew(crewId: string, userId: string): Prom
 export async function searchUsersForInvite(query: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null }>> {
   if (!query.trim()) return []
 
-  const { data, error } = await supabase
+  // Search by display name in user_profiles
+  // Note: We can't directly query auth.users from client for security reasons
+  // So we only search by display name for now
+  const { data: profileData, error: profileError } = await supabase
     .from('user_profiles')
     .select('user_id, display_name, avatar_url')
-    .or(`display_name.ilike.%${query}%,email.ilike.%${query}%`)
+    .ilike('display_name', `%${query}%`)
     .limit(10)
 
-  if (error) throw error
-  return data || []
+  if (profileError) throw profileError
+
+  return profileData || []
 }
 
 // Helper function to generate invite codes
