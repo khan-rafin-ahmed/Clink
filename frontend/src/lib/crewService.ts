@@ -163,30 +163,45 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
 
 // Get crew members
 export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
-  const { data, error } = await supabase
+  // First get the crew members
+  const { data: members, error } = await supabase
     .from('crew_members')
-    .select(`
-      *,
-      user:user_profiles(
-        user_id,
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('*')
     .eq('crew_id', crewId)
     .eq('status', 'accepted')
     .order('joined_at', { ascending: true })
 
   if (error) throw error
+  if (!members || members.length === 0) return []
 
-  return data?.map(member => ({
-    ...member,
-    user: member.user ? {
-      id: member.user.user_id,
-      display_name: member.user.display_name,
-      avatar_url: member.user.avatar_url
-    } : undefined
-  })) || []
+  // Then get user profiles for each member
+  const userIds = members.map(member => member.user_id)
+  const { data: profiles, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('user_id, display_name, avatar_url')
+    .in('user_id', userIds)
+
+  if (profileError) {
+    console.warn('Error fetching user profiles:', profileError)
+    // Return members without profile data if profiles fail
+    return members.map(member => ({
+      ...member,
+      user: undefined
+    }))
+  }
+
+  // Combine members with their profiles
+  return members.map(member => {
+    const profile = profiles?.find(p => p.user_id === member.user_id)
+    return {
+      ...member,
+      user: profile ? {
+        id: profile.user_id,
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url
+      } : undefined
+    }
+  })
 }
 
 // Invite user to crew by user ID
