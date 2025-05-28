@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { QuickEventModal } from '@/components/QuickEventModal'
+import { EditEventModal } from '@/components/EditEventModal'
+import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { UserStats } from '@/components/UserStats'
 import { SessionCard } from '@/components/SessionCard'
 import { useUpcomingSessions } from '@/hooks/useUpcomingSessions'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
-import type { UserProfile } from '@/types'
+import type { UserProfile, Event } from '@/types'
 
 export function UserProfile() {
   const { user, loading } = useAuth()
@@ -17,6 +19,8 @@ export function UserProfile() {
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
 
   // Use the custom hook for upcoming sessions
   const {
@@ -41,6 +45,26 @@ export function UserProfile() {
     // Trigger both stats and sessions refresh
     setStatsRefresh(prev => prev + 1)
     setSessionsRefresh(prev => prev + 1)
+  }
+
+  const handleEdit = (event: any) => {
+    setEditingEvent(event)
+  }
+
+  const handleDelete = (event: any) => {
+    setDeletingEvent(event)
+  }
+
+  const handleEventUpdated = () => {
+    setSessionsRefresh(prev => prev + 1)
+    setStatsRefresh(prev => prev + 1)
+    setEditingEvent(null)
+  }
+
+  const handleEventDeleted = () => {
+    setSessionsRefresh(prev => prev + 1)
+    setStatsRefresh(prev => prev + 1)
+    setDeletingEvent(null)
   }
 
   if (loading) {
@@ -151,6 +175,9 @@ export function UserProfile() {
                     key={session.id}
                     event={session}
                     compact={true}
+                    showHostActions={true}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -209,6 +236,26 @@ export function UserProfile() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingEvent && (
+        <EditEventModal
+          event={editingEvent}
+          open={!!editingEvent}
+          onOpenChange={(open) => !open && setEditingEvent(null)}
+          onEventUpdated={handleEventUpdated}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      {deletingEvent && (
+        <DeleteEventDialog
+          event={deletingEvent}
+          open={!!deletingEvent}
+          onOpenChange={(open) => !open && setDeletingEvent(null)}
+          onEventDeleted={handleEventDeleted}
+        />
+      )}
     </div>
   )
 }
