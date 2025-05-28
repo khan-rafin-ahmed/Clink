@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   getCrewById,
@@ -33,8 +33,7 @@ import {
   Share2,
   Copy,
   ExternalLink,
-  Check,
-  X
+  Check
 } from 'lucide-react'
 import {
   Dialog,
@@ -387,42 +386,102 @@ export function CrewDetail() {
                         Invite Members
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Invite Members</DialogTitle>
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader className="pb-4">
+                        <DialogTitle className="text-xl font-bold">Invite Members</DialogTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Search for users to invite to your crew
+                        </p>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="invite-input">Username</Label>
-                          <div className="flex gap-2 mt-1">
+
+                      <div className="space-y-6">
+                        {/* Search Input */}
+                        <div className="space-y-2">
+                          <div className="relative">
                             <Input
-                              id="invite-input"
-                              placeholder="Enter username..."
+                              placeholder="Search by username..."
                               value={inviteIdentifier}
                               onChange={(e) => {
                                 setInviteIdentifier(e.target.value)
                                 handleSearchUsers(e.target.value)
                               }}
+                              className="pr-10"
                             />
-                            <Button
-                              onClick={() => handleInviteUser()}
-                              disabled={isInviting || !inviteIdentifier.trim()}
-                            >
-                              {isInviting ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                'Invite'
-                              )}
-                            </Button>
+                            {isSearching && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
                           </div>
+                        </div>
 
-                          {/* Bulk Invite Button */}
-                          {selectedUsers.size > 0 && (
-                            <div className="flex gap-2">
+                        {/* Search Results */}
+                        {searchResults.length > 0 && !isSearching && (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-medium">Found {searchResults.length} user{searchResults.length > 1 ? 's' : ''}</h4>
+                              {selectedUsers.size > 0 && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                                  {selectedUsers.size} selected
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {searchResults.map((result) => {
+                                const isSelected = selectedUsers.has(result.user_id)
+                                return (
+                                  <div
+                                    key={result.user_id}
+                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
+                                      isSelected
+                                        ? 'bg-amber-50 border-amber-200 shadow-sm'
+                                        : 'hover:bg-muted/50'
+                                    }`}
+                                    onClick={() => handleToggleUserSelection(result.user_id)}
+                                  >
+                                    <Avatar className="w-10 h-10">
+                                      <AvatarImage src={result.avatar_url || undefined} />
+                                      <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-black font-bold">
+                                        {result.display_name?.[0]?.toUpperCase() || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+
+                                    <div className="flex-1">
+                                      <p className="font-medium text-sm">{result.display_name}</p>
+                                      <p className="text-xs text-muted-foreground">Click to select</p>
+                                    </div>
+
+                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      isSelected
+                                        ? 'bg-amber-500 border-amber-500 text-black'
+                                        : 'border-muted-foreground/30'
+                                    }`}>
+                                      {isSelected && <Check className="w-4 h-4" />}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No Results */}
+                        {inviteIdentifier.trim() && searchResults.length === 0 && !isSearching && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p className="text-sm">No users found with that username</p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-4 border-t">
+                          {selectedUsers.size > 0 ? (
+                            <>
                               <Button
                                 onClick={handleInviteSelectedUsers}
                                 disabled={isInviting}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
+                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold h-11"
                               >
                                 {isInviting ? (
                                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -435,77 +494,39 @@ export function CrewDetail() {
                                 variant="outline"
                                 onClick={() => setSelectedUsers(new Set())}
                                 disabled={isInviting}
+                                className="h-11"
                               >
-                                <X className="w-4 h-4" />
+                                Clear
                               </Button>
-                            </div>
+                            </>
+                          ) : (
+                            <Button
+                              onClick={() => handleInviteUser()}
+                              disabled={isInviting || !inviteIdentifier.trim()}
+                              className="flex-1 h-11"
+                              variant="outline"
+                            >
+                              {isInviting ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <UserPlus className="w-4 h-4 mr-2" />
+                              )}
+                              Quick Invite
+                            </Button>
                           )}
                         </div>
 
-                        {/* Search Results */}
-                        {isSearching && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Searching...</span>
-                          </div>
-                        )}
-                        {searchResults.length > 0 && !isSearching && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm text-muted-foreground">Search Results:</Label>
-                              {selectedUsers.size > 0 && (
-                                <span className="text-xs text-primary font-medium">
-                                  {selectedUsers.size} selected
-                                </span>
-                              )}
-                            </div>
-                            <div className="max-h-32 overflow-y-auto space-y-1">
-                              {searchResults.map((result) => {
-                                const isSelected = selectedUsers.has(result.user_id)
-                                return (
-                                  <div
-                                    key={result.user_id}
-                                    className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-colors ${
-                                      isSelected
-                                        ? 'bg-primary/10 border-primary'
-                                        : 'hover:bg-muted'
-                                    }`}
-                                    onClick={() => handleToggleUserSelection(result.user_id)}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="w-6 h-6">
-                                        <AvatarImage src={result.avatar_url || undefined} />
-                                        <AvatarFallback className="text-xs">
-                                          {result.display_name?.[0]?.toUpperCase() || '?'}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">{result.display_name}</span>
-                                    </div>
-                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                      isSelected
-                                        ? 'bg-primary border-primary text-primary-foreground'
-                                        : 'border-muted-foreground'
-                                    }`}>
-                                      {isSelected && <Check className="w-3 h-3" />}
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )}
-
                         {/* User Not Found - Share Options */}
                         {inviteResult && !inviteResult.success && (
-                          <div className="space-y-4 p-4 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                          <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
                             <div className="text-center space-y-2">
-                              <p className="text-sm font-medium text-muted-foreground">
+                              <p className="text-sm font-medium text-amber-800">
                                 ❌ We didn't find anyone with that username.
                               </p>
-                              <p className="text-sm font-bold">
+                              <p className="text-sm font-bold text-amber-900">
                                 Wanna bring them to the party?
                               </p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs text-amber-700">
                                 Share this invite link to Thirstee 👉
                               </p>
                             </div>
@@ -514,7 +535,7 @@ export function CrewDetail() {
                               <Button
                                 onClick={handleCopyShareLink}
                                 variant="outline"
-                                className="flex-1"
+                                className="flex-1 border-amber-300 text-amber-800 hover:bg-amber-100"
                               >
                                 <Copy className="w-4 h-4 mr-2" />
                                 Copy Link
@@ -540,6 +561,7 @@ export function CrewDetail() {
                                   setSearchResults([])
                                   setLastSearchQuery('')
                                 }}
+                                className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
                               >
                                 Try Another Username
                               </Button>

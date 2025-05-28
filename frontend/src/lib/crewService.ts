@@ -226,16 +226,26 @@ export async function inviteUserByIdentifier(crewId: string, identifier: string)
   // Search for user by display name in user_profiles
   // Note: We can't directly query auth.users from client for security reasons
   // So we only search by display name for now
-  const { data: userProfile, error: profileError } = await supabase
+  const { data: userProfiles, error: profileError } = await supabase
     .from('user_profiles')
-    .select('user_id')
+    .select('user_id, display_name')
     .ilike('display_name', `%${identifier}%`)
-    .maybeSingle()
+    .limit(10)
 
   if (profileError) throw profileError
-  if (!userProfile) throw new Error('User not found')
+  if (!userProfiles || userProfiles.length === 0) throw new Error('User not found')
 
-  await inviteUserToCrew(crewId, userProfile.user_id)
+  // If multiple users found, try to find exact match first
+  let selectedUser = userProfiles.find(user =>
+    user.display_name?.toLowerCase() === identifier.toLowerCase()
+  )
+
+  // If no exact match, use the first result
+  if (!selectedUser) {
+    selectedUser = userProfiles[0]
+  }
+
+  await inviteUserToCrew(crewId, selectedUser.user_id)
 }
 
 // Enhanced invite function with fallback to share link
