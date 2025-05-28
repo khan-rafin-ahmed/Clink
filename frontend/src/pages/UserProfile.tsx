@@ -6,12 +6,22 @@ import { QuickEventModal } from '@/components/QuickEventModal'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { UserStats } from '@/components/UserStats'
-import { SessionCard } from '@/components/SessionCard'
+import { EventCard } from '@/components/EventCard'
 import { useUpcomingSessions } from '@/hooks/useUpcomingSessions'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
+import { supabase } from '@/lib/supabase'
 import type { UserProfile, Event } from '@/types'
+
+interface EnhancedEvent extends Event {
+  creator?: {
+    display_name: string | null
+    avatar_url: string | null
+    user_id: string
+  }
+  rsvp_count?: number
+}
 
 export function UserProfile() {
   const { user, loading } = useAuth()
@@ -21,6 +31,9 @@ export function UserProfile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
+  const [enhancedSessions, setEnhancedSessions] = useState<EnhancedEvent[]>([])
+  const [pastSessions, setPastSessions] = useState<EnhancedEvent[]>([])
+  const [loadingEnhanced, setLoadingEnhanced] = useState(false)
 
   // Use the custom hook for upcoming sessions
   const {
@@ -41,10 +54,82 @@ export function UserProfile() {
     }
   }, [user])
 
+  // Fetch enhanced session data with creator info and RSVP counts
+  const fetchEnhancedSessions = async () => {
+    if (!user?.id) return
+
+    setLoadingEnhanced(true)
+    try {
+      // Fetch upcoming sessions
+      const { data: upcomingData, error: upcomingError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          user_profiles!events_created_by_fkey (
+            display_name,
+            avatar_url,
+            user_id
+          ),
+          rsvps (
+            status
+          )
+        `)
+        .eq('created_by', user.id)
+        .gte('date_time', new Date().toISOString())
+        .order('date_time', { ascending: true })
+
+      if (upcomingError) {
+        console.error('Error fetching upcoming sessions:', upcomingError)
+      } else {
+        const enhancedUpcoming = (upcomingData || []).map(event => ({
+          ...event,
+          creator: event.user_profiles,
+          rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
+        }))
+        setEnhancedSessions(enhancedUpcoming)
+      }
+
+      // Fetch past sessions
+      const { data: pastData, error: pastError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          user_profiles!events_created_by_fkey (
+            display_name,
+            avatar_url,
+            user_id
+          ),
+          rsvps (
+            status
+          )
+        `)
+        .eq('created_by', user.id)
+        .lt('date_time', new Date().toISOString())
+        .order('date_time', { ascending: false })
+        .limit(6)
+
+      if (pastError) {
+        console.error('Error fetching past sessions:', pastError)
+      } else {
+        const enhancedPast = (pastData || []).map(event => ({
+          ...event,
+          creator: event.user_profiles,
+          rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
+        }))
+        setPastSessions(enhancedPast)
+      }
+    } catch (error) {
+      console.error('Error fetching enhanced sessions:', error)
+    } finally {
+      setLoadingEnhanced(false)
+    }
+  }
+
   const handleEventCreated = () => {
     // Trigger both stats and sessions refresh
     setStatsRefresh(prev => prev + 1)
     setSessionsRefresh(prev => prev + 1)
+    fetchEnhancedSessions()
   }
 
   const handleEdit = (event: any) => {
@@ -59,13 +144,22 @@ export function UserProfile() {
     setSessionsRefresh(prev => prev + 1)
     setStatsRefresh(prev => prev + 1)
     setEditingEvent(null)
+    fetchEnhancedSessions()
   }
 
   const handleEventDeleted = () => {
     setSessionsRefresh(prev => prev + 1)
     setStatsRefresh(prev => prev + 1)
     setDeletingEvent(null)
+    fetchEnhancedSessions()
   }
+
+  // Fetch enhanced sessions when user changes or refresh triggers
+  useEffect(() => {
+    if (user?.id) {
+      fetchEnhancedSessions()
+    }
+  }, [user?.id, sessionsRefresh])
 
   if (loading) {
     return (
@@ -149,32 +243,17 @@ export function UserProfile() {
 
             </div>
 
-            {loadingSessions ? (
+            {loadingEnhanced ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
                 <p className="text-muted-foreground">Loading sessions...</p>
               </div>
-            ) : sessionsError ? (
-              <div className="text-center py-8 bg-card rounded-xl border border-border">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-destructive">Failed to Load Sessions</h3>
-                <p className="text-muted-foreground mb-4">
-                  {sessionsError}
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setSessionsRefresh(prev => prev + 1)}
-                >
-                  Try Again
-                </Button>
-              </div>
-            ) : upcomingSessions.length > 0 ? (
-              <div className="grid gap-4">
-                {upcomingSessions.map((session) => (
-                  <SessionCard
+            ) : enhancedSessions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {enhancedSessions.map((session) => (
+                  <EventCard
                     key={session.id}
                     event={session}
-                    compact={true}
                     showHostActions={true}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
@@ -197,6 +276,42 @@ export function UserProfile() {
                   }
                   onEventCreated={handleEventCreated}
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Your Past Sessions */}
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
+                Your Past Sessions
+              </h2>
+            </div>
+
+            {loadingEnhanced ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-muted-foreground">Loading past sessions...</p>
+              </div>
+            ) : pastSessions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {pastSessions.map((session) => (
+                  <EventCard
+                    key={session.id}
+                    event={session}
+                    showHostActions={false}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-card rounded-xl border border-border">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Past Sessions</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
+                  Your completed hell-raising sessions will appear here.
+                </p>
               </div>
             )}
           </div>
