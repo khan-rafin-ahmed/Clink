@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UserAvatar } from './UserAvatar'
 // import { FollowButton } from './FollowButton' // Removed - using Crew System now
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button' // Removed - no buttons in simplified hover card
 import { Card, CardContent } from '@/components/ui/card'
 import {
   HoverCard,
@@ -11,8 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
 import { getUserProfile } from '@/lib/userService'
-import { getInnerCircleCount } from '@/lib/followService'
-import { Calendar, Users, Crown } from 'lucide-react'
+// import { getInnerCircleCount } from '@/lib/followService' // Removed - using Crew System now
+import { Calendar, Crown } from 'lucide-react'
 import type { UserProfile } from '@/types'
 
 interface UserHoverCardProps {
@@ -34,7 +34,6 @@ export function UserHoverCard({
 }: UserHoverCardProps) {
   const { user } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [innerCircleCount, setInnerCircleCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
@@ -48,13 +47,8 @@ export function UserHoverCard({
 
     setIsLoading(true)
     try {
-      const [userProfile, circleCount] = await Promise.all([
-        getUserProfile(userId),
-        getInnerCircleCount(userId)
-      ])
-
+      const userProfile = await getUserProfile(userId)
       setProfile(userProfile)
-      setInnerCircleCount(circleCount)
     } catch (error) {
       console.error('Error loading user data:', error)
     } finally {
@@ -116,7 +110,7 @@ export function UserHoverCard({
         </div>
       </HoverCardTrigger>
 
-      <HoverCardContent className="w-80" side="bottom" align="center">
+      <HoverCardContent className="w-80" side="top" align="start" sideOffset={5}>
         <Card className="border-0 shadow-none">
           <CardContent className="p-4">
             <div className="flex items-start gap-4">
@@ -157,31 +151,14 @@ export function UserHoverCard({
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    <span>{innerCircleCount} Inner Circle</span>
+                {profile?.created_at && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                    <Calendar className="w-3 h-3" />
+                    <span>Since {new Date(profile.created_at).getFullYear()}</span>
                   </div>
-                  {profile?.created_at && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>Since {new Date(profile.created_at).getFullYear()}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Crew System - Follow button removed */}
-                {user && (
-                  <Button size="sm" variant="outline" className="w-full" disabled>
-                    Crew System Active
-                  </Button>
                 )}
 
-                {!user && (
-                  <Button size="sm" variant="outline" className="w-full" disabled>
-                    Sign in to Connect
-                  </Button>
-                )}
+
               </div>
             </div>
 
