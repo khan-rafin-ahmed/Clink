@@ -257,6 +257,25 @@ export async function inviteUserWithFallback(crewId: string, identifier: string)
   }
 }
 
+// Bulk invite multiple users to crew
+export async function bulkInviteUsersToCrew(crewId: string, userIds: string[]): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const invitations = userIds.map(userId => ({
+    crew_id: crewId,
+    user_id: userId,
+    status: 'pending' as const,
+    invited_by: user.id
+  }))
+
+  const { error } = await supabase
+    .from('crew_members')
+    .insert(invitations)
+
+  if (error) throw error
+}
+
 // Respond to crew invitation
 export async function respondToCrewInvitation(crewMemberId: string, status: 'accepted' | 'declined'): Promise<void> {
   const { error } = await supabase

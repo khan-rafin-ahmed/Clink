@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   getCrewById,
   getCrewMembers,
-  inviteUserByIdentifier,
+  inviteUserToCrew,
   inviteUserWithFallback,
+  bulkInviteUsersToCrew,
   createCrewInviteLink,
   searchUsersForInvite,
   type Crew,
@@ -31,7 +32,9 @@ import {
   UserPlus,
   Share2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Check,
+  X
 } from 'lucide-react'
 import {
   Dialog,
@@ -54,6 +57,9 @@ export function CrewDetail() {
   const [isSearching, setIsSearching] = useState(false)
   const [shareLink, setShareLink] = useState('')
   const [inviteResult, setInviteResult] = useState<{ success: boolean; shareLink?: string; message: string } | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
+  const [lastSearchQuery, setLastSearchQuery] = useState('')
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const vibeIcons = {
     casual: Coffee,
@@ -72,6 +78,15 @@ export function CrewDetail() {
 
     loadCrewData()
   }, [crewId])
+
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const loadCrewData = async () => {
     if (!crewId) return
@@ -100,20 +115,68 @@ export function CrewDetail() {
     }
   }
 
-  const handleSearchUsers = async (query: string) => {
+  const handleSearchUsers = useCallback(async (query: string) => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
     if (!query.trim()) {
       setSearchResults([])
+      setLastSearchQuery('')
+      return
+    }
+
+    // Don't search if query hasn't changed
+    if (query === lastSearchQuery) {
       return
     }
 
     setIsSearching(true)
+
+    // Debounce search by 300ms
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchUsersForInvite(query)
+        setSearchResults(results)
+        setLastSearchQuery(query)
+      } catch (error) {
+        console.error('Error searching users:', error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+  }, [lastSearchQuery])
+
+  const handleToggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(userId)) {
+        newSet.delete(userId)
+      } else {
+        newSet.add(userId)
+      }
+      return newSet
+    })
+  }
+
+  const handleInviteSelectedUsers = async () => {
+    if (!crewId || selectedUsers.size === 0) return
+
+    setIsInviting(true)
     try {
-      const results = await searchUsersForInvite(query)
-      setSearchResults(results)
-    } catch (error) {
-      console.error('Error searching users:', error)
+      await bulkInviteUsersToCrew(crewId, Array.from(selectedUsers))
+      toast.success(`🍻 ${selectedUsers.size} invite${selectedUsers.size > 1 ? 's' : ''} sent!`)
+      setSelectedUsers(new Set())
+      setSearchResults([])
+      setInviteIdentifier('')
+      setShowInviteModal(false)
+      loadCrewData() // Refresh data
+    } catch (error: any) {
+      console.error('Error inviting users:', error)
+      toast.error(error.message || 'Failed to send invites')
     } finally {
-      setIsSearching(false)
+      setIsInviting(false)
     }
   }
 
@@ -126,7 +189,7 @@ export function CrewDetail() {
     try {
       if (userId) {
         // Invite by user ID from search results (direct invite)
-        await inviteUserByIdentifier(crewId, userId)
+        await inviteUserToCrew(crewId, userId)
         toast.success('🍻 Invite sent!')
         setInviteIdentifier('')
         setSearchResults([])
@@ -306,7 +369,18 @@ export function CrewDetail() {
                     Share Link
                   </Button>
 
-                  <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+                  <Dialog open={showInviteModal} onOpenChange={(open) => {
+                    setShowInviteModal(open)
+                    if (!open) {
+                      // Reset state when modal closes
+                      setInviteIdentifier('')
+                      setSearchResults([])
+                      setSelectedUsers(new Set())
+                      setInviteResult(null)
+                      setShareLink('')
+                      setLastSearchQuery('')
+                    }
+                  }}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold">
                         <UserPlus className="w-4 h-4 mr-2" />
@@ -341,6 +415,31 @@ export function CrewDetail() {
                               )}
                             </Button>
                           </div>
+
+                          {/* Bulk Invite Button */}
+                          {selectedUsers.size > 0 && (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={handleInviteSelectedUsers}
+                                disabled={isInviting}
+                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
+                              >
+                                {isInviting ? (
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                ) : (
+                                  <UserPlus className="w-4 h-4 mr-2" />
+                                )}
+                                Invite {selectedUsers.size} User{selectedUsers.size > 1 ? 's' : ''}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => setSelectedUsers(new Set())}
+                                disabled={isInviting}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Search Results */}
@@ -352,28 +451,46 @@ export function CrewDetail() {
                         )}
                         {searchResults.length > 0 && !isSearching && (
                           <div className="space-y-2">
-                            <Label className="text-sm text-muted-foreground">Search Results:</Label>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm text-muted-foreground">Search Results:</Label>
+                              {selectedUsers.size > 0 && (
+                                <span className="text-xs text-primary font-medium">
+                                  {selectedUsers.size} selected
+                                </span>
+                              )}
+                            </div>
                             <div className="max-h-32 overflow-y-auto space-y-1">
-                              {searchResults.map((result) => (
-                                <div
-                                  key={result.user_id}
-                                  className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-muted"
-                                  onClick={() => handleInviteUser(result.user_id)}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="w-6 h-6">
-                                      <AvatarImage src={result.avatar_url || undefined} />
-                                      <AvatarFallback className="text-xs">
-                                        {result.display_name?.[0]?.toUpperCase() || '?'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm">{result.display_name}</span>
+                              {searchResults.map((result) => {
+                                const isSelected = selectedUsers.has(result.user_id)
+                                return (
+                                  <div
+                                    key={result.user_id}
+                                    className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-colors ${
+                                      isSelected
+                                        ? 'bg-primary/10 border-primary'
+                                        : 'hover:bg-muted'
+                                    }`}
+                                    onClick={() => handleToggleUserSelection(result.user_id)}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="w-6 h-6">
+                                        <AvatarImage src={result.avatar_url || undefined} />
+                                        <AvatarFallback className="text-xs">
+                                          {result.display_name?.[0]?.toUpperCase() || '?'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm">{result.display_name}</span>
+                                    </div>
+                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                      isSelected
+                                        ? 'bg-primary border-primary text-primary-foreground'
+                                        : 'border-muted-foreground'
+                                    }`}>
+                                      {isSelected && <Check className="w-3 h-3" />}
+                                    </div>
                                   </div>
-                                  <Button size="sm" variant="ghost">
-                                    <UserPlus className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           </div>
                         )}
@@ -419,6 +536,9 @@ export function CrewDetail() {
                                   setInviteResult(null)
                                   setInviteIdentifier('')
                                   setShareLink('')
+                                  setSelectedUsers(new Set())
+                                  setSearchResults([])
+                                  setLastSearchQuery('')
                                 }}
                               >
                                 Try Another Username
