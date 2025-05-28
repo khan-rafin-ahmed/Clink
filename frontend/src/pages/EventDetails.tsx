@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
+import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
@@ -38,7 +39,8 @@ const loadEventDetailsData = async (_user: any, eventId: string) => {
 
 export function EventDetails() {
   const { eventId } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
+  const { goBackSmart } = useSmartNavigation()
+  const { handleDeleteSuccess } = useActionNavigation()
   const { user } = useAuth()
   const [updatingRsvp, setUpdatingRsvp] = useState(false)
   const [rsvpLoading, setRsvpLoading] = useState(false)
@@ -52,7 +54,7 @@ export function EventDetails() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Event URL</h2>
-          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+          <Button onClick={goBackSmart}>Back</Button>
         </div>
       </div>
     )
@@ -82,8 +84,8 @@ export function EventDetails() {
 
   const handleEventDeleted = useCallback(() => {
     toast.success('Session deleted successfully!')
-    navigate('/discover')
-  }, [navigate])
+    handleDeleteSuccess('event')
+  }, [handleDeleteSuccess])
 
   const handleRsvpChange = async (status: RsvpStatus) => {
     if (!eventId || !user) return
@@ -125,7 +127,7 @@ export function EventDetails() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h2>
-          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+          <Button onClick={goBackSmart}>Back</Button>
         </div>
       </div>
     )
@@ -146,9 +148,9 @@ export function EventDetails() {
         <div className="flex items-center justify-between mb-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/dashboard')}
+            onClick={goBackSmart}
           >
-            ← Back to Dashboard
+            ← Back
           </Button>
           <div className="flex items-center gap-2">
             {/* Host Actions */}

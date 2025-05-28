@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
+import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +47,8 @@ export function EventDetail() {
   const { eventCode } = useParams<{ eventCode: string }>()
   const { user, loading: authLoading, error: authError } = useAuth()
   const navigate = useNavigate()
+  const { goBackSmart } = useSmartNavigation()
+  const { handleDeleteSuccess } = useActionNavigation()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -96,8 +99,8 @@ export function EventDetail() {
 
   const handleEventDeleted = useCallback(() => {
     toast.success('Session deleted successfully!')
-    navigate('/')
-  }, [navigate])
+    handleDeleteSuccess('event')
+  }, [handleDeleteSuccess])
 
   const loadEvent = useCallback(async () => {
     // Prevent multiple simultaneous loads
@@ -163,7 +166,7 @@ export function EventDetail() {
           }
         }
         toast.error('Event not found')
-        navigate('/')
+        goBackSmart()
         return
       }
 
@@ -361,8 +364,8 @@ export function EventDetail() {
             <Button onClick={() => loadEvent()} variant="outline">
               Try Again
             </Button>
-            <Button onClick={() => navigate('/')}>
-              Go Home
+            <Button onClick={goBackSmart}>
+              Go Back
             </Button>
           </div>
         </div>
@@ -376,9 +379,9 @@ export function EventDetail() {
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Event not found</h1>
           <p className="text-muted-foreground">This event doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate('/')}>
+          <Button onClick={goBackSmart}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Home
+            Go Back
           </Button>
         </div>
       </div>
@@ -395,7 +398,7 @@ export function EventDetail() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button variant="outline" onClick={goBackSmart}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>

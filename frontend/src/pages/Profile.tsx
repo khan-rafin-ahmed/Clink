@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
+import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { getUserProfile, getFollowCounts } from '@/lib/userService'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -73,6 +74,7 @@ export function Profile() {
   const { userId } = useParams<{ userId: string }>()
   const { user: currentUser } = useAuth()
   const navigate = useNavigate()
+  const { goBackSmart } = useSmartNavigation()
 
   // STRONGEST GUARD: Validate userId from URL params
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
@@ -80,7 +82,7 @@ export function Profile() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">Invalid Profile URL</h2>
-          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+          <Button onClick={goBackSmart}>Back</Button>
         </div>
       </div>
     )
@@ -127,7 +129,7 @@ export function Profile() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">Profile Not Found</h2>
-          <Button onClick={() => navigate('/discover')}>Back to Discover</Button>
+          <Button onClick={goBackSmart}>Back</Button>
         </div>
       </div>
     )

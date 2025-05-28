@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
+import { useActionNavigation, useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { getUserProfile, updateUserProfile, createUserProfile } from '@/lib/userService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,8 @@ const DRINK_OPTIONS = [
 export function EditProfile() {
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+  const { handleUpdateSuccess } = useActionNavigation()
+  const { goBackSmart } = useSmartNavigation()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -135,7 +138,7 @@ export function EditProfile() {
       console.log('[EditProfile] Profile update result:', result)
 
       toast.success('Profile updated successfully! 🎉')
-      navigate('/profile')
+      handleUpdateSuccess()
     } catch (error) {
       console.error('[EditProfile] Error updating profile:', error)
       toast.error('Failed to update profile')
@@ -177,12 +180,10 @@ export function EditProfile() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link to="/profile">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Profile
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={goBackSmart}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
               <User className="h-8 w-8" />
@@ -267,11 +268,9 @@ export function EditProfile() {
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-4 pt-6">
-                <Link to="/profile">
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
+                <Button type="button" variant="outline" onClick={goBackSmart}>
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={saving}>
                   {saving ? (
                     <>
