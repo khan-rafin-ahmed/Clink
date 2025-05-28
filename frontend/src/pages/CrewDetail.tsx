@@ -18,7 +18,6 @@ import {
   type CrewMember
 } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { fixCrewInviteRLS } from '@/lib/runMigration'
 import {
   Users,
   Globe,
@@ -60,7 +59,6 @@ export function CrewDetail() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [lastSearchQuery, setLastSearchQuery] = useState('')
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [isFixingRLS, setIsFixingRLS] = useState(false)
 
   const vibeIcons = {
     casual: Coffee,
@@ -271,22 +269,76 @@ export function CrewDetail() {
     }
   }
 
-  // Temporary function to fix RLS policy
-  const handleFixRLS = async () => {
-    setIsFixingRLS(true)
-    try {
-      const success = await fixCrewInviteRLS()
-      if (success) {
-        toast.success('✅ RLS policy fixed! You can now invite members.')
-      } else {
-        toast.error('❌ Failed to fix RLS policy. Check console for details.')
-      }
-    } catch (error: any) {
-      console.error('Error fixing RLS:', error)
-      toast.error('❌ Failed to fix RLS policy.')
-    } finally {
-      setIsFixingRLS(false)
-    }
+  // Function to show RLS fix instructions
+  const handleShowRLSInstructions = () => {
+    const instructions = `
+🔧 Database Fix Required
+
+The crew invitation system needs database updates. Please follow these steps:
+
+1. Go to Supabase Dashboard: https://supabase.com/dashboard
+2. Select your project: Thirstee
+3. Go to SQL Editor
+4. Copy and paste this SQL command:
+
+DROP POLICY IF EXISTS "Users can join crews when invited" ON crew_members;
+
+CREATE POLICY "Users can join crews or be invited by creators" ON crew_members
+FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+  OR
+  EXISTS (
+    SELECT 1 FROM crews
+    WHERE id = crew_members.crew_id
+    AND created_by = auth.uid()
+  )
+);
+
+CREATE OR REPLACE FUNCTION handle_crew_invitation_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+  crew_name TEXT;
+  inviter_name TEXT;
+  notifications_exists BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_name = 'notifications'
+  ) INTO notifications_exists;
+
+  IF notifications_exists THEN
+    SELECT name INTO crew_name FROM crews WHERE id = NEW.crew_id;
+    SELECT COALESCE(display_name, 'Someone') INTO inviter_name
+    FROM user_profiles WHERE user_id = NEW.invited_by;
+
+    IF EXISTS (
+      SELECT 1 FROM information_schema.routines
+      WHERE routine_name = 'create_notification'
+    ) THEN
+      PERFORM create_notification(
+        NEW.user_id, 'crew_invitation', 'New Crew Invitation',
+        inviter_name || ' invited you to join "' || crew_name || '" crew',
+        jsonb_build_object('crew_id', NEW.crew_id, 'crew_member_id', NEW.id)
+      );
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+5. Click "Run" to execute
+6. Refresh this page and try inviting again
+
+This fixes both the RLS policy and notification errors.
+    `
+
+    // Copy instructions to clipboard
+    navigator.clipboard.writeText(instructions.trim()).then(() => {
+      toast.success('📋 Instructions copied to clipboard!')
+    }).catch(() => {
+      // Fallback: show in alert
+      alert(instructions)
+    })
   }
 
   if (isLoading) {
@@ -379,20 +431,14 @@ export function CrewDetail() {
 
               {isCreator && (
                 <div className="flex gap-2 flex-wrap">
-                  {/* Temporary RLS Fix Button */}
+                  {/* RLS Fix Instructions Button */}
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={handleFixRLS}
-                    disabled={isFixingRLS}
+                    onClick={handleShowRLSInstructions}
                     className="bg-red-600 hover:bg-red-700"
                   >
-                    {isFixingRLS ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      '🔧'
-                    )}
-                    Fix RLS Policy
+                    🔧 Fix Database Policy
                   </Button>
 
                   <Button
