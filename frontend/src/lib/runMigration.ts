@@ -142,3 +142,45 @@ export async function addFavoriteDrinkColumn() {
     return false
   }
 }
+
+// Function to fix crew invite RLS policy
+export async function fixCrewInviteRLS() {
+  try {
+    console.log('Fixing crew invite RLS policy...')
+
+    // Fix RLS policy for crew_members to allow crew creators to invite others
+    const fixRLSQuery = `
+      -- Drop the existing restrictive policy
+      DROP POLICY IF EXISTS "Users can join crews when invited" ON crew_members;
+
+      -- Create new policy that allows:
+      -- 1. Users to join crews themselves (for invite links)
+      -- 2. Crew creators to invite others
+      CREATE POLICY "Users can join crews or be invited by creators" ON crew_members
+      FOR INSERT WITH CHECK (
+        -- User can add themselves (for invite links)
+        user_id = auth.uid()
+        OR
+        -- Crew creator can invite others
+        EXISTS (
+          SELECT 1 FROM crews
+          WHERE id = crew_members.crew_id
+          AND created_by = auth.uid()
+        )
+      );
+    `
+
+    const { error } = await supabase.rpc('exec_sql', { sql: fixRLSQuery })
+
+    if (error) {
+      console.error('Error fixing crew invite RLS:', error)
+      return false
+    } else {
+      console.log('✅ Crew invite RLS policy fixed successfully')
+      return true
+    }
+  } catch (error) {
+    console.error('Error in fixCrewInviteRLS:', error)
+    return false
+  }
+}

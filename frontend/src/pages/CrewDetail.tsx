@@ -18,6 +18,7 @@ import {
   type CrewMember
 } from '@/lib/crewService'
 import { toast } from 'sonner'
+import { fixCrewInviteRLS } from '@/lib/runMigration'
 import {
   Users,
   Globe,
@@ -59,6 +60,7 @@ export function CrewDetail() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [lastSearchQuery, setLastSearchQuery] = useState('')
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [isFixingRLS, setIsFixingRLS] = useState(false)
 
   const vibeIcons = {
     casual: Coffee,
@@ -269,6 +271,24 @@ export function CrewDetail() {
     }
   }
 
+  // Temporary function to fix RLS policy
+  const handleFixRLS = async () => {
+    setIsFixingRLS(true)
+    try {
+      const success = await fixCrewInviteRLS()
+      if (success) {
+        toast.success('✅ RLS policy fixed! You can now invite members.')
+      } else {
+        toast.error('❌ Failed to fix RLS policy. Check console for details.')
+      }
+    } catch (error: any) {
+      console.error('Error fixing RLS:', error)
+      toast.error('❌ Failed to fix RLS policy.')
+    } finally {
+      setIsFixingRLS(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -358,7 +378,23 @@ export function CrewDetail() {
               </div>
 
               {isCreator && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  {/* Temporary RLS Fix Button */}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleFixRLS}
+                    disabled={isFixingRLS}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {isFixingRLS ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      '🔧'
+                    )}
+                    Fix RLS Policy
+                  </Button>
+
                   <Button
                     variant="outline"
                     size="sm"
