@@ -136,7 +136,7 @@ export function CrewDetail() {
     // Debounce search by 300ms
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const results = await searchUsersForInvite(query)
+        const results = await searchUsersForInvite(query, crewId || undefined)
         setSearchResults(results)
         setLastSearchQuery(query)
       } catch (error) {
@@ -145,7 +145,7 @@ export function CrewDetail() {
         setIsSearching(false)
       }
     }, 300)
-  }, [lastSearchQuery])
+  }, [lastSearchQuery, crewId])
 
   const handleToggleUserSelection = (userId: string) => {
     setSelectedUsers(prev => {
@@ -470,7 +470,8 @@ export function CrewDetail() {
                         {inviteIdentifier.trim() && searchResults.length === 0 && !isSearching && (
                           <div className="text-center py-8 text-muted-foreground">
                             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p className="text-sm">No users found with that username</p>
+                            <p className="text-sm">No available users found with that username</p>
+                            <p className="text-xs mt-1">Users already in this crew won't appear in results</p>
                           </div>
                         )}
 

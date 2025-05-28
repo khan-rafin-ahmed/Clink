@@ -269,21 +269,9 @@ export async function inviteUserWithFallback(crewId: string, identifier: string)
 
 // Bulk invite multiple users to crew
 export async function bulkInviteUsersToCrew(crewId: string, userIds: string[]): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const invitations = userIds.map(userId => ({
-    crew_id: crewId,
-    user_id: userId,
-    status: 'pending' as const,
-    invited_by: user.id
-  }))
-
-  const { error } = await supabase
-    .from('crew_members')
-    .insert(invitations)
-
-  if (error) throw error
+  // Use the existing inviteUserToCrew function for each user to ensure proper RLS handling
+  const invitePromises = userIds.map(userId => inviteUserToCrew(crewId, userId))
+  await Promise.all(invitePromises)
 }
 
 // Respond to crew invitation
@@ -459,8 +447,11 @@ export async function removeMemberFromCrew(crewId: string, userId: string): Prom
 }
 
 // Search users for crew invitation
-export async function searchUsersForInvite(query: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null }>> {
+export async function searchUsersForInvite(query: string, crewId?: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null }>> {
   if (!query.trim()) return []
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
 
   // Search by display name in user_profiles
   // Note: We can't directly query auth.users from client for security reasons
@@ -469,11 +460,30 @@ export async function searchUsersForInvite(query: string): Promise<Array<{ user_
     .from('user_profiles')
     .select('user_id, display_name, avatar_url')
     .ilike('display_name', `%${query}%`)
-    .limit(10)
+    .neq('user_id', user.id) // Exclude current user
+    .limit(20) // Get more results to filter out existing members
 
   if (profileError) throw profileError
 
-  return profileData || []
+  let filteredResults = profileData || []
+
+  // If crewId is provided, filter out existing crew members
+  if (crewId && filteredResults.length > 0) {
+    const userIds = filteredResults.map(u => u.user_id)
+
+    const { data: existingMembers, error: membersError } = await supabase
+      .from('crew_members')
+      .select('user_id')
+      .eq('crew_id', crewId)
+      .in('user_id', userIds)
+
+    if (membersError) throw membersError
+
+    const existingMemberIds = new Set(existingMembers?.map(m => m.user_id) || [])
+    filteredResults = filteredResults.filter(user => !existingMemberIds.has(user.user_id))
+  }
+
+  return filteredResults.slice(0, 10) // Return max 10 results
 }
 
 // Helper function to generate invite codes
