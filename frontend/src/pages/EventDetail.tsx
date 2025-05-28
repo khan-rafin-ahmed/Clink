@@ -222,10 +222,7 @@ export function EventDetail() {
       }
 
       // Load host information
-      // await loadHostInfo(eventData.created_by)
-
-      // Load participant profiles
-      // await loadParticipants(eventData.rsvps || [])
+      await loadHostInfo(eventData.created_by)
     } catch (error) {
       console.error('Error loading event:', error)
       if (mountedRef.current) {
@@ -239,33 +236,44 @@ export function EventDetail() {
     }
   }, [eventCode, mountedRef])
 
-  // const loadHostInfo = async (hostId: string) => {
-  //   try {
-  //     const { data: hostProfile, error } = await supabase
-  //       .from('user_profiles')
-  //       .select('user_id, display_name, avatar_url')
-  //       .eq('user_id', hostId)
-  //       .single()
+  const loadHostInfo = async (hostId: string) => {
+    if (!mountedRef.current) return
 
-  //     if (error && error.code !== 'PGRST116') {
-  //       console.error('Error loading host info:', error)
-  //       return
-  //     }
+    try {
+      const { data: hostProfile, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, avatar_url')
+        .eq('user_id', hostId)
+        .single()
 
-  //     if (hostProfile) {
-  //       setEvent(prev => prev ? {
-  //         ...prev,
-  //         host: {
-  //           id: hostProfile.user_id,
-  //           display_name: hostProfile.display_name,
-  //           avatar_url: hostProfile.avatar_url
-  //         }
-  //       } : null)
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading host info:', error)
-  //   }
-  // }
+      if (!mountedRef.current) return // Check again after async operation
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading host info:', error)
+        return
+      }
+
+      // Always set host data, even if profile is null (we'll handle fallbacks in the UI)
+      if (mountedRef.current) {
+        setEvent(prev => prev ? {
+          ...prev,
+          host: hostProfile ? {
+            id: hostProfile.user_id,
+            display_name: hostProfile.display_name,
+            avatar_url: hostProfile.avatar_url
+          } : {
+            id: hostId,
+            display_name: null,
+            avatar_url: null
+          }
+        } : null)
+      }
+    } catch (error) {
+      if (mountedRef.current) {
+        console.error('Error loading host info:', error)
+      }
+    }
+  }
 
   // const loadParticipants = async (rsvps: any[]) => {
   //   if (!rsvps.length) {
@@ -558,20 +566,20 @@ export function EventDetail() {
             <div className="p-6 border-b border-border/50">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
                 <Crown className="w-5 h-5 text-primary" />
-                Your Host
+                Hosted By
               </h2>
 
               <div className="flex items-center gap-4 p-4 bg-muted/20 rounded-lg">
                 <UserAvatar
                   userId={event.created_by}
-                  displayName={event.host?.display_name}
+                  displayName={event.host?.display_name || `Host ${event.created_by?.slice(-4) || ''}`}
                   avatarUrl={event.host?.avatar_url}
                   size="lg"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name || 'Anonymous Host'}
+                      {event.host?.display_name || `Host ${event.created_by?.slice(-4) || ''}`}
                     </h3>
                     {isHost && (
                       <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">

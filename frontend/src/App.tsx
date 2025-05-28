@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/auth-context'
 import { Navbar } from './components/Navbar'
+import { AuthRedirect } from './components/AuthRedirect'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { UserProfile } from './pages/UserProfile'
@@ -30,8 +31,16 @@ function App() {
           <Navbar />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={
+                <AuthRedirect>
+                  <HomePage />
+                </AuthRedirect>
+              } />
+              <Route path="/login" element={
+                <AuthRedirect>
+                  <LoginPage />
+                </AuthRedirect>
+              } />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
               <Route path="/profile" element={<UserProfile />} />

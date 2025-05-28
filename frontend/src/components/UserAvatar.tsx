@@ -1,5 +1,8 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react'
+import { getGoogleAvatarUrl, getCurrentUserGoogleAvatar } from '@/lib/googleAvatarService'
+import { useAuth } from '@/lib/auth-context'
 
 interface UserAvatarProps {
   userId?: string
@@ -13,7 +16,7 @@ interface UserAvatarProps {
 
 const sizeClasses = {
   xs: 'h-6 w-6',
-  sm: 'h-8 w-8', 
+  sm: 'h-8 w-8',
   md: 'h-10 w-10',
   lg: 'h-12 w-12',
   xl: 'h-16 w-16'
@@ -23,19 +26,59 @@ const fallbackSizeClasses = {
   xs: 'text-xs',
   sm: 'text-sm',
   md: 'text-base',
-  lg: 'text-lg', 
+  lg: 'text-lg',
   xl: 'text-xl'
 }
 
-export function UserAvatar({ 
+// Hook to get Google avatar URL for any user
+function useGoogleAvatar(userId?: string) {
+  const [googleAvatarUrl, setGoogleAvatarUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const { user: currentUser } = useAuth()
+
+  useEffect(() => {
+    if (!userId) return
+
+    const fetchGoogleAvatar = async () => {
+      setLoading(true)
+      try {
+        let avatarUrl: string | null = null
+
+        // If this is the current user, use the faster method
+        if (currentUser && currentUser.id === userId) {
+          avatarUrl = await getCurrentUserGoogleAvatar()
+        } else {
+          // For other users, use the RPC function
+          avatarUrl = await getGoogleAvatarUrl(userId)
+        }
+
+        setGoogleAvatarUrl(avatarUrl)
+      } catch (error) {
+        console.warn('Failed to fetch Google avatar:', error)
+        setGoogleAvatarUrl(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchGoogleAvatar()
+  }, [userId, currentUser?.id])
+
+  return { googleAvatarUrl, loading }
+}
+
+export function UserAvatar({
   userId,
-  displayName, 
-  avatarUrl, 
+  displayName,
+  avatarUrl,
   email,
   size = 'md',
   className = '',
   showFallback = true
 }: UserAvatarProps) {
+  // Get Google avatar as fallback
+  const { googleAvatarUrl } = useGoogleAvatar(userId)
+
   const getFallbackText = () => {
     if (displayName) {
       return displayName.charAt(0).toUpperCase()
@@ -56,11 +99,14 @@ export function UserAvatar({
     return 'Anonymous'
   }
 
+  // Priority: custom avatar > Google avatar > fallback
+  const effectiveAvatarUrl = avatarUrl || googleAvatarUrl
+
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
-      {avatarUrl && (
-        <AvatarImage 
-          src={avatarUrl} 
+      {effectiveAvatarUrl && (
+        <AvatarImage
+          src={effectiveAvatarUrl}
           alt={getDisplayName()}
           className="object-cover"
         />

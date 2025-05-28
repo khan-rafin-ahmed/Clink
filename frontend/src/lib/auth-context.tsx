@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { toast } from 'sonner'
+import { updateProfileWithGoogleAvatar } from './googleAvatarService'
 
 type AuthContextType = {
   user: User | null
@@ -68,6 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_IN' && newUser && !user) {
         const username = newUser.email?.split('@')[0] || 'Champion'
         toast.success(`Welcome back, ${username}! 🍻 Ready to raise some hell?`)
+
+        // Update profile with Google avatar if user doesn't have one
+        updateProfileWithGoogleAvatar(newUser.id).catch(error => {
+          console.warn('Failed to update Google avatar:', error)
+        })
 
         // Check for redirect after login
         const redirectPath = sessionStorage.getItem('redirectAfterLogin')
