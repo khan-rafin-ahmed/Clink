@@ -22,9 +22,7 @@ import {
   StickyNote,
   Edit,
   Trash2,
-  MessageCircle,
-  Crown,
-  ChevronRight
+  Crown
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
 
