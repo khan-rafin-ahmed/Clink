@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { QuickEventModal } from '@/components/QuickEventModal'
+import { EditEventModal } from '@/components/EditEventModal'
+import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 type Event = {
@@ -15,14 +17,18 @@ type Event = {
   drink_type: string
   vibe: string
   notes: string | null
+  is_public: boolean
   created_by: string
   created_at: string
+  updated_at: string
 }
 
 export function Dashboard() {
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -51,23 +57,22 @@ export function Dashboard() {
     }
   }
 
-  const handleDelete = async (event: Event) => {
-    if (!confirm('Are you sure you want to delete this session?')) return
+  const handleEdit = (event: Event) => {
+    setEditingEvent(event)
+  }
 
-    try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', event.id)
+  const handleDelete = (event: Event) => {
+    setDeletingEvent(event)
+  }
 
-      if (error) throw error
+  const handleEventUpdated = () => {
+    loadEvents()
+    setEditingEvent(null)
+  }
 
-      setEvents(events.filter(e => e.id !== event.id))
-      toast.success('Session deleted!')
-    } catch (error) {
-      console.error('Error deleting event:', error)
-      toast.error('Failed to delete session')
-    }
+  const handleEventDeleted = () => {
+    loadEvents()
+    setDeletingEvent(null)
   }
 
   const formatDate = (dateString: string) => {
@@ -169,9 +174,19 @@ export function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => handleEdit(event)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDelete(event)}
                     className="text-destructive hover:text-destructive/80"
                   >
+                    <Trash2 className="w-4 h-4 mr-1" />
                     Delete
                   </Button>
                 </div>
@@ -200,6 +215,26 @@ export function Dashboard() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingEvent && (
+        <EditEventModal
+          event={editingEvent}
+          open={!!editingEvent}
+          onOpenChange={(open) => !open && setEditingEvent(null)}
+          onEventUpdated={handleEventUpdated}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      {deletingEvent && (
+        <DeleteEventDialog
+          event={deletingEvent}
+          open={!!deletingEvent}
+          onOpenChange={(open) => !open && setDeletingEvent(null)}
+          onEventDeleted={handleEventDeleted}
+        />
       )}
     </div>
   )

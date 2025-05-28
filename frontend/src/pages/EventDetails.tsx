@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth-context'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
+import { EditEventModal } from '@/components/EditEventModal'
+import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import type { RsvpStatus } from '@/types'
 import {
   Select,
@@ -18,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { ShareModal } from '@/components/ShareModal'
 import { InnerCircleBadge } from '@/components/InnerCircleBadge'
 import { toast } from 'sonner'
+import { Edit, Trash2 } from 'lucide-react'
 
 // Data loading function (outside component for stability)
 const loadEventDetailsData = async (_user: any, eventId: string) => {
@@ -40,6 +43,8 @@ export function EventDetails() {
   const [updatingRsvp, setUpdatingRsvp] = useState(false)
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   // STRONGEST GUARD: Validate eventId from URL params
   if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
@@ -70,6 +75,15 @@ export function EventDetails() {
     onSuccess: (data) => console.log('✅ Event details loaded:', data?.title),
     onError: () => toast.error('Failed to load event details')
   })
+
+  const handleEventUpdated = useCallback(() => {
+    refetch()
+  }, [refetch])
+
+  const handleEventDeleted = useCallback(() => {
+    toast.success('Session deleted successfully!')
+    navigate('/discover')
+  }, [navigate])
 
   const handleRsvpChange = async (status: RsvpStatus) => {
     if (!eventId || !user) return
@@ -136,14 +150,24 @@ export function EventDetails() {
           >
             ← Back to Dashboard
           </Button>
-          <button onClick={() => setIsShareModalOpen(true)} className="flex items-center space-x-1 text-muted-foreground hover:text-foreground">
-            <ShareModal
-              isOpen={isShareModalOpen}
-              onClose={() => setIsShareModalOpen(false)}
-              title={event.title}
-              url={eventUrl}
-            />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Host Actions */}
+            {user && event.created_by === user.id && (
+              <>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </>
+            )}
+            <button onClick={() => setIsShareModalOpen(true)} className="flex items-center space-x-1 text-muted-foreground hover:text-foreground">
+              Share
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3 mb-4">
           <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
@@ -218,6 +242,34 @@ export function EventDetails() {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title={event.title}
+        url={eventUrl}
+      />
+
+      {/* Edit Modal */}
+      {event && (
+        <EditEventModal
+          event={event}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onEventUpdated={handleEventUpdated}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      {event && (
+        <DeleteEventDialog
+          event={event}
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onEventDeleted={handleEventDeleted}
+        />
+      )}
     </div>
   )
 }

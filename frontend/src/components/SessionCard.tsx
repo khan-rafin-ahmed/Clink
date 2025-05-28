@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin, Edit, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RSVPButton } from '@/components/RSVPButton'
 import { ShareModal } from '@/components/ShareModal'
 import { useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
 
 interface SessionCardProps {
   event: {
@@ -25,13 +26,26 @@ interface SessionCardProps {
   }
   showRSVPStatus?: boolean
   compact?: boolean
+  onEdit?: (event: any) => void
+  onDelete?: (event: any) => void
+  showHostActions?: boolean
 }
 
-export function SessionCard({ event, showRSVPStatus = false, compact = false }: SessionCardProps) {
+export function SessionCard({
+  event,
+  showRSVPStatus = false,
+  compact = false,
+  onEdit,
+  onDelete,
+  showHostActions = false
+}: SessionCardProps) {
+  const { user } = useAuth()
   const eventDate = new Date(event.date_time)
   const now = new Date()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const eventUrl = `${window.location.origin}/event/${event.event_code || event.id}`
+
+  const isHost = user && event.created_by === user.id
 
   // Calculate date badge
   const getDateBadge = () => {
@@ -103,6 +117,26 @@ export function SessionCard({ event, showRSVPStatus = false, compact = false }: 
                 {rsvpBadge.text}
               </Badge>
             )}
+            {showHostActions && isHost && onEdit && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onEdit(event)}
+                className="text-xs p-1"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+            {showHostActions && isHost && onDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDelete(event)}
+                className="text-xs p-1 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
             <Link to={`/events/${event.id}`}>
               <Button size="sm" variant="outline" className="text-xs">
                 View
@@ -163,6 +197,28 @@ export function SessionCard({ event, showRSVPStatus = false, compact = false }: 
           >
             📤 Share
           </button>
+          {showHostActions && isHost && onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(event)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          )}
+          {showHostActions && isHost && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(event)}
+              className="text-destructive hover:text-destructive/80"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          )}
           <RSVPButton
             eventId={event.id}
             initialAttendees={event.attendees}

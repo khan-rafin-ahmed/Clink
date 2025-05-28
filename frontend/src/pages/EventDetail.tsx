@@ -9,6 +9,8 @@ import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar, UserAvatarWithName } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
+import { EditEventModal } from '@/components/EditEventModal'
+import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { toast } from 'sonner'
 import {
   Calendar,
@@ -19,7 +21,9 @@ import {
   Clock,
   Wine,
   Music,
-  StickyNote
+  StickyNote,
+  Edit,
+  Trash2
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
 
@@ -49,6 +53,8 @@ export function EventDetail() {
   const loadingRef = useRef(false)
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [participants] = useState<Array<{
     id: string
     status: RsvpStatus
@@ -83,6 +89,15 @@ export function EventDetail() {
       setIsJoined(false)
     }
   }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
+
+  const handleEventUpdated = useCallback(() => {
+    loadEvent()
+  }, [])
+
+  const handleEventDeleted = useCallback(() => {
+    toast.success('Session deleted successfully!')
+    navigate('/')
+  }, [navigate])
 
   const loadEvent = useCallback(async () => {
     // Prevent multiple simultaneous loads
@@ -386,10 +401,25 @@ export function EventDetail() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <Button variant="outline" onClick={() => setIsShareModalOpen(true)}>
-              <Share2 className="w-4 h-4 mr-2" />
-              Share Event
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Host Actions */}
+              {user && event.created_by === user.id && (
+                <>
+                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" onClick={() => setIsShareModalOpen(true)}>
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Event
+              </Button>
+            </div>
           </div>
 
           {/* Event Card */}
@@ -554,6 +584,26 @@ export function EventDetail() {
         title={event?.title || 'Event'}
         url={`${window.location.origin}/event/${eventCode}`}
       />
+
+      {/* Edit Modal */}
+      {event && (
+        <EditEventModal
+          event={event}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onEventUpdated={handleEventUpdated}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      {event && (
+        <DeleteEventDialog
+          event={event}
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onEventDeleted={handleEventDeleted}
+        />
+      )}
     </div>
   )
 }
