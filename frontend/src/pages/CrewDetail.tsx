@@ -269,30 +269,17 @@ export function CrewDetail() {
     }
   }
 
-  // Function to show RLS fix instructions
-  const handleShowRLSInstructions = () => {
+  // Function to show notification fix instructions
+  const handleShowNotificationFix = () => {
     const instructions = `
-🔧 Database Fix Required
+🔧 Notification Fix Required
 
-The crew invitation system needs database updates. Please follow these steps:
+The crew invitation system has a notification error. Please follow these steps:
 
 1. Go to Supabase Dashboard: https://supabase.com/dashboard
 2. Select your project: Thirstee
 3. Go to SQL Editor
 4. Copy and paste this SQL command:
-
-DROP POLICY IF EXISTS "Users can join crews when invited" ON crew_members;
-
-CREATE POLICY "Users can join crews or be invited by creators" ON crew_members
-FOR INSERT WITH CHECK (
-  user_id = auth.uid()
-  OR
-  EXISTS (
-    SELECT 1 FROM crews
-    WHERE id = crew_members.crew_id
-    AND created_by = auth.uid()
-  )
-);
 
 CREATE OR REPLACE FUNCTION handle_crew_invitation_notification()
 RETURNS TRIGGER AS $$
@@ -329,7 +316,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 5. Click "Run" to execute
 6. Refresh this page and try inviting again
 
-This fixes both the RLS policy and notification errors.
+This fixes the "relation notification doesn't exist" error.
     `
 
     // Copy instructions to clipboard
@@ -431,14 +418,14 @@ This fixes both the RLS policy and notification errors.
 
               {isCreator && (
                 <div className="flex gap-2 flex-wrap">
-                  {/* RLS Fix Instructions Button */}
+                  {/* Notification Fix Instructions Button */}
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={handleShowRLSInstructions}
+                    onClick={handleShowNotificationFix}
                     className="bg-red-600 hover:bg-red-700"
                   >
-                    🔧 Fix Database Policy
+                    🔧 Fix Notifications
                   </Button>
 
                   <Button
