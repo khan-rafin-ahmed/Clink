@@ -59,6 +59,9 @@ export function EventDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isJoined, setIsJoined] = useState(false)
 
+  // Load participant profiles state - must be declared before any conditional returns
+  const [participantProfiles, setParticipantProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({})
+
   // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true
@@ -75,6 +78,8 @@ export function EventDetail() {
 
   useEffect(() => {
     // Update join status when user changes
+    if (!mountedRef.current) return
+
     if (user && event) {
       const userRsvpData = event.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
       setIsJoined(userRsvpData?.status === 'going')
@@ -169,6 +174,8 @@ export function EventDetail() {
         return
       }
 
+      if (!mountedRef.current) return // Check before setting state
+
       setEvent(eventData)
 
       // Check user's RSVP status
@@ -184,9 +191,13 @@ export function EventDetail() {
       // await loadParticipants(eventData.rsvps || [])
     } catch (error) {
       console.error('Error loading event:', error)
-      toast.error('Failed to load event')
+      if (mountedRef.current) {
+        toast.error('Failed to load event')
+      }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
       loadingRef.current = false
     }
   }, [eventCode, mountedRef])
@@ -429,12 +440,9 @@ export function EventDetail() {
   const isHost = user && event.created_by === user.id
   const attendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
 
-  // Load participant profiles
-  const [participantProfiles, setParticipantProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({})
-
   useEffect(() => {
     const loadParticipantProfiles = async () => {
-      if (!event.rsvps || event.rsvps.length === 0) return
+      if (!mountedRef.current || !event?.rsvps || event.rsvps.length === 0) return
 
       const userIds = event.rsvps.map(rsvp => rsvp.user_id).filter(Boolean)
       if (userIds.length === 0) return
@@ -444,6 +452,8 @@ export function EventDetail() {
           .from('user_profiles')
           .select('user_id, display_name, avatar_url')
           .in('user_id', userIds)
+
+        if (!mountedRef.current) return // Check again after async operation
 
         if (!error && profiles) {
           const profileMap = profiles.reduce((acc, profile) => {
@@ -457,12 +467,14 @@ export function EventDetail() {
           setParticipantProfiles(profileMap)
         }
       } catch (error) {
-        console.warn('Error loading participant profiles:', error)
+        if (mountedRef.current) {
+          console.warn('Error loading participant profiles:', error)
+        }
       }
     }
 
     loadParticipantProfiles()
-  }, [event.rsvps])
+  }, [event?.rsvps])
 
   return (
     <div className="min-h-screen bg-background">
