@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +40,7 @@ interface CrewCardProps {
 }
 
 export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
+  const navigate = useNavigate()
   const [showMembers, setShowMembers] = useState(false)
   const [members, setMembers] = useState<CrewMember[]>([])
 
@@ -148,7 +150,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                       <Share2 className="w-4 h-4 mr-2" />
                       Create Invite Link
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/crew/${crew.id}`)}>
                       <Settings className="w-4 h-4 mr-2" />
                       Manage Crew
                     </DropdownMenuItem>
@@ -185,7 +187,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleViewMembers}
+              onClick={() => navigate(`/crew/${crew.id}`)}
               className="text-xs"
             >
               View Crew

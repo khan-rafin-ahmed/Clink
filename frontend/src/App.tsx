@@ -12,6 +12,8 @@ import { Profile } from './pages/Profile'
 import { EventDetails } from './pages/EventDetails'
 import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
+import { CrewJoin } from './pages/CrewJoin'
+import { CrewDetail } from './pages/CrewDetail'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -43,6 +45,9 @@ function App() {
               <Route path="/events/:eventId" element={<EventDetails />} />
               <Route path="/event/:eventCode" element={<EventDetail />} />
               <Route path="/profile/:userId" element={<Profile />} />
+
+              <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
+              <Route path="/crew/:crewId" element={<CrewDetail />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">
