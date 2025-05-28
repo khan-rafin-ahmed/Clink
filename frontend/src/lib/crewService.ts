@@ -98,10 +98,10 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
 
   // Transform the data and add member count
   const crews = data?.map(item => item.crew).filter(Boolean) || []
-  
+
   // Get member counts for each crew
   const crewsWithCounts = await Promise.all(
-    crews.map(async (crew) => {
+    crews.map(async (crew: any) => {
       const { count } = await supabase
         .from('crew_members')
         .select('*', { count: 'exact', head: true })
@@ -113,7 +113,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
         member_count: count || 0,
         is_member: true,
         is_creator: crew.created_by === currentUserId
-      }
+      } as Crew
     })
   )
 
@@ -149,7 +149,7 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
       .eq('user_id', user.id)
       .eq('status', 'accepted')
       .maybeSingle()
-    
+
     isMember = !!memberData
   }
 
@@ -290,7 +290,7 @@ export async function createCrewInviteLink(crewId: string, expiresInDays?: numbe
 
   if (!isUnique) throw new Error('Failed to generate unique invite code')
 
-  const expiresAt = expiresInDays 
+  const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
     : null
 

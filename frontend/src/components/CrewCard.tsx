@@ -5,19 +5,18 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { leaveCrew, getCrewMembers, createCrewInviteLink, type Crew, type CrewMember } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { 
-  Users, 
-  Crown, 
-  Globe, 
-  Lock, 
-  Coffee, 
-  PartyPopper, 
-  Flame, 
+import {
+  Users,
+  Crown,
+  Globe,
+  Lock,
+  Coffee,
+  PartyPopper,
+  Flame,
   Star,
   MoreVertical,
   UserMinus,
   Share2,
-  Copy,
   Settings
 } from 'lucide-react'
 import {
@@ -40,7 +39,6 @@ interface CrewCardProps {
 }
 
 export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
-  const [isLoading, setIsLoading] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [members, setMembers] = useState<CrewMember[]>([])
 
@@ -69,7 +67,6 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
       return
     }
 
-    setIsLoading(true)
     try {
       await leaveCrew(crew.id)
       toast.success('Left crew successfully')
@@ -77,8 +74,6 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
     } catch (error: any) {
       console.error('Error leaving crew:', error)
       toast.error(error.message || 'Failed to leave crew')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -117,7 +112,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                 <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
                   {crew.name}
                   {crew.is_creator && (
-                    <Crown className="w-4 h-4 text-amber-500" title="Crew Creator" />
+                    <Crown className="w-4 h-4 text-amber-500" />
                   )}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
@@ -161,7 +156,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                   </>
                 )}
                 {!crew.is_creator && (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleLeaveCrew}
                     className="text-destructive focus:text-destructive"
                   >

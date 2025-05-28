@@ -10,7 +10,7 @@ import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
-import { InnerCircleBadge } from '@/components/InnerCircleBadge'
+// import { InnerCircleBadge } from '@/components/InnerCircleBadge' // Removed - using Crew System now
 import {
   FullPageSkeleton,
   ErrorFallback
@@ -542,12 +542,7 @@ function DiscoverContent() {
                         <span className="text-sm text-muted-foreground">
                           Hosted by {event.creator?.display_name || 'Anonymous'}
                         </span>
-                        {event.creator && (
-                          <InnerCircleBadge
-                            userId={event.creator.user_id}
-                            variant="inline"
-                          />
-                        )}
+                        {/* Crew badge removed - using Crew System now */}
                       </div>
                     </div>
                   </UserHoverCard>

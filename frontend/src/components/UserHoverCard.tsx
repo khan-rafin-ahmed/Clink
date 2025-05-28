@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UserAvatar } from './UserAvatar'
-import { FollowButton } from './FollowButton'
+// import { FollowButton } from './FollowButton' // Removed - using Crew System now
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -170,13 +170,11 @@ export function UserHoverCard({
                   )}
                 </div>
 
-                {/* Follow Button */}
+                {/* Crew System - Follow button removed */}
                 {user && (
-                  <FollowButton
-                    userId={userId}
-                    size="sm"
-                    className="w-full"
-                  />
+                  <Button size="sm" variant="outline" className="w-full" disabled>
+                    Crew System Active
+                  </Button>
                 )}
 
                 {!user && (

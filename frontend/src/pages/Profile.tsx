@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { Users } from 'lucide-react'
-import { FollowButton } from '@/components/FollowButton'
+// import { FollowButton } from '@/components/FollowButton' // Removed - using Crew System now
 import { getInnerCircleCount } from '@/lib/followService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
@@ -182,13 +182,12 @@ export function Profile() {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Crew System Active */}
           {!isOwnProfile && userId && (
             <div className="flex gap-3">
-              <FollowButton
-                userId={userId}
-                className="flex-1"
-              />
+              <Button variant="outline" className="flex-1" disabled>
+                Crew System Active
+              </Button>
             </div>
           )}
         </div>

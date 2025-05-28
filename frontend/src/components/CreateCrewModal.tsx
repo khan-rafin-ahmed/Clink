@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createCrew, type CreateCrewData } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { Loader2, Users, Globe, Lock, Zap, PartyPopper, Coffee, Flame, Crown, Star } from 'lucide-react'
+import { Loader2, Users, Globe, Lock, PartyPopper, Coffee, Flame, Crown, Star } from 'lucide-react'
 
 interface CreateCrewModalProps {
   onCrewCreated?: () => void
@@ -45,7 +45,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
     try {
       await createCrew(formData)
       toast.success('🍺 Hell yeah! Crew created successfully!')
-      
+
       // Reset form and close modal
       setFormData({
         name: '',

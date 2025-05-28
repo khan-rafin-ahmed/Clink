@@ -12,7 +12,7 @@ export interface Follow {
 export interface Notification {
   id: string
   user_id: string
-  type: 'follow_request' | 'follow_accepted' | 'event_invitation' | 'event_update'
+  type: 'follow_request' | 'follow_accepted' | 'event_invitation' | 'event_update' | 'crew_invitation'
   title: string
   message: string
   data: any

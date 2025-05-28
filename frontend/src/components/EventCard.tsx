@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
-import { InnerCircleBadge } from './InnerCircleBadge'
+// import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
   MapPin,
@@ -204,12 +204,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               <span className="text-sm text-muted-foreground">
                 {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || 'Anonymous'}`}
               </span>
-              {event.creator && !isHost && (
-                <InnerCircleBadge
-                  userId={event.creator.user_id}
-                  variant="inline"
-                />
-              )}
+              {/* Crew badge removed - using Crew System now */}
             </div>
           </div>
         </UserHoverCard>

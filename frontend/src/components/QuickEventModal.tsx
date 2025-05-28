@@ -11,7 +11,7 @@ import { createEventWithShareableLink } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
 import { bulkInviteUsers } from '@/lib/memberService'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Users, Check, Search } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void

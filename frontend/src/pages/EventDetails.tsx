@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ShareModal } from '@/components/ShareModal'
-import { InnerCircleBadge } from '@/components/InnerCircleBadge'
+// import { InnerCircleBadge } from '@/components/InnerCircleBadge' // Removed - using Crew System now
 import { toast } from 'sonner'
 import { Edit, Trash2 } from 'lucide-react'
 
@@ -173,7 +173,7 @@ export function EventDetails() {
         </div>
         <div className="flex items-center gap-3 mb-4">
           <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
-          <InnerCircleBadge userId={event.created_by} />
+          {/* Crew badge removed - using Crew System now */}
         </div>
         <div className="mt-4 space-y-2 text-muted-foreground">
           <p>📅 {format(new Date(event.date_time), 'PPP p')}</p>
