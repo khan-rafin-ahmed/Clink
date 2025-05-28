@@ -6,32 +6,29 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useAuth } from '@/lib/auth-context'
-import { 
-  getCrewById, 
-  getCrewMembers, 
+import {
+  getCrewById,
+  getCrewMembers,
   inviteUserByIdentifier,
   createCrewInviteLink,
   searchUsersForInvite,
-  type Crew, 
-  type CrewMember 
+  type Crew,
+  type CrewMember
 } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { 
-  Users, 
-  Globe, 
-  Lock, 
-  Coffee, 
-  PartyPopper, 
-  Flame, 
-  Crown, 
+import {
+  Users,
+  Globe,
+  Lock,
+  Coffee,
+  PartyPopper,
+  Flame,
+  Crown,
   Star,
   Loader2,
   ArrowLeft,
   UserPlus,
-  Share2,
-  Copy,
-  Search
+  Share2
 } from 'lucide-react'
 import {
   Dialog,
@@ -44,7 +41,6 @@ import {
 export function CrewDetail() {
   const { crewId } = useParams<{ crewId: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [crew, setCrew] = useState<Crew | null>(null)
   const [members, setMembers] = useState<CrewMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -132,7 +128,7 @@ export function CrewDetail() {
         }
         await inviteUserByIdentifier(crewId, inviteIdentifier)
       }
-      
+
       toast.success('🍻 Invite sent!')
       setInviteIdentifier('')
       setSearchResults([])
@@ -197,9 +193,9 @@ export function CrewDetail() {
       <div className="max-w-4xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/profile')}
             className="text-muted-foreground hover:text-foreground"
           >
@@ -234,7 +230,7 @@ export function CrewDetail() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
@@ -257,7 +253,7 @@ export function CrewDetail() {
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Link
                   </Button>
-                  
+
                   <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold">
@@ -282,7 +278,7 @@ export function CrewDetail() {
                                 handleSearchUsers(e.target.value)
                               }}
                             />
-                            <Button 
+                            <Button
                               onClick={() => handleInviteUser()}
                               disabled={isInviting || !inviteIdentifier.trim()}
                             >
@@ -296,7 +292,13 @@ export function CrewDetail() {
                         </div>
 
                         {/* Search Results */}
-                        {searchResults.length > 0 && (
+                        {isSearching && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Searching...</span>
+                          </div>
+                        )}
+                        {searchResults.length > 0 && !isSearching && (
                           <div className="space-y-2">
                             <Label className="text-sm text-muted-foreground">Search Results:</Label>
                             <div className="max-h-32 overflow-y-auto space-y-1">

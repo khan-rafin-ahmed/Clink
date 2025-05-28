@@ -2,19 +2,11 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
-import { joinCrewByInviteCode, getCrewById, type Crew } from '@/lib/crewService'
+import { joinCrewByInviteCode } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { 
-  Users, 
-  Globe, 
-  Lock, 
-  Coffee, 
-  PartyPopper, 
-  Flame, 
-  Crown, 
-  Star,
+import {
+  Users,
   Loader2,
   ArrowLeft
 } from 'lucide-react'
@@ -23,19 +15,9 @@ export function CrewJoin() {
   const { inviteCode } = useParams<{ inviteCode: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [crew, setCrew] = useState<Crew | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const vibeIcons = {
-    casual: Coffee,
-    party: PartyPopper,
-    chill: Coffee,
-    wild: Flame,
-    classy: Crown,
-    other: Star
-  }
 
   useEffect(() => {
     if (!inviteCode) {
@@ -116,7 +98,7 @@ export function CrewJoin() {
             You've been invited to join a crew. Ready to raise hell together?
           </p>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">Invite Code:</p>
@@ -131,15 +113,15 @@ export function CrewJoin() {
                 Sign in to join this crew
               </p>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => navigate('/profile')}
                   className="flex-1"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>
-                <Button 
+                <Button
                   onClick={() => navigate('/login')}
                   className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
                 >
@@ -149,8 +131,8 @@ export function CrewJoin() {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => navigate('/profile')}
                 className="flex-1"
                 disabled={isJoining}
@@ -158,7 +140,7 @@ export function CrewJoin() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <Button 
+              <Button
                 onClick={handleJoinCrew}
                 disabled={isJoining}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
