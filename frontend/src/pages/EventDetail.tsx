@@ -5,33 +5,26 @@ import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigat
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
-import { UserAvatar, UserAvatarWithName } from '@/components/UserAvatar'
+import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { toast } from 'sonner'
 import {
-  Calendar,
   MapPin,
   Users,
   Share2,
   ArrowLeft,
   Clock,
   Wine,
-  Music,
   StickyNote,
   Edit,
   Trash2,
   MessageCircle,
   Crown,
-  Star,
-  ChevronRight,
-  Beer,
-  Martini,
-  Coffee
+  ChevronRight
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
 
@@ -48,6 +41,7 @@ interface EventWithRsvps extends Event {
     avatar_url: string | null
     email?: string
   }
+  end_time?: string
 }
 
 export function EventDetail() {
@@ -65,15 +59,6 @@ export function EventDetail() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [participants] = useState<Array<{
-    id: string
-    status: RsvpStatus
-    user_id: string
-    profile?: {
-      display_name: string | null
-      avatar_url: string | null
-    }
-  }>>([])
   const [isJoined, setIsJoined] = useState(false)
 
   // Cleanup on unmount
@@ -440,7 +425,7 @@ export function EventDetail() {
     )
   }
 
-  const { date, time } = formatDateTime(event.date_time)
+  const { date } = formatDateTime(event.date_time)
   const goingCount = event.rsvps?.filter(rsvp => rsvp.status === 'going').length || 0
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
   const isHost = user && event.created_by === user.id

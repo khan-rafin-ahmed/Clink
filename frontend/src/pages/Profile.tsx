@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { getUserProfile, getFollowCounts } from '@/lib/userService'
@@ -73,7 +73,6 @@ const loadProfileData = async (_user: any, userId: string) => {
 export function Profile() {
   const { userId } = useParams<{ userId: string }>()
   const { user: currentUser } = useAuth()
-  const navigate = useNavigate()
   const { goBackSmart } = useSmartNavigation()
 
   // STRONGEST GUARD: Validate userId from URL params

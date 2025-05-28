@@ -1,6 +1,5 @@
 import { useAuth } from '@/lib/auth-context'
 import { useNavigate } from 'react-router-dom'
-import { useActionNavigation } from '@/hooks/useSmartNavigation'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { QuickEventModal } from '@/components/QuickEventModal'
@@ -26,7 +25,6 @@ interface EnhancedEvent extends Event {
 export function UserProfile() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
-  const { handleDeleteSuccess } = useActionNavigation()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -161,7 +159,6 @@ export function UserProfile() {
     setStatsRefresh(prev => prev + 1)
     setDeletingEvent(null)
     fetchEnhancedSessions()
-    // Note: We don't call handleDeleteSuccess here because we want to stay on the profile page
   }
 
   // Fetch enhanced sessions when user changes or refresh triggers
