@@ -8,7 +8,7 @@ import { ShareModal } from '@/components/ShareModal'
 import { UserAvatar } from '@/components/UserAvatar'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
-import { getInnerCircle, type InnerCircleMember } from '@/lib/followService'
+import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
 import { bulkInviteUsers } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check, Search } from 'lucide-react'
@@ -26,45 +26,56 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [createdEvent, setCreatedEvent] = useState<{ share_url: string; event_code: string } | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<InnerCircleMember[]>([])
-  const [isSearching, setIsSearching] = useState(false)
+  const [userCrews, setUserCrews] = useState<Crew[]>([])
+  const [selectedCrew, setSelectedCrew] = useState<string>('')
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
+  const [loadingCrews, setLoadingCrews] = useState(false)
 
-  // Search Inner Circle members
-  const searchInnerCircle = async (query: string) => {
-    if (!user || !query.trim()) {
-      setSearchResults([])
-      return
-    }
+  // Load user crews
+  const loadUserCrews = async () => {
+    if (!user) return
 
-    setIsSearching(true)
+    setLoadingCrews(true)
     try {
-      const members = await getInnerCircle()
-      const filtered = members.filter(member =>
-        member.display_name?.toLowerCase().includes(query.toLowerCase()) ||
-        member.user_id.toLowerCase().includes(query.toLowerCase())
-      )
-      setSearchResults(filtered)
+      const crews = await getUserCrews()
+      setUserCrews(crews)
     } catch (error) {
-      console.error('Error searching Inner Circle members:', error)
-      toast.error('Failed to search your stable')
+      console.error('Error loading crews:', error)
     } finally {
-      setIsSearching(false)
+      setLoadingCrews(false)
     }
   }
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim() && user) {
-        searchInnerCircle(searchQuery)
-      } else {
-        setSearchResults([])
-      }
-    }, 300) // 300ms debounce
+  // Load crew members when crew is selected
+  const loadCrewMembers = async (crewId: string) => {
+    try {
+      const members = await getCrewMembers(crewId)
+      setCrewMembers(members)
+      // Auto-select all crew members
+      setSelectedInvitees(members.map(member => member.user_id))
+    } catch (error) {
+      console.error('Error loading crew members:', error)
+      setCrewMembers([])
+      setSelectedInvitees([])
+    }
+  }
 
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, user?.id])
+  // Load crews when modal opens
+  useEffect(() => {
+    if (open && user) {
+      loadUserCrews()
+    }
+  }, [open, user?.id])
+
+  // Load crew members when crew is selected
+  useEffect(() => {
+    if (selectedCrew) {
+      loadCrewMembers(selectedCrew)
+    } else {
+      setCrewMembers([])
+      setSelectedInvitees([])
+    }
+  }, [selectedCrew])
 
 
   const [formData, setFormData] = useState({
@@ -151,7 +162,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       // Show success message and close modal
       const inviteMessage = selectedInvitees.length > 0
-        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} stable members invited!`
+        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} crew members invited!`
         : '🍺 Hell yeah! Session created! Time to raise some hell!'
       toast.success(inviteMessage)
 
@@ -220,8 +231,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     setStep(1)
     setCreatedEvent(null)
     setSelectedInvitees([])
-    setSearchQuery('')
-    setSearchResults([])
+    setSelectedCrew('')
+    setCrewMembers([])
+    setUserCrews([])
   }
 
 
@@ -445,74 +457,49 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 />
               </div>
 
-              {/* Inner Circle Invitations */}
+              {/* Crew Invitations */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-primary" />
-                  <Label className="text-sm font-medium">Invite the Stable</Label>
+                  <Label className="text-sm font-medium">Invite Your Crew</Label>
                 </div>
 
-                {/* Search Input */}
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search your stable members..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-
-                {/* Search Results */}
-                {isSearching ? (
+                {/* Crew Selection */}
+                {loadingCrews ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    <span className="text-sm text-muted-foreground">Searching your stable...</span>
+                    <span className="text-sm text-muted-foreground">Loading your crews...</span>
                   </div>
-                ) : searchQuery.trim() && searchResults.length === 0 ? (
-                  <div className="text-center py-4 space-y-2">
-                    <div className="text-sm text-muted-foreground">
-                      No stable members found for "{searchQuery}"
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Try a different search term or add more people to your stable!
-                    </div>
-                  </div>
-                ) : searchQuery.trim() && searchResults.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Found {searchResults.length} members ({selectedInvitees.length} selected)
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                      {searchResults.map(member => (
+                ) : userCrews.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCrew('')}
+                        className={`p-3 rounded-lg border text-left transition-colors ${
+                          selectedCrew === ''
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">No crew - invite individually</div>
+                        <div className="text-xs text-muted-foreground">Select specific people to invite</div>
+                      </button>
+                      {userCrews.map(crew => (
                         <button
-                          key={member.user_id}
+                          key={crew.id}
                           type="button"
-                          onClick={() => {
-                            setSelectedInvitees(prev =>
-                              prev.includes(member.user_id)
-                                ? prev.filter(id => id !== member.user_id)
-                                : [...prev, member.user_id]
-                            )
-                          }}
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
-                            selectedInvitees.includes(member.user_id)
+                          onClick={() => setSelectedCrew(crew.id)}
+                          className={`p-3 rounded-lg border text-left transition-colors ${
+                            selectedCrew === crew.id
                               ? 'border-primary bg-primary/10 text-primary'
                               : 'border-border hover:border-primary/50'
                           }`}
                         >
-                          <UserAvatar
-                            userId={member.user_id}
-                            displayName={member.display_name}
-                            avatarUrl={member.avatar_url}
-                            size="xs"
-                          />
-                          <span className="text-xs font-medium truncate">
-                            {member.display_name || 'Anonymous'}
-                          </span>
-                          {selectedInvitees.includes(member.user_id) && (
-                            <Check className="w-3 h-3 ml-auto" />
-                          )}
+                          <div className="text-sm font-medium">{crew.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {crew.member_count} member{crew.member_count !== 1 ? 's' : ''} • {crew.vibe} vibe
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -520,10 +507,47 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 ) : (
                   <div className="text-center py-4 space-y-2">
                     <div className="text-sm text-muted-foreground">
-                      Start typing to search your stable members
+                      No crews found
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {selectedInvitees.length > 0 && `${selectedInvitees.length} members selected for invitation`}
+                      Create a crew first to easily invite your regular drinking buddies!
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Crew Members */}
+                {selectedCrew && crewMembers.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-xs text-muted-foreground">
+                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will be invited:
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                      {crewMembers.map(member => (
+                        <div
+                          key={member.user_id}
+                          className="flex items-center gap-2 p-2 rounded-lg border border-primary bg-primary/10 text-primary"
+                        >
+                          <UserAvatar
+                            userId={member.user_id}
+                            displayName={member.user?.display_name}
+                            avatarUrl={member.user?.avatar_url}
+                            size="xs"
+                          />
+                          <span className="text-xs font-medium truncate">
+                            {member.user?.display_name || 'Anonymous'}
+                          </span>
+                          <Check className="w-3 h-3 ml-auto" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Summary */}
+                {selectedInvitees.length > 0 && (
+                  <div className="text-center py-2">
+                    <div className="text-xs text-muted-foreground">
+                      {selectedInvitees.length} member{selectedInvitees.length !== 1 ? 's' : ''} selected for invitation
                     </div>
                   </div>
                 )}

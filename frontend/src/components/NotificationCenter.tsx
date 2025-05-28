@@ -13,9 +13,9 @@ import {
   getUnreadNotificationCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  respondToFollowRequest,
   type Notification
 } from '@/lib/followService'
+import { respondToCrewInvitation } from '@/lib/crewService'
 import { toast } from 'sonner'
 import { Bell, Check, X, Users, Calendar } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -83,29 +83,28 @@ export function NotificationCenter() {
     }
   }
 
-  const handleFollowResponse = async (notificationId: string, followId: string, response: 'accepted' | 'rejected') => {
+  const handleCrewInvitationResponse = async (notificationId: string, crewMemberId: string, response: 'accepted' | 'declined') => {
     try {
-      await respondToFollowRequest(followId, response)
+      await respondToCrewInvitation(crewMemberId, response)
       await handleMarkAsRead(notificationId)
 
       if (response === 'accepted') {
-        toast.success('Added to your Inner Circle! 🎉')
+        toast.success('Joined the crew! 🍺')
       } else {
-        toast.success('Follow request declined')
+        toast.success('Crew invitation declined')
       }
 
       // Remove the notification from the list
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
     } catch (error) {
-      console.error('Error responding to follow request:', error)
-      toast.error('Failed to respond to request')
+      console.error('Error responding to crew invitation:', error)
+      toast.error('Failed to respond to invitation')
     }
   }
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'follow_request':
-      case 'follow_accepted':
+      case 'crew_invitation':
         return <Users className="w-4 h-4" />
       case 'event_invitation':
       case 'event_update':
@@ -138,28 +137,28 @@ export function NotificationCenter() {
               )}
             </div>
 
-            {/* Follow request actions */}
-            {notification.type === 'follow_request' && !notification.read && (
+            {/* Crew invitation actions */}
+            {notification.type === 'crew_invitation' && !notification.read && (
               <div className="flex gap-2 mt-3">
                 <Button
                   size="sm"
-                  onClick={() => handleFollowResponse(
+                  onClick={() => handleCrewInvitationResponse(
                     notification.id,
-                    notification.data.follow_id,
+                    notification.data.crew_member_id,
                     'accepted'
                   )}
                   className="h-7 px-3"
                 >
                   <Check className="w-3 h-3 mr-1" />
-                  Accept
+                  Join Crew
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleFollowResponse(
+                  onClick={() => handleCrewInvitationResponse(
                     notification.id,
-                    notification.data.follow_id,
-                    'rejected'
+                    notification.data.crew_member_id,
+                    'declined'
                   )}
                   className="h-7 px-3"
                 >
@@ -170,7 +169,7 @@ export function NotificationCenter() {
             )}
 
             {/* Mark as read button for other notifications */}
-            {notification.type !== 'follow_request' && !notification.read && (
+            {notification.type !== 'crew_invitation' && !notification.read && (
               <Button
                 size="sm"
                 variant="ghost"

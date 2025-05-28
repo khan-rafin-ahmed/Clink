@@ -7,9 +7,12 @@ import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { UserStats } from '@/components/UserStats'
 import { EventCard } from '@/components/EventCard'
+import { CreateCrewModal } from '@/components/CreateCrewModal'
+import { CrewCard } from '@/components/CrewCard'
 import { useEffect, useState } from 'react'
-import { Calendar, Plus } from 'lucide-react'
+import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
+import { getUserCrews, type Crew } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
 import type { UserProfile, Event } from '@/types'
 
@@ -33,6 +36,8 @@ export function UserProfile() {
   const [enhancedSessions, setEnhancedSessions] = useState<EnhancedEvent[]>([])
   const [pastSessions, setPastSessions] = useState<EnhancedEvent[]>([])
   const [loadingEnhanced, setLoadingEnhanced] = useState(false)
+  const [userCrews, setUserCrews] = useState<Crew[]>([])
+  const [crewsRefresh, setCrewsRefresh] = useState(0)
 
   // We're now using enhanced sessions instead of the basic hook
   // const {
@@ -52,6 +57,23 @@ export function UserProfile() {
       getUserProfile(user.id).then(setUserProfile).catch(console.error)
     }
   }, [user])
+
+  // Fetch user crews
+  const fetchUserCrews = async () => {
+    if (!user?.id) return
+    try {
+      const crews = await getUserCrews(user.id)
+      setUserCrews(crews)
+    } catch (error) {
+      console.error('Error fetching user crews:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserCrews()
+    }
+  }, [user?.id, crewsRefresh])
 
   // Fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {
@@ -137,6 +159,14 @@ export function UserProfile() {
     setStatsRefresh(prev => prev + 1)
     setSessionsRefresh(prev => prev + 1)
     fetchEnhancedSessions()
+  }
+
+  const handleCrewCreated = () => {
+    setCrewsRefresh(prev => prev + 1)
+  }
+
+  const handleCrewUpdated = () => {
+    setCrewsRefresh(prev => prev + 1)
   }
 
   const handleEdit = (event: any) => {
@@ -236,8 +266,56 @@ export function UserProfile() {
                 onEventCreated={handleEventCreated}
               />
 
-
+              <CreateCrewModal
+                trigger={
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
+                    <Users className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Create Crew</span>
+                    <span className="sm:hidden">Build Crew</span>
+                  </Button>
+                }
+                onCrewCreated={handleCrewCreated}
+              />
             </div>
+          </div>
+
+          {/* Your Crews */}
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+                Your Crews
+              </h2>
+            </div>
+
+            {userCrews.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {userCrews.map((crew) => (
+                  <CrewCard
+                    key={crew.id}
+                    crew={crew}
+                    onCrewUpdated={handleCrewUpdated}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-card rounded-xl border border-border">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Crews Yet</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
+                  Create your first crew to organize your drinking buddies and make event planning easier.
+                </p>
+                <CreateCrewModal
+                  trigger={
+                    <Button className="w-full sm:w-auto">
+                      <Users className="mr-2 h-4 w-4" />
+                      Create Your First Crew
+                    </Button>
+                  }
+                  onCrewCreated={handleCrewCreated}
+                />
+              </div>
+            )}
           </div>
 
           {/* Upcoming Sessions Preview */}
