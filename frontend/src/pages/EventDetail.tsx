@@ -134,7 +134,6 @@ export function EventDetail() {
       // If we found the event, load RSVPs separately
       if (eventData && !error) {
         try {
-          console.log('🔍 Loading RSVPs for event:', eventData.id)
           const { data: rsvpData, error: rsvpError } = await supabase
             .from('rsvps')
             .select('id, status, user_id')
@@ -142,12 +141,6 @@ export function EventDetail() {
 
           if (!rsvpError) {
             eventData.rsvps = rsvpData || []
-            console.log('✅ Loaded RSVPs:', rsvpData?.length || 0, 'RSVPs')
-            console.log('📊 RSVP breakdown:', {
-              going: rsvpData?.filter(r => r.status === 'going').length || 0,
-              maybe: rsvpData?.filter(r => r.status === 'maybe').length || 0,
-              not_going: rsvpData?.filter(r => r.status === 'not_going').length || 0
-            })
           } else {
             console.warn('Could not load RSVPs:', rsvpError)
             eventData.rsvps = []
@@ -396,13 +389,6 @@ export function EventDetail() {
   const goingCount = event.rsvps?.filter(rsvp => rsvp.status === 'going').length || 0
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
 
-  console.log('🎯 EventDetail render - RSVP counts:', {
-    totalRsvps: event.rsvps?.length || 0,
-    going: goingCount,
-    maybe: maybeCount,
-    rsvpData: event.rsvps
-  })
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -517,73 +503,122 @@ export function EventDetail() {
                 </div>
               )}
 
-              {/* Join Event Button */}
-              <div className="space-y-3">
-                <h3 className="font-medium">Will you be there?</h3>
-                <JoinEventButton
-                  eventId={event.id}
-                  initialJoined={isJoined}
-                  onJoinChange={handleJoinChange}
-                  className="w-full"
-                  size="lg"
-                />
-                {!user && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Sign in to join this event and see who's coming!
-                  </p>
-                )}
-              </div>
-
-              {/* Who's Coming */}
-              <div className="space-y-3">
-                <h3 className="font-medium">Who's Coming</h3>
-                {(['going', 'maybe'] as const).map(status => {
-                  const attendees = participants.filter(p => p.status === status)
-                  if (attendees.length === 0 && status === 'going') {
-                    return (
-                      <div key={status} className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">
-                          ✅ Going (0)
-                        </h4>
-                        <p className="text-sm text-muted-foreground italic">
-                          Be the first to join! 🎉
-                        </p>
-                      </div>
-                    )
-                  }
-                  if (attendees.length === 0) return null
-
-                  return (
-                    <div key={status} className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground capitalize">
-                        {status === 'going' ? '✅ Going' : '🤔 Maybe'} ({attendees.length})
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {attendees.map(participant => (
-                          <UserHoverCard
-                            key={participant.id}
-                            userId={participant.user_id}
-                            displayName={participant.profile?.display_name}
-                            avatarUrl={participant.profile?.avatar_url}
-                          >
-                            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full hover:bg-muted/80 transition-colors">
-                              <UserAvatar
-                                userId={participant.user_id}
-                                displayName={participant.profile?.display_name}
-                                avatarUrl={participant.profile?.avatar_url}
-                                size="xs"
-                              />
-                              <span className="text-sm">
-                                {participant.profile?.display_name || `User ${participant.user_id?.slice(-4) || 'Anonymous'}`}
-                              </span>
-                            </div>
-                          </UserHoverCard>
-                        ))}
+              {/* RSVP Status and Join Section */}
+              {goingCount === 0 ? (
+                /* Empty State - Be the first to join */
+                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 text-center border border-primary/20">
+                  <div className="space-y-4">
+                    <div className="text-4xl">🎉</div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-foreground">
+                        Be the first to raise hell!
+                      </h3>
+                      <p className="text-muted-foreground">
+                        This party is waiting for someone awesome like you to get it started
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <JoinEventButton
+                        eventId={event.id}
+                        initialJoined={isJoined}
+                        onJoinChange={handleJoinChange}
+                        className="px-8"
+                        size="lg"
+                      />
+                    </div>
+                    {!user && (
+                      <p className="text-sm text-muted-foreground">
+                        Sign in to join this epic session! 🍻
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Normal State - Show join button and counts */
+                <div className="space-y-4">
+                  <div className="bg-card rounded-lg border p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-lg">Join the Party</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>{goingCount} going, {maybeCount} maybe</span>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                    <JoinEventButton
+                      eventId={event.id}
+                      initialJoined={isJoined}
+                      onJoinChange={handleJoinChange}
+                      className="w-full"
+                      size="lg"
+                    />
+                    {!user && (
+                      <p className="text-sm text-muted-foreground text-center mt-3">
+                        Sign in to join this event and see who's coming!
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Who's Coming Section */}
+              {goingCount > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Who's Coming</h3>
+
+                  {/* RSVP Stats Cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">{goingCount}</div>
+                      <div className="text-sm text-green-600/80">✅ Going</div>
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-600">{maybeCount}</div>
+                      <div className="text-sm text-yellow-600/80">🤔 Maybe</div>
+                    </div>
+                  </div>
+
+                  {/* Attendees List */}
+                  {(['going', 'maybe'] as const).map(status => {
+                    const attendees = participants.filter(p => p.status === status)
+                    if (attendees.length === 0) return null
+
+                    return (
+                      <div key={status} className="space-y-3">
+                        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                          {status === 'going' ? '✅ Confirmed' : '🤔 Maybe Coming'} ({attendees.length})
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {attendees.map(participant => (
+                            <UserHoverCard
+                              key={participant.id}
+                              userId={participant.user_id}
+                              displayName={participant.profile?.display_name}
+                              avatarUrl={participant.profile?.avatar_url}
+                            >
+                              <div className="flex items-center gap-3 bg-muted/50 hover:bg-muted/70 p-3 rounded-lg transition-colors cursor-pointer">
+                                <UserAvatar
+                                  userId={participant.user_id}
+                                  displayName={participant.profile?.display_name}
+                                  avatarUrl={participant.profile?.avatar_url}
+                                  size="sm"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {participant.profile?.display_name || `User ${participant.user_id?.slice(-4) || 'Anonymous'}`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {status === 'going' ? 'Confirmed' : 'Maybe'}
+                                  </p>
+                                </div>
+                              </div>
+                            </UserHoverCard>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

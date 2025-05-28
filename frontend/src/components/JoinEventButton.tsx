@@ -137,7 +137,11 @@ export function JoinEventButton({
       disabled={isLoading}
       variant={isJoined ? 'secondary' : variant}
       size={size}
-      className={`${className} ${isJoined ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/10' : ''}`}
+      className={`${className} ${
+        isJoined
+          ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hover:text-green-700'
+          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+      } transition-all duration-200`}
     >
       {isLoading ? (
         <>
@@ -147,10 +151,13 @@ export function JoinEventButton({
       ) : isJoined ? (
         <>
           <Check className="w-4 h-4 mr-2" />
-          Joined
+          <span className="font-semibold">Joined! 🍻</span>
         </>
       ) : (
-        'Join the Party'
+        <>
+          <span className="font-semibold">Join the Party</span>
+          <span className="ml-2">🎉</span>
+        </>
       )}
     </Button>
   )
