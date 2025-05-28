@@ -10,7 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Edit } from 'lucide-react'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { User, LogOut, Settings, Edit, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
 import { NotificationCenter } from './NotificationCenter'
@@ -19,6 +26,7 @@ import type { UserProfile } from '@/types'
 export function Navbar() {
   const { user, signOut } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -136,13 +144,129 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </Button>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle className="text-left">
+                    <img
+                      src="/thirstee-logo.svg"
+                      alt="Thirstee"
+                      className="h-8 w-auto"
+                    />
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="flex flex-col space-y-4 mt-8">
+                  {/* Navigation Links */}
+                  <Link
+                    to="/discover"
+                    className="text-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Discover
+                  </Link>
+
+                  {user ? (
+                    <>
+                      {/* Notifications */}
+                      <div className="flex justify-center py-2">
+                        <NotificationCenter />
+                      </div>
+
+                      {/* User Section */}
+                      <div className="border-t border-border pt-4 mt-4">
+                        <div className="flex items-center space-x-3 mb-4 p-3 bg-muted/50 rounded-lg">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={userProfile?.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {avatarFallback}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground">{displayName}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
+                        </div>
+
+                        {/* User Menu Items */}
+                        <div className="space-y-2">
+                          <Link
+                            to="/profile"
+                            className="flex items-center space-x-3 text-foreground hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-muted"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <User className="w-4 h-4" />
+                            <span>My Profile</span>
+                          </Link>
+
+                          <Link
+                            to="/profile/edit"
+                            className="flex items-center space-x-3 text-foreground hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-muted"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span>Edit Profile</span>
+                          </Link>
+
+                          <button
+                            disabled
+                            className="flex items-center space-x-3 text-muted-foreground py-2 px-3 rounded-lg w-full text-left opacity-50"
+                          >
+                            <Settings className="w-4 h-4" />
+                            <span>Settings</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              signOut()
+                              setIsMobileMenuOpen(false)
+                            }}
+                            className="flex items-center space-x-3 text-destructive hover:text-destructive/80 transition-colors py-2 px-3 rounded-lg hover:bg-destructive/10 w-full text-left"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign out</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Auth Buttons */}
+                      <div className="border-t border-border pt-4 mt-4 space-y-3">
+                        <Link
+                          to="/login"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-muted-foreground hover:text-foreground"
+                          >
+                            Log in
+                          </Button>
+                        </Link>
+                        <Link
+                          to="/login"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <Button
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                          >
+                            Sign up
+                          </Button>
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

@@ -255,7 +255,7 @@ export function EventDetail() {
 
   const handleJoinChange = (joined: boolean) => {
     setIsJoined(joined)
-    // Reload the event data to get updated RSVP counts
+    // Reload the event data to get updated RSVP counts and participant profiles
     loadEvent()
   }
 
@@ -431,6 +431,41 @@ export function EventDetail() {
   const isHost = user && event.created_by === user.id
   const attendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
 
+  // Load participant profiles
+  const [participantProfiles, setParticipantProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({})
+
+  useEffect(() => {
+    const loadParticipantProfiles = async () => {
+      if (!event.rsvps || event.rsvps.length === 0) return
+
+      const userIds = event.rsvps.map(rsvp => rsvp.user_id).filter(Boolean)
+      if (userIds.length === 0) return
+
+      try {
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds)
+
+        if (!error && profiles) {
+          const profileMap = profiles.reduce((acc, profile) => {
+            acc[profile.user_id] = {
+              display_name: profile.display_name,
+              avatar_url: profile.avatar_url
+            }
+            return acc
+          }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
+
+          setParticipantProfiles(profileMap)
+        }
+      } catch (error) {
+        console.warn('Error loading participant profiles:', error)
+      }
+    }
+
+    loadParticipantProfiles()
+  }, [event.rsvps])
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -508,18 +543,10 @@ export function EventDetail() {
             </div>
             {/* Host Information Section */}
             <div className="p-6 border-b border-border/50">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-primary" />
-                  Your Host
-                </h2>
-                {!isHost && (
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Message
-                  </Button>
-                )}
-              </div>
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
+                <Crown className="w-5 h-5 text-primary" />
+                Your Host
+              </h2>
 
               <div className="flex items-center gap-4 p-4 bg-muted/20 rounded-lg">
                 <UserAvatar
@@ -544,9 +571,6 @@ export function EventDetail() {
                     {isHost ? "You're the host of this epic session!" : "Ready to raise some hell with you!"}
                   </p>
                 </div>
-                {!isHost && (
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                )}
               </div>
             </div>
 
@@ -603,39 +627,58 @@ export function EventDetail() {
 
               {goingCount === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-3">🎉</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Be the first to raise hell!
-                  </h3>
-                  <p className="text-muted-foreground">
-                    This party is waiting for someone awesome to get it started
-                  </p>
+                  {!isHost ? (
+                    <>
+                      <div className="text-4xl mb-3">🎉</div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Be the first to raise hell!
+                      </h3>
+                      <p className="text-muted-foreground">
+                        This party is waiting for someone awesome to get it started
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-4xl mb-3">👥</div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        No one has joined yet
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Share your event to invite people to the party!
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
                   {/* Horizontal scrollable attendees */}
                   <div className="flex gap-3 overflow-x-auto pb-2">
-                    {attendees.slice(0, 8).map((rsvp, index) => (
-                      <div key={rsvp.user_id || index} className="flex-shrink-0">
-                        <UserHoverCard
-                          userId={rsvp.user_id}
-                          displayName={`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
-                          avatarUrl={null}
-                        >
-                          <div className="flex flex-col items-center gap-2 p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px]">
-                            <UserAvatar
-                              userId={rsvp.user_id}
-                              displayName={`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
-                              avatarUrl={null}
-                              size="md"
-                            />
-                            <p className="text-xs font-medium text-center text-foreground truncate w-full">
-                              {`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
-                            </p>
-                          </div>
-                        </UserHoverCard>
-                      </div>
-                    ))}
+                    {attendees.slice(0, 8).map((rsvp, index) => {
+                      const profile = participantProfiles[rsvp.user_id] || {}
+                      const displayName = profile.display_name || `User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`
+
+                      return (
+                        <div key={rsvp.user_id || index} className="flex-shrink-0">
+                          <UserHoverCard
+                            userId={rsvp.user_id}
+                            displayName={displayName}
+                            avatarUrl={profile.avatar_url}
+                          >
+                            <div className="flex flex-col items-center gap-2 p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px]">
+                              <UserAvatar
+                                userId={rsvp.user_id}
+                                displayName={displayName}
+                                avatarUrl={profile.avatar_url}
+                                size="md"
+                              />
+                              <p className="text-xs font-medium text-center text-foreground truncate w-full">
+                                {displayName}
+                              </p>
+                            </div>
+                          </UserHoverCard>
+                        </div>
+                      )
+                    })}
                     {attendees.length > 8 && (
                       <div className="flex-shrink-0 flex items-center justify-center p-3 bg-muted/20 rounded-lg min-w-[80px]">
                         <div className="text-center">
