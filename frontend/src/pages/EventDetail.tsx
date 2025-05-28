@@ -134,6 +134,7 @@ export function EventDetail() {
       // If we found the event, load RSVPs separately
       if (eventData && !error) {
         try {
+          console.log('🔍 Loading RSVPs for event:', eventData.id)
           const { data: rsvpData, error: rsvpError } = await supabase
             .from('rsvps')
             .select('id, status, user_id')
@@ -141,6 +142,12 @@ export function EventDetail() {
 
           if (!rsvpError) {
             eventData.rsvps = rsvpData || []
+            console.log('✅ Loaded RSVPs:', rsvpData?.length || 0, 'RSVPs')
+            console.log('📊 RSVP breakdown:', {
+              going: rsvpData?.filter(r => r.status === 'going').length || 0,
+              maybe: rsvpData?.filter(r => r.status === 'maybe').length || 0,
+              not_going: rsvpData?.filter(r => r.status === 'not_going').length || 0
+            })
           } else {
             console.warn('Could not load RSVPs:', rsvpError)
             eventData.rsvps = []
@@ -260,10 +267,8 @@ export function EventDetail() {
 
   const handleJoinChange = (joined: boolean) => {
     setIsJoined(joined)
-    // Reload participants only, not the entire event
-    // if (event) {
-    //   loadParticipants(event.rsvps || [])
-    // }
+    // Reload the event data to get updated RSVP counts
+    loadEvent()
   }
 
 
@@ -390,6 +395,13 @@ export function EventDetail() {
   const { date, time } = formatDateTime(event.date_time)
   const goingCount = event.rsvps?.filter(rsvp => rsvp.status === 'going').length || 0
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
+
+  console.log('🎯 EventDetail render - RSVP counts:', {
+    totalRsvps: event.rsvps?.length || 0,
+    going: goingCount,
+    maybe: maybeCount,
+    rsvpData: event.rsvps
+  })
 
   return (
     <div className="min-h-screen bg-background">

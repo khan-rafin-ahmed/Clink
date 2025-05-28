@@ -169,9 +169,15 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           <div className="flex items-center gap-1 text-sm">
             <Users className="w-4 h-4" />
             {(event.rsvp_count || 0) === 0 ? (
-              <span className="text-primary font-medium animate-pulse">
-                Be the first to raise hell! ✨
-              </span>
+              isHost ? (
+                <span className="text-muted-foreground">
+                  No one has joined yet
+                </span>
+              ) : (
+                <span className="text-primary font-medium animate-pulse">
+                  Be the first to raise hell! ✨
+                </span>
+              )
             ) : (
               <span className="text-muted-foreground">
                 {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
@@ -209,55 +215,56 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
         </UserHoverCard>
 
         {/* Action Buttons */}
-        <div className="space-y-2">
-          <div className="flex flex-col sm:flex-row gap-2">
-            {/* Host Actions */}
-            {showHostActions && isHost && (
-              <>
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(event)}
-                    className="flex-1"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(event)}
-                    className="flex-1 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                )}
-              </>
-            )}
+        <div className="space-y-3">
+          {/* Host Actions Row */}
+          {showHostActions && isHost && (onEdit || onDelete) && (
+            <div className="flex gap-2">
+              {onEdit && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onEdit(event)}
+                  className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onDelete(event)}
+                  className="flex-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/20 hover:border-destructive/30"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          )}
 
+          {/* Main Actions Row */}
+          <div className="flex gap-2">
             {/* View Details Button */}
             <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
                 <span className="hidden sm:inline">View Details</span>
                 <span className="sm:hidden">Details</span>
               </Button>
             </Link>
-          </div>
 
-          {/* Share Button */}
-          <Button
-            onClick={() => setIsShareModalOpen(true)}
-            variant="ghost"
-            size="sm"
-            className="w-full text-muted-foreground hover:text-primary"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Share Session
-          </Button>
+            {/* Share Button */}
+            <Button
+              onClick={() => setIsShareModalOpen(true)}
+              variant="ghost"
+              size="sm"
+              className="px-3 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="sr-only">Share</span>
+            </Button>
+          </div>
         </div>
       </CardContent>
 
