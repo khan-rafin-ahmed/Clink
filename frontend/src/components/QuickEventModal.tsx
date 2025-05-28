@@ -127,8 +127,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         eventDateTime = new Date(formData.custom_time)
       }
 
-      console.log('Creating event:', formData)
-
       // Create event using the enhanced service
       const eventData = {
         title: formData.title,
@@ -140,20 +138,14 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         is_public: formData.is_public
       }
 
-      console.log('Creating event with data:', eventData)
-
       const result = await createEventWithShareableLink(eventData)
-
-      console.log('✅ Event created successfully:', result)
 
       // Invite selected Inner Circle members if any
       if (selectedInvitees.length > 0 && result.event?.id) {
         try {
           await bulkInviteUsers(result.event.id, selectedInvitees)
-          console.log('✅ Inner Circle members invited successfully')
         } catch (error) {
-          console.error('Error inviting Inner Circle members:', error)
-          // Don't fail the whole process, just log the error
+          // Don't fail the whole process, just continue
         }
       }
 

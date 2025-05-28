@@ -24,8 +24,6 @@ export async function addFavoriteDrinkColumn() {
     })
 
     if (error) {
-      console.error('❌ Failed to add column via RPC:', error)
-
       // If RPC fails, provide instructions for manual addition
       return {
         success: false,
@@ -40,11 +38,9 @@ export async function addFavoriteDrinkColumn() {
       }
     }
 
-    console.log('✅ favorite_drink column added successfully!')
     return { success: true, message: 'Column added successfully' }
 
   } catch (error: any) {
-    console.error('❌ Error adding favorite_drink column:', error)
     return {
       success: false,
       message: `Error: ${error.message}`,

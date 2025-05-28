@@ -108,6 +108,57 @@ export async function createUserProfile(userId: string, profile: Partial<UserPro
   return data
 }
 
+// Ensure user profile exists (create if missing)
+export async function ensureUserProfileExists(user: any) {
+  try {
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (existingProfile) {
+      return existingProfile
+    }
+
+    // Profile doesn't exist, create it
+    const displayName = user.user_metadata?.full_name ||
+                       user.user_metadata?.name ||
+                       user.raw_user_meta_data?.full_name ||
+                       user.raw_user_meta_data?.name ||
+                       user.email?.split('@')[0] ||
+                       'User'
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert({
+        user_id: user.id,
+        display_name: displayName
+      })
+      .select()
+      .single()
+
+    if (error && error.code !== '23505') { // Ignore unique constraint violations
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    // If it's a unique constraint violation, the profile was created by another process
+    if ((error as any)?.code === '23505') {
+      // Try to fetch the existing profile
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+      return data
+    }
+    throw error
+  }
+}
+
 // Follow Functions
 export async function followUser(followingId: string) {
   const { data: { user } } = await supabase.auth.getUser()

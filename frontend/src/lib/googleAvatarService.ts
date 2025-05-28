@@ -71,6 +71,9 @@ export async function getCurrentUserGoogleAvatar(): Promise<string | null> {
  */
 export async function updateProfileWithGoogleAvatar(userId: string): Promise<void> {
   try {
+    // Add a small delay to ensure user session is stable
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     // First check if user already has a custom avatar
     const { data: profile } = await supabase
       .from('user_profiles')
@@ -83,8 +86,8 @@ export async function updateProfileWithGoogleAvatar(userId: string): Promise<voi
       return
     }
 
-    // Get Google avatar
-    const googleAvatarUrl = await getGoogleAvatarUrl(userId)
+    // Get Google avatar using the current user method (more reliable for new users)
+    const googleAvatarUrl = await getCurrentUserGoogleAvatar()
 
     if (googleAvatarUrl) {
       // Update profile with Google avatar
@@ -94,7 +97,7 @@ export async function updateProfileWithGoogleAvatar(userId: string): Promise<voi
         .eq('user_id', userId)
     }
   } catch (error) {
-    console.warn('Failed to update profile with Google avatar:', error)
+    // Silently fail to avoid disrupting user experience
   }
 }
 

@@ -6,20 +6,12 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { UserProfile } from './pages/UserProfile'
 import { EditProfile } from './pages/EditProfile'
-import { ProfileTest } from './pages/ProfileTest'
-
 import { Events } from './pages/Events'
 import { Discover } from './pages/Discover'
 import { Profile } from './pages/Profile'
 import { EventDetails } from './pages/EventDetails'
 import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
-
-import { TestAuth } from './pages/TestAuth'
-import { OAuthTest } from './pages/OAuthTest'
-import { ConfigChecker } from './pages/ConfigChecker'
-import { DatabaseChecker } from './pages/DatabaseChecker'
-import { ShareTest } from './pages/ShareTest'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -51,12 +43,6 @@ function App() {
               <Route path="/events/:eventId" element={<EventDetails />} />
               <Route path="/event/:eventCode" element={<EventDetail />} />
               <Route path="/profile/:userId" element={<Profile />} />
-              <Route path="/test-auth" element={<TestAuth />} />
-              <Route path="/oauth-test" element={<OAuthTest />} />
-              <Route path="/config-check" element={<ConfigChecker />} />
-              <Route path="/db-check" element={<DatabaseChecker />} />
-              <Route path="/profile-test" element={<ProfileTest />} />
-              <Route path="/share-test" element={<ShareTest />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">

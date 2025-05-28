@@ -78,15 +78,12 @@ export async function runPrivacyMigration() {
     for (const migration of migrations) {
       const { error } = await supabase.rpc('exec_sql', { sql: migration })
       if (error) {
-        console.error('Migration error:', error)
         throw error
       }
     }
 
-    console.log('✅ Migration completed successfully!')
     return true
   } catch (error) {
-    console.error('❌ Migration failed:', error)
     return false
   }
 }
@@ -112,10 +109,8 @@ export async function createCurrentUserProfile() {
       throw error
     }
 
-    console.log('✅ User profile created:', data)
     return data
   } catch (error) {
-    console.error('Error creating user profile:', error)
     throw error
   }
 }

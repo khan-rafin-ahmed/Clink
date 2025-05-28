@@ -18,7 +18,6 @@ export function AuthRedirect({ children, redirectTo = '/profile' }: AuthRedirect
   useEffect(() => {
     // Only redirect after auth is fully initialized and we have a user
     if (isInitialized && !loading && user) {
-      console.log('🔄 Redirecting authenticated user to:', redirectTo)
       navigate(redirectTo, { replace: true })
     }
   }, [user, loading, isInitialized, navigate, redirectTo])

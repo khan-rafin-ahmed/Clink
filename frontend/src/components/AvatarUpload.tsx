@@ -51,14 +51,9 @@ export function AvatarUpload({
   const handleUpload = async () => {
     if (!selectedFile) return
 
-    console.log('[AvatarUpload] Starting upload for user:', userId)
     setUploading(true)
     try {
-      console.log('[AvatarUpload] Calling uploadAvatar...')
       const result = await uploadAvatar(selectedFile, userId)
-      console.log('[AvatarUpload] Upload result:', result)
-
-      console.log('[AvatarUpload] Calling onAvatarChange with URL:', result.url)
       onAvatarChange(result.url)
 
       // Clean up
@@ -70,7 +65,6 @@ export function AvatarUpload({
 
       toast.success('Avatar updated successfully! 🎉')
     } catch (error: any) {
-      console.error('[AvatarUpload] Avatar upload error:', error)
       toast.error(`Failed to upload avatar: ${error.message}`)
     } finally {
       setUploading(false)
