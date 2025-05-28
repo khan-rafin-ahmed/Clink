@@ -88,6 +88,43 @@ export function EventDetail() {
     }
   }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
 
+  // Load participant profiles - MOVED HERE to ensure consistent hook order
+  useEffect(() => {
+    const loadParticipantProfiles = async () => {
+      if (!mountedRef.current || !event?.rsvps || event.rsvps.length === 0) return
+
+      const userIds = event.rsvps.map(rsvp => rsvp.user_id).filter(Boolean)
+      if (userIds.length === 0) return
+
+      try {
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds)
+
+        if (!mountedRef.current) return // Check again after async operation
+
+        if (!error && profiles) {
+          const profileMap = profiles.reduce((acc, profile) => {
+            acc[profile.user_id] = {
+              display_name: profile.display_name,
+              avatar_url: profile.avatar_url
+            }
+            return acc
+          }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
+
+          setParticipantProfiles(profileMap)
+        }
+      } catch (error) {
+        if (mountedRef.current) {
+          console.warn('Error loading participant profiles:', error)
+        }
+      }
+    }
+
+    loadParticipantProfiles()
+  }, [event?.rsvps])
+
   const handleEventUpdated = useCallback(() => {
     loadEvent()
   }, [])
@@ -440,41 +477,7 @@ export function EventDetail() {
   const isHost = user && event.created_by === user.id
   const attendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
 
-  useEffect(() => {
-    const loadParticipantProfiles = async () => {
-      if (!mountedRef.current || !event?.rsvps || event.rsvps.length === 0) return
 
-      const userIds = event.rsvps.map(rsvp => rsvp.user_id).filter(Boolean)
-      if (userIds.length === 0) return
-
-      try {
-        const { data: profiles, error } = await supabase
-          .from('user_profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', userIds)
-
-        if (!mountedRef.current) return // Check again after async operation
-
-        if (!error && profiles) {
-          const profileMap = profiles.reduce((acc, profile) => {
-            acc[profile.user_id] = {
-              display_name: profile.display_name,
-              avatar_url: profile.avatar_url
-            }
-            return acc
-          }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
-
-          setParticipantProfiles(profileMap)
-        }
-      } catch (error) {
-        if (mountedRef.current) {
-          console.warn('Error loading participant profiles:', error)
-        }
-      }
-    }
-
-    loadParticipantProfiles()
-  }, [event?.rsvps])
 
   return (
     <div className="min-h-screen bg-background">
