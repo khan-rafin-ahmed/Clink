@@ -24,7 +24,14 @@ import {
   Music,
   StickyNote,
   Edit,
-  Trash2
+  Trash2,
+  MessageCircle,
+  Crown,
+  Star,
+  ChevronRight,
+  Beer,
+  Martini,
+  Coffee
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
 
@@ -311,6 +318,51 @@ export function EventDetail() {
     return vibeEmojis[vibe || ''] || '✨'
   }
 
+  const getTimingEmoji = (dateTime: string) => {
+    const eventDate = new Date(dateTime)
+    const now = new Date()
+    const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+    if (diffHours <= 1) return '🔥' // Right now/very soon
+    if (diffHours <= 6) return '⚡' // Today
+    if (diffHours <= 24) return '🎉' // Tonight
+    if (diffHours <= 48) return '🌟' // Tomorrow
+    return '📅' // Future
+  }
+
+  const getTimingLabel = (dateTime: string) => {
+    const eventDate = new Date(dateTime)
+    const now = new Date()
+    const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+    if (diffHours <= 1) return 'Right Now'
+    if (diffHours <= 6) return 'Today'
+    if (diffHours <= 24) return 'Tonight'
+    if (diffHours <= 48) return 'Tomorrow'
+    return 'Upcoming'
+  }
+
+  const formatEventTiming = (dateTime: string, endTime?: string) => {
+    const startDate = new Date(dateTime)
+    const startTime = startDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+
+    if (endTime) {
+      const endDate = new Date(endTime)
+      const endTimeFormatted = endDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+      return `${startTime} - ${endTimeFormatted}`
+    }
+
+    return `${startTime} - All Night`
+  }
+
   // Show auth error
   if (authError) {
     return (
@@ -391,239 +443,265 @@ export function EventDetail() {
   const { date, time } = formatDateTime(event.date_time)
   const goingCount = event.rsvps?.filter(rsvp => rsvp.status === 'going').length || 0
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
+  const isHost = user && event.created_by === user.id
+  const attendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
-          {/* Header */}
+          {/* Header Section */}
           <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={goBackSmart}>
+            <Button variant="outline" onClick={goBackSmart} className="hover:bg-primary/10">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             <div className="flex items-center gap-2">
               {/* Host Actions */}
-              {user && event.created_by === user.id && (
+              {isHost && (
                 <>
-                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="hover:bg-primary/10">
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:bg-destructive/10">
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </Button>
                 </>
               )}
-              <Button variant="outline" onClick={() => setIsShareModalOpen(true)}>
+              <Button variant="outline" onClick={() => setIsShareModalOpen(true)} className="hover:bg-primary/10">
                 <Share2 className="w-4 h-4 mr-2" />
-                Share Event
+                Share
               </Button>
             </div>
           </div>
 
-          {/* Event Card */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-3xl font-display font-bold text-foreground">
-                    {getDrinkEmoji(event.drink_type)} {event.title}
-                  </CardTitle>
-                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{date}</span>
+          {/* Main Event Card */}
+          <div className="bg-gradient-to-br from-card via-card to-card/80 border border-border rounded-xl overflow-hidden">
+            {/* Event Header */}
+            <div className="p-6 border-b border-border/50">
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{getDrinkEmoji(event.drink_type)}</span>
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+                        {event.title}
+                      </h1>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-lg">{getTimingEmoji(event.date_time)}</span>
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                          {getTimingLabel(event.date_time)}
+                        </Badge>
+                        <Badge variant={event.is_public ? 'default' : 'secondary'} className="ml-2">
+                          {event.is_public ? 'Public' : 'Private'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{time}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
                   </div>
                 </div>
-                <Badge variant={event.is_public ? 'default' : 'secondary'}>
-                  {event.is_public ? 'Public' : 'Private'}
-                </Badge>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Event Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {event.drink_type && (
+
+              {/* Event Timing & Location */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-foreground">{formatEventTiming(event.date_time, event.end_time)}</p>
+                    <p className="text-sm text-muted-foreground">{date}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-foreground">{event.location}</p>
+                    <p className="text-sm text-muted-foreground">Tap to navigate</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Host Information Section */}
+            <div className="p-6 border-b border-border/50">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-primary" />
+                  Your Host
+                </h2>
+                {!isHost && (
+                  <Button variant="outline" size="sm" className="hover:bg-primary/10">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-muted/20 rounded-lg">
+                <UserAvatar
+                  userId={event.created_by}
+                  displayName={event.host?.display_name}
+                  avatarUrl={event.host?.avatar_url}
+                  size="lg"
+                />
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground">
+                      {event.host?.display_name || 'Anonymous Host'}
+                    </h3>
+                    {isHost && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                        <Crown className="w-3 h-3 mr-1" />
+                        You're hosting!
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isHost ? "You're the host of this epic session!" : "Ready to raise some hell with you!"}
+                  </p>
+                </div>
+                {!isHost && (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Event Details Section */}
+            <div className="p-6 border-b border-border/50">
+              <h2 className="text-lg font-semibold text-foreground mb-4">Event Details</h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                {event.drink_type && (
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
                     <Wine className="w-5 h-5 text-primary" />
-                    <span className="capitalize">{event.drink_type}</span>
+                    <div>
+                      <p className="font-medium text-foreground capitalize">{event.drink_type}</p>
+                      <p className="text-sm text-muted-foreground">Drink of choice</p>
+                    </div>
                   </div>
                 )}
                 {event.vibe && (
-                  <div className="flex items-center gap-2">
-                    <Music className="w-5 h-5 text-primary" />
-                    <span className="capitalize">{event.vibe} vibe {getVibeEmoji(event.vibe)}</span>
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                    <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
+                    <div>
+                      <p className="font-medium text-foreground capitalize">{event.vibe} Vibe</p>
+                      <p className="text-sm text-muted-foreground">Party atmosphere</p>
+                    </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <span>{goingCount} going, {maybeCount} maybe</span>
-                </div>
               </div>
 
               {/* Notes */}
               {event.notes && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <StickyNote className="w-5 h-5 text-primary" />
-                    <span className="font-medium">Notes</span>
+                <div className="p-4 bg-muted/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <StickyNote className="w-4 h-4 text-primary" />
+                    <span className="font-medium text-foreground">Host Notes</span>
                   </div>
-                  <p className="text-muted-foreground bg-muted p-3 rounded-lg">
-                    {event.notes}
+                  <p className="text-muted-foreground">{event.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Attendees Section */}
+            <div className="p-6 border-b border-border/50">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Who's Coming ({goingCount})
+                </h2>
+                {maybeCount > 0 && (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    {maybeCount} maybe
+                  </Badge>
+                )}
+              </div>
+
+              {goingCount === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">🎉</div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Be the first to raise hell!
+                  </h3>
+                  <p className="text-muted-foreground">
+                    This party is waiting for someone awesome to get it started
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Horizontal scrollable attendees */}
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {attendees.slice(0, 8).map((rsvp, index) => (
+                      <div key={rsvp.user_id || index} className="flex-shrink-0">
+                        <UserHoverCard
+                          userId={rsvp.user_id}
+                          displayName={`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
+                          avatarUrl={null}
+                        >
+                          <div className="flex flex-col items-center gap-2 p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px]">
+                            <UserAvatar
+                              userId={rsvp.user_id}
+                              displayName={`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
+                              avatarUrl={null}
+                              size="md"
+                            />
+                            <p className="text-xs font-medium text-center text-foreground truncate w-full">
+                              {`User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`}
+                            </p>
+                          </div>
+                        </UserHoverCard>
+                      </div>
+                    ))}
+                    {attendees.length > 8 && (
+                      <div className="flex-shrink-0 flex items-center justify-center p-3 bg-muted/20 rounded-lg min-w-[80px]">
+                        <div className="text-center">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                            <span className="text-sm font-semibold text-primary">+{attendees.length - 8}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">more</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Section */}
+            <div className="p-6">
+              {!isHost ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">Ready to join the party?</h3>
+                      <p className="text-sm text-muted-foreground">Let the host know you're coming!</p>
+                    </div>
+                  </div>
+                  <JoinEventButton
+                    eventId={event.id}
+                    initialJoined={isJoined}
+                    onJoinChange={handleJoinChange}
+                    className="w-full"
+                    size="lg"
+                  />
+                  {!user && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Sign in to join this epic session! 🍻
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Crown className="w-5 h-5 text-primary" />
+                    <span className="font-semibold text-foreground">You're hosting this session!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Share the event link to invite more people to the party
                   </p>
                 </div>
               )}
-
-              {/* Host Information */}
-              {event.host && (
-                <div className="space-y-3">
-                  <h3 className="font-medium">Host</h3>
-                  <UserHoverCard
-                    userId={event.host.id}
-                    displayName={event.host.display_name}
-                    avatarUrl={event.host.avatar_url}
-                    isHost={true}
-                  >
-                    <UserAvatarWithName
-                      userId={event.host.id}
-                      displayName={event.host.display_name}
-                      avatarUrl={event.host.avatar_url}
-                      email={event.host.email}
-                      size="md"
-                    />
-                  </UserHoverCard>
-                </div>
-              )}
-
-              {/* RSVP Status and Join Section */}
-              {goingCount === 0 ? (
-                /* Empty State - Be the first to join */
-                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 text-center border border-primary/20">
-                  <div className="space-y-4">
-                    <div className="text-4xl">🎉</div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-foreground">
-                        Be the first to raise hell!
-                      </h3>
-                      <p className="text-muted-foreground">
-                        This party is waiting for someone awesome like you to get it started
-                      </p>
-                    </div>
-                    <div className="pt-2">
-                      <JoinEventButton
-                        eventId={event.id}
-                        initialJoined={isJoined}
-                        onJoinChange={handleJoinChange}
-                        className="px-8"
-                        size="lg"
-                      />
-                    </div>
-                    {!user && (
-                      <p className="text-sm text-muted-foreground">
-                        Sign in to join this epic session! 🍻
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                /* Normal State - Show join button and counts */
-                <div className="space-y-4">
-                  <div className="bg-card rounded-lg border p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-semibold text-lg">Join the Party</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span>{goingCount} going, {maybeCount} maybe</span>
-                      </div>
-                    </div>
-                    <JoinEventButton
-                      eventId={event.id}
-                      initialJoined={isJoined}
-                      onJoinChange={handleJoinChange}
-                      className="w-full"
-                      size="lg"
-                    />
-                    {!user && (
-                      <p className="text-sm text-muted-foreground text-center mt-3">
-                        Sign in to join this event and see who's coming!
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Who's Coming Section */}
-              {goingCount > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">Who's Coming</h3>
-
-                  {/* RSVP Stats Cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-green-600">{goingCount}</div>
-                      <div className="text-sm text-green-600/80">✅ Going</div>
-                    </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-yellow-600">{maybeCount}</div>
-                      <div className="text-sm text-yellow-600/80">🤔 Maybe</div>
-                    </div>
-                  </div>
-
-                  {/* Attendees List */}
-                  {(['going', 'maybe'] as const).map(status => {
-                    const attendees = participants.filter(p => p.status === status)
-                    if (attendees.length === 0) return null
-
-                    return (
-                      <div key={status} className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                          {status === 'going' ? '✅ Confirmed' : '🤔 Maybe Coming'} ({attendees.length})
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {attendees.map(participant => (
-                            <UserHoverCard
-                              key={participant.id}
-                              userId={participant.user_id}
-                              displayName={participant.profile?.display_name}
-                              avatarUrl={participant.profile?.avatar_url}
-                            >
-                              <div className="flex items-center gap-3 bg-muted/50 hover:bg-muted/70 p-3 rounded-lg transition-colors cursor-pointer">
-                                <UserAvatar
-                                  userId={participant.user_id}
-                                  displayName={participant.profile?.display_name}
-                                  avatarUrl={participant.profile?.avatar_url}
-                                  size="sm"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">
-                                    {participant.profile?.display_name || `User ${participant.user_id?.slice(-4) || 'Anonymous'}`}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {status === 'going' ? 'Confirmed' : 'Maybe'}
-                                  </p>
-                                </div>
-                              </div>
-                            </UserHoverCard>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 
