@@ -400,6 +400,41 @@ export async function getUserAccessibleEvents() {
   }
 }
 
+// Respond to event invitation (accept/decline)
+export async function respondToEventInvitation(eventMemberId: string, response: 'accepted' | 'declined') {
+  console.log('🔄 respondToEventInvitation: Responding to invitation:', eventMemberId, response)
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      throw new Error('User authentication required')
+    }
+
+    const { data, error } = await supabase
+      .from('event_members')
+      .update({
+        status: response,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', eventMemberId)
+      .eq('user_id', user.id) // Ensure user can only update their own invitations
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ respondToEventInvitation: Error:', error)
+      throw error
+    }
+
+    console.log('✅ respondToEventInvitation: Response recorded:', data)
+    return data
+  } catch (error) {
+    console.error('💥 respondToEventInvitation: Unexpected error:', error)
+    throw error
+  }
+}
+
 export async function updateEvent(id: string, event: Partial<Event>) {
   const { data, error } = await supabase
     .from('events')

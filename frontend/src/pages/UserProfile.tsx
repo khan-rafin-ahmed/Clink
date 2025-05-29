@@ -95,8 +95,9 @@ export function UserProfile() {
       }
 
       // Fetch upcoming and past sessions in parallel
-      const [upcomingResult, pastResult] = await Promise.all([
-        // Upcoming sessions
+      // Now includes events you created, RSVP'd to, and were invited to
+      const [upcomingHostedResult, upcomingRSVPResult, upcomingInvitedResult, pastHostedResult, pastAttendingResult] = await Promise.all([
+        // Upcoming sessions you're hosting
         supabase
           .from('events')
           .select(`
@@ -116,7 +117,61 @@ export function UserProfile() {
           .gte('date_time', new Date().toISOString())
           .order('date_time', { ascending: true }),
 
-        // Past sessions
+        // Upcoming sessions you're attending via RSVP
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps!inner (
+              id,
+              status,
+              user_id
+            ),
+            event_members (
+              id,
+              status,
+              user_id
+            ),
+            user_profiles!events_created_by_fkey (
+              display_name,
+              avatar_url,
+              user_id
+            )
+          `)
+          .eq('rsvps.user_id', user.id)
+          .eq('rsvps.status', 'going')
+          .neq('created_by', user.id) // Exclude events you're hosting (already fetched above)
+          .gte('date_time', new Date().toISOString())
+          .order('date_time', { ascending: true }),
+
+        // Upcoming sessions you're invited to via event_members (private events)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              id,
+              status,
+              user_id
+            ),
+            event_members!inner (
+              id,
+              status,
+              user_id
+            ),
+            user_profiles!events_created_by_fkey (
+              display_name,
+              avatar_url,
+              user_id
+            )
+          `)
+          .eq('event_members.user_id', user.id)
+          .eq('event_members.status', 'accepted')
+          .neq('created_by', user.id) // Exclude events you're hosting
+          .gte('date_time', new Date().toISOString())
+          .order('date_time', { ascending: true }),
+
+        // Past sessions you hosted
         supabase
           .from('events')
           .select(`
@@ -135,7 +190,35 @@ export function UserProfile() {
           .eq('created_by', user.id)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false })
-          .limit(6)
+          .limit(3),
+
+        // Past sessions you attended
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps!inner (
+              id,
+              status,
+              user_id
+            ),
+            event_members (
+              id,
+              status,
+              user_id
+            ),
+            user_profiles!events_created_by_fkey (
+              display_name,
+              avatar_url,
+              user_id
+            )
+          `)
+          .eq('rsvps.user_id', user.id)
+          .eq('rsvps.status', 'going')
+          .neq('created_by', user.id)
+          .lt('date_time', new Date().toISOString())
+          .order('date_time', { ascending: false })
+          .limit(3)
       ])
 
       // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
@@ -173,29 +256,108 @@ export function UserProfile() {
         return allAttendees.length
       }
 
-      // Process upcoming sessions
-      if (upcomingResult.error) {
-        console.error('Error fetching upcoming sessions:', upcomingResult.error)
+      // Process upcoming sessions (combine hosted and attending)
+      const allUpcomingEvents = []
+
+      // Add hosted events
+      if (upcomingHostedResult.error) {
+        console.error('Error fetching upcoming hosted sessions:', upcomingHostedResult.error)
       } else {
-        const enhancedUpcoming = (upcomingResult.data || []).map(event => ({
+        const hostedEvents = (upcomingHostedResult.data || []).map(event => ({
           ...event,
           creator: creatorInfo,
-          rsvp_count: calculateAttendeeCount(event)
+          rsvp_count: calculateAttendeeCount(event),
+          isHosting: true
         }))
-        setEnhancedSessions(enhancedUpcoming)
+        allUpcomingEvents.push(...hostedEvents)
       }
 
-      // Process past sessions
-      if (pastResult.error) {
-        console.error('Error fetching past sessions:', pastResult.error)
+      // Add RSVP attending events
+      if (upcomingRSVPResult.error) {
+        console.error('Error fetching upcoming RSVP sessions:', upcomingRSVPResult.error)
       } else {
-        const enhancedPast = (pastResult.data || []).map(event => ({
+        const rsvpEvents = (upcomingRSVPResult.data || []).map(event => ({
+          ...event,
+          creator: event.user_profiles ? {
+            display_name: event.user_profiles.display_name,
+            avatar_url: event.user_profiles.avatar_url,
+            user_id: event.user_profiles.user_id
+          } : {
+            display_name: 'Unknown Host',
+            avatar_url: null,
+            user_id: event.created_by
+          },
+          rsvp_count: calculateAttendeeCount(event),
+          isHosting: false
+        }))
+        allUpcomingEvents.push(...rsvpEvents)
+      }
+
+      // Add invited events (private events you were invited to)
+      if (upcomingInvitedResult.error) {
+        console.error('Error fetching upcoming invited sessions:', upcomingInvitedResult.error)
+      } else {
+        const invitedEvents = (upcomingInvitedResult.data || []).map(event => ({
+          ...event,
+          creator: event.user_profiles ? {
+            display_name: event.user_profiles.display_name,
+            avatar_url: event.user_profiles.avatar_url,
+            user_id: event.user_profiles.user_id
+          } : {
+            display_name: 'Unknown Host',
+            avatar_url: null,
+            user_id: event.created_by
+          },
+          rsvp_count: calculateAttendeeCount(event),
+          isHosting: false
+        }))
+        allUpcomingEvents.push(...invitedEvents)
+      }
+
+      // Sort all upcoming events by date
+      allUpcomingEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+      setEnhancedSessions(allUpcomingEvents)
+
+      // Process past sessions (combine hosted and attended)
+      const allPastEvents = []
+
+      // Add hosted past events
+      if (pastHostedResult.error) {
+        console.error('Error fetching past hosted sessions:', pastHostedResult.error)
+      } else {
+        const hostedPastEvents = (pastHostedResult.data || []).map(event => ({
           ...event,
           creator: creatorInfo,
-          rsvp_count: calculateAttendeeCount(event)
+          rsvp_count: calculateAttendeeCount(event),
+          isHosting: true
         }))
-        setPastSessions(enhancedPast)
+        allPastEvents.push(...hostedPastEvents)
       }
+
+      // Add attended past events
+      if (pastAttendingResult.error) {
+        console.error('Error fetching past attending sessions:', pastAttendingResult.error)
+      } else {
+        const attendedPastEvents = (pastAttendingResult.data || []).map(event => ({
+          ...event,
+          creator: event.user_profiles ? {
+            display_name: event.user_profiles.display_name,
+            avatar_url: event.user_profiles.avatar_url,
+            user_id: event.user_profiles.user_id
+          } : {
+            display_name: 'Unknown Host',
+            avatar_url: null,
+            user_id: event.created_by
+          },
+          rsvp_count: calculateAttendeeCount(event),
+          isHosting: false
+        }))
+        allPastEvents.push(...attendedPastEvents)
+      }
+
+      // Sort all past events by date (most recent first)
+      allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+      setPastSessions(allPastEvents.slice(0, 6)) // Limit to 6 total past events
     } catch (error) {
       console.error('Error fetching enhanced sessions:', error)
     } finally {
@@ -372,8 +534,11 @@ export function UserProfile() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                 <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
-                Your Upcoming Hell
+                Your Coming Hell
               </h2>
+              <p className="text-sm text-muted-foreground">
+                Events you're hosting and attending
+              </p>
 
             </div>
 
@@ -388,9 +553,9 @@ export function UserProfile() {
                   <EventCard
                     key={session.id}
                     event={session}
-                    showHostActions={true}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    showHostActions={session.isHosting}
+                    onEdit={session.isHosting ? handleEdit : undefined}
+                    onDelete={session.isHosting ? handleDelete : undefined}
                   />
                 ))}
               </div>
@@ -399,7 +564,7 @@ export function UserProfile() {
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No Upcoming Hell</h3>
                 <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
-                  You haven't created any upcoming hell-raising sessions yet.
+                  You haven't created or joined any upcoming hell-raising sessions yet.
                 </p>
                 <QuickEventModal
                   trigger={
@@ -418,8 +583,11 @@ export function UserProfile() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
-                Your Past Sessions
+                Your Past Hell
               </h2>
+              <p className="text-sm text-muted-foreground">
+                Events you hosted and attended
+              </p>
             </div>
 
             {loadingEnhanced ? (
@@ -434,17 +602,17 @@ export function UserProfile() {
                     key={session.id}
                     event={session}
                     showHostActions={false}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onEdit={undefined}
+                    onDelete={undefined}
                   />
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 bg-card rounded-xl border border-border">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Past Sessions</h3>
+                <h3 className="text-lg font-semibold mb-2">No Past Hell</h3>
                 <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
-                  Your completed hell-raising sessions will appear here.
+                  Your completed hell-raising sessions (hosted and attended) will appear here.
                 </p>
               </div>
             )}

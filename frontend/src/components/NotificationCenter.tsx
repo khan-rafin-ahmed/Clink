@@ -16,6 +16,7 @@ import {
   type Notification
 } from '@/lib/followService'
 import { respondToCrewInvitation } from '@/lib/crewService'
+import { respondToEventInvitation } from '@/lib/eventService'
 import { toast } from 'sonner'
 import { Bell, Check, X, Users, Calendar } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -105,6 +106,25 @@ export function NotificationCenter() {
     }
   }
 
+  const handleEventInvitationResponse = async (notificationId: string, eventMemberId: string, response: 'accepted' | 'declined') => {
+    try {
+      await respondToEventInvitation(eventMemberId, response)
+      await handleMarkAsRead(notificationId)
+
+      if (response === 'accepted') {
+        toast.success('Event invitation accepted! 🍻')
+      } else {
+        toast.success('Event invitation declined')
+      }
+
+      // Remove the notification from the list
+      setNotifications(prev => prev.filter(n => n.id !== notificationId))
+    } catch (error) {
+      console.error('Error responding to event invitation:', error)
+      toast.error('Failed to respond to invitation')
+    }
+  }
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'crew_invitation':
@@ -171,8 +191,39 @@ export function NotificationCenter() {
               </div>
             )}
 
+            {/* Event invitation actions */}
+            {notification.type === 'event_invitation' && !notification.read && (
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  onClick={() => handleEventInvitationResponse(
+                    notification.id,
+                    notification.data.event_member_id,
+                    'accepted'
+                  )}
+                  className="h-7 px-3"
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  Accept
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEventInvitationResponse(
+                    notification.id,
+                    notification.data.event_member_id,
+                    'declined'
+                  )}
+                  className="h-7 px-3"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Decline
+                </Button>
+              </div>
+            )}
+
             {/* Mark as read button for other notifications */}
-            {notification.type !== 'crew_invitation' && !notification.read && (
+            {!['crew_invitation', 'event_invitation'].includes(notification.type) && !notification.read && (
               <Button
                 size="sm"
                 variant="ghost"
