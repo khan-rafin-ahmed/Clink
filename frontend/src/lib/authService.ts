@@ -67,7 +67,6 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
   console.log('🔧 handlePostAuthSetup: Starting for user:', user.id, 'isNewUser:', isNewUser)
   console.log('🔍 handlePostAuthSetup: User metadata:', {
     user_metadata: user.user_metadata,
-    raw_user_meta_data: user.raw_user_meta_data,
     email: user.email
   })
 
@@ -89,9 +88,7 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
 
     // Step 3: Show welcome message
     const username = user.user_metadata?.full_name?.split(' ')[0] ||
-                    user.raw_user_meta_data?.full_name?.split(' ')[0] ||
                     user.user_metadata?.name?.split(' ')[0] ||
-                    user.raw_user_meta_data?.name?.split(' ')[0] ||
                     user.email?.split('@')[0] || 'Champion'
 
     if (isNewUser) {
@@ -165,8 +162,7 @@ export async function handleAuthCallback() {
       id: user.id,
       email: user.email,
       created_at: user.created_at,
-      user_metadata: user.user_metadata,
-      raw_user_meta_data: user.raw_user_meta_data
+      user_metadata: user.user_metadata
     })
 
     // Determine if this is a new user

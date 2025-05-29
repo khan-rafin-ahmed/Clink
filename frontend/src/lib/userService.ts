@@ -115,7 +115,6 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
     id: user.id,
     email: user.email,
     user_metadata: user.user_metadata,
-    raw_user_meta_data: user.raw_user_meta_data,
     created_at: user.created_at
   })
 
@@ -145,9 +144,6 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
       // Profile doesn't exist, create it with improved metadata extraction
       const displayName = user.user_metadata?.full_name ||
                          user.user_metadata?.name ||
-                         user.raw_user_meta_data?.full_name ||
-                         user.raw_user_meta_data?.name ||
-                         user.raw_user_meta_data?.display_name ||
                          user.user_metadata?.display_name ||
                          (user.email ? user.email.split('@')[0] : null) ||
                          'User'
