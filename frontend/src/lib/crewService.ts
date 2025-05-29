@@ -100,6 +100,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
     .eq('status', 'accepted')
 
   console.log('🔍 getUserCrews: Raw crew_members data:', data)
+  console.log('🔍 getUserCrews: Raw crew_members data details:', JSON.stringify(data, null, 2))
   console.log('🔍 getUserCrews: Query error:', error)
 
   if (error) throw error
