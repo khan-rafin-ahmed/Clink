@@ -33,10 +33,13 @@ export function NotificationCenter() {
     // Poll for new notifications every 30 seconds
     const interval = setInterval(() => {
       loadUnreadCount()
+      if (isOpen) {
+        loadNotifications() // Refresh notifications when panel is open
+      }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isOpen])
 
   const loadNotifications = async () => {
     try {
@@ -185,8 +188,17 @@ export function NotificationCenter() {
     )
   }
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (open) {
+      // Refresh notifications when opening the panel
+      loadNotifications()
+      loadUnreadCount()
+    }
+  }
+
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="w-5 h-5" />

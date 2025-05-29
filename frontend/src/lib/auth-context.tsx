@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const mountedRef = useRef(true)
   const initializingRef = useRef(false)
   const welcomeShownRef = useRef(new Set<string>()) // Track users who have been welcomed
+  const isInitialLoadRef = useRef(true) // Track if this is the initial page load
 
   useEffect(() => {
     mountedRef.current = true
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           setError(null)
           setIsInitialized(true)
+          isInitialLoadRef.current = false // Mark initial load as complete
         }
       } catch (err: any) {
         if (mountedRef.current) {
@@ -65,11 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const newUser = session?.user ?? null
 
-      // Show welcome message on sign in (only once per user per session)
-      if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id)) {
+      // Show welcome message on sign in (only once per user per session and not on initial load)
+      if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
         welcomeShownRef.current.add(newUser.id)
 
-        const username = newUser.email?.split('@')[0] || 'Champion'
+        const username = newUser.user_metadata?.full_name?.split(' ')[0] ||
+                        newUser.email?.split('@')[0] || 'Champion'
 
         // Check if this is a new user (created recently)
         const userCreatedAt = new Date(newUser.created_at || '')
