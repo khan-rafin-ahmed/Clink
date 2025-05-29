@@ -134,11 +134,6 @@ export function UserProfile() {
               id,
               status,
               user_id
-            ),
-            user_profiles!events_created_by_fkey (
-              display_name,
-              avatar_url,
-              user_id
             )
           `)
           .eq('rsvps.user_id', user.id)
@@ -160,11 +155,6 @@ export function UserProfile() {
             event_members!inner (
               id,
               status,
-              user_id
-            ),
-            user_profiles!events_created_by_fkey (
-              display_name,
-              avatar_url,
               user_id
             )
           `)
@@ -208,11 +198,6 @@ export function UserProfile() {
             event_members (
               id,
               status,
-              user_id
-            ),
-            user_profiles!events_created_by_fkey (
-              display_name,
-              avatar_url,
               user_id
             )
           `)
@@ -279,42 +264,56 @@ export function UserProfile() {
       if (upcomingRSVPResult.error) {
         console.error('Error fetching upcoming RSVP sessions:', upcomingRSVPResult.error)
       } else {
-        const rsvpEvents = (upcomingRSVPResult.data || []).map(event => ({
-          ...event,
-          creator: event.user_profiles ? {
-            display_name: event.user_profiles.display_name,
-            avatar_url: event.user_profiles.avatar_url,
-            user_id: event.user_profiles.user_id
-          } : {
-            display_name: 'Unknown Host',
-            avatar_url: null,
-            user_id: event.created_by
-          },
-          rsvp_count: calculateAttendeeCount(event),
-          isHosting: false
-        }))
-        allUpcomingEvents.push(...rsvpEvents)
+        // Fetch creator info for RSVP events
+        const rsvpEventsWithCreators = await Promise.all(
+          (upcomingRSVPResult.data || []).map(async (event) => {
+            const { data: creatorData } = await supabase
+              .from('user_profiles')
+              .select('display_name, avatar_url, user_id')
+              .eq('user_id', event.created_by)
+              .single()
+
+            return {
+              ...event,
+              creator: creatorData || {
+                display_name: 'Unknown Host',
+                avatar_url: null,
+                user_id: event.created_by
+              },
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: false
+            }
+          })
+        )
+        allUpcomingEvents.push(...rsvpEventsWithCreators)
       }
 
       // Add invited events (private events you were invited to)
       if (upcomingInvitedResult.error) {
         console.error('Error fetching upcoming invited sessions:', upcomingInvitedResult.error)
       } else {
-        const invitedEvents = (upcomingInvitedResult.data || []).map(event => ({
-          ...event,
-          creator: event.user_profiles ? {
-            display_name: event.user_profiles.display_name,
-            avatar_url: event.user_profiles.avatar_url,
-            user_id: event.user_profiles.user_id
-          } : {
-            display_name: 'Unknown Host',
-            avatar_url: null,
-            user_id: event.created_by
-          },
-          rsvp_count: calculateAttendeeCount(event),
-          isHosting: false
-        }))
-        allUpcomingEvents.push(...invitedEvents)
+        // Fetch creator info for invited events
+        const invitedEventsWithCreators = await Promise.all(
+          (upcomingInvitedResult.data || []).map(async (event) => {
+            const { data: creatorData } = await supabase
+              .from('user_profiles')
+              .select('display_name, avatar_url, user_id')
+              .eq('user_id', event.created_by)
+              .single()
+
+            return {
+              ...event,
+              creator: creatorData || {
+                display_name: 'Unknown Host',
+                avatar_url: null,
+                user_id: event.created_by
+              },
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: false
+            }
+          })
+        )
+        allUpcomingEvents.push(...invitedEventsWithCreators)
       }
 
       // Sort all upcoming events by date
@@ -341,21 +340,28 @@ export function UserProfile() {
       if (pastAttendingResult.error) {
         console.error('Error fetching past attending sessions:', pastAttendingResult.error)
       } else {
-        const attendedPastEvents = (pastAttendingResult.data || []).map(event => ({
-          ...event,
-          creator: event.user_profiles ? {
-            display_name: event.user_profiles.display_name,
-            avatar_url: event.user_profiles.avatar_url,
-            user_id: event.user_profiles.user_id
-          } : {
-            display_name: 'Unknown Host',
-            avatar_url: null,
-            user_id: event.created_by
-          },
-          rsvp_count: calculateAttendeeCount(event),
-          isHosting: false
-        }))
-        allPastEvents.push(...attendedPastEvents)
+        // Fetch creator info for past attended events
+        const attendedPastEventsWithCreators = await Promise.all(
+          (pastAttendingResult.data || []).map(async (event) => {
+            const { data: creatorData } = await supabase
+              .from('user_profiles')
+              .select('display_name, avatar_url, user_id')
+              .eq('user_id', event.created_by)
+              .single()
+
+            return {
+              ...event,
+              creator: creatorData || {
+                display_name: 'Unknown Host',
+                avatar_url: null,
+                user_id: event.created_by
+              },
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: false
+            }
+          })
+        )
+        allPastEvents.push(...attendedPastEventsWithCreators)
       }
 
       // Sort all past events by date (most recent first)
@@ -514,6 +520,8 @@ export function UserProfile() {
                 <Button
                   onClick={() => {
                     console.log('📊 Current userCrews state:', userCrews)
+                    console.log('📊 userCrews length:', userCrews.length)
+                    console.log('📊 userCrews details:', JSON.stringify(userCrews, null, 2))
                     console.log('👤 Current user:', user)
                   }}
                   variant="outline"
