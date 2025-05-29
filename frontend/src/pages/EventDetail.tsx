@@ -508,8 +508,13 @@ export function EventDetail() {
   const eventMembers = event.event_members || []
 
   // Create a Set to track unique user IDs to avoid duplicates
-  const uniqueAttendeeIds = new Set()
-  const allAttendees = []
+  const uniqueAttendeeIds = new Set<string>()
+  const allAttendees: Array<{
+    id: string
+    user_id: string
+    status: string
+    source: 'rsvp' | 'crew'
+  }> = []
 
   // Add RSVP attendees first
   rsvpAttendees.forEach(rsvp => {
