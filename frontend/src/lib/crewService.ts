@@ -76,42 +76,35 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
   const { data: { user } } = await supabase.auth.getUser()
   const currentUserId = userId || user?.id
   if (!currentUserId) {
-    console.log('❌ getUserCrews: No user ID provided')
     return []
   }
 
-  console.log('🔍 getUserCrews: Fetching crews for user:', currentUserId)
-
-  const { data, error } = await supabase
+  // First, get the crew IDs where the user is a member
+  const { data: membershipData, error: membershipError } = await supabase
     .from('crew_members')
-    .select(`
-      crew:crews(
-        id,
-        name,
-        vibe,
-        visibility,
-        description,
-        created_by,
-        created_at,
-        updated_at
-      )
-    `)
+    .select('crew_id')
     .eq('user_id', currentUserId)
     .eq('status', 'accepted')
 
-  console.log('🔍 getUserCrews: Raw crew_members data:', data)
-  console.log('🔍 getUserCrews: Raw crew_members data details:', JSON.stringify(data, null, 2))
-  console.log('🔍 getUserCrews: Query error:', error)
+  if (membershipError) throw membershipError
+  if (!membershipData || membershipData.length === 0) {
+    return []
+  }
 
-  if (error) throw error
+  const crewIds = membershipData.map(m => m.crew_id)
 
-  // Transform the data and add member count
-  const crews = data?.map(item => item.crew).filter(Boolean) || []
-  console.log('🔍 getUserCrews: Transformed crews:', crews)
+  // Then fetch the crew details directly
+  const { data: crewsData, error: crewsError } = await supabase
+    .from('crews')
+    .select('*')
+    .in('id', crewIds)
+
+  if (crewsError) throw crewsError
+  if (!crewsData) return []
 
   // Get member counts for each crew
   const crewsWithCounts = await Promise.all(
-    crews.map(async (crew: any) => {
+    crewsData.map(async (crew: any) => {
       const { count } = await supabase
         .from('crew_members')
         .select('*', { count: 'exact', head: true })
@@ -127,7 +120,6 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
     })
   )
 
-  console.log('✅ getUserCrews: Final crews with counts:', crewsWithCounts)
   return crewsWithCounts
 }
 

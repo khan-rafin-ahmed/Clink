@@ -63,9 +63,7 @@ export function UserProfile() {
   const fetchUserCrews = async () => {
     if (!user?.id) return
     try {
-      console.log('🔍 Fetching crews for user:', user.id)
       const crews = await getUserCrews(user.id)
-      console.log('✅ Fetched crews:', crews)
       setUserCrews(crews)
     } catch (error) {
       console.error('❌ Error fetching user crews:', error)
@@ -264,7 +262,6 @@ export function UserProfile() {
       if (upcomingRSVPResult.error) {
         console.error('Error fetching upcoming RSVP sessions:', upcomingRSVPResult.error)
       } else {
-        console.log('🔍 RSVP Events Raw Data:', upcomingRSVPResult.data)
         // Fetch creator info for RSVP events
         const rsvpEventsWithCreators = await Promise.all(
           (upcomingRSVPResult.data || []).map(async (event) => {
@@ -293,7 +290,6 @@ export function UserProfile() {
       if (upcomingInvitedResult.error) {
         console.error('Error fetching upcoming invited sessions:', upcomingInvitedResult.error)
       } else {
-        console.log('🔍 Invited Events Raw Data:', upcomingInvitedResult.data)
         // Fetch creator info for invited events
         const invitedEventsWithCreators = await Promise.all(
           (upcomingInvitedResult.data || []).map(async (event) => {
@@ -321,12 +317,7 @@ export function UserProfile() {
       // Sort all upcoming events by date
       allUpcomingEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
 
-      console.log('📊 Final Upcoming Events Summary:')
-      console.log('  - Hosted Events:', upcomingHostedResult.data?.length || 0)
-      console.log('  - RSVP Events:', upcomingRSVPResult.data?.length || 0)
-      console.log('  - Invited Events:', upcomingInvitedResult.data?.length || 0)
-      console.log('  - Total Events:', allUpcomingEvents.length)
-      console.log('📊 All Upcoming Events:', allUpcomingEvents)
+
 
       setEnhancedSessions(allUpcomingEvents)
 
@@ -516,30 +507,7 @@ export function UserProfile() {
                 <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                 Crews You're In
               </h2>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    console.log('🔄 Manual crew refresh triggered')
-                    fetchUserCrews()
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  🔄 Debug Crews
-                </Button>
-                <Button
-                  onClick={() => {
-                    console.log('📊 Current userCrews state:', userCrews)
-                    console.log('📊 userCrews length:', userCrews.length)
-                    console.log('📊 userCrews details:', JSON.stringify(userCrews, null, 2))
-                    console.log('👤 Current user:', user)
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  📊 Log State
-                </Button>
-              </div>
+
             </div>
 
             {userCrews.length > 0 ? (
