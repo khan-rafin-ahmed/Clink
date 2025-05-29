@@ -111,6 +111,13 @@ export async function createUserProfile(userId: string, profile: Partial<UserPro
 // Robust user profile creation with multiple retry attempts
 export async function ensureUserProfileExists(user: any, maxRetries = 3): Promise<any> {
   console.log('🔄 ensureUserProfileExists: Starting for user:', user.id)
+  console.log('🔍 ensureUserProfileExists: User data:', {
+    id: user.id,
+    email: user.email,
+    user_metadata: user.user_metadata,
+    raw_user_meta_data: user.raw_user_meta_data,
+    created_at: user.created_at
+  })
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -135,13 +142,17 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
 
       console.log('📝 ensureUserProfileExists: Profile not found, creating new one')
 
-      // Profile doesn't exist, create it
+      // Profile doesn't exist, create it with improved metadata extraction
       const displayName = user.user_metadata?.full_name ||
                          user.user_metadata?.name ||
                          user.raw_user_meta_data?.full_name ||
                          user.raw_user_meta_data?.name ||
-                         user.email?.split('@')[0] ||
+                         user.raw_user_meta_data?.display_name ||
+                         user.user_metadata?.display_name ||
+                         (user.email ? user.email.split('@')[0] : null) ||
                          'User'
+
+      console.log('📝 ensureUserProfileExists: Creating profile with display_name:', displayName)
 
       const { data, error } = await supabase
         .from('user_profiles')
@@ -153,10 +164,21 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
         .single()
 
       if (error) {
+        console.error(`❌ ensureUserProfileExists: Insert error on attempt ${attempt}:`, {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+
         if (error.code === '23505') {
           // Unique constraint violation - profile was created by another process
           console.log('⚠️ ensureUserProfileExists: Profile created by another process, fetching it')
-          const { data: fetchedProfile } = await supabase
+
+          // Wait a bit for the other process to complete
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          const { data: fetchedProfile, error: fetchError } = await supabase
             .from('user_profiles')
             .select('id, user_id, display_name')
             .eq('user_id', user.id)
@@ -166,11 +188,14 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
             console.log('✅ ensureUserProfileExists: Retrieved existing profile:', fetchedProfile.id)
             return fetchedProfile
           }
+
+          if (fetchError) {
+            console.error('❌ ensureUserProfileExists: Failed to fetch existing profile:', fetchError)
+          }
         }
 
-        console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, error)
-
         if (attempt === maxRetries) {
+          console.error('💥 ensureUserProfileExists: All insert attempts failed')
           throw error
         }
 
@@ -184,8 +209,12 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
       console.log('✅ ensureUserProfileExists: Profile created successfully:', data.id)
       return data
 
-    } catch (error) {
-      console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, error)
+    } catch (error: any) {
+      console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, {
+        error: error.message,
+        code: error.code,
+        details: error.details
+      })
 
       if (attempt === maxRetries) {
         console.error('💥 ensureUserProfileExists: All attempts failed, throwing error')

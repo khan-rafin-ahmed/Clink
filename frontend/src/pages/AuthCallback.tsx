@@ -28,27 +28,34 @@ export function AuthCallback() {
 
         // If we have a code parameter, this is likely a Google OAuth callback
         if (code) {
+          console.log('🔐 AuthCallback: Processing OAuth code exchange')
+
           // Try to exchange the code for a session using Supabase's method
           try {
             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
             if (error) {
+              console.error('❌ AuthCallback: OAuth exchange failed:', error)
               navigate('/login?error=' + encodeURIComponent(`OAuth exchange failed: ${error.message}`))
               return
             }
 
             if (data?.session) {
+              console.log('✅ AuthCallback: OAuth exchange successful, handling callback')
+
               // Use our robust auth callback handler
               const result = await handleAuthCallback()
               if (result.success) {
+                console.log('✅ AuthCallback: Setup completed, redirecting to profile')
                 navigate('/profile')
               } else {
+                console.error('❌ AuthCallback: Setup failed:', result.error)
                 navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
               }
               return
             }
           } catch (exchangeError: any) {
-            console.error('Exchange failed, falling back to polling:', exchangeError)
+            console.error('❌ AuthCallback: Exchange failed, falling back to polling:', exchangeError)
           }
 
           // Fallback: Poll for session (in case exchangeCodeForSession doesn't work)

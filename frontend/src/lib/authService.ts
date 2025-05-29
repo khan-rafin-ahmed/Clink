@@ -65,6 +65,11 @@ export async function signInWithGoogle() {
 // Handle post-authentication setup (profile creation, avatar, etc.)
 export async function handlePostAuthSetup(user: any, isNewUser: boolean = false) {
   console.log('🔧 handlePostAuthSetup: Starting for user:', user.id, 'isNewUser:', isNewUser)
+  console.log('🔍 handlePostAuthSetup: User metadata:', {
+    user_metadata: user.user_metadata,
+    raw_user_meta_data: user.raw_user_meta_data,
+    email: user.email
+  })
 
   try {
     // Step 1: Ensure user profile exists (most critical)
@@ -84,6 +89,9 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
 
     // Step 3: Show welcome message
     const username = user.user_metadata?.full_name?.split(' ')[0] ||
+                    user.raw_user_meta_data?.full_name?.split(' ')[0] ||
+                    user.user_metadata?.name?.split(' ')[0] ||
+                    user.raw_user_meta_data?.name?.split(' ')[0] ||
                     user.email?.split('@')[0] || 'Champion'
 
     if (isNewUser) {
@@ -95,11 +103,27 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
     console.log('✅ handlePostAuthSetup: Setup completed successfully')
     return { success: true, profile }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 handlePostAuthSetup: Critical error:', error)
+    console.error('💥 handlePostAuthSetup: Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
 
-    // Show user-friendly error message
-    toast.error('Account setup encountered an issue. Please refresh the page.')
+    // Show user-friendly error message based on error type
+    if (error.message?.includes('duplicate key') || error.code === '23505') {
+      console.log('⚠️ handlePostAuthSetup: Profile already exists, continuing...')
+      toast.success(`Welcome back! 🍻`)
+      return { success: true, profile: null }
+    } else if (error.message?.includes('permission') || error.message?.includes('RLS')) {
+      toast.error('Account setup failed due to permissions. Please contact support.')
+    } else if (error.message?.includes('network') || error.message?.includes('timeout')) {
+      toast.error('Network issue during setup. Please refresh the page and try again.')
+    } else {
+      toast.error('Account setup encountered an issue. Please refresh the page.')
+    }
 
     throw error
   }
@@ -137,18 +161,42 @@ export async function handleAuthCallback() {
 
     const user = session.user
     console.log('👤 handleAuthCallback: User found:', user.id)
+    console.log('🔍 handleAuthCallback: User details:', {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at,
+      user_metadata: user.user_metadata,
+      raw_user_meta_data: user.raw_user_meta_data
+    })
 
     // Determine if this is a new user
     const userIsNew = isNewUser(user)
+    console.log('🆕 handleAuthCallback: User is new:', userIsNew)
 
-    // Handle post-auth setup
-    await handlePostAuthSetup(user, userIsNew)
+    // Handle post-auth setup with additional error handling
+    try {
+      await handlePostAuthSetup(user, userIsNew)
+      console.log('✅ handleAuthCallback: Post-auth setup completed')
+    } catch (setupError: any) {
+      console.error('❌ handleAuthCallback: Post-auth setup failed:', setupError)
+
+      // For duplicate key errors, still consider it a success
+      if (setupError.message?.includes('duplicate key') || setupError.code === '23505') {
+        console.log('⚠️ handleAuthCallback: Profile already exists, continuing...')
+        return { success: true, user, isNewUser: false }
+      }
+
+      // For other errors, still allow the user to proceed but log the issue
+      console.warn('⚠️ handleAuthCallback: Setup failed but allowing user to proceed')
+      toast.error('Account setup had an issue. Please refresh if you experience problems.')
+      return { success: true, user, isNewUser, setupError: setupError.message }
+    }
 
     console.log('✅ handleAuthCallback: Callback handled successfully')
     return { success: true, user, isNewUser: userIsNew }
 
   } catch (error: any) {
-    console.error('💥 handleAuthCallback: Error:', error)
+    console.error('💥 handleAuthCallback: Critical error:', error)
     return { success: false, error: error.message || 'Callback failed' }
   }
 }
