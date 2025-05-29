@@ -9,7 +9,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
-import { bulkInviteUsers, bulkAddCrewMembersToEvent } from '@/lib/memberService'
+import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 
