@@ -63,10 +63,12 @@ export function UserProfile() {
   const fetchUserCrews = async () => {
     if (!user?.id) return
     try {
+      console.log('🔍 Fetching crews for user:', user.id)
       const crews = await getUserCrews(user.id)
+      console.log('✅ Fetched crews:', crews)
       setUserCrews(crews)
     } catch (error) {
-      console.error('Error fetching user crews:', error)
+      console.error('❌ Error fetching user crews:', error)
     }
   }
 
@@ -498,6 +500,28 @@ export function UserProfile() {
                 <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                 Crews You're In
               </h2>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    console.log('🔄 Manual crew refresh triggered')
+                    fetchUserCrews()
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  🔄 Debug Crews
+                </Button>
+                <Button
+                  onClick={() => {
+                    console.log('📊 Current userCrews state:', userCrews)
+                    console.log('👤 Current user:', user)
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  📊 Log State
+                </Button>
+              </div>
             </div>
 
             {userCrews.length > 0 ? (
