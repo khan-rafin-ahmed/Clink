@@ -14,7 +14,6 @@ import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews, type Crew } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
-import { fixCrewVisibilityRLS } from '@/lib/runMigration'
 import type { UserProfile, Event } from '@/types'
 
 interface EnhancedEvent extends Event {
@@ -508,22 +507,6 @@ export function UserProfile() {
                 <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                 Crews You're In
               </h2>
-              <Button
-                onClick={async () => {
-                  console.log('🔧 Running crew visibility RLS fix...')
-                  const success = await fixCrewVisibilityRLS()
-                  if (success) {
-                    console.log('✅ RLS fix completed, refreshing crews...')
-                    fetchUserCrews()
-                  } else {
-                    console.log('❌ RLS fix failed')
-                  }
-                }}
-                variant="outline"
-                size="sm"
-              >
-                🔧 Fix Crew RLS
-              </Button>
             </div>
 
             {userCrews.length > 0 ? (
