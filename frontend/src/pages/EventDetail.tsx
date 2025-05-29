@@ -82,7 +82,8 @@ export function EventDetail() {
 
     if (user && event) {
       const userRsvpData = event.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-      setIsJoined(userRsvpData?.status === 'going')
+      const userEventMember = event.event_members?.find((member: any) => member.user_id === user.id)
+      setIsJoined(userRsvpData?.status === 'going' || userEventMember?.status === 'accepted')
     } else {
       setIsJoined(false)
     }
@@ -91,16 +92,20 @@ export function EventDetail() {
   // Load participant profiles - MOVED HERE to ensure consistent hook order
   useEffect(() => {
     const loadParticipantProfiles = async () => {
-      if (!mountedRef.current || !event?.rsvps || event.rsvps.length === 0) return
+      if (!mountedRef.current || !event) return
 
-      const userIds = event.rsvps.map(rsvp => rsvp.user_id).filter(Boolean)
-      if (userIds.length === 0) return
+      // Collect user IDs from both RSVPs and event members
+      const rsvpUserIds = event.rsvps?.map(rsvp => rsvp.user_id).filter(Boolean) || []
+      const memberUserIds = event.event_members?.map(member => member.user_id).filter(Boolean) || []
+      const allUserIds = [...new Set([...rsvpUserIds, ...memberUserIds])]
+
+      if (allUserIds.length === 0) return
 
       try {
         const { data: profiles, error } = await supabase
           .from('user_profiles')
           .select('user_id, display_name, avatar_url')
-          .in('user_id', userIds)
+          .in('user_id', allUserIds)
 
         if (!mountedRef.current) return // Check again after async operation
 
@@ -123,7 +128,7 @@ export function EventDetail() {
     }
 
     loadParticipantProfiles()
-  }, [event?.rsvps])
+  }, [event?.rsvps, event?.event_members])
 
   const handleEventUpdated = useCallback(() => {
     loadEvent()
@@ -166,9 +171,10 @@ export function EventDetail() {
         eventData = eventById
       }
 
-      // If we found the event, load RSVPs separately
+      // If we found the event, load RSVPs and event members separately
       if (eventData && !error) {
         try {
+          // Load RSVPs
           const { data: rsvpData, error: rsvpError } = await supabase
             .from('rsvps')
             .select('id, status, user_id')
@@ -180,9 +186,24 @@ export function EventDetail() {
             console.warn('Could not load RSVPs:', rsvpError)
             eventData.rsvps = []
           }
-        } catch (rsvpErr) {
-          console.warn('Error loading RSVPs:', rsvpErr)
+
+          // Load event members (crew members who were automatically added)
+          const { data: memberData, error: memberError } = await supabase
+            .from('event_members')
+            .select('id, status, user_id')
+            .eq('event_id', eventData.id)
+            .eq('status', 'accepted')
+
+          if (!memberError) {
+            eventData.event_members = memberData || []
+          } else {
+            console.warn('Could not load event members:', memberError)
+            eventData.event_members = []
+          }
+        } catch (err) {
+          console.warn('Error loading event attendees:', err)
           eventData.rsvps = []
+          eventData.event_members = []
         }
       }
 
@@ -215,10 +236,11 @@ export function EventDetail() {
 
       setEvent(eventData)
 
-      // Check user's RSVP status
+      // Check user's RSVP status (both RSVP and event member)
       if (user) {
         const userRsvpData = eventData.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-        setIsJoined(userRsvpData?.status === 'going')
+        const userEventMember = eventData.event_members?.find((member: any) => member.user_id === user.id)
+        setIsJoined(userRsvpData?.status === 'going' || userEventMember?.status === 'accepted')
       }
 
       // Load host information
@@ -480,10 +502,35 @@ export function EventDetail() {
   }
 
   const { date } = formatDateTime(event.date_time)
-  const goingCount = event.rsvps?.filter(rsvp => rsvp.status === 'going').length || 0
+
+  // Combine attendees from both RSVPs and event members
+  const rsvpAttendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
+  const eventMembers = event.event_members || []
+
+  // Create a Set to track unique user IDs to avoid duplicates
+  const uniqueAttendeeIds = new Set()
+  const allAttendees = []
+
+  // Add RSVP attendees first
+  rsvpAttendees.forEach(rsvp => {
+    if (!uniqueAttendeeIds.has(rsvp.user_id)) {
+      uniqueAttendeeIds.add(rsvp.user_id)
+      allAttendees.push({ ...rsvp, source: 'rsvp' })
+    }
+  })
+
+  // Add event members (crew members) if they're not already in RSVPs
+  eventMembers.forEach(member => {
+    if (!uniqueAttendeeIds.has(member.user_id)) {
+      uniqueAttendeeIds.add(member.user_id)
+      allAttendees.push({ ...member, status: 'going', source: 'crew' })
+    }
+  })
+
+  const goingCount = allAttendees.length
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
   const isHost = user && event.created_by === user.id
-  const attendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
+  const attendees = allAttendees
 
 
 
