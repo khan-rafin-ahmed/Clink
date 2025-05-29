@@ -23,6 +23,7 @@ interface EnhancedEvent extends Event {
     user_id: string
   }
   rsvp_count?: number
+  isHosting?: boolean
 }
 
 export function UserProfile() {
