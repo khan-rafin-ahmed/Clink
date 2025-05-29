@@ -372,10 +372,12 @@ export async function getUserAccessibleEvents() {
         updated_at,
         event_code,
         rsvps (
+          id,
           status,
           user_id
         ),
         event_members (
+          id,
           status,
           user_id
         )

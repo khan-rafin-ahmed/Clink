@@ -102,10 +102,12 @@ export function UserProfile() {
           .select(`
             *,
             rsvps (
+              id,
               status,
               user_id
             ),
             event_members (
+              id,
               status,
               user_id
             )
@@ -120,10 +122,12 @@ export function UserProfile() {
           .select(`
             *,
             rsvps (
+              id,
               status,
               user_id
             ),
             event_members (
+              id,
               status,
               user_id
             )

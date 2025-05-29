@@ -22,7 +22,8 @@ const loadEventsData = async (user: any): Promise<Event[]> => {
     console.log('🔍 Loading user accessible events for:', user.id)
     const data = await getUserAccessibleEvents()
     console.log('✅ Loaded events:', data?.length || 0)
-    return data || []
+    // Use type assertion since the data structure is compatible for our use case
+    return (data || []) as Event[]
   } catch (error) {
     console.error('❌ Error loading events:', error)
     throw error
