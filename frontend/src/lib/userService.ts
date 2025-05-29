@@ -142,14 +142,46 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
       console.log('📝 ensureUserProfileExists: Profile not found, creating new one')
 
       // Profile doesn't exist, create it with improved metadata extraction
+      // Try to get display name from various Google OAuth sources
       const displayName = user.user_metadata?.full_name ||
                          user.user_metadata?.name ||
                          user.user_metadata?.display_name ||
+                         // Also try raw_user_meta_data if available (though TypeScript doesn't know about it)
+                         (user as any).raw_user_meta_data?.full_name ||
+                         (user as any).raw_user_meta_data?.name ||
+                         (user as any).raw_user_meta_data?.display_name ||
                          (user.email ? user.email.split('@')[0] : null) ||
                          'User'
 
       console.log('📝 ensureUserProfileExists: Creating profile with display_name:', displayName)
 
+      // Try using RPC function first (if trigger is disabled)
+      try {
+        console.log('🔧 ensureUserProfileExists: Trying RPC function approach')
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('create_profile_for_user', { target_user_id: user.id })
+
+        if (!rpcError && rpcResult === true) {
+          console.log('✅ ensureUserProfileExists: Profile created via RPC function')
+
+          // Fetch the created profile
+          const { data: createdProfile } = await supabase
+            .from('user_profiles')
+            .select('id, user_id, display_name')
+            .eq('user_id', user.id)
+            .single()
+
+          if (createdProfile) {
+            return createdProfile
+          }
+        } else {
+          console.log('⚠️ ensureUserProfileExists: RPC function failed or not available, trying direct insert')
+        }
+      } catch (rpcError) {
+        console.log('⚠️ ensureUserProfileExists: RPC function not available, trying direct insert')
+      }
+
+      // Fallback to direct insert
       const { data, error } = await supabase
         .from('user_profiles')
         .insert({
