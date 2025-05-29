@@ -4,9 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { UserAvatar } from '@/components/UserAvatar'
 import { updateEvent } from '@/lib/eventService'
+import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
+import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
+import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 import type { Event } from '@/types'
 
 interface EditEventModalProps {
@@ -17,8 +21,14 @@ interface EditEventModalProps {
 }
 
 export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: EditEventModalProps) {
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
+  const [userCrews, setUserCrews] = useState<Crew[]>([])
+  const [selectedCrew, setSelectedCrew] = useState<string>('')
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
+  const [loadingCrews, setLoadingCrews] = useState(false)
 
   // Convert event date to the format needed for datetime-local input
   const eventDate = new Date(event.date_time)
@@ -34,6 +44,23 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     custom_time: customTimeValue,
     is_public: event.is_public,
   })
+
+  // Load user crews when modal opens
+  useEffect(() => {
+    if (open && user) {
+      loadUserCrews()
+    }
+  }, [open, user])
+
+  // Load crew members when crew is selected
+  useEffect(() => {
+    if (selectedCrew) {
+      loadCrewMembers(selectedCrew)
+    } else {
+      setCrewMembers([])
+      setSelectedInvitees([])
+    }
+  }, [selectedCrew])
 
   // Reset form when event changes
   useEffect(() => {
@@ -51,7 +78,38 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       is_public: event.is_public,
     })
     setStep(1)
+    // Reset crew selection when event changes
+    setSelectedCrew('')
+    setSelectedInvitees([])
+    setCrewMembers([])
   }, [event])
+
+  const loadUserCrews = async () => {
+    if (!user?.id) return
+
+    setLoadingCrews(true)
+    try {
+      const crews = await getUserCrews(user.id)
+      setUserCrews(crews)
+    } catch (error) {
+      console.error('Error loading user crews:', error)
+      toast.error('Failed to load crews')
+    } finally {
+      setLoadingCrews(false)
+    }
+  }
+
+  const loadCrewMembers = async (crewId: string) => {
+    try {
+      const members = await getCrewMembers(crewId)
+      // Filter out the current user from crew members
+      const filteredMembers = members.filter(member => member.user_id !== user?.id)
+      setCrewMembers(filteredMembers)
+    } catch (error) {
+      console.error('Error loading crew members:', error)
+      toast.error('Failed to load crew members')
+    }
+  }
 
   const drinkTypes = [
     { value: 'beer', label: 'Beer', emoji: '🍺' },
@@ -60,6 +118,12 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     { value: 'cocktails', label: 'Cocktails', emoji: '🍸' },
     { value: 'shots', label: 'Shots', emoji: '🥂' },
     { value: 'mixed', label: 'Mixed', emoji: '🍹' }
+  ]
+
+  const timeOptions = [
+    { value: 'now', label: 'Right Now!', emoji: '🔥' },
+    { value: 'tonight', label: 'Later Tonight', emoji: '🌙' },
+    { value: 'custom', label: 'Custom Time', emoji: '⏰' }
   ]
 
   const vibes = [
@@ -71,14 +135,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     { value: 'classy', label: 'Classy Evening', emoji: '🥂' }
   ]
 
-  const timeOptions = [
-    { value: 'now', label: 'Right Now!', emoji: '🚀' },
-    { value: 'tonight', label: 'Later Tonight', emoji: '🌙' },
-    { value: 'custom', label: 'Custom Time', emoji: '⏰' }
-  ]
-
   async function handleSubmit() {
-    if (step !== 3) return
+    if (step !== 4) return
 
     try {
       setIsSubmitting(true)
@@ -103,7 +161,21 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
       console.log('Updating event with data:', updateData)
       await updateEvent(event.id, updateData)
-      toast.success('Session updated successfully! 🍺')
+
+      // Add selected crew members if any (they automatically join)
+      if (selectedInvitees.length > 0) {
+        try {
+          await bulkAddCrewMembersToEvent(event.id, selectedInvitees)
+          toast.success(`🍺 Session updated and ${selectedInvitees.length} crew members invited!`)
+        } catch (error) {
+          console.error('Error inviting crew members:', error)
+          toast.success('Session updated successfully! 🍺')
+          toast.error('Failed to invite some crew members')
+        }
+      } else {
+        toast.success('Session updated successfully! 🍺')
+      }
+
       onOpenChange(false)
       onEventUpdated()
     } catch (error) {
@@ -115,7 +187,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   }
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1)
+    if (step < 4) setStep(step + 1)
   }
 
   const prevStep = () => {
@@ -130,6 +202,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
         return formData.time && formData.drink_type
       case 3:
         return true
+      case 4:
+        return true
       default:
         return false
     }
@@ -138,9 +212,9 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (step < 3 && isStepValid()) {
+      if (step < 4 && isStepValid()) {
         nextStep()
-      } else if (step === 3) {
+      } else if (step === 4) {
         handleSubmit()
       }
     }
@@ -154,7 +228,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             Edit Session 🍺
           </DialogTitle>
           <div className="flex space-x-2 mt-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`h-2 flex-1 rounded-full ${
@@ -325,6 +399,139 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
+          {/* Step 4: Invite Crew Members */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Invite Crew Members (Optional)</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select a crew to invite members to your session
+                </p>
+              </div>
+
+              {/* Crew Selection */}
+              <div>
+                <Label className="text-sm font-medium">Select Crew</Label>
+                {loadingCrews ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Loading crews...
+                  </div>
+                ) : userCrews.length === 0 ? (
+                  <div className="text-center p-4 text-muted-foreground">
+                    <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No crews found</p>
+                    <p className="text-xs">Create a crew first to invite members</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCrew('')}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        selectedCrew === ''
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="text-sm font-medium">No crew selected</div>
+                      <div className="text-xs text-muted-foreground">Skip crew invitation</div>
+                    </button>
+                    {userCrews.map(crew => (
+                      <button
+                        key={crew.id}
+                        type="button"
+                        onClick={() => setSelectedCrew(crew.id)}
+                        className={`p-3 rounded-lg border text-left transition-colors ${
+                          selectedCrew === crew.id
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">{crew.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {crew.member_count} members • {crew.visibility}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Crew Members Selection */}
+              {selectedCrew && crewMembers.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">
+                    Select Members to Invite ({selectedInvitees.length} selected)
+                  </Label>
+                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-48 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedInvitees.length === crewMembers.length) {
+                          setSelectedInvitees([])
+                        } else {
+                          setSelectedInvitees(crewMembers.map(m => m.user_id))
+                        }
+                      }}
+                      className="p-2 rounded-lg border border-dashed border-primary/50 text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      <div className="text-sm font-medium">
+                        {selectedInvitees.length === crewMembers.length ? 'Deselect All' : 'Select All'}
+                      </div>
+                    </button>
+                    {crewMembers.map(member => (
+                      <button
+                        key={member.user_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedInvitees(prev =>
+                            prev.includes(member.user_id)
+                              ? prev.filter(id => id !== member.user_id)
+                              : [...prev, member.user_id]
+                          )
+                        }}
+                        className={`p-3 rounded-lg border text-left transition-colors ${
+                          selectedInvitees.includes(member.user_id)
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <UserAvatar
+                            userId={member.user_id}
+                            displayName={member.user?.display_name}
+                            avatarUrl={member.user?.avatar_url}
+                            size="sm"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">
+                              {member.user?.display_name || 'Anonymous User'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {member.user_id === userCrews.find(c => c.id === selectedCrew)?.created_by ? '👑 Host' : '🎟️ Member'}
+                            </div>
+                          </div>
+                          {selectedInvitees.includes(member.user_id) && (
+                            <Check className="w-4 h-4 text-primary" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedCrew && crewMembers.length === 0 && (
+                <div className="text-center p-4 text-muted-foreground">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No other members in this crew</p>
+                  <p className="text-xs">You're the only member</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex flex-col sm:flex-row gap-3">
             {step > 1 && (
@@ -338,7 +545,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </Button>
             )}
 
-            {step < 3 ? (
+            {step < 4 ? (
               <Button
                 type="button"
                 onClick={nextStep}
