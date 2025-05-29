@@ -102,7 +102,12 @@ export function UserProfile() {
           .select(`
             *,
             rsvps (
-              status
+              status,
+              user_id
+            ),
+            event_members (
+              status,
+              user_id
             )
           `)
           .eq('created_by', user.id)
@@ -115,7 +120,12 @@ export function UserProfile() {
           .select(`
             *,
             rsvps (
-              status
+              status,
+              user_id
+            ),
+            event_members (
+              status,
+              user_id
             )
           `)
           .eq('created_by', user.id)
@@ -124,6 +134,41 @@ export function UserProfile() {
           .limit(6)
       ])
 
+      // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
+      const calculateAttendeeCount = (event: any) => {
+        // Get RSVPs with status 'going'
+        const rsvpAttendees = (event.rsvps || []).filter((rsvp: any) => rsvp.status === 'going')
+
+        // Get event members with status 'accepted' (crew members)
+        const eventMembers = (event.event_members || []).filter((member: any) => member.status === 'accepted')
+
+        // Create a Set to track unique user IDs to avoid duplicates
+        const uniqueAttendeeIds = new Set<string>()
+        const allAttendees: Array<{
+          user_id: string
+          status: string
+          source: 'rsvp' | 'crew'
+        }> = []
+
+        // Add RSVP attendees first
+        rsvpAttendees.forEach((rsvp: any) => {
+          if (!uniqueAttendeeIds.has(rsvp.user_id)) {
+            uniqueAttendeeIds.add(rsvp.user_id)
+            allAttendees.push({ ...rsvp, source: 'rsvp' })
+          }
+        })
+
+        // Add event members (crew members) if they're not already in RSVPs
+        eventMembers.forEach((member: any) => {
+          if (!uniqueAttendeeIds.has(member.user_id)) {
+            uniqueAttendeeIds.add(member.user_id)
+            allAttendees.push({ ...member, status: 'going', source: 'crew' })
+          }
+        })
+
+        return allAttendees.length
+      }
+
       // Process upcoming sessions
       if (upcomingResult.error) {
         console.error('Error fetching upcoming sessions:', upcomingResult.error)
@@ -131,7 +176,7 @@ export function UserProfile() {
         const enhancedUpcoming = (upcomingResult.data || []).map(event => ({
           ...event,
           creator: creatorInfo,
-          rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
+          rsvp_count: calculateAttendeeCount(event)
         }))
         setEnhancedSessions(enhancedUpcoming)
       }
@@ -143,7 +188,7 @@ export function UserProfile() {
         const enhancedPast = (pastResult.data || []).map(event => ({
           ...event,
           creator: creatorInfo,
-          rsvp_count: event.rsvps?.filter((r: any) => r.status === 'going').length || 0
+          rsvp_count: calculateAttendeeCount(event)
         }))
         setPastSessions(enhancedPast)
       }
