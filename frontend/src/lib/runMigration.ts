@@ -184,3 +184,51 @@ export async function fixCrewInviteRLS() {
     return false
   }
 }
+
+// Function to fix crew visibility RLS policies
+export async function fixCrewVisibilityRLS() {
+  try {
+    console.log('Fixing crew visibility RLS policies...')
+
+    // Fix RLS policies for crews table to allow members to see crews they belong to
+    const fixCrewRLSQuery = `
+      -- Drop existing policies for crews table
+      DROP POLICY IF EXISTS "Public crews are viewable by everyone" ON crews;
+      DROP POLICY IF EXISTS "Private crews are viewable by members" ON crews;
+
+      -- Create comprehensive policy that covers all cases
+      CREATE POLICY "Users can view crews they have access to" ON crews
+      FOR SELECT USING (
+        -- Public crews are viewable by everyone
+        visibility = 'public'
+        OR
+        -- Private crews are viewable by creator
+        created_by = auth.uid()
+        OR
+        -- Private crews are viewable by accepted members
+        (
+          visibility = 'private' AND
+          EXISTS (
+            SELECT 1 FROM crew_members
+            WHERE crew_id = crews.id
+            AND user_id = auth.uid()
+            AND status = 'accepted'
+          )
+        )
+      );
+    `
+
+    const { error } = await supabase.rpc('exec_sql', { sql: fixCrewRLSQuery })
+
+    if (error) {
+      console.error('Error fixing crew visibility RLS:', error)
+      return false
+    } else {
+      console.log('✅ Crew visibility RLS policies fixed successfully')
+      return true
+    }
+  } catch (error) {
+    console.error('Error in fixCrewVisibilityRLS:', error)
+    return false
+  }
+}

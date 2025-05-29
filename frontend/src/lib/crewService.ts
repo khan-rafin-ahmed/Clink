@@ -86,18 +86,26 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
     .eq('user_id', currentUserId)
     .eq('status', 'accepted')
 
+  console.log('🔍 DEBUG: Membership data:', membershipData)
+  console.log('🔍 DEBUG: Membership error:', membershipError)
+
   if (membershipError) throw membershipError
   if (!membershipData || membershipData.length === 0) {
+    console.log('🔍 DEBUG: No memberships found')
     return []
   }
 
   const crewIds = membershipData.map(m => m.crew_id)
+  console.log('🔍 DEBUG: Crew IDs to fetch:', crewIds)
 
   // Then fetch the crew details directly
   const { data: crewsData, error: crewsError } = await supabase
     .from('crews')
     .select('*')
     .in('id', crewIds)
+
+  console.log('🔍 DEBUG: Crews data:', crewsData)
+  console.log('🔍 DEBUG: Crews error:', crewsError)
 
   if (crewsError) throw crewsError
   if (!crewsData) return []
