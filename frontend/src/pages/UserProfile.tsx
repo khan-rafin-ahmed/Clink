@@ -322,7 +322,7 @@ export function UserProfile() {
       allUpcomingEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
 
       console.log('📊 Final Upcoming Events Summary:')
-      console.log('  - Hosted Events:', hostedEvents?.length || 0)
+      console.log('  - Hosted Events:', upcomingHostedResult.data?.length || 0)
       console.log('  - RSVP Events:', upcomingRSVPResult.data?.length || 0)
       console.log('  - Invited Events:', upcomingInvitedResult.data?.length || 0)
       console.log('  - Total Events:', allUpcomingEvents.length)
