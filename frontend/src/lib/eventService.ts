@@ -355,7 +355,7 @@ export async function getUserAccessibleEvents() {
 
     console.log('🔍 getUserAccessibleEvents: Authenticated user:', user.id)
 
-    // Simplified - just get public events for now to avoid RLS issues
+    // Get public events with RSVP and event member data for consistent attendee counting
     const { data: events, error } = await supabase
       .from('events')
       .select(`
@@ -370,7 +370,15 @@ export async function getUserAccessibleEvents() {
         created_by,
         created_at,
         updated_at,
-        event_code
+        event_code,
+        rsvps (
+          status,
+          user_id
+        ),
+        event_members (
+          status,
+          user_id
+        )
       `)
       .eq('is_public', true)
       .gte('date_time', new Date().toISOString())

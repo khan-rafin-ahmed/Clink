@@ -146,8 +146,33 @@ function EventsContent() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {events.map(event => {
             const userRsvp = event.rsvps?.find(r => r.user_id === user.id)
+
+            // Calculate attendee counts using the same logic as other pages
+            const rsvpAttendees = (event.rsvps || []).filter((rsvp: any) => rsvp.status === 'going')
+            const eventMembers = (event.event_members || []).filter((member: any) => member.status === 'accepted')
+
+            // Deduplicate attendees
+            const uniqueAttendeeIds = new Set<string>()
+            const allAttendees: Array<{ user_id: string; status: string; source: 'rsvp' | 'crew' }> = []
+
+            // Add RSVP attendees first
+            rsvpAttendees.forEach((rsvp: any) => {
+              if (!uniqueAttendeeIds.has(rsvp.user_id)) {
+                uniqueAttendeeIds.add(rsvp.user_id)
+                allAttendees.push({ ...rsvp, source: 'rsvp' })
+              }
+            })
+
+            // Add event members (crew members) if they're not already in RSVPs
+            eventMembers.forEach((member: any) => {
+              if (!uniqueAttendeeIds.has(member.user_id)) {
+                uniqueAttendeeIds.add(member.user_id)
+                allAttendees.push({ ...member, status: 'going', source: 'crew' })
+              }
+            })
+
             const rsvpCounts = {
-              going: event.rsvps?.filter(r => r.status === 'going').length ?? 0,
+              going: allAttendees.length, // Total unique attendees
               maybe: event.rsvps?.filter(r => r.status === 'maybe').length ?? 0,
               not_going: event.rsvps?.filter(r => r.status === 'not_going').length ?? 0,
             }
