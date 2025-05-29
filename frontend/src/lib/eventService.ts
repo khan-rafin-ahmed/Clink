@@ -179,13 +179,10 @@ export async function getPublicEvents(): Promise<Event[]> {
   console.log('🔍 getPublicEvents: Fetching public events')
 
   try {
-    // Get events with RSVP counts
+    // First, get all public events
     const { data: events, error } = await supabase
       .from('events')
-      .select(`
-        *,
-        rsvps(count)
-      `)
+      .select('*')
       .eq('is_public', true)
       .gte('date_time', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -195,7 +192,35 @@ export async function getPublicEvents(): Promise<Event[]> {
       throw new Error('Failed to fetch public events')
     }
 
-    console.log('✅ getPublicEvents: Loaded public events:', events?.length || 0)
+    if (!events || events.length === 0) {
+      console.log('📭 getPublicEvents: No public events found')
+      return []
+    }
+
+    console.log('✅ getPublicEvents: Loaded public events:', events.length)
+
+    // Get event IDs for batch queries
+    const eventIds = events.map(event => event.id)
+
+    // Batch fetch RSVPs for all events
+    const { data: allRsvps, error: rsvpError } = await supabase
+      .from('rsvps')
+      .select('event_id, status, user_id')
+      .in('event_id', eventIds)
+
+    if (rsvpError) {
+      console.warn('⚠️ getPublicEvents: Could not fetch RSVPs:', rsvpError)
+    }
+
+    // Batch fetch event members for all events
+    const { data: allEventMembers, error: memberError } = await supabase
+      .from('event_members')
+      .select('event_id, status, user_id')
+      .in('event_id', eventIds)
+
+    if (memberError) {
+      console.warn('⚠️ getPublicEvents: Could not fetch event members:', memberError)
+    }
 
     // Get current user (this is optional for public events)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -225,12 +250,52 @@ export async function getPublicEvents(): Promise<Event[]> {
       console.log('📭 getPublicEvents: No authenticated user, proceeding without RSVP data')
     }
 
-    // Transform the data
-    const transformedEvents = (events || []).map(event => ({
-      ...event,
-      rsvp_count: event.rsvps?.[0]?.count || 0,
-      user_has_joined: userRsvps.some(rsvp => rsvp.event_id === event.id)
-    }))
+    // Transform the data with correct attendee counting (matching EventDetail logic exactly)
+    const transformedEvents = events.map(event => {
+      // Get RSVPs with status 'going' for this event
+      const rsvpAttendees = (allRsvps || []).filter(
+        (rsvp: any) => rsvp.event_id === event.id && rsvp.status === 'going'
+      )
+
+      // Get event members with status 'accepted' for this event (crew members)
+      const eventMembers = (allEventMembers || []).filter(
+        (member: any) => member.event_id === event.id && member.status === 'accepted'
+      )
+
+      // Create a Set to track unique user IDs to avoid duplicates (same as EventDetail)
+      const uniqueAttendeeIds = new Set<string>()
+      const allAttendees: Array<{
+        user_id: string
+        status: string
+        source: 'rsvp' | 'crew'
+      }> = []
+
+      // Add RSVP attendees first
+      rsvpAttendees.forEach(rsvp => {
+        if (!uniqueAttendeeIds.has(rsvp.user_id)) {
+          uniqueAttendeeIds.add(rsvp.user_id)
+          allAttendees.push({ ...rsvp, source: 'rsvp' })
+        }
+      })
+
+      // Add event members (crew members) if they're not already in RSVPs
+      eventMembers.forEach(member => {
+        if (!uniqueAttendeeIds.has(member.user_id)) {
+          uniqueAttendeeIds.add(member.user_id)
+          allAttendees.push({ ...member, status: 'going', source: 'crew' })
+        }
+      })
+
+      const totalAttendees = allAttendees.length
+
+
+
+      return {
+        ...event,
+        rsvp_count: totalAttendees,
+        user_has_joined: userRsvps.some(rsvp => rsvp.event_id === event.id)
+      }
+    })
 
     console.log('✅ getPublicEvents: Events transformed successfully')
     return transformedEvents
