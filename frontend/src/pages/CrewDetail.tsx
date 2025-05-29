@@ -269,36 +269,7 @@ export function CrewDetail() {
     }
   }
 
-  // Function to show notification fix instructions
-  const handleShowNotificationFix = () => {
-    const instructions = `
-🔧 Notification Fix Required
 
-The crew invitation system has a notification constraint error. Please follow these steps:
-
-1. Go to Supabase Dashboard: https://supabase.com/dashboard
-2. Select your project: Thirstee
-3. Go to SQL Editor
-4. Copy and paste this SQL command:
-
-ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
-ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
-CHECK (type IN ('follow_request', 'follow_accepted', 'event_invitation', 'event_update', 'crew_invitation'));
-
-5. Click "Run" to execute
-6. Refresh this page and try inviting again
-
-This adds 'crew_invitation' to the allowed notification types.
-    `
-
-    // Copy instructions to clipboard
-    navigator.clipboard.writeText(instructions.trim()).then(() => {
-      toast.success('📋 Instructions copied to clipboard!')
-    }).catch(() => {
-      // Fallback: show in alert
-      alert(instructions)
-    })
-  }
 
   if (isLoading) {
     return (
@@ -390,16 +361,6 @@ This adds 'crew_invitation' to the allowed notification types.
 
               {isCreator && (
                 <div className="flex gap-2 flex-wrap">
-                  {/* Notification Fix Instructions Button */}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleShowNotificationFix}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    🔧 Fix Notifications
-                  </Button>
-
                   <Button
                     variant="outline"
                     size="sm"
@@ -476,7 +437,7 @@ This adds 'crew_invitation' to the allowed notification types.
                                     key={result.user_id}
                                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
                                       isSelected
-                                        ? 'bg-amber-50 border-amber-200 shadow-sm'
+                                        ? 'bg-amber-500/20 border-amber-400 shadow-sm'
                                         : 'hover:bg-muted/50'
                                     }`}
                                     onClick={() => handleToggleUserSelection(result.user_id)}
@@ -489,8 +450,8 @@ This adds 'crew_invitation' to the allowed notification types.
                                     </Avatar>
 
                                     <div className="flex-1">
-                                      <p className="font-medium text-sm">{result.display_name}</p>
-                                      <p className="text-xs text-muted-foreground">Click to select</p>
+                                      <p className={`font-medium text-sm ${isSelected ? 'text-amber-900 dark:text-amber-100' : ''}`}>{result.display_name}</p>
+                                      <p className={`text-xs ${isSelected ? 'text-amber-700 dark:text-amber-200' : 'text-muted-foreground'}`}>Click to select</p>
                                     </div>
 
                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${

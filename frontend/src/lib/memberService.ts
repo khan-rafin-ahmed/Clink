@@ -131,3 +131,37 @@ export async function bulkInviteUsers(eventId: string, userIds: string[]) {
     user: userProfiles?.find(profile => profile.user_id === member.user_id)
   }))
 }
+
+// Bulk add crew members to event as automatically accepted
+export async function bulkAddCrewMembersToEvent(eventId: string, userIds: string[]) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const memberships = userIds.map(userId => ({
+    event_id: eventId,
+    user_id: userId,
+    invited_by: user.id,
+    status: 'accepted' as MemberStatus
+  }))
+
+  const { data, error } = await supabase
+    .from('event_members')
+    .insert(memberships)
+    .select()
+
+  if (error) throw error
+
+  if (!data || data.length === 0) return []
+
+  // Get user profiles for all added users
+  const { data: userProfiles } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .in('user_id', userIds)
+
+  // Combine the data
+  return data.map(member => ({
+    ...member,
+    user: userProfiles?.find(profile => profile.user_id === member.user_id)
+  }))
+}

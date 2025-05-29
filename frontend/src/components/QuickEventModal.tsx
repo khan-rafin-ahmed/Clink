@@ -9,7 +9,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
-import { bulkInviteUsers } from '@/lib/memberService'
+import { bulkInviteUsers, bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 
@@ -151,10 +151,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       const result = await createEventWithShareableLink(eventData)
 
-      // Invite selected Inner Circle members if any
+      // Add selected crew members if any (they automatically join)
       if (selectedInvitees.length > 0 && result.event?.id) {
         try {
-          await bulkInviteUsers(result.event.id, selectedInvitees)
+          await bulkAddCrewMembersToEvent(result.event.id, selectedInvitees)
         } catch (error) {
           // Don't fail the whole process, just continue
         }
@@ -162,7 +162,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       // Show success message and close modal
       const inviteMessage = selectedInvitees.length > 0
-        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} crew members invited!`
+        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} crew members automatically joined!`
         : '🍺 Hell yeah! Session created! Time to raise some hell!'
       toast.success(inviteMessage)
 
@@ -519,7 +519,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 {selectedCrew && crewMembers.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs text-muted-foreground">
-                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will be invited:
+                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will automatically join:
                     </div>
                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
                       {crewMembers.map(member => (
@@ -547,7 +547,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 {selectedInvitees.length > 0 && (
                   <div className="text-center py-2">
                     <div className="text-xs text-muted-foreground">
-                      {selectedInvitees.length} member{selectedInvitees.length !== 1 ? 's' : ''} selected for invitation
+                      {selectedInvitees.length} member{selectedInvitees.length !== 1 ? 's' : ''} will automatically join the session
                     </div>
                   </div>
                 )}
