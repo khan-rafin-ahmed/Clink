@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { supabase } from '@/lib/supabase'
+import { signInWithMagicLink } from '@/lib/authService'
 import { toast } from 'sonner'
 
 export function LoginPage() {
@@ -50,17 +50,7 @@ export function LoginPage() {
     setIsLoading(true)
     try {
       console.log('Sending magic link to:', email)
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-
-      if (error) {
-        console.error('Magic link error:', error)
-        throw error
-      }
+      await signInWithMagicLink(email, `${window.location.origin}/auth/callback`)
 
       console.log('Magic link sent successfully')
       setMagicLinkSent(true)

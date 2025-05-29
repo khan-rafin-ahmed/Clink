@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { handleAuthCallback } from '@/lib/authService'
 import { Loader2 } from 'lucide-react'
 
 export function AuthCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    const handleCallback = async () => {
       try {
         console.log('Auth callback triggered')
         console.log('Current URL:', window.location.href)
@@ -27,10 +28,8 @@ export function AuthCallback() {
 
         // If we have a code parameter, this is likely a Google OAuth callback
         if (code) {
-
           // Try to exchange the code for a session using Supabase's method
           try {
-            // Use Supabase's exchangeCodeForSession method
             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
             if (error) {
@@ -39,11 +38,17 @@ export function AuthCallback() {
             }
 
             if (data?.session) {
-              navigate('/profile')
+              // Use our robust auth callback handler
+              const result = await handleAuthCallback()
+              if (result.success) {
+                navigate('/profile')
+              } else {
+                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
+              }
               return
             }
           } catch (exchangeError: any) {
-            // Fall back to session polling if exchange fails
+            console.error('Exchange failed, falling back to polling:', exchangeError)
           }
 
           // Fallback: Poll for session (in case exchangeCodeForSession doesn't work)
@@ -60,13 +65,18 @@ export function AuthCallback() {
                 navigate('/login?error=' + encodeURIComponent(`Session polling failed: ${error.message}`))
                 return
               }
-              // Retry after delay
               setTimeout(checkForSession, 1500)
               return
             }
 
             if (session) {
-              navigate('/profile')
+              // Use our robust auth callback handler
+              const result = await handleAuthCallback()
+              if (result.success) {
+                navigate('/profile')
+              } else {
+                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
+              }
               return
             }
 
@@ -75,7 +85,6 @@ export function AuthCallback() {
               return
             }
 
-            // Retry after delay
             setTimeout(checkForSession, 1500)
           }
 
@@ -83,21 +92,22 @@ export function AuthCallback() {
           return
         }
 
-        // For magic links (no code parameter), check session immediately
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        if (error) {
-          navigate('/login?error=' + encodeURIComponent(error.message))
-          return
-        }
-
-        if (session) {
+        // For magic links (no code parameter), use our robust handler
+        const result = await handleAuthCallback()
+        if (result.success) {
           navigate('/profile')
+        } else if (result.error) {
+          navigate('/login?error=' + encodeURIComponent(result.error))
         } else {
           // Listen for auth state change (for magic links)
-          const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session) {
-              navigate('/profile')
+              const setupResult = await handleAuthCallback()
+              if (setupResult.success) {
+                navigate('/profile')
+              } else {
+                navigate('/login?error=' + encodeURIComponent(setupResult.error || 'Setup failed'))
+              }
             }
           })
 
@@ -108,11 +118,12 @@ export function AuthCallback() {
           }, 10000)
         }
       } catch (error: any) {
+        console.error('Auth callback error:', error)
         navigate('/login?error=' + encodeURIComponent(error.message || 'callback_failed'))
       }
     }
 
-    handleAuthCallback()
+    handleCallback()
   }, [navigate])
 
   return (

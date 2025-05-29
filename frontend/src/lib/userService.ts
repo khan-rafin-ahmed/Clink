@@ -108,54 +108,95 @@ export async function createUserProfile(userId: string, profile: Partial<UserPro
   return data
 }
 
-// Ensure user profile exists (create if missing)
-export async function ensureUserProfileExists(user: any) {
-  try {
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
+// Robust user profile creation with multiple retry attempts
+export async function ensureUserProfileExists(user: any, maxRetries = 3): Promise<any> {
+  console.log('🔄 ensureUserProfileExists: Starting for user:', user.id)
 
-    if (existingProfile) {
-      return existingProfile
-    }
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔍 ensureUserProfileExists: Attempt ${attempt}/${maxRetries} - Checking if profile exists`)
 
-    // Profile doesn't exist, create it
-    const displayName = user.user_metadata?.full_name ||
-                       user.user_metadata?.name ||
-                       user.raw_user_meta_data?.full_name ||
-                       user.raw_user_meta_data?.name ||
-                       user.email?.split('@')[0] ||
-                       'User'
-
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .insert({
-        user_id: user.id,
-        display_name: displayName
-      })
-      .select()
-      .single()
-
-    if (error && error.code !== '23505') { // Ignore unique constraint violations
-      throw error
-    }
-
-    return data
-  } catch (error) {
-    // If it's a unique constraint violation, the profile was created by another process
-    if ((error as any)?.code === '23505') {
-      // Try to fetch the existing profile
-      const { data } = await supabase
+      // Check if profile already exists
+      const { data: existingProfile, error: selectError } = await supabase
         .from('user_profiles')
-        .select('id')
+        .select('id, user_id, display_name')
         .eq('user_id', user.id)
         .single()
+
+      if (existingProfile) {
+        console.log('✅ ensureUserProfileExists: Profile already exists:', existingProfile.id)
+        return existingProfile
+      }
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('❌ ensureUserProfileExists: Error checking profile:', selectError)
+        throw selectError
+      }
+
+      console.log('📝 ensureUserProfileExists: Profile not found, creating new one')
+
+      // Profile doesn't exist, create it
+      const displayName = user.user_metadata?.full_name ||
+                         user.user_metadata?.name ||
+                         user.raw_user_meta_data?.full_name ||
+                         user.raw_user_meta_data?.name ||
+                         user.email?.split('@')[0] ||
+                         'User'
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: user.id,
+          display_name: displayName
+        })
+        .select('id, user_id, display_name')
+        .single()
+
+      if (error) {
+        if (error.code === '23505') {
+          // Unique constraint violation - profile was created by another process
+          console.log('⚠️ ensureUserProfileExists: Profile created by another process, fetching it')
+          const { data: fetchedProfile } = await supabase
+            .from('user_profiles')
+            .select('id, user_id, display_name')
+            .eq('user_id', user.id)
+            .single()
+
+          if (fetchedProfile) {
+            console.log('✅ ensureUserProfileExists: Retrieved existing profile:', fetchedProfile.id)
+            return fetchedProfile
+          }
+        }
+
+        console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, error)
+
+        if (attempt === maxRetries) {
+          throw error
+        }
+
+        // Wait before retrying (exponential backoff)
+        const delay = Math.pow(2, attempt) * 1000
+        console.log(`⏳ ensureUserProfileExists: Waiting ${delay}ms before retry`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        continue
+      }
+
+      console.log('✅ ensureUserProfileExists: Profile created successfully:', data.id)
       return data
+
+    } catch (error) {
+      console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, error)
+
+      if (attempt === maxRetries) {
+        console.error('💥 ensureUserProfileExists: All attempts failed, throwing error')
+        throw error
+      }
+
+      // Wait before retrying (exponential backoff)
+      const delay = Math.pow(2, attempt) * 1000
+      console.log(`⏳ ensureUserProfileExists: Waiting ${delay}ms before retry`)
+      await new Promise(resolve => setTimeout(resolve, delay))
     }
-    throw error
   }
 }
 

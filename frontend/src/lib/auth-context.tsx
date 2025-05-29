@@ -2,8 +2,7 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { toast } from 'sonner'
-import { updateProfileWithGoogleAvatar } from './googleAvatarService'
-import { ensureUserProfileExists } from './userService'
+import { signInWithGoogle as authSignInWithGoogle, signOut as authSignOut, handlePostAuthSetup, isNewUser } from './authService'
 
 type AuthContextType = {
   user: User | null
@@ -67,36 +66,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const newUser = session?.user ?? null
 
-      // Show welcome message on sign in (only once per user per session and not on initial load)
+      // Handle user sign in with robust profile creation
       if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
         welcomeShownRef.current.add(newUser.id)
 
-        const username = newUser.user_metadata?.full_name?.split(' ')[0] ||
-                        newUser.email?.split('@')[0] || 'Champion'
+        // Determine if this is a new user
+        const userIsNew = isNewUser(newUser)
 
-        // Check if this is a new user (created recently)
-        const userCreatedAt = new Date(newUser.created_at || '')
-        const now = new Date()
-        const isNewUser = (now.getTime() - userCreatedAt.getTime()) < 60000 // Less than 1 minute old
-
-        if (isNewUser) {
-          toast.success(`Welcome to Thirstee, ${username}! 🍻 Let's raise some hell!`)
-        } else {
-          toast.success(`Welcome back, ${username}! 🍻 Ready to raise some hell?`)
-        }
-
-        // Ensure user profile exists and update with Google avatar
+        // Handle post-auth setup (profile creation, avatar, welcome message)
         setTimeout(async () => {
           try {
-            // First ensure the user profile exists (in case trigger failed)
-            await ensureUserProfileExists(newUser)
-
-            // Then update with Google avatar if user doesn't have one
-            await updateProfileWithGoogleAvatar(newUser.id)
+            await handlePostAuthSetup(newUser, userIsNew)
           } catch (error) {
-            // Silently handle profile/avatar errors to not disrupt auth flow
+            console.error('Post-auth setup failed:', error)
+            // Don't disrupt the auth flow, but log the error
           }
-        }, isNewUser ? 2000 : 500) // Longer delay for new users
+        }, userIsNew ? 2000 : 500) // Longer delay for new users
 
         // Check for redirect after login
         const redirectPath = sessionStorage.getItem('redirectAfterLogin')
@@ -135,32 +120,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      })
-
-      if (error) {
-        // More specific error handling
-        if (error.message.includes('server_error')) {
-          toast.error('Google server error. This might be a configuration issue. Please try magic link! 📧')
-        } else if (error.message.includes('Provider not found') || error.message.includes('not enabled')) {
-          toast.error('Google sign-in is not enabled. Please use magic link for now! 📧')
-        } else if (error.message.includes('redirect_uri')) {
-          toast.error('Google OAuth redirect URL mismatch. Please contact support.')
-        } else {
-          toast.error(`Google sign-in failed: ${error.message}`)
-        }
-        throw error
-      }
+      await authSignInWithGoogle()
     } catch (error: any) {
-      // Only show generic error if we haven't already shown a specific one
-      if (!error.message?.includes('server_error') && !error.message?.includes('Provider not found')) {
+      // Handle specific Google OAuth errors
+      if (error.message?.includes('server_error')) {
+        toast.error('Google sign-in temporarily unavailable. Please try magic link! 📧')
+      } else if (error.message?.includes('Provider not found')) {
+        toast.error('Google sign-in not configured. Please try magic link! 📧')
+      } else {
         toast.error('Google sign-in failed. Please try magic link instead! 📧')
       }
     }
@@ -169,11 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      await authSignOut()
     } catch (error: any) {
       setError(error.message || 'Sign out failed')
-      toast.error('Failed to sign out. Please try again.')
     } finally {
       if (mountedRef.current) {
         setLoading(false)
