@@ -279,12 +279,12 @@ export function UserProfile() {
             </div>
           </div>
 
-          {/* Your Crews */}
+          {/* Crews You're In */}
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-                Your Crews
+                Crews You're In
               </h2>
             </div>
 

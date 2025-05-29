@@ -129,6 +129,9 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                       <><Lock className="w-3 h-3 mr-1" />Private</>
                     )}
                   </Badge>
+                  <Badge variant={crew.is_creator ? 'default' : 'secondary'} className="text-xs">
+                    {crew.is_creator ? '👑 Host' : '🎟️ Member'}
+                  </Badge>
                 </div>
               </div>
             </div>
