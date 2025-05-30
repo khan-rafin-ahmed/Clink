@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   getCrewById,
@@ -14,9 +13,8 @@ import {
   bulkInviteUsersToCrew,
   createCrewInviteLink,
   searchUsersForInvite,
-  type Crew,
-  type CrewMember
 } from '@/lib/crewService'
+import { leaveCrew, inviteUserByIdentifier } from '@/lib/crewService'
 import { toast } from 'sonner'
 import {
   Users,
@@ -42,6 +40,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import type { Crew, CrewMember } from '@/types'
 
 export function CrewDetail() {
   const { crewId } = useParams<{ crewId: string }>()
@@ -269,8 +271,6 @@ export function CrewDetail() {
     }
   }
 
-
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -301,7 +301,28 @@ export function CrewDetail() {
     )
   }
 
-  const VibeIcon = vibeIcons[crew.vibe] || Star
+  const VibeIcon = ({ vibe }: { vibe: Crew['vibe'] }) => {
+    const icons: Record<Crew['vibe'], typeof Users> = {
+      casual: Users,
+      party: PartyPopper,
+      chill: Coffee,
+      wild: Flame,
+      classy: Crown,
+      other: Star
+    }
+    const Icon = icons[vibe]
+    return <Icon className="w-4 h-4" />
+  }
+
+  const vibeColors: Record<Crew['vibe'], 'default' | 'secondary'> = {
+    casual: 'secondary',
+    party: 'secondary',
+    chill: 'secondary',
+    wild: 'secondary',
+    classy: 'secondary',
+    other: 'secondary'
+  }
+
   const isCreator = crew.is_creator
 
   return (
@@ -327,14 +348,13 @@ export function CrewDetail() {
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                    <VibeIcon className="w-6 h-6 text-primary" />
+                    <VibeIcon vibe={crew.vibe} />
                   </div>
                   <div>
                     <CardTitle className="text-2xl font-display">{crew.name}</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="capitalize">
-                        <VibeIcon className="w-3 h-3 mr-1" />
-                        {crew.vibe}
+                      <Badge variant={vibeColors[crew.vibe]} className="capitalize">
+                        <VibeIcon vibe={crew.vibe} />
                       </Badge>
                       <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'}>
                         {crew.visibility === 'public' ? (

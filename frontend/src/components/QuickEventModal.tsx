@@ -8,10 +8,13 @@ import { ShareModal } from '@/components/ShareModal'
 import { UserAvatar } from '@/components/UserAvatar'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
-import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
+import { getUserCrews } from '@/lib/crewService'
+import { getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
+import type { Event } from '@/types'
+import type { Crew, CrewMember } from '@/types'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void

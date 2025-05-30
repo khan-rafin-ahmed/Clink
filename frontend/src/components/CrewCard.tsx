@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { leaveCrew, getCrewMembers, createCrewInviteLink, type Crew, type CrewMember } from '@/lib/crewService'
+import { leaveCrew, getCrewMembers, createCrewInviteLink } from '@/lib/crewService'
+import type { Crew, CrewMember } from '@/types'
 import { EditCrewModal } from '@/components/EditCrewModal'
 import { toast } from 'sonner'
 import {
@@ -86,9 +87,9 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
       const crewMembers = await getCrewMembers(crew.id)
       setMembers(crewMembers)
       setShowMembers(true)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching crew members:', error)
-      toast.error('Failed to load crew members')
+      toast.error('Failed to fetch crew members')
     }
   }
 

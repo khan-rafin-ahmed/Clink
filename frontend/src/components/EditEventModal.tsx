@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { UserAvatar } from '@/components/UserAvatar'
 import { updateEvent } from '@/lib/eventService'
-import { getUserCrews, getCrewMembers, type Crew, type CrewMember } from '@/lib/crewService'
+import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 import type { Event } from '@/types'
+import type { Crew, CrewMember } from '@/types'
 
 interface EditEventModalProps {
   event: Event
@@ -115,7 +116,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     { value: 'beer', label: 'Beer', emoji: '🍺' },
     { value: 'wine', label: 'Wine', emoji: '🍷' },
     { value: 'whiskey', label: 'Whiskey', emoji: '🥃' },
-    { value: 'cocktails', label: 'Cocktails', emoji: '🍸' },
+    { value: 'cocktails', label: 'Cocktails', emoji: '��' },
     { value: 'shots', label: 'Shots', emoji: '🥂' },
     { value: 'mixed', label: 'Mixed', emoji: '🍹' }
   ]

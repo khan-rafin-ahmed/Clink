@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateCrew } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Users, Globe, Lock, PartyPopper, Coffee, Flame, Crown, Star } from 'lucide-react'
 import type { Crew } from '@/types'
 
 interface EditCrewModalProps {
@@ -19,11 +19,16 @@ interface EditCrewModalProps {
 
 export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrewModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    description: string
+    vibe: Crew['vibe']
+    visibility: 'public' | 'private'
+  }>({
     name: '',
     description: '',
-    vibe: '',
-    visibility: 'private' as 'public' | 'private'
+    vibe: 'casual',
+    visibility: 'private'
   })
 
   // Initialize form data when crew changes
@@ -32,7 +37,7 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
       setFormData({
         name: crew.name || '',
         description: crew.description || '',
-        vibe: crew.vibe || '',
+        vibe: crew.vibe,
         visibility: crew.visibility || 'private'
       })
     }
@@ -55,7 +60,7 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     try {
       await updateCrew(crew.id, {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
+        description: formData.description.trim() || undefined,
         vibe: formData.vibe,
         visibility: formData.visibility
       })
@@ -125,7 +130,7 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
             <Label className="text-white">Vibe *</Label>
             <Select
               value={formData.vibe}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, vibe: value }))}
+              onValueChange={(value: Crew['vibe']) => setFormData(prev => ({ ...prev, vibe: value }))}
               disabled={isLoading}
             >
               <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
