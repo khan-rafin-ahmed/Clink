@@ -268,9 +268,15 @@ export function UserProfile() {
               id,
               status,
               user_id
+            ),
+            event_members (
+              id,
+              status,
+              user_id
             )
           `)
           .in('crew_id', crewIds)
+          .or(`rsvps.user_id.eq.${user.id},event_members.user_id.eq.${user.id}`)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false }),
       ])
@@ -507,6 +513,14 @@ export function UserProfile() {
       } else {
         const crewPastWithCreators = await Promise.all(
           (pastCrewEventsResult.data || [])
+            .filter(event => {
+              // Only include events where:
+              // 1. User has an RSVP with status 'going'
+              // 2. User is an event member with status 'accepted'
+              const hasRsvp = event.rsvps?.some(r => r.user_id === user.id && r.status === 'going')
+              const isMember = event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted')
+              return hasRsvp || isMember
+            })
             .filter(event => !processedEventIds.has(event.id))
             .map(async (event) => {
               processedEventIds.add(event.id)
