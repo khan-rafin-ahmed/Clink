@@ -256,10 +256,6 @@ export function UserProfile() {
               id,
               status,
               user_id
-            ),
-            crews!inner (
-              id,
-              name
             )
           `)
           .in('crew_id', crewIds)
