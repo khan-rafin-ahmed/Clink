@@ -37,6 +37,7 @@ export interface EventMember {
 export interface Event {
   id: string
   title: string
+  place_nickname?: string | null
   date_time: string
   location: string
   latitude?: number | null

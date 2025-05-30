@@ -82,6 +82,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
   const [formData, setFormData] = useState({
     title: '',
+    place_nickname: '',
     location: '',
     locationData: null as LocationData | null,
     time: 'now',
@@ -134,8 +135,13 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     try {
       const eventData = {
         title: formData.title,
-        location: formData.location,
-        date_time: formData.time === 'custom' 
+        place_nickname: formData.place_nickname || null,
+        location: formData.locationData?.place_name || formData.location,
+        latitude: formData.locationData?.latitude || null,
+        longitude: formData.locationData?.longitude || null,
+        place_id: formData.locationData?.place_id || null,
+        place_name: formData.locationData?.place_name || null,
+        date_time: formData.time === 'custom'
           ? new Date(formData.custom_time).toISOString()
           : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         drink_type: formData.drink_type,
@@ -216,6 +222,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const resetModal = () => {
     setFormData({
       title: '',
+      place_nickname: '',
       location: '',
       locationData: null,
       time: 'now',
@@ -311,6 +318,18 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   onKeyDown={handleKeyDown}
                   className="mt-1"
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="place_nickname" className="text-sm font-medium">Place Nickname <span className="text-muted-foreground">(optional)</span></Label>
+                <Input
+                  id="place_nickname"
+                  placeholder="Swerve's House, The Rooftop Bar, etc."
+                  value={formData.place_nickname}
+                  onChange={(e) => setFormData(prev => ({ ...prev, place_nickname: e.target.value }))}
+                  onKeyDown={handleKeyDown}
+                  className="mt-1"
                 />
               </div>
 

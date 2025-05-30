@@ -32,6 +32,8 @@ export function LocationAutocomplete({
 
   // Initialize Google Maps Places Autocomplete
   useEffect(() => {
+    let observer: MutationObserver | null = null;
+
     const initializeAutocomplete = async () => {
       try {
         await loadGoogleMapsAPI();
@@ -73,6 +75,7 @@ export function LocationAutocomplete({
             pacContainer.style.border = '1px solid #D97706' // border-gold-500
             pacContainer.style.borderRadius = '0.375rem'
             pacContainer.style.zIndex = '9999'
+            pacContainer.style.marginTop = '4px'
 
             const pacItems = pacContainer.querySelectorAll('.pac-item')
             pacItems.forEach((item: Element) => {
@@ -80,7 +83,8 @@ export function LocationAutocomplete({
               htmlItem.style.backgroundColor = '#111827' // bg-gray-900
               htmlItem.style.color = '#ffffff' // text-white
               htmlItem.style.borderBottom = '1px solid #374151' // border-gray-700
-              htmlItem.style.padding = '8px 16px'
+              htmlItem.style.padding = '12px 16px'
+              htmlItem.style.cursor = 'pointer'
 
               htmlItem.addEventListener('mouseenter', () => {
                 htmlItem.style.backgroundColor = '#1F2937' // hover:bg-gray-800
@@ -91,36 +95,47 @@ export function LocationAutocomplete({
               })
             })
 
-            // Hide "Powered by Google" text
+            // Hide "Powered by Google" text and logo
             const poweredBy = pacContainer.querySelector('.pac-logo') as HTMLElement
             if (poweredBy) {
               poweredBy.style.display = 'none'
             }
+
+            // Also hide any other Google branding
+            const pacLogos = pacContainer.querySelectorAll('[src*="google"], .pac-logo, .pac-icon')
+            pacLogos.forEach((logo: Element) => {
+              (logo as HTMLElement).style.display = 'none'
+            })
           }
         }
 
-        // Apply styling after a short delay to ensure dropdown is rendered
-        const observer = new MutationObserver(() => {
-          styleAutocompleteDropdown()
+        // Apply styling immediately and on mutations
+        setTimeout(styleAutocompleteDropdown, 100)
+
+        observer = new MutationObserver(() => {
+          setTimeout(styleAutocompleteDropdown, 50)
         })
 
         observer.observe(document.body, {
           childList: true,
           subtree: true
         })
-
-        return () => {
-          observer.disconnect()
-          if (autocompleteRef.current) {
-            google.maps.event.clearInstanceListeners(autocompleteRef.current)
-          }
-        }
       } catch (error) {
         console.error('Failed to initialize Google Maps autocomplete:', error)
       }
     }
 
     initializeAutocomplete()
+
+    // Return cleanup function
+    return () => {
+      if (observer) {
+        observer.disconnect()
+      }
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current)
+      }
+    }
   }, [onChange])
 
   // Handle clear selection
@@ -173,10 +188,6 @@ export function LocationAutocomplete({
       {error && (
         <p className="text-sm text-destructive mt-1">{error}</p>
       )}
-
-      <div className="mt-2 text-sm italic text-gray-400 opacity-50">
-        Powered by Google
-      </div>
     </div>
   )
 }
