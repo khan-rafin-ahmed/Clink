@@ -38,22 +38,22 @@ export function GoogleLocationPicker({
   }
 
   // Manual predictions dropdown using AutocompleteService & PlacesService
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService>()
-  const placesServiceRef = useRef<google.maps.places.PlacesService>()
+  const [predictions, setPredictions] = useState<any[]>([])
+  const autocompleteServiceRef = useRef<any>()
+  const placesServiceRef = useRef<any>()
 
   useEffect(() => {
-    if (!window.google) return
-    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
-    placesServiceRef.current = new window.google.maps.places.PlacesService(document.createElement('div'))
+    if (!(window as any).google) return
+    autocompleteServiceRef.current = new (window as any).google.maps.places.AutocompleteService()
+    placesServiceRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
   }, [])
 
   const fetchPredictions = (input: string) => {
     if (!autocompleteServiceRef.current) return
     autocompleteServiceRef.current.getPlacePredictions(
       { input, componentRestrictions: { country: 'bd' }, types: ['establishment','geocode'] },
-      (preds, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && preds) {
+      (preds: any, status: any) => {
+        if (status === "OK" && preds) {
           setPredictions(preds)
         } else {
           setPredictions([])
@@ -62,12 +62,12 @@ export function GoogleLocationPicker({
     )
   }
 
-  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
+  const handleSelectPrediction = (pred: any) => {
     if (!placesServiceRef.current) return
     placesServiceRef.current.getDetails(
       { placeId: pred.place_id },
-      (place, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+      (place: any, status: any) => {
+        if (status === "OK" && place?.geometry?.location) {
           const locationData: LocationData = {
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng(),
