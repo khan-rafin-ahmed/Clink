@@ -139,7 +139,7 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            rsvps!inner (
+            rsvps (
               id,
               status,
               user_id
@@ -166,7 +166,7 @@ export function UserProfile() {
               status,
               user_id
             ),
-            event_members!inner (
+            event_members (
               id,
               status,
               user_id
@@ -258,7 +258,7 @@ export function UserProfile() {
               user_id
             )
           `)
-          .in('crew_id', crewIds)
+          .in('created_by', crewIds)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false })
       ])
@@ -276,7 +276,7 @@ export function UserProfile() {
         const allAttendees: Array<{
           user_id: string
           status: string
-          source: 'rsvp' | 'crew'
+          source: 'rsvp' | 'crew' | 'creator'
         }> = []
 
         // Add RSVP attendees first
@@ -294,6 +294,16 @@ export function UserProfile() {
             allAttendees.push({ ...member, status: 'going', source: 'crew' })
           }
         })
+
+        // Add the creator if they're not already counted
+        if (event.created_by && !uniqueAttendeeIds.has(event.created_by)) {
+          uniqueAttendeeIds.add(event.created_by)
+          allAttendees.push({
+            user_id: event.created_by,
+            status: 'going',
+            source: 'creator'
+          })
+        }
 
         return allAttendees.length
       }
