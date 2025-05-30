@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase'
 import { formatEventTiming, getUserJoinStatus } from '@/lib/eventUtils'
 import type { Event } from '@/types'
 import { cn } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
 
 interface NextEventBannerProps {
   userId: string
@@ -20,24 +19,28 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isHost, setIsHost] = useState(false)
 
-  const { data: nextEventData, isLoading: queryLoading } = useQuery({
-    queryKey: ['nextEvent', userId],
-    queryFn: () => getNextEvent(userId),
-    enabled: !!userId
-  })
-
   useEffect(() => {
-    if (nextEventData) {
-      setNextEvent(nextEventData)
-      setIsHost(nextEventData.created_by === userId)
+    loadNextEvent()
+  }, [userId])
+
+  const loadNextEvent = async () => {
+    if (!userId) return
+
+    setIsLoading(true)
+    try {
+      const event = await getNextEvent(userId)
+      setNextEvent(event)
+      setIsHost(event?.created_by === userId)
+    } catch (error) {
+      console.error('Error loading next event:', error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(queryLoading)
-  }, [nextEventData, queryLoading])
+  }
 
   const getNextEvent = async (userId: string): Promise<Event | null> => {
     if (!userId) return null
 
-    setIsLoading(true)
     try {
       // Get upcoming events where user is either:
       // 1. The host (created_by)
@@ -85,20 +88,18 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
       // Combine and find the earliest event
       const allEvents = [...(events || []), ...(crewEvents || [])]
-      
+
       if (allEvents.length > 0) {
         // Sort by date and take the earliest
-        const sortedEvents = allEvents.sort((a, b) => 
+        const sortedEvents = allEvents.sort((a, b) =>
           new Date(a.date_time).getTime() - new Date(b.date_time).getTime()
         )
-        
+
         const earliestEvent = sortedEvents[0]
         return earliestEvent
       }
     } catch (error) {
       console.error('Error loading next event:', error)
-    } finally {
-      setIsLoading(false)
     }
     return null
   }
@@ -190,9 +191,9 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
                   </Badge>
                 )}
               </div>
-              
-              <Button 
-                variant={isHost ? "default" : "outline"} 
+
+              <Button
+                variant={isHost ? "default" : "outline"}
                 size="sm"
                 className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                 onClick={(e) => {
