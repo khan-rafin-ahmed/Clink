@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, Loader2, Crown } from 'lucide-react'
 
 interface JoinEventButtonProps {
   eventId: string
@@ -13,6 +13,7 @@ interface JoinEventButtonProps {
   size?: 'default' | 'sm' | 'lg'
   variant?: 'default' | 'outline' | 'secondary'
   showLoginPrompt?: boolean
+  isHost?: boolean
 }
 
 export function JoinEventButton({
@@ -22,7 +23,8 @@ export function JoinEventButton({
   className = '',
   size = 'default',
   variant = 'default',
-  showLoginPrompt = true
+  showLoginPrompt = true,
+  isHost = false
 }: JoinEventButtonProps) {
   const { user } = useAuth()
   const [isJoined, setIsJoined] = useState(initialJoined)
@@ -116,6 +118,20 @@ export function JoinEventButton({
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isHost) {
+    return (
+      <Button
+        variant="secondary"
+        size={size}
+        className={`${className} bg-primary/10 text-primary border-primary/20 cursor-not-allowed`}
+        disabled
+      >
+        <Crown className="w-4 h-4 mr-2" />
+        <span className="font-semibold">You are the host</span>
+      </Button>
+    )
   }
 
   if (!user && !showLoginPrompt) {

@@ -34,6 +34,7 @@ import { supabase } from '@/lib/supabase'
 import { getPublicEvents } from '@/lib/eventService'
 import type { Event, UserProfile } from '@/types'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 
 type SortOption = 'newest' | 'trending' | 'date' | 'popular'
 type FilterOption = 'all' | 'tonight' | 'tomorrow' | 'weekend' | 'next-week'
@@ -132,6 +133,7 @@ function DiscoverContent() {
   const [drinkFilter, setDrinkFilter] = useState<string>('all')
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
+  const { user } = useAuth()
 
   // Create a stable fetch function that will receive the user from the hook
   const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
@@ -555,6 +557,7 @@ function DiscoverContent() {
                         initialJoined={event.user_has_joined}
                         onJoinChange={(joined) => handleJoinChange(event.id, joined)}
                         className="flex-1"
+                        isHost={event.created_by === user?.id}
                       />
                       <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
                         <Button variant="outline" className="w-full">
