@@ -15,6 +15,7 @@ import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
 import type { Crew, CrewMember, LocationData } from '@/types'
+import { supabase } from '@/lib/supabase'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void
@@ -118,84 +119,59 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     { value: 'custom', label: 'Custom Time', emoji: '⏰' }
   ]
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-
-    // Only allow submission on step 3
-    if (step !== 3) {
-      return
-    }
-
-    if (!user) {
-      toast.error('Please sign in to create an event')
-      return
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
 
     setIsSubmitting(true)
-
     try {
-      // Calculate event time
-      let eventDateTime = new Date()
-      if (formData.time === 'tonight') {
-        eventDateTime.setHours(20, 0, 0, 0) // 8 PM tonight
-      } else if (formData.time === 'custom' && formData.custom_time) {
-        eventDateTime = new Date(formData.custom_time)
-      }
-
-      // Create event using the enhanced service
       const eventData = {
         title: formData.title,
-        location: formData.locationData?.place_name || formData.location,
-        latitude: formData.locationData?.latitude || null,
-        longitude: formData.locationData?.longitude || null,
-        place_id: formData.locationData?.place_id || null,
-        place_name: formData.locationData?.place_name || null,
-        date_time: eventDateTime.toISOString(),
+        location: formData.location,
+        date_time: formData.time === 'custom' 
+          ? new Date(formData.custom_time).toISOString()
+          : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         drink_type: formData.drink_type,
         vibe: formData.vibe,
-        notes: formData.notes || undefined,
-        is_public: formData.is_public
+        notes: formData.notes,
+        is_public: formData.is_public,
+        created_by: user.id,
+        crew_id: selectedCrew || null // Add crew_id if a crew is selected
       }
 
-      const result = await createEventWithShareableLink(eventData)
+      const { data: event, error } = await supabase
+        .from('events')
+        .insert(eventData)
+        .select()
+        .single()
 
-      // Add selected crew members if any (they automatically join)
-      if (selectedInvitees.length > 0 && result.event?.id) {
-        try {
-          await bulkAddCrewMembersToEvent(result.event.id, selectedInvitees)
-        } catch (error) {
-          // Don't fail the whole process, just continue
-        }
+      if (error) throw error
+
+      // If crew is selected, add all crew members as event members
+      if (selectedCrew && crewMembers.length > 0) {
+        const eventMembers = crewMembers.map(member => ({
+          event_id: event.id,
+          user_id: member.user_id,
+          invited_by: user.id,
+          status: 'accepted'
+        }))
+
+        const { error: membersError } = await supabase
+          .from('event_members')
+          .insert(eventMembers)
+
+        if (membersError) throw membersError
       }
 
-      // Show success message and close modal
-      const inviteMessage = selectedInvitees.length > 0
-        ? `🍺 Hell yeah! Session created and ${selectedInvitees.length} crew members automatically joined!`
-        : '🍺 Hell yeah! Session created! Time to raise some hell!'
-      toast.success(inviteMessage)
-
-      // Close modal and reset
-      setOpen(false)
-      setTimeout(resetModal, 300)
-
-      // Call the callback
+      setCreatedEvent({
+        share_url: `${window.location.origin}/event/${event.event_code || event.id}`,
+        event_code: event.event_code || event.id
+      })
+      setStep(3)
       onEventCreated?.()
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating event:', error)
-
-      // Provide more specific error messages
-      let errorMessage = 'Failed to create event'
-      if (error.message?.includes('NetworkError')) {
-        errorMessage = 'Network error - please check your internet connection and try again'
-      } else if (error.message?.includes('JWT')) {
-        errorMessage = 'Authentication error - please sign out and sign back in'
-      } else if (error.message?.includes('permission')) {
-        errorMessage = 'Permission denied - please check your account permissions'
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      toast.error(errorMessage)
+      toast.error('Failed to create event')
     } finally {
       setIsSubmitting(false)
     }
@@ -263,7 +239,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       if (step < 3 && isStepValid()) {
         nextStep()
       } else if (step === 3) {
-        handleSubmit()
+        handleSubmit(e)
       }
     }
   }
@@ -353,7 +329,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, time: option.value }))}
+                      onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, time: option.value })) }}
                       className={`p-3 rounded-lg border text-center transition-colors ${
                         formData.time === option.value
                           ? 'border-primary bg-primary/10 text-primary'
@@ -384,7 +360,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                     <button
                       key={drink.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, drink_type: drink.value }))}
+                      onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, drink_type: drink.value })) }}
                       className={`p-3 rounded-lg border text-center transition-colors ${
                         formData.drink_type === drink.value
                           ? 'border-primary bg-primary/10 text-primary'
@@ -410,7 +386,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                     <button
                       key={vibe.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, vibe: vibe.value }))}
+                      onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, vibe: vibe.value })) }}
                       className={`p-3 rounded-lg border text-center transition-colors ${
                         formData.vibe === vibe.value
                           ? 'border-primary bg-primary/10 text-primary'
@@ -429,7 +405,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_public: true }))}
+                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, is_public: true })) }}
                     className={`p-3 rounded-lg border text-center transition-colors ${
                       formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
@@ -442,7 +418,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_public: false }))}
+                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, is_public: false })) }}
                     className={`p-3 rounded-lg border text-center transition-colors ${
                       !formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
@@ -487,7 +463,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                     <div className="grid grid-cols-1 gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedCrew('')}
+                        onClick={(e) => { e.preventDefault(); setSelectedCrew('') }}
                         className={`p-3 rounded-lg border text-left transition-colors ${
                           selectedCrew === ''
                             ? 'border-primary bg-primary/10 text-primary'
@@ -501,7 +477,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                         <button
                           key={crew.id}
                           type="button"
-                          onClick={() => setSelectedCrew(crew.id)}
+                          onClick={(e) => { e.preventDefault(); setSelectedCrew(crew.id) }}
                           className={`p-3 rounded-lg border text-left transition-colors ${
                             selectedCrew === crew.id
                               ? 'border-primary bg-primary/10 text-primary'
@@ -575,7 +551,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
               <Button
                 type="button"
                 variant="outline"
-                onClick={prevStep}
+                onClick={(e) => { e.preventDefault(); prevStep() }}
                 className="px-6 order-2 sm:order-1"
               >
                 Back
@@ -585,7 +561,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             {step < 3 ? (
               <Button
                 type="button"
-                onClick={nextStep}
+                onClick={(e) => { e.preventDefault(); nextStep() }}
                 disabled={!isStepValid()}
                 className="flex-1 font-semibold order-1 sm:order-2"
               >
@@ -594,7 +570,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             ) : (
               <Button
                 type="button"
-                onClick={() => handleSubmit()}
+                onClick={(e) => { e.preventDefault(); handleSubmit(e) }}
                 disabled={isSubmitting}
                 className="flex-1 font-semibold order-1 sm:order-2"
               >

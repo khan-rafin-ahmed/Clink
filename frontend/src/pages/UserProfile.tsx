@@ -188,6 +188,11 @@ export function UserProfile() {
               id,
               status,
               user_id
+            ),
+            event_members (
+              id,
+              status,
+              user_id
             )
           `)
           .in('crew_id', crewIds)
