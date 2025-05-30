@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
+import { StaticMapThumbnail, StaticMapPin } from './StaticMapThumbnail'
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
@@ -143,8 +144,21 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               {formatEventTime(event.date_time)}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4" />
-              {event.location}
+              {event.latitude && event.longitude ? (
+                <div className="flex items-center gap-2">
+                  <StaticMapPin
+                    latitude={event.latitude}
+                    longitude={event.longitude}
+                    placeName={event.place_name || event.location}
+                  />
+                  <span className="truncate">{event.place_name || event.location}</span>
+                </div>
+              ) : (
+                <>
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate">{event.location}</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1 text-primary">

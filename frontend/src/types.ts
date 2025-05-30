@@ -8,6 +8,8 @@ export interface UserProfile {
   bio: string | null
   avatar_url: string | null
   favorite_drink: string | null
+  tagline: string | null
+  join_date: string | null
   created_at: string
   updated_at: string
 }
@@ -37,6 +39,10 @@ export interface Event {
   title: string
   date_time: string
   location: string
+  latitude?: number | null
+  longitude?: number | null
+  place_id?: string | null
+  place_name?: string | null
   notes: string | null
   drink_type?: string
   vibe?: string
@@ -56,10 +62,22 @@ export interface Event {
   event_members?: EventMember[]
 }
 
+export interface LocationData {
+  latitude: number
+  longitude: number
+  place_id: string
+  place_name: string
+  address?: string
+}
+
 export interface CreateEventDto {
   title: string
   date_time: string
   location: string
+  latitude?: number | null
+  longitude?: number | null
+  place_id?: string | null
+  place_name?: string | null
   notes: string | null
   drink_type?: string
   vibe?: string

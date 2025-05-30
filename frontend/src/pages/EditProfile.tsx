@@ -40,6 +40,7 @@ export function EditProfile() {
   const [formData, setFormData] = useState({
     display_name: '',
     bio: '',
+    tagline: '',
     favorite_drink: '',
     avatar_url: ''
   })
@@ -78,8 +79,10 @@ export function EditProfile() {
           user_id: user.id,
           display_name: user.email?.split('@')[0] || 'User',
           bio: null,
+          tagline: null,
           avatar_url: null,
           favorite_drink: null,
+          join_date: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
@@ -89,6 +92,7 @@ export function EditProfile() {
       setFormData({
         display_name: profileData.display_name || '',
         bio: profileData.bio || '',
+        tagline: profileData.tagline || '',
         favorite_drink: profileData.favorite_drink || 'none',
         avatar_url: profileData.avatar_url || ''
       })
@@ -127,6 +131,7 @@ export function EditProfile() {
     const updateData = {
       display_name: formData.display_name.trim() || null,
       bio: formData.bio.trim() || null,
+      tagline: formData.tagline.trim() || null,
       favorite_drink: formData.favorite_drink === 'none' ? null : formData.favorite_drink || null,
       avatar_url: formData.avatar_url.trim() || null
     }
@@ -239,6 +244,22 @@ export function EditProfile() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {formData.bio.length}/200 characters
+                </p>
+              </div>
+
+              {/* Tagline */}
+              <div className="space-y-2">
+                <Label htmlFor="tagline">Tagline</Label>
+                <Input
+                  id="tagline"
+                  type="text"
+                  placeholder="Your personal motto or catchphrase..."
+                  value={formData.tagline}
+                  onChange={(e) => handleInputChange('tagline', e.target.value)}
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.tagline.length}/100 characters - A short phrase that represents you
                 </p>
               </div>
 

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ShareModal } from '@/components/ShareModal'
 import { UserAvatar } from '@/components/UserAvatar'
+import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { useAuth } from '@/lib/auth-context'
 import { createEventWithShareableLink } from '@/lib/eventService'
 import { getUserCrews } from '@/lib/crewService'
@@ -13,7 +14,7 @@ import { getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
-import type { Crew, CrewMember } from '@/types'
+import type { Crew, CrewMember, LocationData } from '@/types'
 
 interface QuickEventModalProps {
   onEventCreated?: () => void
@@ -83,6 +84,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [formData, setFormData] = useState({
     title: '',
     location: '',
+    locationData: null as LocationData | null,
     time: 'now',
     drink_type: 'beer',
     vibe: 'casual',
@@ -143,7 +145,11 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       // Create event using the enhanced service
       const eventData = {
         title: formData.title,
-        location: formData.location,
+        location: formData.locationData?.place_name || formData.location,
+        latitude: formData.locationData?.latitude || null,
+        longitude: formData.locationData?.longitude || null,
+        place_id: formData.locationData?.place_id || null,
+        place_name: formData.locationData?.place_name || null,
         date_time: eventDateTime.toISOString(),
         drink_type: formData.drink_type,
         vibe: formData.vibe,
@@ -206,7 +212,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.title.trim() && formData.location.trim()
+        return formData.title.trim() && (formData.locationData || formData.location.trim())
       case 2:
         return formData.time && formData.drink_type
       case 3:
@@ -222,6 +228,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     setFormData({
       title: '',
       location: '',
+      locationData: null,
       time: 'now',
       drink_type: 'beer',
       vibe: 'casual',
@@ -319,14 +326,17 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
               </div>
 
               <div>
-                <Label htmlFor="location" className="text-sm font-medium">Where's the party?</Label>
-                <Input
-                  id="location"
-                  placeholder="The Local Pub, Downtown Bar, etc."
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  onKeyDown={handleKeyDown}
-                  className="mt-1"
+                <LocationAutocomplete
+                  label="Where's the party?"
+                  placeholder="Search for bars, restaurants, venues..."
+                  value={formData.locationData}
+                  onChange={(locationData) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      locationData,
+                      location: locationData?.place_name || ''
+                    }))
+                  }}
                   required
                 />
               </div>

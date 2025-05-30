@@ -11,6 +11,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
+import { InteractiveMap } from '@/components/InteractiveMap'
 import { toast } from 'sonner'
 import {
   MapPin,
@@ -685,6 +686,23 @@ export function EventDetail() {
                 </div>
               )}
             </div>
+
+            {/* Location Map Section */}
+            {event.latitude && event.longitude && (
+              <div className="p-6 border-b border-border/50">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Event Location
+                </h2>
+                <InteractiveMap
+                  latitude={event.latitude}
+                  longitude={event.longitude}
+                  placeName={event.place_name || event.location}
+                  height={300}
+                  className="rounded-lg"
+                />
+              </div>
+            )}
 
             {/* Attendees Section */}
             <div className="p-6 border-b border-border/50">

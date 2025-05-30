@@ -2,6 +2,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
@@ -9,11 +10,14 @@ import { UserStats } from '@/components/UserStats'
 import { EventCard } from '@/components/EventCard'
 import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
+import { NextEventBanner } from '@/components/NextEventBanner'
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Users } from 'lucide-react'
+import { Calendar, Plus, Users, MapPin, Clock, Edit } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
+import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { formatDistanceToNow } from 'date-fns'
 import type { UserProfile, Event, Crew } from '@/types'
 
 interface EnhancedEvent extends Event {
@@ -40,6 +44,7 @@ export function UserProfile() {
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const [pastPage, setPastPage] = useState(1)
+  const [totalEventsHosted, setTotalEventsHosted] = useState(0)
   const itemsPerPage = 10
 
   // We're now using enhanced sessions instead of the basic hook
@@ -58,8 +63,30 @@ export function UserProfile() {
   useEffect(() => {
     if (user) {
       getUserProfile(user.id).then(setUserProfile).catch(console.error)
+      fetchTotalEventsHosted()
     }
   }, [user])
+
+  // Fetch total events hosted by user
+  const fetchTotalEventsHosted = async () => {
+    if (!user?.id) return
+
+    try {
+      const { count, error } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', user.id)
+
+      if (error) {
+        console.error('Error fetching total events hosted:', error)
+        return
+      }
+
+      setTotalEventsHosted(count || 0)
+    } catch (error) {
+      console.error('Error fetching total events hosted:', error)
+    }
+  }
 
   // Fetch user crews
   const fetchUserCrews = async () => {
@@ -602,21 +629,55 @@ export function UserProfile() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Profile Header */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Avatar className="w-14 h-14 sm:w-16 sm:h-16">
+              <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
                 <AvatarImage src={userProfile?.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xl sm:text-2xl font-bold">
                   {avatarFallback}
                 </AvatarFallback>
               </Avatar>
-              <div className="text-center sm:text-left">
+              <div className="text-center sm:text-left space-y-2">
                 <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
                   {displayName}'s Profile 🍻
                 </h1>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  Ready to raise some hell? Let's get this party started!
-                </p>
+                {userProfile?.tagline && (
+                  <p className="text-sm sm:text-base text-primary font-medium italic">
+                    "{userProfile.tagline}"
+                  </p>
+                )}
+                {userProfile?.bio && (
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    {userProfile.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* User Info Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <div className="text-lg font-bold text-foreground">{totalEventsHosted}</div>
+                <div className="text-xs text-muted-foreground">Events Hosted</div>
+              </div>
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <div className="text-lg font-bold text-foreground">{userCrews.length}</div>
+                <div className="text-xs text-muted-foreground">Crews</div>
+              </div>
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <div className="text-lg font-bold text-foreground">
+                  {userProfile?.favorite_drink || 'Beer'}
+                </div>
+                <div className="text-xs text-muted-foreground">Favorite Drink</div>
+              </div>
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <div className="text-lg font-bold text-foreground">
+                  {userProfile?.join_date
+                    ? formatDistanceToNow(new Date(userProfile.join_date), { addSuffix: false })
+                    : 'Recently'
+                  }
+                </div>
+                <div className="text-xs text-muted-foreground">Member Since</div>
               </div>
             </div>
 
@@ -625,13 +686,21 @@ export function UserProfile() {
                 <strong>Signed in as:</strong> {user.email}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Member since {new Date(user.created_at || '').toLocaleDateString() || 'today'}
+                Ready to raise some hell? Let's get this party started!
               </p>
             </div>
           </div>
 
           {/* User Stats */}
           <UserStats className="max-w-2xl mx-auto" refreshTrigger={statsRefresh} />
+
+          {/* Next Event Banner */}
+          {user?.id && (
+            <NextEventBanner
+              userId={user.id}
+              className="max-w-4xl mx-auto"
+            />
+          )}
 
           {/* Quick Actions */}
           <div className="text-center space-y-6">

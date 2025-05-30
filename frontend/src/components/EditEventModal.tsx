@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { UserAvatar } from '@/components/UserAvatar'
+import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { updateEvent } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
-import type { Event } from '@/types'
+import type { Event, LocationData } from '@/types'
 import type { Crew, CrewMember } from '@/types'
 
 interface EditEventModalProps {
@@ -38,6 +39,13 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const [formData, setFormData] = useState({
     title: event.title,
     location: event.location,
+    locationData: (event.latitude && event.longitude) ? {
+      latitude: event.latitude,
+      longitude: event.longitude,
+      place_id: event.place_id || '',
+      place_name: event.place_name || event.location,
+      address: event.location
+    } as LocationData : null,
     time: 'custom',
     drink_type: event.drink_type || 'beer',
     vibe: event.vibe || 'casual',
@@ -71,6 +79,13 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     setFormData({
       title: event.title,
       location: event.location,
+      locationData: (event.latitude && event.longitude) ? {
+        latitude: event.latitude,
+        longitude: event.longitude,
+        place_id: event.place_id || '',
+        place_name: event.place_name || event.location,
+        address: event.location
+      } as LocationData : null,
       time: 'custom',
       drink_type: event.drink_type || 'beer',
       vibe: event.vibe || 'casual',
@@ -153,7 +168,11 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       const updateData = {
         title: formData.title,
         date_time: eventDateTime.toISOString(),
-        location: formData.location,
+        location: formData.locationData?.place_name || formData.location,
+        latitude: formData.locationData?.latitude || null,
+        longitude: formData.locationData?.longitude || null,
+        place_id: formData.locationData?.place_id || null,
+        place_name: formData.locationData?.place_name || null,
         drink_type: formData.drink_type,
         vibe: formData.vibe,
         notes: formData.notes || null,
@@ -198,7 +217,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.title.trim() && formData.location.trim()
+        return formData.title.trim() && (formData.locationData || formData.location.trim())
       case 2:
         return formData.time && formData.drink_type
       case 3:
@@ -258,14 +277,17 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </div>
 
               <div>
-                <Label htmlFor="location" className="text-sm font-medium">Where's the party?</Label>
-                <Input
-                  id="location"
-                  placeholder="The Local Pub, Downtown Bar, etc."
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  onKeyDown={handleKeyDown}
-                  className="mt-1"
+                <LocationAutocomplete
+                  label="Where's the party?"
+                  placeholder="Search for bars, restaurants, venues..."
+                  value={formData.locationData}
+                  onChange={(locationData) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      locationData,
+                      location: locationData?.place_name || ''
+                    }))
+                  }}
                   required
                 />
               </div>

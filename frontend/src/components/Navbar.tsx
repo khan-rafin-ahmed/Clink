@@ -20,7 +20,7 @@ import {
 import { User, LogOut, Settings, Edit, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
-import { NotificationCenter } from './NotificationCenter'
+import { NotificationBell } from './NotificationBell'
 import type { UserProfile } from '@/types'
 
 export function Navbar() {
@@ -64,7 +64,7 @@ export function Navbar() {
             {user ? (
               <>
                 {/* Notifications */}
-                <NotificationCenter />
+                <NotificationBell />
 
                 {/* User Dropdown */}
                 <DropdownMenu>
@@ -177,7 +177,7 @@ export function Navbar() {
                     <>
                       {/* Notifications */}
                       <div className="flex justify-center py-2">
-                        <NotificationCenter />
+                        <NotificationBell />
                       </div>
 
                       {/* User Section */}

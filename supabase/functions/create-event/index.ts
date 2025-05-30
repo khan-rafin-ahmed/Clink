@@ -9,6 +9,10 @@ const corsHeaders = {
 interface CreateEventRequest {
   title: string
   location: string
+  latitude?: number | null
+  longitude?: number | null
+  place_id?: string | null
+  place_name?: string | null
   date_time: string
   drink_type?: string
   vibe?: string
@@ -112,6 +116,10 @@ serve(async (req) => {
       .insert({
         title: eventData.title,
         location: eventData.location,
+        latitude: eventData.latitude,
+        longitude: eventData.longitude,
+        place_id: eventData.place_id,
+        place_name: eventData.place_name,
         date_time: eventData.date_time,
         drink_type: eventData.drink_type,
         vibe: eventData.vibe,

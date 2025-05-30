@@ -135,6 +135,10 @@ export async function createEventWithShareableLink(eventData: {
     .insert({
       title: eventData.title,
       location: eventData.location,
+      latitude: eventData.latitude,
+      longitude: eventData.longitude,
+      place_id: eventData.place_id,
+      place_name: eventData.place_name,
       date_time: eventData.date_time,
       drink_type: eventData.drink_type,
       vibe: eventData.vibe,
@@ -182,7 +186,13 @@ export async function getPublicEvents(): Promise<Event[]> {
     // First, get all public events
     const { data: events, error } = await supabase
       .from('events')
-      .select('*')
+      .select(`
+        *,
+        latitude,
+        longitude,
+        place_id,
+        place_name
+      `)
       .eq('is_public', true)
       .gte('date_time', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -362,6 +372,10 @@ export async function getUserAccessibleEvents() {
         id,
         title,
         location,
+        latitude,
+        longitude,
+        place_id,
+        place_name,
         date_time,
         drink_type,
         vibe,
