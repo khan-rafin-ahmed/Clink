@@ -71,7 +71,7 @@ export function loadGoogleMapsAPI(): Promise<void> {
  * @returns boolean indicating if the API is loaded
  */
 export function isGoogleMapsLoaded(): boolean {
-  return isLoaded && window.google && window.google.maps && window.google.maps.places;
+  return !!(isLoaded && (window as any).google && (window as any).google.maps && (window as any).google.maps.places);
 }
 
 /**
