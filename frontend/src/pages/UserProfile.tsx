@@ -39,6 +39,8 @@ export function UserProfile() {
   const [loadingEnhanced, setLoadingEnhanced] = useState(false)
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
+  const [pastPage, setPastPage] = useState(1)
+  const itemsPerPage = 10
 
   // We're now using enhanced sessions instead of the basic hook
   // const {
@@ -550,11 +552,8 @@ export function UserProfile() {
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
   const avatarFallback = displayName.charAt(0).toUpperCase()
 
-  // Pagination state for past sessions
-  const [pastPage, setPastPage] = useState(1);
-  const itemsPerPage = 10;
-  const pageCount = Math.ceil(pastSessions.length / itemsPerPage);
-  const displayedPastSessions = pastSessions.slice((pastPage - 1) * itemsPerPage, pastPage * itemsPerPage);
+  const pageCount = Math.ceil(pastSessions.length / itemsPerPage)
+  const displayedPastSessions = pastSessions.slice((pastPage - 1) * itemsPerPage, pastPage * itemsPerPage)
 
   return (
     <div className="min-h-screen bg-background">
