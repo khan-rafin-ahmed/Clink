@@ -23,7 +23,7 @@ export function UserStats({ className, refreshTrigger }: UserStatsProps) {
   if (!user) return null
 
   // Get emoji for favorite drink
-  const getDrinkEmoji = (drink: string | null) => {
+  const getDrinkEmoji = (drink: string | null | undefined) => {
     if (!drink) return null
 
     const drinkEmojis: Record<string, string> = {

@@ -56,7 +56,11 @@ export function LocationAutocomplete({
   // Debounced search function
   const searchPlaces = async (searchQuery: string) => {
     if (!searchQuery.trim() || !MAPBOX_ACCESS_TOKEN) {
-      console.log('Search aborted:', !searchQuery.trim() ? 'Empty query' : 'Missing token')
+      console.log('Search aborted:', {
+        reason: !searchQuery.trim() ? 'Empty query' : 'Missing token',
+        tokenPresent: !!MAPBOX_ACCESS_TOKEN,
+        tokenLength: MAPBOX_ACCESS_TOKEN?.length
+      })
       setSuggestions([])
       setIsLoading(false)
       return
