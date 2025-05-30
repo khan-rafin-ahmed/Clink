@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, MapPin, Crown, ArrowRight, Edit } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatEventTiming, hasUserJoined, getUserJoinStatus } from '@/lib/eventUtils'
+import { formatEventTiming, getUserJoinStatus } from '@/lib/eventUtils'
 import type { Event } from '@/types'
 import { cn } from '@/lib/utils'
+import { useQuery } from '@tanstack/react-query'
 
 interface NextEventBannerProps {
   userId: string
@@ -19,12 +20,22 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isHost, setIsHost] = useState(false)
 
-  useEffect(() => {
-    loadNextEvent()
-  }, [userId])
+  const { data: nextEventData, isLoading: queryLoading } = useQuery({
+    queryKey: ['nextEvent', userId],
+    queryFn: () => getNextEvent(userId),
+    enabled: !!userId
+  })
 
-  const loadNextEvent = async () => {
-    if (!userId) return
+  useEffect(() => {
+    if (nextEventData) {
+      setNextEvent(nextEventData)
+      setIsHost(nextEventData.created_by === userId)
+    }
+    setIsLoading(queryLoading)
+  }, [nextEventData, queryLoading])
+
+  const getNextEvent = async (userId: string): Promise<Event | null> => {
+    if (!userId) return null
 
     setIsLoading(true)
     try {
@@ -49,7 +60,7 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
       if (error) {
         console.error('Error loading next event:', error)
-        return
+        return null
       }
 
       // Also check for events where user is an accepted crew member
@@ -82,14 +93,14 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
         )
         
         const earliestEvent = sortedEvents[0]
-        setNextEvent(earliestEvent)
-        setIsHost(earliestEvent.created_by === userId)
+        return earliestEvent
       }
     } catch (error) {
       console.error('Error loading next event:', error)
     } finally {
       setIsLoading(false)
     }
+    return null
   }
 
   if (isLoading) {

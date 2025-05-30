@@ -17,23 +17,6 @@ import { supabase } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
 import type { UserProfile, Event, Crew } from '@/types'
 
-interface EventWithCreator extends Event {
-  creator?: {
-    id: string;
-    user_id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    favorite_drink: string | null;
-    created_at: string;
-    updated_at: string;
-    tagline?: string | null;
-    join_date?: string | null;
-  };
-  user_has_joined: boolean;
-  rsvp_count: number;
-}
-
 interface EnhancedEvent extends Event {
   creator?: {
     display_name: string | null

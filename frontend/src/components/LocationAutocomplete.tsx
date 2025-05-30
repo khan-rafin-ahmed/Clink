@@ -41,8 +41,8 @@ export function LocationAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   
   const inputRef = useRef<HTMLInputElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
-  const abortControllerRef = useRef<AbortController>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 

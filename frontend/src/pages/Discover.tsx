@@ -32,7 +32,7 @@ import {
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { getPublicEvents } from '@/lib/eventService'
-import type { Event, UserProfile } from '@/types'
+import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 
