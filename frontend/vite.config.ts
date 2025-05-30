@@ -16,11 +16,11 @@ export default defineConfig(({ mode }) => {
     },
     // Expose env variables to the client
     define: {
-      'import.meta.env.VITE_MAPBOX_ACCESS_TOKEN': JSON.stringify(env.VITE_MAPBOX_ACCESS_TOKEN),
-      'import.meta.env.VITE_MAPBOX_STYLE_URL': JSON.stringify(env.VITE_MAPBOX_STYLE_URL),
-      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY)
+      'import.meta.env.VITE_MAPBOX_ACCESS_TOKEN': JSON.stringify(env.VITE_MAPBOX_ACCESS_TOKEN || ''),
+      'import.meta.env.VITE_MAPBOX_STYLE_URL': JSON.stringify(env.VITE_MAPBOX_STYLE_URL || 'mapbox://styles/mapbox/streets-v12'),
+      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || ''),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || ''),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || '')
     }
   }
 })
