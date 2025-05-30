@@ -113,7 +113,8 @@ export function UserProfile() {
         upcomingCrewEventsResult,
         pastHostedResult,
         pastAttendingRSVPResult,
-        pastAttendingMembersResult
+        pastAttendingMembersResult,
+        pastCrewEventsResult
       ] = await Promise.all([
         // Upcoming sessions you're hosting
         supabase
@@ -258,7 +259,20 @@ export function UserProfile() {
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false }),
 
-
+        // Past crew-based events (for crews the user belongs to)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              id,
+              status,
+              user_id
+            )
+          `)
+          .in('crew_id', crewIds)
+          .lt('date_time', new Date().toISOString())
+          .order('date_time', { ascending: false }),
       ])
 
       // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
@@ -487,7 +501,27 @@ export function UserProfile() {
         allPastEvents.push(...attendedMemberPastEventsWithCreators)
       }
 
-
+      // Add crew past events
+      if (pastCrewEventsResult.error) {
+        console.error('Error fetching past crew events:', pastCrewEventsResult.error)
+      } else {
+        const crewPastWithCreators = await Promise.all(
+          (pastCrewEventsResult.data || [])
+            .filter(event => !processedEventIds.has(event.id))
+            .map(async (event) => {
+              processedEventIds.add(event.id)
+              const crewMembers = await getCrewMembers(event.crew_id)
+              return {
+                ...event,
+                creator: creatorInfo,
+                rsvp_count: crewMembers.length,
+                isHosting: false,
+                isCrewEvent: true
+              }
+            })
+        )
+        allPastEvents.push(...crewPastWithCreators)
+      }
 
       // Sort all past events by date (most recent first)
       allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
@@ -594,8 +628,6 @@ export function UserProfile() {
               </div>
             </div>
 
-
-
             <div className="bg-primary/10 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
               <p className="text-xs sm:text-sm text-muted-foreground">
                 <strong>Signed in as:</strong> {user.email}
@@ -693,7 +725,6 @@ export function UserProfile() {
               <p className="text-sm text-muted-foreground">
                 Events you're hosting and attending
               </p>
-
             </div>
 
             {loadingEnhanced ? (
