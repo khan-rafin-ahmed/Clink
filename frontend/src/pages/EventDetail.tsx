@@ -684,9 +684,13 @@ export function EventDetail() {
                   Event Location
                 </h2>
                 <InteractiveMap
-                  latitude={event.latitude}
-                  longitude={event.longitude}
-                  placeName={event.place_name || event.location}
+                  location={{
+                    latitude: event.latitude,
+                    longitude: event.longitude,
+                    place_name: event.place_name || event.location,
+                    place_id: event.place_id || '',
+                    address: event.place_name || event.location
+                  }}
                   height={300}
                   className="rounded-lg"
                 />

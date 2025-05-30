@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LocationData } from '@/types'
 
