@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateCrew } from '@/lib/crewService'
 import { toast } from 'sonner'
-import { Loader2, Users, Globe, Lock, PartyPopper, Coffee, Flame, Crown, Star } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { Crew } from '@/types'
 
 interface EditCrewModalProps {

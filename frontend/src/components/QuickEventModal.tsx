@@ -13,7 +13,6 @@ import { getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
-import type { Event } from '@/types'
 import type { Crew, CrewMember } from '@/types'
 
 interface QuickEventModalProps {

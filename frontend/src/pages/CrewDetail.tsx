@@ -40,9 +40,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import type { Crew, CrewMember } from '@/types'
 
 export function CrewDetail() {

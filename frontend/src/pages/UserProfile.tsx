@@ -12,9 +12,9 @@ import { CrewCard } from '@/components/CrewCard'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
-import { getUserCrews, type Crew } from '@/lib/crewService'
+import { getUserCrews } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
-import type { UserProfile, Event } from '@/types'
+import type { UserProfile, Event, Crew } from '@/types'
 
 interface EnhancedEvent extends Event {
   creator?: {
