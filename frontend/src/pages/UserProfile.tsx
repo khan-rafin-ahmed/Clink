@@ -113,8 +113,7 @@ export function UserProfile() {
         upcomingCrewEventsResult,
         pastHostedResult,
         pastAttendingRSVPResult,
-        pastAttendingMembersResult,
-        pastCrewEventsResult
+        pastAttendingMembersResult
       ] = await Promise.all([
         // Upcoming sessions you're hosting
         supabase
@@ -220,7 +219,7 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            rsvps (
+            rsvps!inner (
               id,
               status,
               user_id
@@ -256,27 +255,6 @@ export function UserProfile() {
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
           .neq('created_by', user.id)
-          .lt('date_time', new Date().toISOString())
-          .order('date_time', { ascending: false }),
-
-        // Past crew-based events (for crews the user belongs to)
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps (
-              id,
-              status,
-              user_id
-            ),
-            event_members (
-              id,
-              status,
-              user_id
-            )
-          `)
-          .in('crew_id', crewIds)
-          .or(`rsvps.user_id.eq.${user.id},event_members.user_id.eq.${user.id}`)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false }),
       ])
@@ -505,36 +483,6 @@ export function UserProfile() {
             })
         )
         allPastEvents.push(...attendedMemberPastEventsWithCreators)
-      }
-
-      // Add crew past events
-      if (pastCrewEventsResult.error) {
-        console.error('Error fetching past crew events:', pastCrewEventsResult.error)
-      } else {
-        const crewPastWithCreators = await Promise.all(
-          (pastCrewEventsResult.data || [])
-            .filter(event => {
-              // Only include events where:
-              // 1. User has an RSVP with status 'going'
-              // 2. User is an event member with status 'accepted'
-              const hasRsvp = event.rsvps?.some((r: { user_id: string; status: string }) => r.user_id === user.id && r.status === 'going')
-              const isMember = event.event_members?.some((m: { user_id: string; status: string }) => m.user_id === user.id && m.status === 'accepted')
-              return hasRsvp || isMember
-            })
-            .filter(event => !processedEventIds.has(event.id))
-            .map(async (event) => {
-              processedEventIds.add(event.id)
-              const crewMembers = await getCrewMembers(event.crew_id)
-              return {
-                ...event,
-                creator: creatorInfo,
-                rsvp_count: crewMembers.length,
-                isHosting: false,
-                isCrewEvent: true
-              }
-            })
-        )
-        allPastEvents.push(...crewPastWithCreators)
       }
 
       // Sort all past events by date (most recent first)
