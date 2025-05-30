@@ -517,8 +517,8 @@ export function UserProfile() {
               // Only include events where:
               // 1. User has an RSVP with status 'going'
               // 2. User is an event member with status 'accepted'
-              const hasRsvp = event.rsvps?.some(r => r.user_id === user.id && r.status === 'going')
-              const isMember = event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted')
+              const hasRsvp = event.rsvps?.some((r: { user_id: string; status: string }) => r.user_id === user.id && r.status === 'going')
+              const isMember = event.event_members?.some((m: { user_id: string; status: string }) => m.user_id === user.id && m.status === 'accepted')
               return hasRsvp || isMember
             })
             .filter(event => !processedEventIds.has(event.id))
