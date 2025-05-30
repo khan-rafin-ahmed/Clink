@@ -45,39 +45,35 @@ export function GoogleLocationPicker({
       options
     })
 
-    // Style the autocomplete dropdown
+    // Style the autocomplete dropdown using Shadow Parts
     const styleElement = document.createElement('style')
     styleElement.textContent = `
-      .pac-container {
-        background-color: #111827 !important;
-        border: 1px solid #D4AF37 !important;
+      gmp-place-autocomplete::part(dropdown) {
+        background-color: #111827 !important; /* bg-gray-900 */
+        border: 1px solid #D4AF37 !important; /* border-gold-500 */
         border-radius: 0.5rem !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
         margin-top: 0.5rem !important;
         padding: 0.5rem 0 !important;
       }
-      .pac-item {
-        color: white !important;
+      gmp-place-autocomplete::part(option) {
+        color: white !important; /* text-white */
         padding: 0.75rem 1rem !important;
         cursor: pointer !important;
         transition: background-color 0.2s !important;
       }
-      .pac-item:hover {
-        background-color: #1F2937 !important;
+      gmp-place-autocomplete::part(option):hover {
+        background-color: #1F2937 !important; /* hover:bg-gray-800 */
       }
-      .pac-item-query {
-        color: white !important;
-        font-size: 0.875rem !important;
+       gmp-place-autocomplete::part(option-text-primary), gmp-place-autocomplete::part(option-text-secondary) {
+        color: white !important; /* text-white */
       }
-      .pac-icon {
-        filter: invert(1) !important;
+       gmp-place-autocomplete::part(option-icon) {
+         filter: invert(1) brightness(1.5) sepia(1) hue-rotate(180deg) saturate(5) contrast(1.5) !important; /* Adjust icon color */
       }
-      .pac-matched {
-        color: #D4AF37 !important;
-      }
-      .pac-container:after {
-        display: none !important;
+       gmp-place-autocomplete::part(powered-by-google) {
+        display: none !important; /* Hide default attribution */
       }
     `
     document.head.appendChild(styleElement)
