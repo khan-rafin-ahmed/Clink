@@ -446,17 +446,23 @@ export function UserProfile() {
 
       // Process past sessions (combine hosted and attended)
       const allPastEvents = []
+      const processedEventIds = new Set<string>()
 
       // Add hosted past events
       if (pastHostedResult.error) {
         console.error('Error fetching past hosted sessions:', pastHostedResult.error)
       } else {
-        const hostedPastEvents = (pastHostedResult.data || []).map(event => ({
-          ...event,
-          creator: creatorInfo,
-          rsvp_count: calculateAttendeeCount(event),
-          isHosting: true
-        }))
+        const hostedPastEvents = (pastHostedResult.data || [])
+          .filter(event => !processedEventIds.has(event.id))
+          .map(event => {
+            processedEventIds.add(event.id)
+            return {
+              ...event,
+              creator: creatorInfo,
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: true
+            }
+          })
         allPastEvents.push(...hostedPastEvents)
       }
 
@@ -466,24 +472,27 @@ export function UserProfile() {
       } else {
         // Fetch creator info for past RSVP attended events
         const attendedRSVPPastEventsWithCreators = await Promise.all(
-          (pastAttendingRSVPResult.data || []).map(async (event: any) => {
-            const { data: creatorData } = await supabase
-              .from('user_profiles')
-              .select('display_name, avatar_url, user_id')
-              .eq('user_id', event.created_by)
-              .single()
+          (pastAttendingRSVPResult.data || [])
+            .filter(event => !processedEventIds.has(event.id))
+            .map(async (event: any) => {
+              processedEventIds.add(event.id)
+              const { data: creatorData } = await supabase
+                .from('user_profiles')
+                .select('display_name, avatar_url, user_id')
+                .eq('user_id', event.created_by)
+                .single()
 
-            return {
-              ...event,
-              creator: creatorData || {
-                display_name: 'Unknown Host',
-                avatar_url: null,
-                user_id: event.created_by
-              },
-              rsvp_count: calculateAttendeeCount(event),
-              isHosting: false
-            }
-          })
+              return {
+                ...event,
+                creator: creatorData || {
+                  display_name: 'Unknown Host',
+                  avatar_url: null,
+                  user_id: event.created_by
+                },
+                rsvp_count: calculateAttendeeCount(event),
+                isHosting: false
+              }
+            })
         )
         allPastEvents.push(...attendedRSVPPastEventsWithCreators)
       }
@@ -494,24 +503,27 @@ export function UserProfile() {
       } else {
         // Fetch creator info for past member attended events
         const attendedMemberPastEventsWithCreators = await Promise.all(
-          (pastAttendingMembersResult.data || []).map(async (event: any) => {
-            const { data: creatorData } = await supabase
-              .from('user_profiles')
-              .select('display_name, avatar_url, user_id')
-              .eq('user_id', event.created_by)
-              .single()
+          (pastAttendingMembersResult.data || [])
+            .filter(event => !processedEventIds.has(event.id))
+            .map(async (event: any) => {
+              processedEventIds.add(event.id)
+              const { data: creatorData } = await supabase
+                .from('user_profiles')
+                .select('display_name, avatar_url, user_id')
+                .eq('user_id', event.created_by)
+                .single()
 
-            return {
-              ...event,
-              creator: creatorData || {
-                display_name: 'Unknown Host',
-                avatar_url: null,
-                user_id: event.created_by
-              },
-              rsvp_count: calculateAttendeeCount(event),
-              isHosting: false
-            }
-          })
+              return {
+                ...event,
+                creator: creatorData || {
+                  display_name: 'Unknown Host',
+                  avatar_url: null,
+                  user_id: event.created_by
+                },
+                rsvp_count: calculateAttendeeCount(event),
+                isHosting: false
+              }
+            })
         )
         allPastEvents.push(...attendedMemberPastEventsWithCreators)
       }
@@ -522,25 +534,28 @@ export function UserProfile() {
       } else {
         // Fetch creator info for past crew events
         const crewEventsWithCreators = await Promise.all(
-          (pastCrewEventsResult.data || []).map(async (event) => {
-            const { data: creatorData } = await supabase
-              .from('user_profiles')
-              .select('display_name, avatar_url, user_id')
-              .eq('user_id', event.created_by)
-              .single()
+          (pastCrewEventsResult.data || [])
+            .filter(event => !processedEventIds.has(event.id))
+            .map(async (event) => {
+              processedEventIds.add(event.id)
+              const { data: creatorData } = await supabase
+                .from('user_profiles')
+                .select('display_name, avatar_url, user_id')
+                .eq('user_id', event.created_by)
+                .single()
 
-            return {
-              ...event,
-              creator: creatorData || {
-                display_name: 'Unknown Host',
-                avatar_url: null,
-                user_id: event.created_by
-              },
-              rsvp_count: calculateAttendeeCount(event),
-              isHosting: false,
-              isCrewEvent: true
-            }
-          })
+              return {
+                ...event,
+                creator: creatorData || {
+                  display_name: 'Unknown Host',
+                  avatar_url: null,
+                  user_id: event.created_by
+                },
+                rsvp_count: calculateAttendeeCount(event),
+                isHosting: false,
+                isCrewEvent: true
+              }
+            })
         )
         allPastEvents.push(...crewEventsWithCreators)
       }

@@ -46,9 +46,13 @@ export function LocationAutocomplete({
 
   const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 
+  // Add debug log
+  console.log('Mapbox Token:', MAPBOX_ACCESS_TOKEN ? 'Present' : 'Missing')
+
   // Debounced search function
   const searchPlaces = async (searchQuery: string) => {
     if (!searchQuery.trim() || !MAPBOX_ACCESS_TOKEN) {
+      console.log('Search aborted:', !searchQuery.trim() ? 'Empty query' : 'Missing token')
       setSuggestions([])
       setIsLoading(false)
       return
@@ -63,18 +67,26 @@ export function LocationAutocomplete({
     setIsLoading(true)
 
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery
-        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=poi,address,place&limit=5`,
-        { signal: abortControllerRef.current.signal }
-      )
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        searchQuery
+      )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=poi,address,place&limit=5`
+      
+      console.log('Fetching from Mapbox:', url)
+      
+      const response = await fetch(url, { signal: abortControllerRef.current.signal })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch suggestions')
+        const errorData = await response.json().catch(() => null)
+        console.error('Mapbox API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        })
+        throw new Error(`Failed to fetch suggestions: ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('Mapbox response:', data)
       setSuggestions(data.features || [])
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
