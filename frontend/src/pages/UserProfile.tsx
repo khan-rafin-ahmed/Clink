@@ -61,15 +61,13 @@ export function UserProfile() {
 
   // Fetch user crews
   const fetchUserCrews = async () => {
-    if (!user?.id) return
     try {
-      const crews = await getUserCrews(user.id)
+      const crews = await getUserCrews() // no user.id needed anymore
       setUserCrews(crews)
     } catch (error) {
       console.error('❌ Error fetching user crews:', error)
     }
   }
-
   useEffect(() => {
     if (user?.id) {
       fetchUserCrews()
