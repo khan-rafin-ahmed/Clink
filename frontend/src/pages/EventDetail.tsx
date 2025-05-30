@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { supabase } from '@/lib/supabase'
@@ -46,7 +46,6 @@ interface EventWithRsvps extends Event {
 export function EventDetail() {
   const { eventCode } = useParams<{ eventCode: string }>()
   const { user, loading: authLoading, error: authError } = useAuth()
-  const navigate = useNavigate()
   const { goBackSmart } = useSmartNavigation()
   const { handleDeleteSuccess } = useActionNavigation()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
@@ -215,7 +214,6 @@ export function EventDetail() {
           if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'PGRST116' && !user) {
             sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
             toast.error('Please sign in to view this event')
-            navigate('/login')
             return
           }
         }
@@ -229,7 +227,6 @@ export function EventDetail() {
         // Store current URL for redirect after login
         sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
         toast.error('Please sign in to view this private event')
-        navigate('/login')
         return
       }
 
@@ -335,10 +332,6 @@ export function EventDetail() {
     // Reload the event data to get updated RSVP counts and participant profiles
     loadEvent()
   }
-
-
-
-
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime)
@@ -537,10 +530,6 @@ export function EventDetail() {
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
   const isHost = user && event.created_by === user.id
   const attendees = allAttendees
-
-
-
-
 
   return (
     <div className="min-h-screen bg-background">

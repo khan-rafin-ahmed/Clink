@@ -99,17 +99,28 @@ class NotificationService {
   private showToastNotification(notification: NotificationData): void {
     const emoji = this.getNotificationEmoji(notification.type)
     
-    toast(notification.title, {
-      description: notification.message,
-      icon: emoji,
-      duration: 5000,
-      action: notification.data?.eventId ? {
-        label: 'View Event',
-        onClick: () => {
-          window.location.href = `/event/${notification.data.eventCode || notification.data.eventId}`
+    const eventId = notification.data?.eventId
+    const eventTitle = notification.data?.eventTitle
+
+    if (eventId && eventTitle) {
+      toast(notification.title, {
+        description: notification.message,
+        icon: emoji,
+        duration: 5000,
+        action: {
+          label: 'View Event',
+          onClick: () => {
+            window.location.href = `/event/${eventId}`
+          }
         }
-      } : undefined
-    })
+      })
+    } else {
+      toast(notification.title, {
+        description: notification.message,
+        icon: emoji,
+        duration: 5000
+      })
+    }
   }
 
   /**

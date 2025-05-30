@@ -1,8 +1,6 @@
 import { useAuth } from '@/lib/auth-context'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
@@ -12,13 +10,29 @@ import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Users, MapPin, Clock, Edit } from 'lucide-react'
+import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
-import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { formatDistanceToNow } from 'date-fns'
 import type { UserProfile, Event, Crew } from '@/types'
+
+interface EventWithCreator extends Event {
+  creator?: {
+    id: string;
+    user_id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    favorite_drink: string | null;
+    created_at: string;
+    updated_at: string;
+    tagline?: string | null;
+    join_date?: string | null;
+  };
+  user_has_joined: boolean;
+  rsvp_count: number;
+}
 
 interface EnhancedEvent extends Event {
   creator?: {
@@ -32,7 +46,6 @@ interface EnhancedEvent extends Event {
 
 export function UserProfile() {
   const { user, loading } = useAuth()
-  const navigate = useNavigate()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -56,9 +69,9 @@ export function UserProfile() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/login')
+      // navigate('/login')
     }
-  }, [user, loading, navigate])
+  }, [user, loading])
 
   useEffect(() => {
     if (user) {

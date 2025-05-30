@@ -96,6 +96,13 @@ export async function createEventWithShareableLink(eventData: {
   vibe?: string
   notes?: string
   is_public: boolean
+  locationData?: {
+    latitude: number
+    longitude: number
+    place_id: string
+    place_name: string
+    address?: string
+  }
 }) {
   // Get the current user
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -135,10 +142,10 @@ export async function createEventWithShareableLink(eventData: {
     .insert({
       title: eventData.title,
       location: eventData.location,
-      latitude: eventData.latitude,
-      longitude: eventData.longitude,
-      place_id: eventData.place_id,
-      place_name: eventData.place_name,
+      latitude: eventData.locationData?.latitude,
+      longitude: eventData.locationData?.longitude,
+      place_id: eventData.locationData?.place_id,
+      place_name: eventData.locationData?.place_name,
       date_time: eventData.date_time,
       drink_type: eventData.drink_type,
       vibe: eventData.vibe,

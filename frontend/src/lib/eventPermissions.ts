@@ -17,8 +17,7 @@ export interface EventPermissions {
  */
 export function getEventPermissions(
   event: Event | null,
-  user: UserProfile | null,
-  userCrewIds: string[] = []
+  user: UserProfile | null
 ): EventPermissions {
   const defaultPermissions: EventPermissions = {
     canView: false,

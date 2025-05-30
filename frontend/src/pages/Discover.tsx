@@ -40,9 +40,20 @@ type SortOption = 'newest' | 'trending' | 'date' | 'popular'
 type FilterOption = 'all' | 'tonight' | 'tomorrow' | 'weekend' | 'next-week'
 
 interface EventWithCreator extends Event {
-  creator?: UserProfile
-  rsvp_count?: number
-  user_has_joined?: boolean
+  creator?: {
+    id: string;
+    user_id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    favorite_drink: string | null;
+    created_at: string;
+    updated_at: string;
+    tagline?: string | null;
+    join_date?: string | null;
+  };
+  user_has_joined: boolean;
+  rsvp_count: number;
 }
 
 // Extracted data loading function with better error handling
@@ -112,7 +123,8 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
           created_at: '',
           updated_at: ''
         } : undefined,
-        user_has_joined: userJoinStatuses.get(event.id) || false
+        user_has_joined: userJoinStatuses.get(event.id) || false,
+        rsvp_count: 0
       }
     })
 

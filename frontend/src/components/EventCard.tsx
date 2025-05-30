@@ -2,13 +2,13 @@ import { format, isToday, isTomorrow, isThisWeek, isPast } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
-import { StaticMapThumbnail, StaticMapPin } from './StaticMapThumbnail'
+import { StaticMapPin } from '@/components/StaticMapThumbnail'
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
