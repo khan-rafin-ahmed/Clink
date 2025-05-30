@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { MapPin, Loader2, X } from 'lucide-react'
+import { MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LocationData } from '@/types'
 
@@ -26,7 +26,6 @@ export function LocationAutocomplete({
   error
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value?.place_name || '')
-  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
 
@@ -109,9 +108,6 @@ export function LocationAutocomplete({
             >
               <X className="w-4 h-4" />
             </Button>
-          )}
-          {isLoading && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
           )}
         </div>
       </div>

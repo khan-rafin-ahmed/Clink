@@ -13,6 +13,14 @@ declare namespace google.maps {
   class Marker {
     constructor(opts?: MarkerOptions);
     setPosition(latLng: LatLng | LatLngLiteral): void;
+    getPosition(): LatLng;
+    setMap(map: Map | null): void;
+    addListener(event: string, callback: () => void): void;
+  }
+
+  class Geocoder {
+    constructor();
+    geocode(request: GeocoderRequest, callback: (results: GeocoderResult[], status: GeocoderStatus) => void): void;
   }
 
   interface LatLngLiteral {
@@ -24,12 +32,16 @@ declare namespace google.maps {
     center?: LatLng | LatLngLiteral;
     zoom?: number;
     styles?: MapTypeStyle[];
+    mapTypeControl?: boolean;
+    streetViewControl?: boolean;
+    fullscreenControl?: boolean;
   }
 
   interface MarkerOptions {
     position: LatLng | LatLngLiteral;
     map?: Map;
     animation?: Animation;
+    draggable?: boolean;
   }
 
   interface MapTypeStyle {
@@ -40,6 +52,42 @@ declare namespace google.maps {
 
   interface MapTypeStyler {
     [key: string]: any;
+  }
+
+  interface GeocoderRequest {
+    address?: string;
+    location?: LatLng | LatLngLiteral;
+    placeId?: string;
+  }
+
+  interface GeocoderResult {
+    address_components?: AddressComponent[];
+    formatted_address?: string;
+    geometry?: {
+      location?: LatLng;
+      location_type?: string;
+      viewport?: {
+        northeast: LatLng;
+        southwest: LatLng;
+      };
+    };
+    place_id?: string;
+    types?: string[];
+  }
+
+  interface AddressComponent {
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }
+
+  enum GeocoderStatus {
+    OK = 'OK',
+    ZERO_RESULTS = 'ZERO_RESULTS',
+    OVER_QUERY_LIMIT = 'OVER_QUERY_LIMIT',
+    REQUEST_DENIED = 'REQUEST_DENIED',
+    INVALID_REQUEST = 'INVALID_REQUEST',
+    UNKNOWN_ERROR = 'UNKNOWN_ERROR'
   }
 
   enum Animation {
