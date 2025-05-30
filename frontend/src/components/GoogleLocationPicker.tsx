@@ -29,85 +29,59 @@ export function GoogleLocationPicker({
 }: GoogleLocationPickerProps) {
   const [query, setQuery] = useState(value?.place_name || '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
-
-  // Initialize Google Maps Places Autocomplete
-  useEffect(() => {
-    if (!window.google || !inputRef.current) return
-
-    const options = {
-      types: ['establishment', 'geocode'],
-      componentRestrictions: { country: 'bd' }
-    }
-
-    autocompleteRef.current = new google.maps.places.PlaceAutocompleteElement({
-      input: inputRef.current,
-      options
-    })
-
-    // Style the autocomplete dropdown using Shadow Parts
-    const styleElement = document.createElement('style')
-    styleElement.textContent = `
-      gmp-place-autocomplete::part(dropdown) {
-        background-color: #111827 !important; /* bg-gray-900 */
-        border: 1px solid #D4AF37 !important; /* border-gold-500 */
-        border-radius: 0.5rem !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
-        margin-top: 0.5rem !important;
-        padding: 0.5rem 0 !important;
-      }
-      gmp-place-autocomplete::part(option) {
-        color: white !important; /* text-white */
-        padding: 0.75rem 1rem !important;
-        cursor: pointer !important;
-        transition: background-color 0.2s !important;
-      }
-      gmp-place-autocomplete::part(option):hover {
-        background-color: #1F2937 !important; /* hover:bg-gray-800 */
-      }
-       gmp-place-autocomplete::part(option-text-primary), gmp-place-autocomplete::part(option-text-secondary) {
-        color: white !important; /* text-white */
-      }
-       gmp-place-autocomplete::part(option-icon) {
-         filter: invert(1) brightness(1.5) sepia(1) hue-rotate(180deg) saturate(5) contrast(1.5) !important; /* Adjust icon color */
-      }
-       gmp-place-autocomplete::part(powered-by-google) {
-        display: none !important; /* Hide default attribution */
-      }
-    `
-    document.head.appendChild(styleElement)
-
-    autocompleteRef.current.addListener('place_changed', () => {
-      const place = autocompleteRef.current?.getPlace()
-      if (!place?.geometry?.location) return
-
-      const locationData: LocationData = {
-        latitude: place.geometry.location.lat(),
-        longitude: place.geometry.location.lng(),
-        place_id: place.place_id || '',
-        place_name: place.formatted_address || place.name || '',
-        address: place.formatted_address
-      }
-
-      setQuery(locationData.place_name)
-      onChange(locationData)
-      onSelect?.(locationData)
-    })
-
-    return () => {
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current)
-      }
-      document.head.removeChild(styleElement)
-    }
-  }, [onChange, onSelect])
 
   // Handle clear selection
   const handleClear = () => {
     setQuery('')
     onChange(null)
     inputRef.current?.focus()
+  }
+
+  // Manual predictions dropdown using AutocompleteService & PlacesService
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService>()
+  const placesServiceRef = useRef<google.maps.places.PlacesService>()
+
+  useEffect(() => {
+    if (!window.google) return
+    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
+    placesServiceRef.current = new window.google.maps.places.PlacesService(document.createElement('div'))
+  }, [])
+
+  const fetchPredictions = (input: string) => {
+    if (!autocompleteServiceRef.current) return
+    autocompleteServiceRef.current.getPlacePredictions(
+      { input, componentRestrictions: { country: 'bd' }, types: ['establishment','geocode'] },
+      (preds, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && preds) {
+          setPredictions(preds)
+        } else {
+          setPredictions([])
+        }
+      }
+    )
+  }
+
+  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
+    if (!placesServiceRef.current) return
+    placesServiceRef.current.getDetails(
+      { placeId: pred.place_id },
+      (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          const locationData: LocationData = {
+            latitude: place.geometry.location.lat(),
+            longitude: place.geometry.location.lng(),
+            place_id: place.place_id || '',
+            place_name: place.formatted_address || place.name || '',
+            address: place.formatted_address
+          }
+          setQuery(locationData.place_name)
+          onChange(locationData)
+          onSelect?.(locationData)
+          setPredictions([])
+        }
+      }
+    )
   }
 
   return (
@@ -127,7 +101,11 @@ export function GoogleLocationPicker({
             id="location-input"
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setQuery(val)
+              fetchPredictions(val)
+            }}
             placeholder={placeholder}
             className={cn(
               "pl-10 pr-10 bg-gray-900 border-gray-800 text-white placeholder:text-gray-400",
@@ -136,6 +114,24 @@ export function GoogleLocationPicker({
             )}
             required={required}
           />
+          {predictions.length > 0 && (
+            <ul className="absolute z-10 bg-gray-900 border border-gold-500 rounded-md w-full mt-1 max-h-60 overflow-auto">
+              {predictions.map(pred => (
+                <li
+                  key={pred.place_id}
+                  className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-800 text-white"
+                  onClick={() => handleSelectPrediction(pred)}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  <span>
+                    <strong>{pred.structured_formatting.main_text}</strong>{' '}
+                    <small className="opacity-75">{pred.structured_formatting.secondary_text}</small>
+                  </span>
+                </li>
+              ))}
+              <li className="px-4 py-2 text-xs text-gray-400 text-center">Powered by Google</li>
+            </ul>
+          )}
           {(query || value) && (
             <Button
               type="button"
@@ -159,4 +155,4 @@ export function GoogleLocationPicker({
       </div>
     </div>
   )
-} 
+}
