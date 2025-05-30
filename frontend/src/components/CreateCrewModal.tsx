@@ -97,7 +97,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
               id="name"
               placeholder="The Drinking Squad, Beer Buddies, etc."
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData((prev: CreateCrewData) => ({ ...prev, name: e.target.value }))}
               onKeyDown={handleKeyDown}
               className="mt-1"
               maxLength={50}
@@ -115,7 +115,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, vibe: option.value as any }))}
+                    onClick={() => setFormData((prev: CreateCrewData) => ({ ...prev, vibe: option.value as CreateCrewData['vibe'] }))}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       formData.vibe === option.value
                         ? 'border-primary bg-primary/10 text-primary'
@@ -140,7 +140,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, visibility: 'public' }))}
+                onClick={() => setFormData((prev: CreateCrewData) => ({ ...prev, visibility: 'public' }))}
                 className={`p-4 rounded-lg border-2 transition-all text-center ${
                   formData.visibility === 'public'
                     ? 'border-primary bg-primary/10 text-primary'
@@ -153,7 +153,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
               </button>
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, visibility: 'private' }))}
+                onClick={() => setFormData((prev: CreateCrewData) => ({ ...prev, visibility: 'private' }))}
                 className={`p-4 rounded-lg border-2 transition-all text-center ${
                   formData.visibility === 'private'
                     ? 'border-primary bg-primary/10 text-primary'
@@ -176,7 +176,7 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
               id="description"
               placeholder="What's your crew about? Any rules or vibes to share..."
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setFormData((prev: CreateCrewData) => ({ ...prev, description: e.target.value }))}
               onKeyDown={handleKeyDown}
               rows={3}
               className="mt-1"
