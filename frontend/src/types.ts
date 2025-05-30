@@ -66,3 +66,41 @@ export interface CreateEventDto {
   is_public: boolean
   created_by: string
 }
+
+export interface Crew {
+  id: string
+  name: string
+  vibe: 'casual' | 'party' | 'chill' | 'wild' | 'classy' | 'other'
+  visibility: 'public' | 'private'
+  description?: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  member_count?: number
+  is_member?: boolean
+  is_creator?: boolean
+}
+
+export interface CrewMember {
+  id: string
+  crew_id: string
+  user_id: string
+  status: 'pending' | 'accepted' | 'declined'
+  invited_by?: string
+  joined_at: string
+  created_at: string
+  updated_at: string
+  user?: {
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+    email?: string
+  }
+}
+
+export interface CreateCrewData {
+  name: string
+  vibe: 'casual' | 'party' | 'chill' | 'wild' | 'classy' | 'other'
+  visibility: 'public' | 'private'
+  description?: string
+}
