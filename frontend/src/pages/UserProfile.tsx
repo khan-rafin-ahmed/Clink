@@ -76,26 +76,42 @@ export function UserProfile() {
 
   // Fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {
-    if (!user?.id) return
+    if (!user) return
 
     setLoadingEnhanced(true)
     try {
-      // Get the user's profile for creator info first (single fetch)
-      const { data: userProfileData } = await supabase
+      // Get creator info once
+      const { data: creatorData } = await supabase
         .from('user_profiles')
         .select('display_name, avatar_url, user_id')
         .eq('user_id', user.id)
         .single()
 
-      const creatorInfo = userProfileData || {
-        display_name: user.email?.split('@')[0] || 'You',
+      const creatorInfo = creatorData || {
+        display_name: 'Unknown Host',
         avatar_url: null,
         user_id: user.id
       }
 
-      // Fetch upcoming and past sessions in parallel
-      // Now includes events you created, RSVP'd to, and were invited to
-      const [upcomingHostedResult, upcomingRSVPResult, upcomingInvitedResult, pastHostedResult, pastAttendingRSVPResult, pastAttendingMembersResult] = await Promise.all([
+      // Get all crews the user is a member of
+      const { data: userCrews } = await supabase
+        .from('crew_members')
+        .select('crew_id')
+        .eq('user_id', user.id)
+        .eq('status', 'accepted')
+
+      const crewIds = userCrews?.map(crew => crew.crew_id) || []
+
+      // Fetch all data in parallel
+      const [
+        upcomingHostedResult,
+        upcomingRSVPResult,
+        upcomingInvitedResult,
+        pastHostedResult,
+        pastAttendingRSVPResult,
+        pastAttendingMembersResult,
+        pastCrewEventsResult
+      ] = await Promise.all([
         // Upcoming sessions you're hosting
         supabase
           .from('events')
@@ -134,7 +150,7 @@ export function UserProfile() {
           `)
           .eq('rsvps.user_id', user.id)
           .eq('rsvps.status', 'going')
-          .neq('created_by', user.id) // Exclude events you're hosting (already fetched above)
+          .neq('created_by', user.id)
           .gte('date_time', new Date().toISOString())
           .order('date_time', { ascending: true }),
 
@@ -156,7 +172,7 @@ export function UserProfile() {
           `)
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
-          .neq('created_by', user.id) // Exclude events you're hosting
+          .neq('created_by', user.id)
           .gte('date_time', new Date().toISOString())
           .order('date_time', { ascending: true }),
 
@@ -223,6 +239,31 @@ export function UserProfile() {
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
           .neq('created_by', user.id)
+          .lt('date_time', new Date().toISOString())
+          .order('date_time', { ascending: false })
+          .limit(5),
+
+        // Past sessions from crews you're a member of
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              id,
+              status,
+              user_id
+            ),
+            event_members (
+              id,
+              status,
+              user_id
+            ),
+            crews!inner (
+              id,
+              name
+            )
+          `)
+          .in('crew_id', crewIds)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false })
           .limit(5)
@@ -338,8 +379,6 @@ export function UserProfile() {
       // Sort all upcoming events by date
       allUpcomingEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
 
-
-
       setEnhancedSessions(allUpcomingEvents)
 
       // Process past sessions (combine hosted and attended)
@@ -412,6 +451,35 @@ export function UserProfile() {
           })
         )
         allPastEvents.push(...attendedMemberPastEventsWithCreators)
+      }
+
+      // Add past crew events
+      if (pastCrewEventsResult.error) {
+        console.error('Error fetching past crew events:', pastCrewEventsResult.error)
+      } else {
+        // Fetch creator info for past crew events
+        const crewEventsWithCreators = await Promise.all(
+          (pastCrewEventsResult.data || []).map(async (event) => {
+            const { data: creatorData } = await supabase
+              .from('user_profiles')
+              .select('display_name, avatar_url, user_id')
+              .eq('user_id', event.created_by)
+              .single()
+
+            return {
+              ...event,
+              creator: creatorData || {
+                display_name: 'Unknown Host',
+                avatar_url: null,
+                user_id: event.created_by
+              },
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: false,
+              isCrewEvent: true
+            }
+          })
+        )
+        allPastEvents.push(...crewEventsWithCreators)
       }
 
       // Sort all past events by date (most recent first)
