@@ -44,8 +44,12 @@ export function GoogleLocationPicker({
 
   useEffect(() => {
     if (!(window as any).google) return
-    autocompleteServiceRef.current = new (window as any).google.maps.places.AutocompleteService()
-    placesServiceRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
+    // Grab constructors as any to bypass TS signatures
+    const AutocompleteSrv: any = (window as any).google.maps.places.AutocompleteService;
+    const PlacesSrv: any = (window as any).google.maps.places.PlacesService;
+    // Instantiate services
+    autocompleteServiceRef.current = new AutocompleteSrv();
+    placesServiceRef.current = new PlacesSrv(document.createElement('div'));
   }, [])
 
   const fetchPredictions = (input: string) => {
