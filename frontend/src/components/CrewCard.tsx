@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { leaveCrew, getCrewMembers, createCrewInviteLink, type Crew, type CrewMember } from '@/lib/crewService'
+import { EditCrewModal } from '@/components/EditCrewModal'
 import { toast } from 'sonner'
 import {
   Users,
@@ -18,7 +19,7 @@ import {
   MoreVertical,
   UserMinus,
   Share2,
-  Settings
+  Edit
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -42,6 +43,7 @@ interface CrewCardProps {
 export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
   const navigate = useNavigate()
   const [showMembers, setShowMembers] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [members, setMembers] = useState<CrewMember[]>([])
 
   const vibeIcons = {
@@ -149,13 +151,13 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                 </DropdownMenuItem>
                 {crew.is_creator && (
                   <>
+                    <DropdownMenuItem onClick={() => setShowEditModal(true)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Crew
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleShareCrew}>
                       <Share2 className="w-4 h-4 mr-2" />
                       Create Invite Link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/crew/${crew.id}`)}>
-                      <Settings className="w-4 h-4 mr-2" />
-                      Manage Crew
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
@@ -255,6 +257,17 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Crew Modal */}
+      <EditCrewModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        crew={crew}
+        onCrewUpdated={() => {
+          onCrewUpdated?.()
+          setShowEditModal(false)
+        }}
+      />
     </>
   )
 }

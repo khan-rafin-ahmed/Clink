@@ -88,7 +88,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
 
     console.log('🔍 getUserCrews: Found crews:', crewsData.length)
 
-    // Get member counts for each crew (including creator)
+    // Get member counts for each crew (including creator, but avoid double counting)
     const crewsWithCounts = await Promise.all(
       crewsData.map(async (crew: any) => {
         try {
@@ -98,8 +98,17 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
             .eq('crew_id', crew.id)
             .eq('status', 'accepted')
 
-          // Add 1 for the creator (who might not be in crew_members table)
-          const totalMembers = (count || 0) + 1
+          // Check if creator is already in crew_members table
+          const { data: creatorMembership } = await supabase
+            .from('crew_members')
+            .select('id')
+            .eq('crew_id', crew.id)
+            .eq('user_id', crew.created_by)
+            .eq('status', 'accepted')
+            .maybeSingle()
+
+          // Add 1 for creator only if they're not already counted in crew_members
+          const totalMembers = (count || 0) + (creatorMembership ? 0 : 1)
 
           return {
             ...crew,
@@ -158,15 +167,24 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
 
   if (error) return null
 
-  // Get member count (including creator)
+  // Get member count (including creator, but avoid double counting)
   const { count } = await supabase
     .from('crew_members')
     .select('*', { count: 'exact', head: true })
     .eq('crew_id', crewId)
     .eq('status', 'accepted')
 
-  // Add 1 for the creator (who might not be in crew_members table)
-  const totalMembers = (count || 0) + 1
+  // Check if creator is already in crew_members table
+  const { data: creatorMembership } = await supabase
+    .from('crew_members')
+    .select('id')
+    .eq('crew_id', crewId)
+    .eq('user_id', data.created_by)
+    .eq('status', 'accepted')
+    .maybeSingle()
+
+  // Add 1 for creator only if they're not already counted in crew_members
+  const totalMembers = (count || 0) + (creatorMembership ? 0 : 1)
 
   // Check if current user is a member
   let isMember = false
@@ -193,10 +211,10 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
 // Get crew members
 export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
   try {
-    // First get the crew info to get the creator
+    // First get the crew info to get the creator and creation date
     const { data: crewData, error: crewError } = await supabase
       .from('crews')
-      .select('created_by')
+      .select('created_by, created_at')
       .eq('id', crewId)
       .single()
 
@@ -226,32 +244,52 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
       console.warn('Error fetching user profiles:', profileError)
     }
 
-    // Create result array starting with creator
+    // Create result array
     const result: CrewMember[] = []
 
-    // Add creator first (if they have a profile)
-    const creatorProfile = profiles?.find(p => p.user_id === crewData.created_by)
-    if (creatorProfile) {
+    // Check if creator is in crew_members table
+    const creatorInMembers = members?.find(member => member.user_id === crewData.created_by)
+
+    if (creatorInMembers) {
+      // Creator is in crew_members, use their actual data
+      const profile = profiles?.find(p => p.user_id === crewData.created_by)
       result.push({
-        id: `creator-${crewData.created_by}`,
-        crew_id: crewId,
-        user_id: crewData.created_by,
-        status: 'accepted' as const,
-        joined_at: new Date().toISOString(), // Placeholder
-        created_at: new Date().toISOString(), // Placeholder
-        updated_at: new Date().toISOString(), // Placeholder
-        user: {
-          id: creatorProfile.user_id,
-          display_name: creatorProfile.display_name,
-          avatar_url: creatorProfile.avatar_url
+        ...creatorInMembers,
+        user: profile ? {
+          id: profile.user_id,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url
+        } : {
+          id: creatorInMembers.user_id,
+          display_name: 'Unknown User',
+          avatar_url: null
         }
       })
+    } else {
+      // Creator is not in crew_members, add them manually
+      const creatorProfile = profiles?.find(p => p.user_id === crewData.created_by)
+      if (creatorProfile) {
+        result.push({
+          id: `creator-${crewData.created_by}`,
+          crew_id: crewId,
+          user_id: crewData.created_by,
+          status: 'accepted' as const,
+          joined_at: crewData.created_at, // Use crew creation date
+          created_at: crewData.created_at, // Use crew creation date
+          updated_at: crewData.created_at, // Use crew creation date
+          user: {
+            id: creatorProfile.user_id,
+            display_name: creatorProfile.display_name,
+            avatar_url: creatorProfile.avatar_url
+          }
+        })
+      }
     }
 
-    // Add regular members (excluding creator if they're also in crew_members)
+    // Add all other members (excluding creator if already added)
     if (members) {
       for (const member of members) {
-        // Skip if this member is the creator (already added above)
+        // Skip creator if already added above
         if (member.user_id === crewData.created_by) continue
 
         const profile = profiles?.find(p => p.user_id === member.user_id)
@@ -557,6 +595,20 @@ export async function searchUsersForInvite(query: string, crewId?: string): Prom
   }
 
   return filteredResults.slice(0, 10) // Return max 10 results
+}
+
+// Update crew
+export async function updateCrew(crewId: string, updates: Partial<Crew>): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('crews')
+    .update(updates)
+    .eq('id', crewId)
+    .eq('created_by', user.id) // Only creator can edit
+
+  if (error) throw error
 }
 
 // Helper function to generate invite codes
