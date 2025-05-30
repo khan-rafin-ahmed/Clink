@@ -183,7 +183,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
 
     if (crewError) throw crewError
 
-    // Get all crew members (excluding creator to avoid duplicates)
+    // Get all accepted crew members (excluding creator to avoid duplicates)
     const { data: members, error } = await supabase
       .from('crew_members')
       .select('*')
@@ -276,6 +276,51 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
     console.error('Error getting crew members:', error)
     throw error
   }
+}
+
+// Get pending invitation requests (to display but not count)
+export async function getCrewPendingRequests(crewId: string): Promise<CrewMember[]> {
+  const { data, error } = await supabase
+    .from('crew_members')
+    .select(`
+      id,
+      crew_id,
+      user_id,
+      status,
+      joined_at,
+      created_at,
+      updated_at,
+      user: user_profiles (
+        user_id,
+        display_name,
+        avatar_url
+      )
+    `)
+    .eq('crew_id', crewId)
+    .eq('status', 'pending')
+    .order('joined_at', { ascending: true })
+
+  if (error) {
+    console.error('❌ Error getting pending crew requests:', error)
+    throw error
+  }
+
+  return (data || []).map((member: any) => ({
+    id: member.id,
+    crew_id: member.crew_id,
+    user_id: member.user_id,
+    status: member.status,
+    joined_at: member.joined_at,
+    created_at: member.created_at,
+    updated_at: member.updated_at,
+    user: member.user
+      ? {
+          id: member.user.user_id,
+          display_name: member.user.display_name,
+          avatar_url: member.user.avatar_url
+        }
+      : undefined
+  }))
 }
 
 // Invite user to crew by user ID
