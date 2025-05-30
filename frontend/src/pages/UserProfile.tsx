@@ -194,8 +194,7 @@ export function UserProfile() {
           `)
           .eq('created_by', user.id)
           .lt('date_time', new Date().toISOString())
-          .order('date_time', { ascending: false })
-          .limit(3),
+          .order('date_time', { ascending: false }),
 
         // Past sessions you attended via RSVP
         supabase
@@ -217,8 +216,7 @@ export function UserProfile() {
           .eq('rsvps.status', 'going')
           .neq('created_by', user.id)
           .lt('date_time', new Date().toISOString())
-          .order('date_time', { ascending: false })
-          .limit(5),
+          .order('date_time', { ascending: false }),
 
         // Past sessions you attended via event_members (private events)
         supabase
@@ -240,8 +238,7 @@ export function UserProfile() {
           .eq('event_members.status', 'accepted')
           .neq('created_by', user.id)
           .lt('date_time', new Date().toISOString())
-          .order('date_time', { ascending: false })
-          .limit(5),
+          .order('date_time', { ascending: false }),
 
         // Past sessions from crews you're a member of
         supabase
@@ -266,7 +263,6 @@ export function UserProfile() {
           .in('crew_id', crewIds)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false })
-          .limit(5)
       ])
 
       // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
@@ -484,7 +480,7 @@ export function UserProfile() {
 
       // Sort all past events by date (most recent first)
       allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
-      setPastSessions(allPastEvents.slice(0, 6)) // Limit to 6 total past events
+      setPastSessions(allPastEvents)
     } catch (error) {
       console.error('Error fetching enhanced sessions:', error)
     } finally {
@@ -553,6 +549,12 @@ export function UserProfile() {
 
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
   const avatarFallback = displayName.charAt(0).toUpperCase()
+
+  // Pagination state for past sessions
+  const [pastPage, setPastPage] = useState(1);
+  const itemsPerPage = 10;
+  const pageCount = Math.ceil(pastSessions.length / itemsPerPage);
+  const displayedPastSessions = pastSessions.slice((pastPage - 1) * itemsPerPage, pastPage * itemsPerPage);
 
   return (
     <div className="min-h-screen bg-background">
@@ -723,17 +725,26 @@ export function UserProfile() {
                 <p className="text-muted-foreground">Loading past sessions...</p>
               </div>
             ) : pastSessions.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {pastSessions.map((session) => (
-                  <EventCard
-                    key={session.id}
-                    event={session}
-                    showHostActions={false}
-                    onEdit={undefined}
-                    onDelete={undefined}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {displayedPastSessions.map((session) => (
+                    <EventCard
+                      key={session.id}
+                      event={session}
+                      showHostActions={false}
+                      onEdit={undefined}
+                      onDelete={undefined}
+                    />
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <div className="flex justify-center space-x-2 mt-4">
+                    <Button disabled={pastPage === 1} onClick={() => setPastPage(p => p - 1)}>Previous</Button>
+                    <span className="px-2 py-1">{pastPage} / {pageCount}</span>
+                    <Button disabled={pastPage === pageCount} onClick={() => setPastPage(p => p + 1)}>Next</Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12 bg-card rounded-xl border border-border">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
