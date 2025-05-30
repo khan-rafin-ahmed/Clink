@@ -12,7 +12,7 @@ import { CrewCard } from '@/components/CrewCard'
 import { useEffect, useState } from 'react'
 import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
-import { getUserCrews } from '@/lib/crewService'
+import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -109,6 +109,7 @@ export function UserProfile() {
         upcomingHostedResult,
         upcomingRSVPResult,
         upcomingInvitedResult,
+        upcomingCrewEventsResult,
         pastHostedResult,
         pastAttendingRSVPResult,
         pastAttendingMembersResult,
@@ -175,6 +176,21 @@ export function UserProfile() {
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
           .neq('created_by', user.id)
+          .gte('date_time', new Date().toISOString())
+          .order('date_time', { ascending: true }),
+
+        // Upcoming crew-based events (for crews the user belongs to)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              id,
+              status,
+              user_id
+            )
+          `)
+          .in('crew_id', crewIds)
           .gte('date_time', new Date().toISOString())
           .order('date_time', { ascending: true }),
 
@@ -378,6 +394,26 @@ export function UserProfile() {
           })
         )
         allUpcomingEvents.push(...invitedEventsWithCreators)
+      }
+
+      // Add crew events
+      if (upcomingCrewEventsResult.error) {
+        console.error('Error fetching upcoming crew events:', upcomingCrewEventsResult.error)
+      } else {
+        const crewEventsWithCreators = await Promise.all(
+          (upcomingCrewEventsResult.data || []).map(async (event) => {
+            // Use creatorInfo for host
+            const crewMembers = await getCrewMembers(event.crew_id)
+            return {
+              ...event,
+              creator: creatorInfo,
+              rsvp_count: crewMembers.length,
+              isHosting: false,
+              isCrewEvent: true
+            }
+          })
+        )
+        allUpcomingEvents.push(...crewEventsWithCreators)
       }
 
       // Sort all upcoming events by date
