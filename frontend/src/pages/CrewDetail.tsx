@@ -14,7 +14,6 @@ import {
   createCrewInviteLink,
   searchUsersForInvite,
 } from '@/lib/crewService'
-import { leaveCrew, inviteUserByIdentifier } from '@/lib/crewService'
 import { toast } from 'sonner'
 import {
   Users,
@@ -58,15 +57,6 @@ export function CrewDetail() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [lastSearchQuery, setLastSearchQuery] = useState('')
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const vibeIcons = {
-    casual: Coffee,
-    party: PartyPopper,
-    chill: Coffee,
-    wild: Flame,
-    classy: Crown,
-    other: Star
-  }
 
   useEffect(() => {
     if (!crewId) {
