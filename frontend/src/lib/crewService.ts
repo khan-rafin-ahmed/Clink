@@ -40,54 +40,89 @@ export interface CreateCrewData {
 
 // Get user's crews (where they are a member)
 export async function getUserCrews(userId?: string): Promise<Crew[]> {
-  const { data: { user } } = await supabase.auth.getUser()
-  const currentUserId = userId || user?.id
-  if (!currentUserId) {
-    return []
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const currentUserId = userId || user?.id
+    if (!currentUserId) {
+      return []
+    }
+
+    console.log('🔍 getUserCrews: Fetching crews for user:', currentUserId)
+
+    // Use a more robust approach that avoids potential RLS issues
+    // First, get the crew IDs where the user is a member
+    const { data: membershipData, error: membershipError } = await supabase
+      .from('crew_members')
+      .select('crew_id')
+      .eq('user_id', currentUserId)
+      .eq('status', 'accepted')
+
+    if (membershipError) {
+      console.error('❌ Error fetching user crews:', membershipError)
+      throw membershipError
+    }
+
+    if (!membershipData || membershipData.length === 0) {
+      console.log('✅ getUserCrews: No crew memberships found')
+      return []
+    }
+
+    const crewIds = membershipData.map(m => m.crew_id)
+    console.log('🔍 getUserCrews: Found crew IDs:', crewIds)
+
+    // Then fetch the crew details directly
+    const { data: crewsData, error: crewsError } = await supabase
+      .from('crews')
+      .select('*')
+      .in('id', crewIds)
+
+    if (crewsError) {
+      console.error('❌ Error fetching crew details:', crewsError)
+      throw crewsError
+    }
+
+    if (!crewsData) {
+      console.log('✅ getUserCrews: No crew data found')
+      return []
+    }
+
+    console.log('🔍 getUserCrews: Found crews:', crewsData.length)
+
+    // Get member counts for each crew
+    const crewsWithCounts = await Promise.all(
+      crewsData.map(async (crew: any) => {
+        try {
+          const { count } = await supabase
+            .from('crew_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('crew_id', crew.id)
+            .eq('status', 'accepted')
+
+          return {
+            ...crew,
+            member_count: count || 0,
+            is_member: true,
+            is_creator: crew.created_by === currentUserId
+          } as Crew
+        } catch (error) {
+          console.error('❌ Error getting member count for crew:', crew.id, error)
+          // Return crew without member count if there's an error
+          return {
+            ...crew,
+            member_count: 0,
+            is_member: true,
+            is_creator: crew.created_by === currentUserId
+          } as Crew
+        }
+      })
+    )
+
+    console.log('✅ getUserCrews: Successfully loaded crews with counts')
+    return crewsWithCounts
+  } catch (error) {
+    console.error('❌ getUserCrews: Unexpected error:', error)
+    throw error
   }
-
-  // First, get the crew IDs where the user is a member
-  const { data: membershipData, error: membershipError } = await supabase
-    .from('crew_members')
-    .select('crew_id')
-    .eq('user_id', currentUserId)
-    .eq('status', 'accepted')
-
-  if (membershipError) throw membershipError
-  if (!membershipData || membershipData.length === 0) {
-    return []
-  }
-
-  const crewIds = membershipData.map(m => m.crew_id)
-
-  // Then fetch the crew details directly
-  const { data: crewsData, error: crewsError } = await supabase
-    .from('crews')
-    .select('*')
-    .in('id', crewIds)
-
-  if (crewsError) throw crewsError
-  if (!crewsData) return []
-
-  // Get member counts for each crew
-  const crewsWithCounts = await Promise.all(
-    crewsData.map(async (crew: any) => {
-      const { count } = await supabase
-        .from('crew_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('crew_id', crew.id)
-        .eq('status', 'accepted')
-
-      return {
-        ...crew,
-        member_count: count || 0,
-        is_member: true,
-        is_creator: crew.created_by === currentUserId
-      } as Crew
-    })
-  )
-
-  return crewsWithCounts
 }
 
 // Create a new crew
