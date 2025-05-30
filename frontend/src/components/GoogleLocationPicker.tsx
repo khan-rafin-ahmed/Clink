@@ -9,6 +9,7 @@ import type { LocationData } from '@/types'
 interface GoogleLocationPickerProps {
   value?: LocationData | null
   onChange: (location: LocationData | null) => void
+  onSelect?: (location: LocationData) => void
   placeholder?: string
   label?: string
   required?: boolean
@@ -19,6 +20,7 @@ interface GoogleLocationPickerProps {
 export function GoogleLocationPicker({
   value,
   onChange,
+  onSelect,
   placeholder = "Search for a location...",
   label,
   required = false,
@@ -27,7 +29,7 @@ export function GoogleLocationPicker({
 }: GoogleLocationPickerProps) {
   const [query, setQuery] = useState(value?.place_name || '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
 
   // Initialize Google Maps Places Autocomplete
   useEffect(() => {
@@ -35,13 +37,13 @@ export function GoogleLocationPicker({
 
     const options = {
       types: ['establishment', 'geocode'],
-      fields: ['formatted_address', 'geometry', 'name', 'place_id']
+      componentRestrictions: { country: 'bd' }
     }
 
-    autocompleteRef.current = new google.maps.places.Autocomplete(
-      inputRef.current,
+    autocompleteRef.current = new google.maps.places.PlaceAutocompleteElement({
+      input: inputRef.current,
       options
-    )
+    })
 
     // Style the autocomplete dropdown
     const styleElement = document.createElement('style')
@@ -75,14 +77,7 @@ export function GoogleLocationPicker({
         color: #D4AF37 !important;
       }
       .pac-container:after {
-        content: "Powered by Google" !important;
-        color: #9CA3AF !important;
-        font-size: 0.75rem !important;
-        font-style: italic !important;
-        opacity: 0.5 !important;
-        position: absolute !important;
-        bottom: 0.5rem !important;
-        right: 1rem !important;
+        display: none !important;
       }
     `
     document.head.appendChild(styleElement)
@@ -101,6 +96,7 @@ export function GoogleLocationPicker({
 
       setQuery(locationData.place_name)
       onChange(locationData)
+      onSelect?.(locationData)
     })
 
     return () => {
@@ -109,7 +105,7 @@ export function GoogleLocationPicker({
       }
       document.head.removeChild(styleElement)
     }
-  }, [onChange])
+  }, [onChange, onSelect])
 
   // Handle clear selection
   const handleClear = () => {
@@ -161,6 +157,10 @@ export function GoogleLocationPicker({
       {error && (
         <p className="text-sm text-destructive mt-1">{error}</p>
       )}
+
+      <div className="mt-2 text-sm italic text-gray-400 opacity-50">
+        Powered by Google
+      </div>
     </div>
   )
 } 

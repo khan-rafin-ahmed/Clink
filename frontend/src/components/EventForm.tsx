@@ -47,6 +47,11 @@ export function EventForm({ initialData, onSubmit, onCancel }: EventFormProps) {
   const [notes, setNotes] = useState(initialData?.notes || '')
   const [isPublic, setIsPublic] = useState(initialData?.is_public ?? true)
 
+  const handleLocationSelect = (selectedLocation: LocationData) => {
+    setLocation(selectedLocation)
+    toast.success('Location selected!')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -126,6 +131,7 @@ export function EventForm({ initialData, onSubmit, onCancel }: EventFormProps) {
           <GoogleLocationPicker
             value={location}
             onChange={setLocation}
+            onSelect={handleLocationSelect}
             placeholder="Search for a venue..."
             required
           />

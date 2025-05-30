@@ -108,6 +108,20 @@ declare namespace google.maps {
       getPlace(): PlaceResult;
     }
 
+    class PlaceAutocompleteElement {
+      constructor(options: {
+        input: HTMLInputElement;
+        options?: {
+          types?: string[];
+          componentRestrictions?: {
+            country: string;
+          };
+        };
+      });
+      addListener(event: string, callback: () => void): void;
+      getPlace(): PlaceResult;
+    }
+
     interface PlaceResult {
       geometry?: {
         location?: LatLng;
