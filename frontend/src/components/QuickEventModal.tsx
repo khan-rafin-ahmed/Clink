@@ -120,6 +120,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
   // Add handler for location change
   const handleLocationChange = (locationData: LocationData | null) => {
+    console.log('Location changed in QuickEventModal:', locationData)
     setFormData(prev => ({
       ...prev,
       location: locationData?.place_name || '',

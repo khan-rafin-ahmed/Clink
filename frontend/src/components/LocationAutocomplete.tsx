@@ -36,24 +36,37 @@ export function LocationAutocomplete({
 
     const initializeAutocomplete = async () => {
       try {
+        console.log('Starting to load Google Maps API...')
         await loadGoogleMapsAPI();
+        console.log('Google Maps API loaded successfully')
 
-        if (!inputRef.current) return;
+        if (!inputRef.current) {
+          console.log('Input ref not available')
+          return
+        }
 
         const options = {
           types: ['establishment', 'geocode'],
-          fields: ['formatted_address', 'geometry', 'name', 'place_id'],
-          componentRestrictions: { country: 'bd' }
+          fields: ['formatted_address', 'geometry', 'name', 'place_id']
+          // Temporarily removing country restriction to test
+          // componentRestrictions: { country: 'bd' }
         }
 
+        console.log('Creating autocomplete with options:', options)
         autocompleteRef.current = new google.maps.places.Autocomplete(
           inputRef.current,
           options
         )
+        console.log('Autocomplete created successfully')
 
         autocompleteRef.current.addListener('place_changed', () => {
           const place = autocompleteRef.current?.getPlace()
-          if (!place?.geometry?.location) return
+          console.log('Place changed:', place)
+
+          if (!place?.geometry?.location) {
+            console.log('No geometry or location found')
+            return
+          }
 
           const locationData: LocationData = {
             latitude: place.geometry.location.lat(),
@@ -63,6 +76,7 @@ export function LocationAutocomplete({
             address: place.formatted_address
           }
 
+          console.log('Location data created:', locationData)
           setQuery(locationData.place_name)
           onChange(locationData)
         })
@@ -71,43 +85,115 @@ export function LocationAutocomplete({
         const styleAutocompleteDropdown = () => {
           const pacContainer = document.querySelector('.pac-container') as HTMLElement
           if (pacContainer) {
-            pacContainer.style.backgroundColor = '#111827' // bg-gray-900
-            pacContainer.style.border = '1px solid #D97706' // border-gold-500
-            pacContainer.style.borderRadius = '0.375rem'
-            pacContainer.style.zIndex = '9999'
-            pacContainer.style.marginTop = '4px'
+            // Container styling
+            pacContainer.style.setProperty('background-color', '#111827', 'important')
+            pacContainer.style.setProperty('border', '1px solid #D97706', 'important')
+            pacContainer.style.setProperty('border-radius', '0.375rem', 'important')
+            pacContainer.style.setProperty('z-index', '9999', 'important')
+            pacContainer.style.setProperty('margin-top', '4px', 'important')
+            pacContainer.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0, 0, 0, 0.1)', 'important')
 
+            // Style all items WITHOUT breaking Google's event listeners
             const pacItems = pacContainer.querySelectorAll('.pac-item')
             pacItems.forEach((item: Element) => {
               const htmlItem = item as HTMLElement
-              htmlItem.style.backgroundColor = '#111827' // bg-gray-900
-              htmlItem.style.color = '#ffffff' // text-white
-              htmlItem.style.borderBottom = '1px solid #374151' // border-gray-700
-              htmlItem.style.padding = '12px 16px'
-              htmlItem.style.cursor = 'pointer'
 
+              // Force dark styling
+              htmlItem.style.setProperty('background-color', '#111827', 'important')
+              htmlItem.style.setProperty('color', '#ffffff', 'important')
+              htmlItem.style.setProperty('border-bottom', '1px solid #374151', 'important')
+              htmlItem.style.setProperty('padding', '12px 16px', 'important')
+              htmlItem.style.setProperty('cursor', 'pointer', 'important')
+
+              // Style all text elements inside
+              const textElements = htmlItem.querySelectorAll('span, .pac-item-query, .pac-matched')
+              textElements.forEach((textEl: Element) => {
+                (textEl as HTMLElement).style.setProperty('color', '#ffffff', 'important')
+              })
+
+              // Add hover effects WITHOUT cloning (to preserve Google's event listeners)
               htmlItem.addEventListener('mouseenter', () => {
-                htmlItem.style.backgroundColor = '#1F2937' // hover:bg-gray-800
+                htmlItem.style.setProperty('background-color', '#1F2937', 'important')
               })
 
               htmlItem.addEventListener('mouseleave', () => {
-                htmlItem.style.backgroundColor = '#111827' // bg-gray-900
+                htmlItem.style.setProperty('background-color', '#111827', 'important')
               })
             })
 
-            // Hide "Powered by Google" text and logo
-            const poweredBy = pacContainer.querySelector('.pac-logo') as HTMLElement
-            if (poweredBy) {
-              poweredBy.style.display = 'none'
-            }
+            // Hide all Google branding more aggressively
+            const brandingSelectors = [
+              '.pac-logo',
+              '.pac-icon',
+              '[src*="google"]',
+              '[alt*="google"]',
+              '[title*="google"]',
+              '.pac-item:last-child'
+            ]
 
-            // Also hide any other Google branding
-            const pacLogos = pacContainer.querySelectorAll('[src*="google"], .pac-logo, .pac-icon')
-            pacLogos.forEach((logo: Element) => {
-              (logo as HTMLElement).style.display = 'none'
+            brandingSelectors.forEach(selector => {
+              const elements = pacContainer.querySelectorAll(selector)
+              elements.forEach((el: Element) => {
+                (el as HTMLElement).style.setProperty('display', 'none', 'important')
+              })
+            })
+
+            // Check for "Powered by Google" text and hide it
+            const allText = pacContainer.querySelectorAll('*')
+            allText.forEach((el: Element) => {
+              if (el.textContent?.includes('Powered by Google')) {
+                (el as HTMLElement).style.setProperty('display', 'none', 'important')
+              }
             })
           }
         }
+
+        // Inject CSS for Google Maps styling
+        const injectGoogleMapsCSS = () => {
+          const existingStyle = document.getElementById('google-maps-dark-theme')
+          if (!existingStyle) {
+            const style = document.createElement('style')
+            style.id = 'google-maps-dark-theme'
+            style.textContent = `
+              .pac-container {
+                background-color: #111827 !important;
+                border: 1px solid #D97706 !important;
+                border-radius: 0.375rem !important;
+                z-index: 9999 !important;
+                margin-top: 4px !important;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+              }
+              .pac-item {
+                background-color: #111827 !important;
+                color: #ffffff !important;
+                border-bottom: 1px solid #374151 !important;
+                padding: 12px 16px !important;
+                cursor: pointer !important;
+              }
+              .pac-item:hover {
+                background-color: #1F2937 !important;
+              }
+              .pac-item span,
+              .pac-item-query,
+              .pac-matched {
+                color: #ffffff !important;
+              }
+              .pac-logo,
+              .pac-icon,
+              [src*="google"],
+              [alt*="google"],
+              [title*="google"],
+              .pac-item:last-child {
+                display: none !important;
+              }
+            `
+            document.head.appendChild(style)
+            console.log('Google Maps CSS injected')
+          }
+        }
+
+        // Inject CSS immediately
+        injectGoogleMapsCSS()
 
         // Apply styling immediately and on mutations
         setTimeout(styleAutocompleteDropdown, 100)
