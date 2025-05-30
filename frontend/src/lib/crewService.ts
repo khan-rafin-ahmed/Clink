@@ -280,47 +280,36 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
 
 // Get pending invitation requests (to display but not count)
 export async function getCrewPendingRequests(crewId: string): Promise<CrewMember[]> {
-  const { data, error } = await supabase
+  // Step 1: Query crew_members for pending rows
+  const { data: rows, error: rowsError } = await supabase
     .from('crew_members')
-    .select(`
-      id,
-      crew_id,
-      user_id,
-      status,
-      joined_at,
-      created_at,
-      updated_at,
-      user: user_profiles (
-        user_id,
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('id, crew_id, user_id, status, joined_at, created_at, updated_at')
     .eq('crew_id', crewId)
     .eq('status', 'pending')
-    .order('joined_at', { ascending: true })
-
-  if (error) {
-    console.error('❌ Error getting pending crew requests:', error)
-    throw error
+    .order('joined_at', { ascending: true });
+  if (rowsError) {
+    console.error('❌ Error getting pending crew requests:', rowsError)
+    throw rowsError;
   }
 
-  return (data || []).map((member: any) => ({
-    id: member.id,
-    crew_id: member.crew_id,
-    user_id: member.user_id,
-    status: member.status,
-    joined_at: member.joined_at,
-    created_at: member.created_at,
-    updated_at: member.updated_at,
-    user: member.user
-      ? {
-          id: member.user.user_id,
-          display_name: member.user.display_name,
-          avatar_url: member.user.avatar_url
-        }
-      : undefined
-  }))
+  // Step 2: Extract unique user_ids and fetch profiles
+  const userIds = Array.from(new Set((rows || []).map(r => r.user_id)));
+  const { data: profiles, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('user_id, display_name, avatar_url')
+    .in('user_id', userIds);
+  if (profileError) throw profileError;
+
+  // Step 3: Map rows into CrewMember[] merging profile lookup
+  return (rows || []).map(row => {
+    const prof = profiles?.find(p => p.user_id === row.user_id);
+    return {
+      ...row,
+      user: prof
+        ? { id: prof.user_id, display_name: prof.display_name, avatar_url: prof.avatar_url }
+        : undefined
+    };
+  });
 }
 
 // Invite user to crew by user ID
