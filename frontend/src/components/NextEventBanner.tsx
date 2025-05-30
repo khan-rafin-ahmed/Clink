@@ -50,13 +50,18 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
         .from('events')
         .select(`
           *,
-          rsvps!inner (
-            user_id,
-            status
+          rsvps (
+            id,
+            status,
+            user_id
+          ),
+          event_members (
+            id,
+            status,
+            user_id
           )
         `)
-        .or(`created_by.eq.${userId},rsvps.user_id.eq.${userId}`)
-        .eq('rsvps.status', 'going')
+        .or(`created_by.eq.${userId},rsvps.user_id.eq.${userId},event_members.user_id.eq.${userId}`)
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: true })
         .limit(1)
