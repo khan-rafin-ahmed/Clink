@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { loadGoogleMapsAPI } from '@/lib/googleMapsLoader'
 import type { LocationData } from '@/types'
 
 interface GoogleLocationPickerProps {
@@ -35,14 +36,22 @@ export function GoogleLocationPicker({
   const dummyDivRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!window.google || !window.google.maps || !window.google.maps.places) return
+    const initializeServices = async () => {
+      try {
+        await loadGoogleMapsAPI();
 
-    // Create a dummy div for the PlacesService
-    dummyDivRef.current = document.createElement('div');
+        // Create a dummy div for the PlacesService
+        dummyDivRef.current = document.createElement('div');
 
-    // Initialize services
-    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-    placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current);
+        // Initialize services
+        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current);
+      } catch (error) {
+        console.error('Failed to initialize Google Maps services:', error);
+      }
+    };
+
+    initializeServices();
 
     // Clean up the dummy div on unmount
     return () => {
@@ -109,7 +118,7 @@ export function GoogleLocationPicker({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      
+
       <div className="relative mt-1">
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />

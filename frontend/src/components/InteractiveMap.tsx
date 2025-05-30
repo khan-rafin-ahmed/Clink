@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { loadGoogleMapsAPI } from '@/lib/googleMapsLoader'
 import type { LocationData } from '@/types'
 
 interface InteractiveMapProps {
@@ -24,16 +25,14 @@ export function InteractiveMap({
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
 
   useEffect(() => {
-    if (!mapRef.current || !window.google) return
+    const initializeMap = async () => {
+      try {
+        await loadGoogleMapsAPI();
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-    if (!apiKey) {
-      console.error('Google Maps API key is missing')
-      return
-    }
+        if (!mapRef.current) return;
 
-    const center = { lat: location.latitude, lng: location.longitude }
-    
+        const center = { lat: location.latitude, lng: location.longitude }
+
     const mapOptions: google.maps.MapOptions = {
       center,
       zoom,
@@ -86,8 +85,14 @@ export function InteractiveMap({
       })
     }
 
-    mapInstanceRef.current = map
-    markerRef.current = marker
+        mapInstanceRef.current = map
+        markerRef.current = marker
+      } catch (error) {
+        console.error('Failed to initialize Google Maps:', error);
+      }
+    }
+
+    initializeMap();
 
     return () => {
       if (markerRef.current) {
