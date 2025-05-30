@@ -29,61 +29,77 @@ export function GoogleLocationPicker({
 }: GoogleLocationPickerProps) {
   const [query, setQuery] = useState(value?.place_name || '')
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Handle clear selection
-  const handleClear = () => {
-    setQuery('')
-    onChange(null)
-    inputRef.current?.focus()
-  }
-
-  // Manual predictions dropdown using AutocompleteService & PlacesService
-  const [predictions, setPredictions] = useState<any[]>([])
-  const autocompleteServiceRef = useRef<any>()
-  const placesServiceRef = useRef<any>()
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const dummyDivRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!(window as any).google) return
-    // Instantiate services
-    autocompleteServiceRef.current = new ((window as any).google as any).maps.places.AutocompleteService();
-    placesServiceRef.current = new ((window as any).google as any).maps.places.PlacesService(document.createElement('div'));
-  }, [])
+    if (!window.google || !window.google.maps || !window.google.maps.places) return
+
+    // Create a dummy div for the PlacesService
+    dummyDivRef.current = document.createElement('div');
+
+    // Initialize services
+    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+    placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current);
+
+    // Clean up the dummy div on unmount
+    return () => {
+      if (dummyDivRef.current) {
+        dummyDivRef.current.remove();
+      }
+    };
+  }, []);
 
   const fetchPredictions = (input: string) => {
-    if (!autocompleteServiceRef.current) return
+    if (!autocompleteServiceRef.current || input.length < 3) {
+      setPredictions([]);
+      return;
+    }
+
     autocompleteServiceRef.current.getPlacePredictions(
       { input, componentRestrictions: { country: 'bd' }, types: ['establishment','geocode'] },
-      (preds: any, status: any) => {
-        if (status === "OK" && preds) {
-          setPredictions(preds)
+      (preds, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && preds) {
+          setPredictions(preds);
         } else {
-          setPredictions([])
+          setPredictions([]);
         }
       }
-    )
-  }
+    );
+  };
 
-  const handleSelectPrediction = (pred: any) => {
-    if (!placesServiceRef.current) return
+  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
+    if (!placesServiceRef.current || !pred.place_id) return;
+
     placesServiceRef.current.getDetails(
       { placeId: pred.place_id },
-      (place: any, status: any) => {
-        if (status === "OK" && place?.geometry?.location) {
+      (place, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
           const locationData: LocationData = {
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng(),
             place_id: place.place_id || '',
             place_name: place.formatted_address || place.name || '',
             address: place.formatted_address
-          }
-          setQuery(locationData.place_name)
-          onChange(locationData)
-          onSelect?.(locationData)
-          setPredictions([])
+          };
+          setQuery(locationData.place_name);
+          onChange(locationData);
+          onSelect?.(locationData);
+          setPredictions([]); // Clear predictions after selection
         }
       }
-    )
-  }
+    );
+  };
+
+  // Handle clear selection
+  const handleClear = () => {
+    setQuery('');
+    onChange(null);
+    setPredictions([]); // Clear predictions on clear
+    inputRef.current?.focus();
+  };
 
   return (
     <div className={cn("relative", className)}>
@@ -103,9 +119,9 @@ export function GoogleLocationPicker({
             type="text"
             value={query}
             onChange={(e) => {
-              const val = e.target.value
-              setQuery(val)
-              fetchPredictions(val)
+              const val = e.target.value;
+              setQuery(val);
+              fetchPredictions(val);
             }}
             placeholder={placeholder}
             className={cn(
@@ -116,34 +132,34 @@ export function GoogleLocationPicker({
             required={required}
           />
           {predictions.length > 0 && (
-            <ul className="absolute z-10 bg-gray-900 border border-gold-500 rounded-md w-full mt-1 max-h-60 overflow-auto">
-              {predictions.map(pred => (
-                <li
-                  key={pred.place_id}
-                  className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-800 text-white"
-                  onClick={() => handleSelectPrediction(pred)}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  <span>
-                    <strong>{pred.structured_formatting.main_text}</strong>{' '}
-                    <small className="opacity-75">{pred.structured_formatting.secondary_text}</small>
-                  </span>
-                </li>
-              ))}
-              <li className="px-4 py-2 text-xs text-gray-400 text-center">Powered by Google</li>
-            </ul>
-          )}
-          {(query || value) && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-800 text-gray-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          )}
+             <ul className="absolute z-10 bg-gray-900 border border-gold-500 rounded-md w-full mt-1 max-h-60 overflow-auto">
+               {predictions.map(pred => (
+                 <li
+                   key={pred.place_id}
+                   className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-800 text-white"
+                   onClick={() => handleSelectPrediction(pred)}
+                 >
+                   <MapPin className="w-4 h-4 mr-2" />
+                   <span>
+                     <strong>{pred.structured_formatting.main_text}</strong>{' '}
+                     <small className="opacity-75">{pred.structured_formatting.secondary_text}</small>
+                   </span>
+                 </li>
+               ))}
+               <li className="px-4 py-2 text-xs text-gray-400 text-center">Powered by Google</li>
+             </ul>
+           )}
+            {(query || value) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-800 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
         </div>
       </div>
 

@@ -130,6 +130,60 @@ declare namespace google.maps {
       formatted_address?: string;
       name?: string;
     }
+
+    interface AutocompletePrediction {
+      description: string;
+      place_id: string;
+      structured_formatting: {
+        main_text: string;
+        secondary_text: string;
+        main_text_matched_substrings: {
+          offset: number;
+          length: number;
+        }[];
+      };
+      terms: {
+        offset: number;
+        value: string;
+      }[];
+      types: string[];
+    }
+
+    class AutocompleteService {
+      getPlacePredictions(request: AutocompletePredictionRequest, callback: (results: AutocompletePrediction[] | null, status: PlacesServiceStatus) => void): void;
+    }
+
+    interface AutocompletePredictionRequest {
+      input: string;
+      componentRestrictions?: {
+        country: string | string[];
+      };
+      bounds?: LatLngBounds | LatLngBoundsLiteral;
+      location?: LatLng | LatLngLiteral;
+      offset?: number;
+      radius?: number;
+      types?: string[];
+    }
+
+    class PlacesService {
+      constructor(attrContainer: Element | Map);
+      getDetails(request: PlaceDetailsRequest, callback: (placeResult: PlaceResult | null, status: PlacesServiceStatus) => void): void;
+    }
+
+    interface PlaceDetailsRequest {
+      placeId: string;
+      fields?: string[];
+    }
+
+    enum PlacesServiceStatus {
+      OK = 'OK',
+      ZERO_RESULTS = 'ZERO_RESULTS',
+      OVER_QUERY_LIMIT = 'OVER_QUERY_LIMIT',
+      REQUEST_DENIED = 'REQUEST_DENIED',
+      INVALID_REQUEST = 'INVALID_REQUEST',
+      NOT_FOUND = 'NOT_FOUND',
+      UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+    }
   }
 
   namespace event {
