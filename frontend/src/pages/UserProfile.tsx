@@ -219,7 +219,7 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            rsvps!inner (
+            rsvps (
               id,
               status,
               user_id
