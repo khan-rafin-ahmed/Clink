@@ -117,6 +117,15 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     { value: 'custom', label: 'Custom Time', emoji: '⏰' }
   ]
 
+  // Add handler for location change
+  const handleLocationChange = (locationData: LocationData | null) => {
+    setFormData(prev => ({
+      ...prev,
+      location: locationData?.place_name || '',
+      locationData
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -304,13 +313,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   label="Where's the party?"
                   placeholder="Search for bars, restaurants, venues..."
                   value={formData.locationData}
-                  onChange={(locationData) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      locationData,
-                      location: locationData?.place_name || ''
-                    }))
-                  }}
+                  onChange={handleLocationChange}
                   required
                 />
               </div>

@@ -47,29 +47,16 @@ export function LocationAutocomplete({
   // Get Mapbox token from environment
   const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 
-  // Add more detailed debug logs
+  // Remove debug logs since Mapbox is working
   useEffect(() => {
-    console.log('LocationAutocomplete mounted with environment:', {
-      hasMapboxToken: !!MAPBOX_ACCESS_TOKEN,
-      tokenLength: MAPBOX_ACCESS_TOKEN?.length,
-      tokenValue: MAPBOX_ACCESS_TOKEN,
-      allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')),
-      envValues: Object.fromEntries(
-        Object.entries(import.meta.env)
-          .filter(([key]) => key.startsWith('VITE_'))
-          .map(([key, value]) => [key, value])
-      )
-    })
+    if (!MAPBOX_ACCESS_TOKEN) {
+      console.warn('Mapbox access token is missing')
+    }
   }, [])
 
   // Debounced search function
   const searchPlaces = async (searchQuery: string) => {
     if (!searchQuery.trim() || !MAPBOX_ACCESS_TOKEN) {
-      console.log('Search aborted:', {
-        reason: !searchQuery.trim() ? 'Empty query' : 'Missing token',
-        tokenPresent: !!MAPBOX_ACCESS_TOKEN,
-        tokenLength: MAPBOX_ACCESS_TOKEN?.length
-      })
       setSuggestions([])
       setIsLoading(false)
       return
@@ -88,22 +75,13 @@ export function LocationAutocomplete({
         searchQuery
       )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=poi,address,place&limit=5`
       
-      console.log('Fetching from Mapbox:', url)
-      
       const response = await fetch(url, { signal: abortControllerRef.current.signal })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('Mapbox API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        })
         throw new Error(`Failed to fetch suggestions: ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('Mapbox response:', data)
       setSuggestions(data.features || [])
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
