@@ -44,8 +44,8 @@ export function LocationAutocomplete({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Get Mapbox token from environment
-  const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
+  // Temporarily hardcode the Mapbox token for testing
+  const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1Ijoicm91Z2hpbiIsImEiOiJjbWJiMWh0a2YwdTVjMmtwcm5ubzI2MnpnIn0.zZ7-Pto8J7YiWZJzxf7kvQ'
 
   // Add more detailed debug logs
   useEffect(() => {
