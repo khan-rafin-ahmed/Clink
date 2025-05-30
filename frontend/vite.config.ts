@@ -7,6 +7,15 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current directory.
   const env = loadEnv(mode, process.cwd(), '')
   
+  // Debug log to check environment variables
+  console.log('Environment variables loaded:', {
+    MAPBOX_TOKEN: env.VITE_MAPBOX_ACCESS_TOKEN ? 'present' : 'missing',
+    MAPBOX_STYLE: env.VITE_MAPBOX_STYLE_URL ? 'present' : 'missing',
+    API_URL: env.VITE_API_URL ? 'present' : 'missing',
+    SUPABASE_URL: env.VITE_SUPABASE_URL ? 'present' : 'missing',
+    SUPABASE_KEY: env.VITE_SUPABASE_ANON_KEY ? 'present' : 'missing'
+  })
+  
   return {
     plugins: [react()],
     resolve: {
