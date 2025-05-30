@@ -14,7 +14,7 @@ import { Calendar, Plus, Users } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
-import { formatDistanceToNow } from 'date-fns'
+
 import type { UserProfile, Event, Crew } from '@/types'
 
 interface EnhancedEvent extends Event {
@@ -40,7 +40,7 @@ export function UserProfile() {
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const [pastPage, setPastPage] = useState(1)
-  const [totalEventsHosted, setTotalEventsHosted] = useState(0)
+
   const itemsPerPage = 10
 
   // We're now using enhanced sessions instead of the basic hook
@@ -59,30 +59,8 @@ export function UserProfile() {
   useEffect(() => {
     if (user) {
       getUserProfile(user.id).then(setUserProfile).catch(console.error)
-      fetchTotalEventsHosted()
     }
   }, [user])
-
-  // Fetch total events hosted by user
-  const fetchTotalEventsHosted = async () => {
-    if (!user?.id) return
-
-    try {
-      const { count, error } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true })
-        .eq('created_by', user.id)
-
-      if (error) {
-        console.error('Error fetching total events hosted:', error)
-        return
-      }
-
-      setTotalEventsHosted(count || 0)
-    } catch (error) {
-      console.error('Error fetching total events hosted:', error)
-    }
-  }
 
   // Fetch user crews
   const fetchUserCrews = async () => {
@@ -135,8 +113,7 @@ export function UserProfile() {
         upcomingCrewEventsResult,
         pastHostedResult,
         pastAttendingRSVPResult,
-        pastAttendingMembersResult,
-        pastCrewEventsResult
+        pastAttendingMembersResult
       ] = await Promise.all([
         // Upcoming sessions you're hosting
         supabase
@@ -281,25 +258,7 @@ export function UserProfile() {
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false }),
 
-        // Past sessions from crews you're a member of
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps (
-              id,
-              status,
-              user_id
-            ),
-            event_members (
-              id,
-              status,
-              user_id
-            )
-          `)
-          .in('created_by', crewIds)
-          .lt('date_time', new Date().toISOString())
-          .order('date_time', { ascending: false })
+
       ])
 
       // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
@@ -528,37 +487,7 @@ export function UserProfile() {
         allPastEvents.push(...attendedMemberPastEventsWithCreators)
       }
 
-      // Add past crew events
-      if (pastCrewEventsResult.error) {
-        console.error('Error fetching past crew events:', pastCrewEventsResult.error)
-      } else {
-        // Fetch creator info for past crew events
-        const crewEventsWithCreators = await Promise.all(
-          (pastCrewEventsResult.data || [])
-            .filter(event => !processedEventIds.has(event.id))
-            .map(async (event) => {
-              processedEventIds.add(event.id)
-              const { data: creatorData } = await supabase
-                .from('user_profiles')
-                .select('display_name, avatar_url, user_id')
-                .eq('user_id', event.created_by)
-                .single()
 
-              return {
-                ...event,
-                creator: creatorData || {
-                  display_name: 'Unknown Host',
-                  avatar_url: null,
-                  user_id: event.created_by
-                },
-                rsvp_count: calculateAttendeeCount(event),
-                isHosting: false,
-                isCrewEvent: true
-              }
-            })
-        )
-        allPastEvents.push(...crewEventsWithCreators)
-      }
 
       // Sort all past events by date (most recent first)
       allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
@@ -665,32 +594,7 @@ export function UserProfile() {
               </div>
             </div>
 
-            {/* User Info Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
-              <div className="bg-card rounded-lg p-3 border border-border">
-                <div className="text-lg font-bold text-foreground">{totalEventsHosted}</div>
-                <div className="text-xs text-muted-foreground">Events Hosted</div>
-              </div>
-              <div className="bg-card rounded-lg p-3 border border-border">
-                <div className="text-lg font-bold text-foreground">{userCrews.length}</div>
-                <div className="text-xs text-muted-foreground">Crews</div>
-              </div>
-              <div className="bg-card rounded-lg p-3 border border-border">
-                <div className="text-lg font-bold text-foreground">
-                  {userProfile?.favorite_drink || 'Beer'}
-                </div>
-                <div className="text-xs text-muted-foreground">Favorite Drink</div>
-              </div>
-              <div className="bg-card rounded-lg p-3 border border-border">
-                <div className="text-lg font-bold text-foreground">
-                  {userProfile?.join_date
-                    ? formatDistanceToNow(new Date(userProfile.join_date), { addSuffix: false })
-                    : 'Recently'
-                  }
-                </div>
-                <div className="text-xs text-muted-foreground">Member Since</div>
-              </div>
-            </div>
+
 
             <div className="bg-primary/10 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
               <p className="text-xs sm:text-sm text-muted-foreground">

@@ -46,8 +46,12 @@ export function LocationAutocomplete({
 
   const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 
-  // Add debug log
-  console.log('Mapbox Token:', MAPBOX_ACCESS_TOKEN ? 'Present' : 'Missing')
+  // Add more detailed debug logs
+  console.log('Environment variables:', {
+    hasMapboxToken: !!MAPBOX_ACCESS_TOKEN,
+    tokenLength: MAPBOX_ACCESS_TOKEN?.length,
+    allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
+  })
 
   // Debounced search function
   const searchPlaces = async (searchQuery: string) => {
