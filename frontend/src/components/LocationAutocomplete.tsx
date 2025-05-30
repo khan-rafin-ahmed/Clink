@@ -44,14 +44,23 @@ export function LocationAutocomplete({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // Get Mapbox token from environment
   const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 
   // Add more detailed debug logs
-  console.log('Environment variables:', {
-    hasMapboxToken: !!MAPBOX_ACCESS_TOKEN,
-    tokenLength: MAPBOX_ACCESS_TOKEN?.length,
-    allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
-  })
+  useEffect(() => {
+    console.log('LocationAutocomplete mounted with environment:', {
+      hasMapboxToken: !!MAPBOX_ACCESS_TOKEN,
+      tokenLength: MAPBOX_ACCESS_TOKEN?.length,
+      tokenValue: MAPBOX_ACCESS_TOKEN,
+      allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')),
+      envValues: Object.fromEntries(
+        Object.entries(import.meta.env)
+          .filter(([key]) => key.startsWith('VITE_'))
+          .map(([key, value]) => [key, value])
+      )
+    })
+  }, [])
 
   // Debounced search function
   const searchPlaces = async (searchQuery: string) => {
