@@ -13,6 +13,7 @@ import {
   bulkInviteUsersToCrew,
   createCrewInviteLink,
   searchUsersForInvite,
+  getCrewPendingRequests,
 } from '@/lib/crewService'
 import { toast } from 'sonner'
 import {
@@ -30,7 +31,8 @@ import {
   Share2,
   Copy,
   ExternalLink,
-  Check
+  Check,
+  Clock,
 } from 'lucide-react'
 import {
   Dialog,
@@ -46,6 +48,7 @@ export function CrewDetail() {
   const navigate = useNavigate()
   const [crew, setCrew] = useState<Crew | null>(null)
   const [members, setMembers] = useState<CrewMember[]>([])
+  const [pendingRequests, setPendingRequests] = useState<CrewMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteIdentifier, setInviteIdentifier] = useState('')
@@ -81,9 +84,10 @@ export function CrewDetail() {
 
     setIsLoading(true)
     try {
-      const [crewData, membersData] = await Promise.all([
+      const [crewData, membersData, pendingData] = await Promise.all([
         getCrewById(crewId),
-        getCrewMembers(crewId)
+        getCrewMembers(crewId),
+        getCrewPendingRequests(crewId)
       ])
 
       if (!crewData) {
@@ -94,6 +98,7 @@ export function CrewDetail() {
 
       setCrew(crewData)
       setMembers(membersData)
+      setPendingRequests(pendingData)
     } catch (error: any) {
       console.error('Error loading crew data:', error)
       toast.error('Failed to load crew details')
@@ -359,6 +364,12 @@ export function CrewDetail() {
                     <Users className="w-4 h-4" />
                     <span>{crew.member_count || 0} members</span>
                   </div>
+                  {pendingRequests.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{pendingRequests.length} pending</span>
+                    </div>
+                  )}
                 </div>
 
                 {crew.description && (
@@ -586,6 +597,48 @@ export function CrewDetail() {
             </div>
           </CardHeader>
         </Card>
+
+        {/* Pending Requests Section */}
+        {pendingRequests.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Pending Invites ({pendingRequests.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3">
+                {pendingRequests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={request.user?.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {request.user?.display_name?.[0]?.toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {request.user?.display_name || 'Anonymous'}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Invited {new Date(request.joined_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Members Section */}
         <Card>
