@@ -117,19 +117,19 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                     <Crown className="w-4 h-4 text-amber-500" />
                   )}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-xs">
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <Badge variant="secondary" className="text-xs whitespace-nowrap">
                     <VibeIcon className="w-3 h-3 mr-1" />
                     {crew.vibe} {vibeEmojis[crew.vibe]}
                   </Badge>
-                  <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'} className="text-xs">
+                  <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'} className="text-xs whitespace-nowrap">
                     {crew.visibility === 'public' ? (
                       <><Globe className="w-3 h-3 mr-1" />Public</>
                     ) : (
                       <><Lock className="w-3 h-3 mr-1" />Private</>
                     )}
                   </Badge>
-                  <Badge variant={crew.is_creator ? 'default' : 'secondary'} className="text-xs">
+                  <Badge variant={crew.is_creator ? 'default' : 'secondary'} className="text-xs whitespace-nowrap">
                     {crew.is_creator ? '👑 Host' : '🎟️ Member'}
                   </Badge>
                 </div>

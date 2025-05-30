@@ -95,7 +95,7 @@ export function UserProfile() {
 
       // Fetch upcoming and past sessions in parallel
       // Now includes events you created, RSVP'd to, and were invited to
-      const [upcomingHostedResult, upcomingRSVPResult, upcomingInvitedResult, pastHostedResult, pastAttendingResult] = await Promise.all([
+      const [upcomingHostedResult, upcomingRSVPResult, upcomingInvitedResult, pastHostedResult, pastAttendingRSVPResult, pastAttendingMembersResult] = await Promise.all([
         // Upcoming sessions you're hosting
         supabase
           .from('events')
@@ -181,7 +181,7 @@ export function UserProfile() {
           .order('date_time', { ascending: false })
           .limit(3),
 
-        // Past sessions you attended
+        // Past sessions you attended via RSVP
         supabase
           .from('events')
           .select(`
@@ -202,7 +202,30 @@ export function UserProfile() {
           .neq('created_by', user.id)
           .lt('date_time', new Date().toISOString())
           .order('date_time', { ascending: false })
-          .limit(3)
+          .limit(5),
+
+        // Past sessions you attended via event_members (private events)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps (
+              id,
+              status,
+              user_id
+            ),
+            event_members!inner (
+              id,
+              status,
+              user_id
+            )
+          `)
+          .eq('event_members.user_id', user.id)
+          .eq('event_members.status', 'accepted')
+          .neq('created_by', user.id)
+          .lt('date_time', new Date().toISOString())
+          .order('date_time', { ascending: false })
+          .limit(5)
       ])
 
       // Helper function to calculate attendee count (same logic as EventDetail and getPublicEvents)
@@ -335,13 +358,13 @@ export function UserProfile() {
         allPastEvents.push(...hostedPastEvents)
       }
 
-      // Add attended past events
-      if (pastAttendingResult.error) {
-        console.error('Error fetching past attending sessions:', pastAttendingResult.error)
+      // Add attended past events (RSVP)
+      if (pastAttendingRSVPResult.error) {
+        console.error('Error fetching past RSVP attending sessions:', pastAttendingRSVPResult.error)
       } else {
-        // Fetch creator info for past attended events
-        const attendedPastEventsWithCreators = await Promise.all(
-          (pastAttendingResult.data || []).map(async (event) => {
+        // Fetch creator info for past RSVP attended events
+        const attendedRSVPPastEventsWithCreators = await Promise.all(
+          (pastAttendingRSVPResult.data || []).map(async (event: any) => {
             const { data: creatorData } = await supabase
               .from('user_profiles')
               .select('display_name, avatar_url, user_id')
@@ -360,7 +383,35 @@ export function UserProfile() {
             }
           })
         )
-        allPastEvents.push(...attendedPastEventsWithCreators)
+        allPastEvents.push(...attendedRSVPPastEventsWithCreators)
+      }
+
+      // Add attended past events (event members)
+      if (pastAttendingMembersResult.error) {
+        console.error('Error fetching past member attending sessions:', pastAttendingMembersResult.error)
+      } else {
+        // Fetch creator info for past member attended events
+        const attendedMemberPastEventsWithCreators = await Promise.all(
+          (pastAttendingMembersResult.data || []).map(async (event: any) => {
+            const { data: creatorData } = await supabase
+              .from('user_profiles')
+              .select('display_name, avatar_url, user_id')
+              .eq('user_id', event.created_by)
+              .single()
+
+            return {
+              ...event,
+              creator: creatorData || {
+                display_name: 'Unknown Host',
+                avatar_url: null,
+                user_id: event.created_by
+              },
+              rsvp_count: calculateAttendeeCount(event),
+              isHosting: false
+            }
+          })
+        )
+        allPastEvents.push(...attendedMemberPastEventsWithCreators)
       }
 
       // Sort all past events by date (most recent first)

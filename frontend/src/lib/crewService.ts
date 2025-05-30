@@ -88,7 +88,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
 
     console.log('🔍 getUserCrews: Found crews:', crewsData.length)
 
-    // Get member counts for each crew
+    // Get member counts for each crew (including creator)
     const crewsWithCounts = await Promise.all(
       crewsData.map(async (crew: any) => {
         try {
@@ -98,18 +98,21 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
             .eq('crew_id', crew.id)
             .eq('status', 'accepted')
 
+          // Add 1 for the creator (who might not be in crew_members table)
+          const totalMembers = (count || 0) + 1
+
           return {
             ...crew,
-            member_count: count || 0,
+            member_count: totalMembers,
             is_member: true,
             is_creator: crew.created_by === currentUserId
           } as Crew
         } catch (error) {
           console.error('❌ Error getting member count for crew:', crew.id, error)
-          // Return crew without member count if there's an error
+          // Return crew with just creator count if there's an error
           return {
             ...crew,
-            member_count: 0,
+            member_count: 1, // At least the creator
             is_member: true,
             is_creator: crew.created_by === currentUserId
           } as Crew
@@ -155,12 +158,15 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
 
   if (error) return null
 
-  // Get member count
+  // Get member count (including creator)
   const { count } = await supabase
     .from('crew_members')
     .select('*', { count: 'exact', head: true })
     .eq('crew_id', crewId)
     .eq('status', 'accepted')
+
+  // Add 1 for the creator (who might not be in crew_members table)
+  const totalMembers = (count || 0) + 1
 
   // Check if current user is a member
   let isMember = false
@@ -173,12 +179,12 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
       .eq('status', 'accepted')
       .maybeSingle()
 
-    isMember = !!memberData
+    isMember = !!memberData || data.created_by === user.id // Creator is always a member
   }
 
   return {
     ...data,
-    member_count: count || 0,
+    member_count: totalMembers,
     is_member: isMember,
     is_creator: data.created_by === user?.id
   }
@@ -186,45 +192,89 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
 
 // Get crew members
 export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
-  // First get the crew members
-  const { data: members, error } = await supabase
-    .from('crew_members')
-    .select('*')
-    .eq('crew_id', crewId)
-    .eq('status', 'accepted')
-    .order('joined_at', { ascending: true })
+  try {
+    // First get the crew info to get the creator
+    const { data: crewData, error: crewError } = await supabase
+      .from('crews')
+      .select('created_by')
+      .eq('id', crewId)
+      .single()
 
-  if (error) throw error
-  if (!members || members.length === 0) return []
+    if (crewError) throw crewError
 
-  // Then get user profiles for each member
-  const userIds = members.map(member => member.user_id)
-  const { data: profiles, error: profileError } = await supabase
-    .from('user_profiles')
-    .select('user_id, display_name, avatar_url')
-    .in('user_id', userIds)
+    // Get all crew members (excluding creator to avoid duplicates)
+    const { data: members, error } = await supabase
+      .from('crew_members')
+      .select('*')
+      .eq('crew_id', crewId)
+      .eq('status', 'accepted')
+      .order('joined_at', { ascending: true })
 
-  if (profileError) {
-    console.warn('Error fetching user profiles:', profileError)
-    // Return members without profile data if profiles fail
-    return members.map(member => ({
-      ...member,
-      user: undefined
-    }))
-  }
+    if (error) throw error
 
-  // Combine members with their profiles
-  return members.map(member => {
-    const profile = profiles?.find(p => p.user_id === member.user_id)
-    return {
-      ...member,
-      user: profile ? {
-        id: profile.user_id,
-        display_name: profile.display_name,
-        avatar_url: profile.avatar_url
-      } : undefined
+    // Collect all user IDs (members + creator)
+    const memberUserIds = members?.map(member => member.user_id) || []
+    const allUserIds = [...new Set([crewData.created_by, ...memberUserIds])]
+
+    // Get user profiles for all users
+    const { data: profiles, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', allUserIds)
+
+    if (profileError) {
+      console.warn('Error fetching user profiles:', profileError)
     }
-  })
+
+    // Create result array starting with creator
+    const result: CrewMember[] = []
+
+    // Add creator first (if they have a profile)
+    const creatorProfile = profiles?.find(p => p.user_id === crewData.created_by)
+    if (creatorProfile) {
+      result.push({
+        id: `creator-${crewData.created_by}`,
+        crew_id: crewId,
+        user_id: crewData.created_by,
+        status: 'accepted' as const,
+        joined_at: new Date().toISOString(), // Placeholder
+        created_at: new Date().toISOString(), // Placeholder
+        updated_at: new Date().toISOString(), // Placeholder
+        user: {
+          id: creatorProfile.user_id,
+          display_name: creatorProfile.display_name,
+          avatar_url: creatorProfile.avatar_url
+        }
+      })
+    }
+
+    // Add regular members (excluding creator if they're also in crew_members)
+    if (members) {
+      for (const member of members) {
+        // Skip if this member is the creator (already added above)
+        if (member.user_id === crewData.created_by) continue
+
+        const profile = profiles?.find(p => p.user_id === member.user_id)
+        result.push({
+          ...member,
+          user: profile ? {
+            id: profile.user_id,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url
+          } : {
+            id: member.user_id,
+            display_name: 'Unknown User',
+            avatar_url: null
+          }
+        })
+      }
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error fetching crew members:', error)
+    throw error
+  }
 }
 
 // Invite user to crew by user ID
