@@ -827,14 +827,14 @@ export function UserProfile() {
                       </Button>
                     )}
                   </div>
-
-                  {/* Page Info */}
-                  <div className="text-center mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {((pastPage - 1) * itemsPerPage) + 1} to {Math.min(pastPage * itemsPerPage, pastSessions.length)} of {pastSessions.length} past sessions
-                    </p>
-                  </div>
                 )}
+
+                {/* Page Info */}
+                <div className="text-center mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {((pastPage - 1) * itemsPerPage) + 1} to {Math.min(pastPage * itemsPerPage, pastSessions.length)} of {pastSessions.length} past sessions
+                  </p>
+                </div>
               </>
             ) : (
               <div className="text-center py-12 bg-card rounded-xl border border-border">
