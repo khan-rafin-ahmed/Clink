@@ -165,25 +165,10 @@ export function EventDetail() {
       } catch (slugError: any) {
         // If slug-based approach fails, try legacy event_code approach for backward compatibility
         if (slugError.message === 'Event not found') {
+          // Try event_code lookup without problematic joins
           const { data: eventByCode, error: codeError } = await supabase
             .from('events')
-            .select(`
-              *,
-              rsvps (
-                id,
-                status,
-                user_id,
-                users (
-                  email
-                )
-              ),
-              event_members (
-                id,
-                status,
-                user_id,
-                invited_by
-              )
-            `)
+            .select('*')
             .eq('event_code', slug)
             .maybeSingle()
 
@@ -191,29 +176,17 @@ export function EventDetail() {
             eventData = eventByCode
           } else {
             // Final fallback to ID-based lookup
-            const { data: eventById } = await supabase
+            const { data: eventById, error: idError } = await supabase
               .from('events')
-              .select(`
-                *,
-                rsvps (
-                  id,
-                  status,
-                  user_id,
-                  users (
-                    email
-                  )
-                ),
-                event_members (
-                  id,
-                  status,
-                  user_id,
-                  invited_by
-                )
-              `)
+              .select('*')
               .eq('id', slug)
               .maybeSingle()
 
-            eventData = eventById
+            if (eventById && !idError) {
+              eventData = eventById
+            } else {
+              throw new Error('Event not found')
+            }
           }
         } else {
           throw slugError

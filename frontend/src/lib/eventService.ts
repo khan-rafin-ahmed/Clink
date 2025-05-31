@@ -14,41 +14,40 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
 
-    const query = supabase
-      .from('events')
-      .select(`
-        *,
-        rsvps (
-          id,
-          status,
-          user_id,
-          users (
-            email
-          )
-        ),
-        event_members (
-          id,
-          status,
-          user_id,
-          invited_by
-        )
-      `)
+    // Get event without problematic joins first
+    const { data: eventData, error: eventError } = isPrivate
+      ? await supabase.from('events').select('*').eq('private_slug', slug).single()
+      : await supabase.from('events').select('*').eq('public_slug', slug).single()
 
-    // Use appropriate slug column based on event type
-    const event = isPrivate
-      ? await query.eq('private_slug', slug).single()
-      : await query.eq('public_slug', slug).single()
-
-    if (event.error) {
-      if (event.error.code === 'PGRST116') {
+    if (eventError) {
+      if (eventError.code === 'PGRST116') {
         throw new Error('Event not found')
       }
-      throw event.error
+      throw eventError
+    }
+
+    // Get RSVPs separately to avoid foreign key issues
+    const { data: rsvps } = await supabase
+      .from('rsvps')
+      .select('id, status, user_id')
+      .eq('event_id', eventData.id)
+
+    // Get event members separately
+    const { data: eventMembers } = await supabase
+      .from('event_members')
+      .select('id, status, user_id, invited_by')
+      .eq('event_id', eventData.id)
+
+    // Combine the data
+    const event = {
+      ...eventData,
+      rsvps: rsvps || [],
+      event_members: eventMembers || []
     }
 
     // For private events, verify user has access
     if (isPrivate && user) {
-      const hasAccess = await checkEventAccess(event.data.id, user.id)
+      const hasAccess = await checkEventAccess(event.id, user.id)
       if (!hasAccess) {
         throw new Error('You do not have permission to view this private event')
       }
@@ -56,7 +55,7 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false) {
       throw new Error('Please sign in to view this private event')
     }
 
-    return event.data
+    return event
   } catch (error) {
     throw error
   }
@@ -72,33 +71,37 @@ export async function getEventDetails(eventId: string) {
   }
 
   try {
-    const { data: event, error } = await supabase
+    // Get event without problematic joins first
+    const { data: eventData, error: eventError } = await supabase
       .from('events')
-      .select(`
-        *,
-        rsvps (
-          id,
-          status,
-          user_id,
-          users (
-            email
-          )
-        ),
-        event_members (
-          id,
-          status,
-          user_id,
-          invited_by
-        )
-      `)
+      .select('*')
       .eq('id', eventId)
       .single()
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (eventError) {
+      if (eventError.code === 'PGRST116') {
         throw new Error('Event not found')
       }
-      throw error
+      throw eventError
+    }
+
+    // Get RSVPs separately to avoid foreign key issues
+    const { data: rsvps } = await supabase
+      .from('rsvps')
+      .select('id, status, user_id')
+      .eq('event_id', eventData.id)
+
+    // Get event members separately
+    const { data: eventMembers } = await supabase
+      .from('event_members')
+      .select('id, status, user_id, invited_by')
+      .eq('event_id', eventData.id)
+
+    // Combine the data
+    const event = {
+      ...eventData,
+      rsvps: rsvps || [],
+      event_members: eventMembers || []
     }
 
     return event

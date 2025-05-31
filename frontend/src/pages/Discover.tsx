@@ -61,22 +61,10 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
   try {
     console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
 
-    // Try to get public events
+    // Get public events without problematic joins
     const { data: publicEvents, error: publicEventsError } = await supabase
       .from('events')
-      .select(`
-        *,
-        rsvps (
-          id,
-          status,
-          user_id
-        ),
-        event_members (
-          id,
-          status,
-          user_id
-        )
-      `)
+      .select('*')
       .eq('is_public', true) // Ensure only public events are fetched
       .gte('date_time', new Date().toISOString()) // Filter for upcoming events
       .order('date_time', { ascending: true }) // Order by date
@@ -91,6 +79,29 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     if (!publicEvents || publicEvents.length === 0) {
       console.log('⚠️ No public events found')
       return []
+    }
+
+    // Get event IDs for batch queries
+    const eventIds = publicEvents.map(event => event.id)
+
+    // Batch fetch RSVPs for all events
+    const { data: allRsvps, error: rsvpError } = await supabase
+      .from('rsvps')
+      .select('event_id, status, user_id')
+      .in('event_id', eventIds)
+
+    if (rsvpError) {
+      console.error('❌ Error loading RSVPs:', rsvpError)
+    }
+
+    // Batch fetch event members for all events
+    const { data: allEventMembers, error: memberError } = await supabase
+      .from('event_members')
+      .select('event_id, status, user_id')
+      .in('event_id', eventIds)
+
+    if (memberError) {
+      console.error('❌ Error loading event members:', memberError)
     }
 
     // Get unique creator IDs to batch fetch profiles
@@ -134,10 +145,22 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     // Map events with their creators and join status, and calculate attendee count
     const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
       const profile = profiles?.find(p => p.user_id === event.created_by)
-      // Calculate attendee count using the utility function
-      const attendeeCount = calculateAttendeeCount(event);
-      return {
+
+      // Add RSVPs and event members to the event object
+      const eventRsvps = allRsvps?.filter(rsvp => rsvp.event_id === event.id) || []
+      const eventMembers = allEventMembers?.filter(member => member.event_id === event.id) || []
+
+      const eventWithData = {
         ...event,
+        rsvps: eventRsvps,
+        event_members: eventMembers
+      }
+
+      // Calculate attendee count using the utility function
+      const attendeeCount = calculateAttendeeCount(eventWithData);
+
+      return {
+        ...eventWithData,
         creator: profile ? {
           id: profile.user_id,
           user_id: profile.user_id,
