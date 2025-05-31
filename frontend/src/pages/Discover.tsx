@@ -35,6 +35,7 @@ import { getPublicEvents } from '@/lib/eventService'
 import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { calculateAttendeeCount } from '@/lib/eventUtils'
 
 type SortOption = 'newest' | 'trending' | 'date' | 'popular'
 type FilterOption = 'all' | 'tonight' | 'tomorrow' | 'weekend' | 'next-week'
@@ -62,8 +63,30 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
 
     // Try to get public events
-    const publicEvents = await getPublicEvents()
-    console.log('📅 Found public events:', publicEvents.length)
+    const { data: publicEvents, error: publicEventsError } = await supabase
+      .from('events')
+      .select(`
+        *,
+        rsvps (
+          id,
+          status,
+          user_id
+        ),
+        event_members (
+          id,
+          status,
+          user_id
+        )
+      `)
+      .eq('is_public', true) // Ensure only public events are fetched
+      .order('date_time', { ascending: true }) // Order by date
+
+    if (publicEventsError) {
+      console.error('❌ Error loading public events:', publicEventsError)
+      throw publicEventsError // Throw to be caught by the hook's error handling
+    }
+
+    console.log('📅 Found public events:', publicEvents?.length || 0)
 
     if (!publicEvents || publicEvents.length === 0) {
       console.log('⚠️ No public events found')
@@ -108,9 +131,11 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
       }
     }
 
-    // Map events with their creators and join status
+    // Map events with their creators and join status, and calculate attendee count
     const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
       const profile = profiles?.find(p => p.user_id === event.created_by)
+      // Calculate attendee count using the utility function
+      const attendeeCount = calculateAttendeeCount(event);
       return {
         ...event,
         creator: profile ? {
@@ -124,7 +149,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
           updated_at: ''
         } : undefined,
         user_has_joined: userJoinStatuses.get(event.id) || false,
-        rsvp_count: 0
+        rsvp_count: attendeeCount
       }
     })
 
