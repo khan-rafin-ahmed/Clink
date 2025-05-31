@@ -148,8 +148,13 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
-              <div className="truncate">
-                <span className="text-sm text-muted-foreground">{event.place_name || event.location}</span>
+              <div className="truncate max-w-[200px]">
+                <span 
+                  className="text-sm text-muted-foreground truncate" 
+                  title={event.place_name || event.location}
+                >
+                  {event.place_name || event.location}
+                </span>
               </div>
             </div>
           </div>
@@ -175,15 +180,9 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           <div className="flex items-center gap-1 text-sm">
             <Users className="w-4 h-4" />
             {attendeeCount === 0 ? (
-              isHost ? (
-                <span className="text-muted-foreground">
-                  No one has joined yet
-                </span>
-              ) : (
-                <span className="text-primary font-medium animate-pulse">
-                  Be the first to raise hell! ✨
-                </span>
-              )
+              <span className="text-primary font-medium animate-pulse">
+                Be the first to raise hell! ✨
+              </span>
             ) : (
               <span className="text-muted-foreground">
                 {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} going
