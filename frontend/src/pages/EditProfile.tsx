@@ -42,7 +42,9 @@ export function EditProfile() {
     bio: '',
     tagline: '',
     favorite_drink: '',
-    avatar_url: ''
+    avatar_url: '',
+    profile_visibility: 'public' as 'public' | 'crew_only' | 'private',
+    show_crews_publicly: true
   })
 
   const loadProfile = useCallback(async () => {
@@ -94,7 +96,9 @@ export function EditProfile() {
         bio: profileData.bio || '',
         tagline: profileData.tagline || '',
         favorite_drink: profileData.favorite_drink || 'none',
-        avatar_url: profileData.avatar_url || ''
+        avatar_url: profileData.avatar_url || '',
+        profile_visibility: profileData.profile_visibility || 'public',
+        show_crews_publicly: profileData.show_crews_publicly ?? true
       })
       setHasLoaded(true)
     } catch (error: any) {
@@ -131,7 +135,9 @@ export function EditProfile() {
       bio: formData.bio.trim() || null,
       tagline: formData.tagline.trim() || null,
       favorite_drink: formData.favorite_drink === 'none' ? null : formData.favorite_drink || null,
-      avatar_url: formData.avatar_url.trim() || null
+      avatar_url: formData.avatar_url.trim() || null,
+      profile_visibility: formData.profile_visibility,
+      show_crews_publicly: formData.show_crews_publicly
     }
 
     console.log('[EditProfile] Saving profile with data:', updateData)
@@ -150,11 +156,11 @@ export function EditProfile() {
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     console.log('[EditProfile] Field changed:', field, '=', value)
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'show_crews_publicly' ? value === 'true' || value === true : value
     }))
   }
 
@@ -283,6 +289,52 @@ export function EditProfile() {
                 <p className="text-xs text-muted-foreground">
                   Let others know what you like to drink
                 </p>
+              </div>
+
+              {/* Privacy Settings */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-lg font-semibold text-foreground">Privacy Settings</h3>
+
+                {/* Profile Visibility */}
+                <div className="space-y-2">
+                  <Label htmlFor="profile_visibility">Who can view your profile?</Label>
+                  <Select
+                    value={formData.profile_visibility}
+                    onValueChange={(value: 'public' | 'crew_only' | 'private') =>
+                      handleInputChange('profile_visibility', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">🌍 Public - Anyone can view</SelectItem>
+                      <SelectItem value="crew_only">👥 Crew Only - Only crew members can view</SelectItem>
+                      <SelectItem value="private">🔒 Private - Only you can view</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.profile_visibility === 'public' && 'Your profile will be visible to everyone who views events you attend or host'}
+                    {formData.profile_visibility === 'crew_only' && 'Only people in your crews can view your profile details'}
+                    {formData.profile_visibility === 'private' && 'Your profile is completely private - others will only see your name'}
+                  </p>
+                </div>
+
+                {/* Show Crews Publicly */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="show_crews_publicly"
+                      checked={formData.show_crews_publicly}
+                      onChange={(e) => handleInputChange('show_crews_publicly', e.target.checked.toString())}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="show_crews_publicly">Show my crews on my profile</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, others can see which crews you're part of (respects crew visibility settings)
+                  </p>
+                </div>
               </div>
 
               {/* Submit Button */}

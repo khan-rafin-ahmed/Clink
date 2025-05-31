@@ -7,20 +7,22 @@ import type { UserProfile } from '@/types'
 interface UserStatsProps {
   className?: string
   refreshTrigger?: number
+  userId?: string // Optional userId to view other users' stats
 }
 
-export function UserStats({ className, refreshTrigger }: UserStatsProps) {
+export function UserStats({ className, refreshTrigger, userId }: UserStatsProps) {
   const { user } = useAuth()
-  const { stats, loading, error } = useUserStats(refreshTrigger)
+  const targetUserId = userId || user?.id
+  const { stats, loading, error } = useUserStats(refreshTrigger, targetUserId)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
-    if (user?.id) {
-      getUserProfile(user.id).then(setUserProfile).catch(console.error)
+    if (targetUserId) {
+      getUserProfile(targetUserId).then(setUserProfile).catch(console.error)
     }
-  }, [user?.id])
+  }, [targetUserId])
 
-  if (!user) return null
+  if (!targetUserId) return null
 
   // Get emoji for favorite drink
   const getDrinkEmoji = (drink: string | null | undefined) => {

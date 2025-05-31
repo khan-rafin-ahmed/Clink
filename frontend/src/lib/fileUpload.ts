@@ -142,6 +142,18 @@ export async function uploadAvatar(file: File, userId: string): Promise<UploadRe
 }
 
 /**
+ * Uploads an event photo specifically
+ */
+export async function uploadEventPhoto(file: File, userId: string, eventId: string): Promise<UploadResult> {
+  return uploadFile(file, userId, {
+    bucket: 'event-photos',
+    folder: eventId, // Group photos by event
+    maxSizeBytes: 10 * 1024 * 1024, // 10MB for event photos
+    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  })
+}
+
+/**
  * Creates a preview URL for a file before upload
  */
 export function createFilePreview(file: File): string {

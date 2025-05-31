@@ -8,7 +8,7 @@ import { UserProfile } from './pages/UserProfile'
 import { EditProfile } from './pages/EditProfile'
 import { Events } from './pages/Events'
 import { Discover } from './pages/Discover'
-import { Profile } from './pages/Profile'
+import { PublicProfile } from './pages/PublicProfile'
 import { EventDetails } from './pages/EventDetails'
 import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
@@ -44,7 +44,7 @@ function App() {
               <Route path="/discover" element={<Discover />} />
               <Route path="/events/:eventId" element={<EventDetails />} />
               <Route path="/event/:eventCode" element={<EventDetail />} />
-              <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/profile/:userId" element={<PublicProfile />} />
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />

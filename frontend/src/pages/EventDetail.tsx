@@ -12,6 +12,9 @@ import { UserHoverCard } from '@/components/UserHoverCard'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { InteractiveMap } from '@/components/InteractiveMap'
+import { EventGallery } from '@/components/EventGallery'
+import { EventComments } from '@/components/EventComments'
+import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
 import {
   MapPin,
@@ -530,6 +533,16 @@ export function EventDetail() {
 
   const attendees = allAttendees
 
+  // Check if event is in the past
+  const isPastEvent = new Date(event.date_time) < new Date()
+
+  // Check if current user attended the event
+  const userAttended = user && (
+    isHost ||
+    event.rsvps?.some(rsvp => rsvp.user_id === user.id && rsvp.status === 'going') ||
+    event.event_members?.some(member => member.user_id === user.id && member.status === 'accepted')
+  )
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -821,6 +834,33 @@ export function EventDetail() {
               )}
             </div>
           </div>
+
+          {/* Past Event Gallery & Comments - Only for attendees */}
+          {isPastEvent && userAttended && (
+            <>
+              {/* Toast Recap */}
+              <ToastRecap
+                event={event}
+                attendeeCount={goingCount}
+                photoCount={0} // Will be updated by EventGallery
+                commentCount={0} // Will be updated by EventComments
+              />
+
+              {/* Event Gallery */}
+              <EventGallery
+                eventId={event.id}
+                canUpload={!!userAttended}
+                canModerate={!!isHost}
+              />
+
+              {/* Event Comments */}
+              <EventComments
+                eventId={event.id}
+                canComment={!!userAttended}
+                canModerate={!!isHost}
+              />
+            </>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,8 @@ export interface UserProfile {
   favorite_drink: string | null
   tagline: string | null
   join_date: string | null
+  profile_visibility: 'public' | 'crew_only' | 'private'
+  show_crews_publicly: boolean
   created_at: string
   updated_at: string
 }
@@ -122,4 +124,41 @@ export interface CreateCrewData {
   vibe: 'casual' | 'party' | 'chill' | 'wild' | 'classy' | 'other'
   visibility: 'public' | 'private'
   description?: string
+}
+
+export interface EventPhoto {
+  id: string
+  event_id: string
+  uploaded_by: string
+  photo_url: string
+  storage_path: string
+  caption: string | null
+  created_at: string
+  updated_at: string
+  uploader?: {
+    display_name: string | null
+    avatar_url: string | null
+  }
+}
+
+export interface EventComment {
+  id: string
+  event_id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+  user?: {
+    display_name: string | null
+    avatar_url: string | null
+  }
+  reactions?: EventCommentReaction[]
+}
+
+export interface EventCommentReaction {
+  id: string
+  comment_id: string
+  user_id: string
+  reaction: '🍻' | '🙌' | '🤘' | '🥴' | '😂' | '❤️' | '🔥'
+  created_at: string
 }

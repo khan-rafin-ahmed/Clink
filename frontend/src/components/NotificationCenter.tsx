@@ -162,7 +162,7 @@ export function NotificationCenter() {
 
             {/* Crew invitation actions */}
             {notification.type === 'crew_invitation' && !notification.read && (
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 <Button
                   size="sm"
                   onClick={() => handleCrewInvitationResponse(
@@ -170,7 +170,7 @@ export function NotificationCenter() {
                     notification.data.crew_member_id,
                     'accepted'
                   )}
-                  className="h-7 px-3"
+                  className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
                   <Check className="w-3 h-3 mr-1" />
                   Join Crew
@@ -183,7 +183,7 @@ export function NotificationCenter() {
                     notification.data.crew_member_id,
                     'declined'
                   )}
-                  className="h-7 px-3"
+                  className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
                   <X className="w-3 h-3 mr-1" />
                   Decline
@@ -264,7 +264,7 @@ export function NotificationCenter() {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-80 sm:w-96 p-0" align="end">
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -284,7 +284,7 @@ export function NotificationCenter() {
           </CardHeader>
 
           <CardContent className="p-0">
-            <ScrollArea className="h-96">
+            <ScrollArea className="h-80 sm:h-96">
               {notifications.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />

@@ -45,12 +45,34 @@ export function CrewJoin() {
 
     setIsJoining(true)
     try {
+      console.log('Attempting to join crew with invite code:', inviteCode)
       const joinedCrew = await joinCrewByInviteCode(inviteCode)
       toast.success(`🍻 Hell yeah! You joined "${joinedCrew.name}"!`)
       navigate('/profile') // Redirect to profile to see crews
     } catch (error: any) {
       console.error('Error joining crew:', error)
-      toast.error(error.message || 'Failed to join crew')
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to join crew'
+      if (error.message?.includes('Invalid invite code')) {
+        errorMessage = 'This invite link is invalid or has expired. Please ask for a new invite link.'
+      } else if (error.message?.includes('already a member')) {
+        errorMessage = 'You are already a member of this crew!'
+      } else if (error.message?.includes('expired')) {
+        errorMessage = 'This invite link has expired. Please ask for a new one.'
+      } else if (error.message?.includes('maximum uses')) {
+        errorMessage = 'This invite link has reached its usage limit. Please ask for a new one.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      toast.error(errorMessage)
     } finally {
       setIsJoining(false)
     }

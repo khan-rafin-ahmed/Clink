@@ -430,11 +430,18 @@ export async function createCrewInviteLink(crewId: string, expiresInDays?: numbe
   let attempts = 0
 
   while (!isUnique && attempts < 10) {
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('crew_invitations')
       .select('id')
       .eq('invite_code', inviteCode)
       .maybeSingle()
+
+    if (checkError) {
+      if (checkError.message?.includes('relation "crew_invitations" does not exist')) {
+        throw new Error('Crew invitation system is not set up. Please contact support.')
+      }
+      throw checkError
+    }
 
     if (!existing) {
       isUnique = true
@@ -457,10 +464,16 @@ export async function createCrewInviteLink(crewId: string, expiresInDays?: numbe
       invite_code: inviteCode,
       created_by: user.id,
       expires_at: expiresAt,
-      max_uses: maxUses
+      max_uses: maxUses,
+      current_uses: 0
     })
 
-  if (error) throw error
+  if (error) {
+    if (error.message?.includes('relation "crew_invitations" does not exist')) {
+      throw new Error('Crew invitation system is not set up. Please contact support.')
+    }
+    throw error
+  }
 
   return `${window.location.origin}/crew/join/${inviteCode}`
 }
@@ -470,6 +483,8 @@ export async function joinCrewByInviteCode(inviteCode: string): Promise<Crew> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  console.log('Looking up invite code:', inviteCode)
+
   // Get invitation details
   const { data: invitation, error: inviteError } = await supabase
     .from('crew_invitations')
@@ -477,7 +492,21 @@ export async function joinCrewByInviteCode(inviteCode: string): Promise<Crew> {
     .eq('invite_code', inviteCode)
     .single()
 
-  if (inviteError || !invitation) throw new Error('Invalid invite code')
+  console.log('Invitation lookup result:', { invitation, inviteError })
+
+  if (inviteError) {
+    console.error('Database error looking up invite:', inviteError)
+    if (inviteError.code === 'PGRST116') {
+      throw new Error('Invalid invite code - invitation not found')
+    } else if (inviteError.message?.includes('relation "crew_invitations" does not exist')) {
+      throw new Error('Crew invitation system is not set up. Please contact support.')
+    }
+    throw new Error(`Database error: ${inviteError.message}`)
+  }
+
+  if (!invitation) {
+    throw new Error('Invalid invite code - invitation not found')
+  }
 
   // Check if invitation is expired
   if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {

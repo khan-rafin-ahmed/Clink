@@ -20,8 +20,9 @@ const statsCache = new Map<string, { data: UserStatsData; timestamp: number }>()
 const activeRequests = new Set<string>()
 const CACHE_TTL = 3 * 60 * 1000 // 3 minutes
 
-export function useUserStats(refreshTrigger?: number): UseUserStatsReturn {
+export function useUserStats(refreshTrigger?: number, userId?: string): UseUserStatsReturn {
   const { user } = useAuth()
+  const targetUserId = userId || user?.id
   const [stats, setStats] = useState<UserStatsData>({
     totalEvents: 0,
     upcomingEvents: 0,
@@ -39,13 +40,13 @@ export function useUserStats(refreshTrigger?: number): UseUserStatsReturn {
   }, [])
 
   const fetchStats = async (forceRefresh = false) => {
-    if (!user?.id) {
+    if (!targetUserId) {
       setStats({ totalEvents: 0, upcomingEvents: 0, totalRSVPs: 0 })
       setLoading(false)
       return
     }
 
-    const cacheKey = `stats-${user.id}-${refreshTrigger || 0}`
+    const cacheKey = `stats-${targetUserId}-${refreshTrigger || 0}`
 
     // Check if request is already in progress
     if (activeRequests.has(cacheKey)) {
@@ -77,20 +78,20 @@ export function useUserStats(refreshTrigger?: number): UseUserStatsReturn {
         supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
-          .eq('created_by', user.id),
+          .eq('created_by', targetUserId),
 
         // Upcoming events count
         supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
-          .eq('created_by', user.id)
+          .eq('created_by', targetUserId)
           .gte('date_time', new Date().toISOString()),
 
         // Total RSVPs count
         supabase
           .from('rsvps')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', targetUserId)
       ])
 
       const newStats: UserStatsData = {
@@ -125,10 +126,10 @@ export function useUserStats(refreshTrigger?: number): UseUserStatsReturn {
     }
   }
 
-  // Load stats when user changes or refresh trigger changes
+  // Load stats when target user changes or refresh trigger changes
   useEffect(() => {
     fetchStats()
-  }, [user?.id, refreshTrigger])
+  }, [targetUserId, refreshTrigger])
 
   const refresh = () => {
     fetchStats(true)
