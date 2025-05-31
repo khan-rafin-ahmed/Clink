@@ -18,25 +18,26 @@ export interface AttendeeInfo {
 export function calculateAttendeeCount(event: Event): number {
   if (!event) return 0
 
+  // Always count the host as an attendee
+  const uniqueAttendeeIds = new Set<string>();
+  if (event.created_by) {
+    uniqueAttendeeIds.add(event.created_by);
+  }
+
   // Get RSVPs with status 'going'
   const rsvpAttendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
   
   // Get event members with status 'accepted' (crew members)
   const eventMembers = event.event_members?.filter(member => member.status === 'accepted') || []
 
-  // Create a Set to track unique user IDs to avoid duplicates
-  const uniqueAttendeeIds = new Set<string>()
-
   // Add RSVP attendees
   rsvpAttendees.forEach(rsvp => {
     uniqueAttendeeIds.add(rsvp.user_id)
   })
-
-  // Add event members (crew members) if they're not already in RSVPs
+  // Add event members (crew members)
   eventMembers.forEach(member => {
     uniqueAttendeeIds.add(member.user_id)
   })
-
   return uniqueAttendeeIds.size
 }
 
@@ -94,13 +95,14 @@ export function formatAttendeeCount(count: number): string {
  */
 export function getAttendeeMessage(event: Event, isHost: boolean): string {
   const count = calculateAttendeeCount(event)
-  
-  if (count === 0) {
-    return isHost 
-      ? 'No one has joined yet'
-      : 'Be the first to raise hell! ✨'
+  // If only the host is counted (count === 1) and current user is the host, no guests yet
+  if (count === 1 && isHost) {
+    return 'No guests yet'
   }
-  
+  // If somehow count is 1 and user is not host, treat as "1 person going"
+  if (count === 1) {
+    return '1 person going'
+  }
   return formatAttendeeCount(count)
 }
 

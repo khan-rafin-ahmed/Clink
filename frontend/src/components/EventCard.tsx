@@ -47,6 +47,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
 
   // Calculate attendee count using the same logic as EventDetail
   const attendeeCount = calculateAttendeeCount(event)
+  const displayCount = isHost ? attendeeCount + 1 : attendeeCount
 
   // Format event time and get status badge
   const formatEventTime = (dateTime: string) => {
@@ -179,13 +180,17 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           </Badge>
           <div className="flex items-center gap-1 text-sm">
             <Users className="w-4 h-4" />
-            {attendeeCount === 0 ? (
+            {displayCount === 0 && !isHost ? (
               <span className="text-primary font-medium animate-pulse">
                 Be the first to raise hell! ✨
               </span>
+            ) : displayCount === 1 && isHost ? (
+              <span className="text-muted-foreground">
+                No guests yet
+              </span>
             ) : (
               <span className="text-muted-foreground">
-                {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} going
+                {displayCount} {displayCount === 1 ? 'person' : 'people'} going
               </span>
             )}
           </div>

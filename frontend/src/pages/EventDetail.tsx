@@ -522,7 +522,8 @@ export function EventDetail() {
     }
   })
 
-  const goingCount = allAttendees.length
+  // Count hosts + guests
+  const goingCount = (event.created_by ? 1 : 0) + allAttendees.length
   const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
   const isHost = user && event.created_by === user.id
   const attendees = allAttendees
@@ -707,7 +708,7 @@ export function EventDetail() {
                 )}
               </div>
 
-              {goingCount === 0 ? (
+              {allAttendees.length === 0 ? (
                 <div className="text-center py-8">
                   {!isHost ? (
                     <>

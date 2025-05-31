@@ -526,15 +526,9 @@ function DiscoverContent() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm">
                       <Users className="w-4 h-4" />
-                      {event.rsvp_count === 0 ? (
-                        <span className="text-primary font-medium animate-pulse">
-                          Be the first to raise hell! ✨
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
-                        </span>
-                      )}
+                      <span className="text-muted-foreground">
+                        {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
+                      </span>
                     </div>
                   </div>
 
