@@ -110,17 +110,24 @@ export async function uploadEventPhoto(
         storage_path: uploadResult.path,
         caption: caption || null
       })
-      .select(`
-        *,
-        uploader:uploaded_by(display_name, avatar_url)
-      `)
+      .select('*')
       .single()
 
     if (error) {
       throw new Error(`Failed to save photo: ${error.message}`)
     }
 
-    return photo
+    // Get uploader profile separately
+    const { data: uploaderProfile } = await supabase
+      .from('user_profiles')
+      .select('display_name, avatar_url')
+      .eq('user_id', user.id)
+      .single()
+
+    return {
+      ...photo,
+      uploader: uploaderProfile
+    }
   } catch (error) {
     console.error('Error uploading event photo:', error)
     throw error
@@ -236,17 +243,24 @@ export async function addEventComment(eventId: string, content: string): Promise
         user_id: user.id,
         content: content.trim()
       })
-      .select(`
-        *,
-        user:user_id(display_name, avatar_url)
-      `)
+      .select('*')
       .single()
 
     if (error) {
       throw new Error(`Failed to add comment: ${error.message}`)
     }
 
-    return comment
+    // Get user profile separately to avoid relationship issues
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('display_name, avatar_url')
+      .eq('user_id', user.id)
+      .single()
+
+    return {
+      ...comment,
+      user: userProfile
+    }
   } catch (error) {
     console.error('Error adding event comment:', error)
     throw error
@@ -270,13 +284,10 @@ export async function getEventComments(eventId: string): Promise<EventComment[]>
   }
 
   try {
+    // Get comments first
     const { data: comments, error } = await supabase
       .from('event_comments')
-      .select(`
-        *,
-        user:user_id(display_name, avatar_url),
-        reactions:event_comment_reactions(*)
-      `)
+      .select('*')
       .eq('event_id', eventId)
       .order('created_at', { ascending: true })
 
@@ -284,7 +295,30 @@ export async function getEventComments(eventId: string): Promise<EventComment[]>
       throw new Error(`Failed to fetch comments: ${error.message}`)
     }
 
-    return comments || []
+    if (!comments || comments.length === 0) {
+      return []
+    }
+
+    // Get user profiles for all comment authors
+    const userIds = [...new Set(comments.map(c => c.user_id))]
+    const { data: userProfiles } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', userIds)
+
+    // Get reactions for all comments
+    const commentIds = comments.map(c => c.id)
+    const { data: reactions } = await supabase
+      .from('event_comment_reactions')
+      .select('*')
+      .in('comment_id', commentIds)
+
+    // Combine data
+    return comments.map(comment => ({
+      ...comment,
+      user: userProfiles?.find(u => u.user_id === comment.user_id),
+      reactions: reactions?.filter(r => r.comment_id === comment.id) || []
+    }))
   } catch (error) {
     console.error('Error fetching event comments:', error)
     throw error

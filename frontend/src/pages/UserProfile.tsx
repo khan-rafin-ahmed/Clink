@@ -10,7 +10,7 @@ import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Users } from 'lucide-react'
+import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
@@ -761,10 +761,78 @@ export function UserProfile() {
                   ))}
                 </div>
                 {pageCount > 1 && (
-                  <div className="flex justify-center space-x-2 mt-4">
-                    <Button disabled={pastPage === 1} onClick={() => setPastPage(p => p - 1)}>Previous</Button>
-                    <span className="px-2 py-1">{pastPage} / {pageCount}</span>
-                    <Button disabled={pastPage === pageCount} onClick={() => setPastPage(p => p + 1)}>Next</Button>
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    {/* Previous Button - Hidden on first page */}
+                    {pastPage > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPastPage(p => p - 1)}
+                        className="flex items-center gap-2"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                    )}
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => {
+                        // Show first page, last page, current page, and pages around current
+                        const showPage =
+                          page === 1 ||
+                          page === pageCount ||
+                          Math.abs(page - pastPage) <= 1
+
+                        if (!showPage) {
+                          // Show ellipsis for gaps
+                          if (page === pastPage - 2 || page === pastPage + 2) {
+                            return (
+                              <span key={page} className="px-2 text-muted-foreground">
+                                ...
+                              </span>
+                            )
+                          }
+                          return null
+                        }
+
+                        return (
+                          <Button
+                            key={page}
+                            variant={page === pastPage ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setPastPage(page)}
+                            className={`min-w-[40px] ${
+                              page === pastPage
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-muted'
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Next Button - Hidden on last page */}
+                    {pastPage < pageCount && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPastPage(p => p + 1)}
+                        className="flex items-center gap-2"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Page Info */}
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {((pastPage - 1) * itemsPerPage) + 1} to {Math.min(pastPage * itemsPerPage, pastSessions.length)} of {pastSessions.length} past sessions
+                    </p>
                   </div>
                 )}
               </>
