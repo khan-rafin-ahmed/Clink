@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { loadGoogleMapsAPI } from '@/lib/googleMapsLoader'
+import { googlePlacesService } from '@/lib/googlePlacesService'
 import type { LocationData } from '@/types'
 
 interface GoogleLocationPickerProps {
@@ -30,77 +30,41 @@ export function GoogleLocationPicker({
 }: GoogleLocationPickerProps) {
   const [query, setQuery] = useState(value?.place_name || '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
-  const dummyDivRef = useRef<HTMLDivElement | null>(null);
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
 
-  useEffect(() => {
-    const initializeServices = async () => {
-      try {
-        await loadGoogleMapsAPI();
-
-        // Create a dummy div for the PlacesService
-        dummyDivRef.current = document.createElement('div');
-
-        // Initialize services
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current);
-      } catch (error) {
-        console.error('Failed to initialize Google Maps services:', error);
-      }
-    };
-
-    initializeServices();
-
-    // Clean up the dummy div on unmount
-    return () => {
-      if (dummyDivRef.current) {
-        dummyDivRef.current.remove();
-      }
-    };
-  }, []);
-
-  const fetchPredictions = (input: string) => {
-    if (!autocompleteServiceRef.current || input.length < 3) {
-      setPredictions([]);
-      return;
+  const fetchPredictions = async (input: string) => {
+    if (input.length < 3) {
+      setPredictions([])
+      return
     }
 
-    autocompleteServiceRef.current.getPlacePredictions(
-      { input, componentRestrictions: { country: 'bd' }, types: ['establishment','geocode'] },
-      (preds, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && preds) {
-          setPredictions(preds);
-        } else {
-          setPredictions([]);
-        }
-      }
-    );
-  };
+    try {
+      const preds = await googlePlacesService.getPredictions(input, {
+        componentRestrictions: { country: 'bd' },
+        types: ['establishment', 'geocode']
+      })
+      setPredictions(preds)
+    } catch (error) {
+      console.error('Error fetching predictions:', error)
+      setPredictions([])
+    }
+  }
 
-  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
-    if (!placesServiceRef.current || !pred.place_id) return;
+  const handleSelectPrediction = async (pred: google.maps.places.AutocompletePrediction) => {
+    if (!pred.place_id) return
 
-    placesServiceRef.current.getDetails(
-      { placeId: pred.place_id },
-      (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-          const locationData: LocationData = {
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng(),
-            place_id: place.place_id || '',
-            place_name: place.formatted_address || place.name || '',
-            address: place.formatted_address
-          };
-          setQuery(locationData.place_name);
-          onChange(locationData);
-          onSelect?.(locationData);
-          setPredictions([]); // Clear predictions after selection
-        }
+    try {
+      const locationData = await googlePlacesService.getPlaceDetails(pred.place_id)
+      if (locationData) {
+        setQuery(locationData.place_name)
+        onChange(locationData)
+        onSelect?.(locationData)
+        setPredictions([]) // Clear predictions after selection
       }
-    );
-  };
+    } catch (error) {
+      console.error('Error getting place details:', error)
+    }
+  }
 
   // Handle clear selection
   const handleClear = () => {

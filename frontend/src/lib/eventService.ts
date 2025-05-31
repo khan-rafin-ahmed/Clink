@@ -21,6 +21,12 @@ export async function getEventDetails(eventId: string) {
           users (
             email
           )
+        ),
+        event_members (
+          id,
+          status,
+          user_id,
+          invited_by
         )
       `)
       .eq('id', eventId)

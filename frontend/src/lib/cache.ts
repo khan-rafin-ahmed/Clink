@@ -61,7 +61,10 @@ export const CACHE_KEYS = {
   MY_EVENTS: (userId: string) => `my_events_${userId}`,
   PUBLIC_EVENTS: 'public_events',
   USER_ACCESSIBLE_EVENTS: (userId: string) => `accessible_events_${userId}`,
-  IS_FOLLOWING: (followerId: string, followingId: string) => `is_following_${followerId}_${followingId}`
+  IS_FOLLOWING: (followerId: string, followingId: string) => `is_following_${followerId}_${followingId}`,
+  GOOGLE_PLACES_PREDICTIONS: (query: string, options: string) => `places_predictions_${query}_${options}`,
+  GOOGLE_PLACE_DETAILS: (placeId: string) => `place_details_${placeId}`,
+  EVENT_ATTENDANCE: (eventId: string, userId: string) => `event_attendance_${eventId}_${userId}`
 }
 
 // Helper function for cached API calls
@@ -78,10 +81,10 @@ export async function withCache<T>(
 
   // Fetch fresh data
   const data = await fetcher()
-  
+
   // Cache the result
   cache.set(key, data, ttl)
-  
+
   return data
 }
 
@@ -99,6 +102,33 @@ export function invalidateEventCaches(): void {
   for (const key of cache['cache'].keys()) {
     if (key.includes('accessible_events_') || key.includes('my_events_')) {
       cache.delete(key)
+    }
+  }
+}
+
+export function invalidateGooglePlacesCaches(): void {
+  // Clear all Google Places caches
+  for (const key of cache['cache'].keys()) {
+    if (key.includes('places_predictions_') || key.includes('place_details_')) {
+      cache.delete(key)
+    }
+  }
+}
+
+export function invalidateEventAttendanceCaches(eventId?: string): void {
+  if (eventId) {
+    // Clear specific event attendance caches
+    for (const key of cache['cache'].keys()) {
+      if (key.includes(`event_attendance_${eventId}_`)) {
+        cache.delete(key)
+      }
+    }
+  } else {
+    // Clear all event attendance caches
+    for (const key of cache['cache'].keys()) {
+      if (key.includes('event_attendance_')) {
+        cache.delete(key)
+      }
     }
   }
 }

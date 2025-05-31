@@ -1,39 +1,72 @@
 import { supabase } from './supabase'
 import { uploadFile } from './fileUpload'
+import { cache, CACHE_KEYS } from './cache'
 import type { EventPhoto, EventComment, EventCommentReaction } from '@/types'
 
 /**
  * Check if user attended an event (has permission to view/add media)
  */
 export async function checkEventAttendance(eventId: string, userId: string): Promise<boolean> {
+  const cacheKey = CACHE_KEYS.EVENT_ATTENDANCE(eventId, userId)
+
+  // Check cache first (5 minute TTL)
+  const cached = cache.get<boolean>(cacheKey)
+  if (cached !== null) {
+    return cached
+  }
+
   try {
+    // First get the event to check if user is the host
     const { data: event } = await supabase
       .from('events')
-      .select(`
-        id,
-        created_by,
-        rsvps!inner(user_id, status),
-        event_members!inner(user_id, status)
-      `)
+      .select('id, created_by')
       .eq('id', eventId)
       .single()
 
-    if (!event) return false
+    if (!event) {
+      cache.set(cacheKey, false, 60 * 1000) // Cache negative result for 1 minute
+      return false
+    }
 
     // User is the host
-    if (event.created_by === userId) return true
+    if (event.created_by === userId) {
+      cache.set(cacheKey, true, 5 * 60 * 1000) // Cache for 5 minutes
+      return true
+    }
 
-    // User RSVP'd as going
-    const userRsvp = event.rsvps?.find(r => r.user_id === userId && r.status === 'going')
-    if (userRsvp) return true
+    // Check if user RSVP'd as going
+    const { data: userRsvp } = await supabase
+      .from('rsvps')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'going')
+      .maybeSingle()
 
-    // User was invited and accepted (private events)
-    const userMember = event.event_members?.find(m => m.user_id === userId && m.status === 'accepted')
-    if (userMember) return true
+    if (userRsvp) {
+      cache.set(cacheKey, true, 5 * 60 * 1000) // Cache for 5 minutes
+      return true
+    }
 
+    // Check if user was invited and accepted (private events)
+    const { data: userMember } = await supabase
+      .from('event_members')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    if (userMember) {
+      cache.set(cacheKey, true, 5 * 60 * 1000) // Cache for 5 minutes
+      return true
+    }
+
+    cache.set(cacheKey, false, 5 * 60 * 1000) // Cache negative result for 5 minutes
     return false
   } catch (error) {
     console.error('Error checking event attendance:', error)
+    cache.set(cacheKey, false, 60 * 1000) // Cache error as false for 1 minute
     return false
   }
 }
@@ -47,7 +80,7 @@ export async function uploadEventPhoto(
   caption?: string
 ): Promise<EventPhoto> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -99,7 +132,7 @@ export async function uploadEventPhoto(
  */
 export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -136,7 +169,7 @@ export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
  */
 export async function deleteEventPhoto(photoId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -184,7 +217,7 @@ export async function deleteEventPhoto(photoId: string): Promise<void> {
  */
 export async function addEventComment(eventId: string, content: string): Promise<EventComment> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -225,7 +258,7 @@ export async function addEventComment(eventId: string, content: string): Promise
  */
 export async function getEventComments(eventId: string): Promise<EventComment[]> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -262,11 +295,11 @@ export async function getEventComments(eventId: string): Promise<EventComment[]>
  * Add a reaction to a comment
  */
 export async function addCommentReaction(
-  commentId: string, 
+  commentId: string,
   reaction: EventCommentReaction['reaction']
 ): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }
@@ -293,11 +326,11 @@ export async function addCommentReaction(
  * Remove a reaction from a comment
  */
 export async function removeCommentReaction(
-  commentId: string, 
+  commentId: string,
   reaction: EventCommentReaction['reaction']
 ): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     throw new Error('User not authenticated')
   }

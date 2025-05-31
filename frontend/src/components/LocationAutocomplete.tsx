@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { loadGoogleMapsAPI } from '@/lib/googleMapsLoader'
+import { googlePlacesService } from '@/lib/googlePlacesService'
 import type { LocationData } from '@/types'
 
 interface LocationAutocompleteProps {
@@ -30,85 +30,40 @@ export function LocationAutocomplete({
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null)
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null)
-  const dummyDivRef = useRef<HTMLDivElement | null>(null)
 
-  // Initialize Google Maps Places Services (using new recommended approach)
-  useEffect(() => {
-    const initializeServices = async () => {
-      try {
-        await loadGoogleMapsAPI()
-
-        // Create a dummy div for the PlacesService
-        dummyDivRef.current = document.createElement('div')
-
-        // Initialize services
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
-        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current)
-      } catch (error) {
-        // Failed to initialize Google Maps services
-      }
-    }
-
-    initializeServices()
-
-    // Clean up the dummy div on unmount
-    return () => {
-      if (dummyDivRef.current) {
-        dummyDivRef.current.remove()
-      }
-    }
-  }, [])
-
-  const fetchPredictions = (input: string) => {
-    if (!autocompleteServiceRef.current || input.length < 3) {
+  const fetchPredictions = async (input: string) => {
+    if (input.length < 3) {
       setPredictions([])
       return
     }
 
     setIsLoading(true)
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
-        input,
+    try {
+      const preds = await googlePlacesService.getPredictions(input, {
         types: ['establishment', 'geocode']
-        // Removed country restriction for better global coverage
-      },
-      (preds, status) => {
-        setIsLoading(false)
-        if (status === google.maps.places.PlacesServiceStatus.OK && preds) {
-          setPredictions(preds)
-        } else {
-          setPredictions([])
-        }
-      }
-    )
+      })
+      setPredictions(preds)
+    } catch (error) {
+      console.error('Error fetching predictions:', error)
+      setPredictions([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
-    if (!placesServiceRef.current || !pred.place_id) return
+  const handleSelectPrediction = async (pred: google.maps.places.AutocompletePrediction) => {
+    if (!pred.place_id) return
 
-    placesServiceRef.current.getDetails(
-      { placeId: pred.place_id },
-      (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-          // Prioritize place name over formatted address for display
-          const displayName = place.name || place.formatted_address || ''
-
-          const locationData: LocationData = {
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng(),
-            place_id: place.place_id || '',
-            place_name: displayName,
-            address: place.formatted_address
-          }
-
-          setQuery(displayName)
-          onChange(locationData)
-          setPredictions([]) // Clear predictions after selection
-        }
+    try {
+      const locationData = await googlePlacesService.getPlaceDetails(pred.place_id)
+      if (locationData) {
+        setQuery(locationData.place_name)
+        onChange(locationData)
+        setPredictions([]) // Clear predictions after selection
       }
-    )
+    } catch (error) {
+      console.error('Error getting place details:', error)
+    }
   }
 
   // Handle clear selection
