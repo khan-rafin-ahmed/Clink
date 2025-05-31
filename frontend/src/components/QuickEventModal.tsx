@@ -178,8 +178,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         vibe: formData.vibe,
         notes: formData.notes?.trim() || null,
         is_public: formData.is_public,
-        created_by: user.id,
-        crew_id: selectedCrew || null // Add crew_id if a crew is selected
+        created_by: user.id
+        // Note: crew_id is not a column in events table, crew relationship is handled via event_members table
       }
 
       // Create the event first
