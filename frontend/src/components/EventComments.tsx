@@ -22,7 +22,7 @@ interface EventCommentsProps {
 
 const REACTION_EMOJIS: EventCommentReaction['reaction'][] = ['🍻', '🙌', '🤘', '🥴', '😂', '❤️', '🔥']
 
-export function EventComments({ eventId, canComment, canModerate }: EventCommentsProps) {
+export function EventComments({ eventId, canComment }: EventCommentsProps) {
   const { user } = useAuth()
   const [comments, setComments] = useState<EventComment[]>([])
   const [loading, setLoading] = useState(true)

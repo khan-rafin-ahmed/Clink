@@ -79,7 +79,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger for updated_at
-CREATE TRIGGER update_crew_invitations_updated_at
-    BEFORE UPDATE ON crew_invitations
-    FOR EACH ROW EXECUTE FUNCTION update_crew_invitations_updated_at();
+-- Trigger for updated_at (only if it doesn't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'update_crew_invitations_updated_at'
+    ) THEN
+        CREATE TRIGGER update_crew_invitations_updated_at
+            BEFORE UPDATE ON crew_invitations
+            FOR EACH ROW EXECUTE FUNCTION update_crew_invitations_updated_at();
+    END IF;
+END $$;

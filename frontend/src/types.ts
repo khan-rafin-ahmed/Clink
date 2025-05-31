@@ -10,8 +10,8 @@ export interface UserProfile {
   favorite_drink: string | null
   tagline: string | null
   join_date: string | null
-  profile_visibility: 'public' | 'crew_only' | 'private'
-  show_crews_publicly: boolean
+  profile_visibility?: 'public' | 'crew_only' | 'private'
+  show_crews_publicly?: boolean
   created_at: string
   updated_at: string
 }

@@ -97,8 +97,8 @@ export function EditProfile() {
         tagline: profileData?.tagline || '',
         favorite_drink: profileData?.favorite_drink || 'none',
         avatar_url: profileData?.avatar_url || '',
-        profile_visibility: (profileData as any)?.profile_visibility || 'public',
-        show_crews_publicly: (profileData as any)?.show_crews_publicly ?? true
+        profile_visibility: profileData?.profile_visibility || 'public',
+        show_crews_publicly: profileData?.show_crews_publicly ?? true
       })
       setHasLoaded(true)
     } catch (error: any) {
