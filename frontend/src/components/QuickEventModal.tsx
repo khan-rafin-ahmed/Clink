@@ -202,10 +202,15 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const isStepValid = () => {
     switch (step) {
       case 1:
-        const isValid = formData.title.trim() && formData.locationData !== null;
+        const hasTitle = formData.title.trim().length > 0;
+        const hasLocation = formData.locationData !== null || formData.location.trim().length > 0;
+        const isValid = hasTitle && hasLocation;
         console.log('Step 1 validation:', {
           title: formData.title.trim(),
           locationData: formData.locationData,
+          location: formData.location,
+          hasTitle,
+          hasLocation,
           isValid
         });
         return isValid;

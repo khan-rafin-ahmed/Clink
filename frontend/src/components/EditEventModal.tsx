@@ -38,6 +38,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
   const [formData, setFormData] = useState({
     title: event.title,
+    place_nickname: (event as any).place_nickname || '',
     location: event.location,
     locationData: (event.latitude && event.longitude) ? {
       latitude: event.latitude,
@@ -78,6 +79,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
     setFormData({
       title: event.title,
+      place_nickname: (event as any).place_nickname || '',
       location: event.location,
       locationData: (event.latitude && event.longitude) ? {
         latitude: event.latitude,
@@ -167,6 +169,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
       const updateData = {
         title: formData.title,
+        place_nickname: formData.place_nickname || null,
         date_time: eventDateTime.toISOString(),
         location: formData.locationData?.place_name || formData.location,
         latitude: formData.locationData?.latitude || null,
@@ -273,6 +276,18 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                   onKeyDown={handleKeyDown}
                   className="mt-1"
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="place_nickname" className="text-sm font-medium">Place Nickname <span className="text-muted-foreground">(optional)</span></Label>
+                <Input
+                  id="place_nickname"
+                  placeholder="Swerve's House, The Rooftop Bar, etc."
+                  value={formData.place_nickname}
+                  onChange={(e) => setFormData(prev => ({ ...prev, place_nickname: e.target.value }))}
+                  onKeyDown={handleKeyDown}
+                  className="mt-1"
                 />
               </div>
 

@@ -46,63 +46,82 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
       // 1. The host (created_by)
       // 2. Has RSVP'd as 'going'
       // 3. Is an accepted event member (crew member)
-      const { data: events, error } = await supabase
+
+      // First, get events created by the user
+      const { data: hostedEvents, error: hostedError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('created_by', userId)
+        .gte('date_time', new Date().toISOString())
+        .order('date_time', { ascending: true })
+        .limit(5)
+
+      if (hostedError) {
+        console.error('Error loading hosted events:', hostedError)
+        return null
+      }
+
+      // Get events where user has RSVP'd
+      const { data: rsvpEvents, error: rsvpError } = await supabase
         .from('events')
         .select(`
           *,
-          rsvps (
-            id,
-            status,
-            user_id
-          ),
-          event_members (
-            id,
+          rsvps!inner (
             status,
             user_id
           )
         `)
-        .or(`created_by.eq.${userId},rsvps.user_id.eq.${userId},event_members.user_id.eq.${userId}`)
+        .eq('rsvps.user_id', userId)
+        .eq('rsvps.status', 'going')
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: true })
-        .limit(1)
+        .limit(5)
 
-      if (error) {
-        console.error('Error loading next event:', error)
+      if (rsvpError) {
+        console.error('Error loading RSVP events:', rsvpError)
         return null
       }
 
-      // Also check for events where user is an accepted crew member
-      const { data: crewEvents, error: crewError } = await supabase
+      // Get events where user is a crew member
+      const { data: memberEvents, error: memberError } = await supabase
         .from('events')
         .select(`
           *,
           event_members!inner (
-            user_id,
-            status
+            status,
+            user_id
           )
         `)
         .eq('event_members.user_id', userId)
         .eq('event_members.status', 'accepted')
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: true })
-        .limit(1)
+        .limit(5)
 
-      if (crewError) {
-        console.error('Error loading crew events:', crewError)
+      if (memberError) {
+        console.error('Error loading member events:', memberError)
+        return null
       }
 
-      // Combine and find the earliest event
-      const allEvents = [...(events || []), ...(crewEvents || [])]
+      // Combine all events and find the earliest one
+      const allEvents = [
+        ...(hostedEvents || []),
+        ...(rsvpEvents || []),
+        ...(memberEvents || [])
+      ]
 
-      if (allEvents.length > 0) {
-        // Sort by date and take the earliest
-        const sortedEvents = allEvents.sort((a, b) =>
-          new Date(a.date_time).getTime() - new Date(b.date_time).getTime()
-        )
-
-        const earliestEvent = sortedEvents[0]
-        return earliestEvent
+      if (allEvents.length === 0) {
+        return null
       }
+
+      // Remove duplicates and sort by date
+      const uniqueEvents = allEvents.filter((event, index, self) =>
+        index === self.findIndex(e => e.id === event.id)
+      )
+
+      uniqueEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+
+      return uniqueEvents[0] || null
     } catch (error) {
       console.error('Error loading next event:', error)
     }

@@ -27,47 +27,71 @@ export function LocationAutocomplete({
   error
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value?.place_name || '')
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null)
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null)
+  const dummyDivRef = useRef<HTMLDivElement | null>(null)
 
-  // Initialize Google Maps Places Autocomplete
+  // Initialize Google Maps Places Services (using new recommended approach)
   useEffect(() => {
-    let observer: MutationObserver | null = null;
-
-    const initializeAutocomplete = async () => {
+    const initializeServices = async () => {
       try {
-        console.log('Starting to load Google Maps API...')
-        await loadGoogleMapsAPI();
-        console.log('Google Maps API loaded successfully')
+        await loadGoogleMapsAPI()
 
-        if (!inputRef.current) {
-          console.log('Input ref not available')
-          return
+        // Create a dummy div for the PlacesService
+        dummyDivRef.current = document.createElement('div')
+
+        // Initialize services
+        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
+        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current)
+      } catch (error) {
+        console.error('Failed to initialize Google Maps services:', error)
+      }
+    }
+
+    initializeServices()
+
+    // Clean up the dummy div on unmount
+    return () => {
+      if (dummyDivRef.current) {
+        dummyDivRef.current.remove()
+      }
+    }
+  }, [])
+
+  const fetchPredictions = (input: string) => {
+    if (!autocompleteServiceRef.current || input.length < 3) {
+      setPredictions([])
+      return
+    }
+
+    setIsLoading(true)
+    autocompleteServiceRef.current.getPlacePredictions(
+      {
+        input,
+        types: ['establishment', 'geocode']
+        // Removed country restriction for better global coverage
+      },
+      (preds, status) => {
+        setIsLoading(false)
+        if (status === google.maps.places.PlacesServiceStatus.OK && preds) {
+          setPredictions(preds)
+        } else {
+          setPredictions([])
         }
+      }
+    )
+  }
 
-        const options = {
-          types: ['establishment', 'geocode'],
-          fields: ['formatted_address', 'geometry', 'name', 'place_id']
-          // Temporarily removing country restriction to test
-          // componentRestrictions: { country: 'bd' }
-        }
+  const handleSelectPrediction = (pred: google.maps.places.AutocompletePrediction) => {
+    if (!placesServiceRef.current || !pred.place_id) return
 
-        console.log('Creating autocomplete with options:', options)
-        autocompleteRef.current = new google.maps.places.Autocomplete(
-          inputRef.current,
-          options
-        )
-        console.log('Autocomplete created successfully')
-
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current?.getPlace()
-          console.log('Place changed:', place)
-
-          if (!place?.geometry?.location) {
-            console.log('No geometry or location found')
-            return
-          }
-
+    placesServiceRef.current.getDetails(
+      { placeId: pred.place_id },
+      (place, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
           const locationData: LocationData = {
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng(),
@@ -76,163 +100,29 @@ export function LocationAutocomplete({
             address: place.formatted_address
           }
 
-          console.log('Location data created:', locationData)
           setQuery(locationData.place_name)
           onChange(locationData)
-        })
-
-        // Style the autocomplete dropdown to match our dark theme
-        const styleAutocompleteDropdown = () => {
-          const pacContainer = document.querySelector('.pac-container') as HTMLElement
-          if (pacContainer) {
-            // Container styling
-            pacContainer.style.setProperty('background-color', '#111827', 'important')
-            pacContainer.style.setProperty('border', '1px solid #D97706', 'important')
-            pacContainer.style.setProperty('border-radius', '0.375rem', 'important')
-            pacContainer.style.setProperty('z-index', '9999', 'important')
-            pacContainer.style.setProperty('margin-top', '4px', 'important')
-            pacContainer.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0, 0, 0, 0.1)', 'important')
-
-            // Style all items WITHOUT breaking Google's event listeners
-            const pacItems = pacContainer.querySelectorAll('.pac-item')
-            pacItems.forEach((item: Element) => {
-              const htmlItem = item as HTMLElement
-
-              // Force dark styling
-              htmlItem.style.setProperty('background-color', '#111827', 'important')
-              htmlItem.style.setProperty('color', '#ffffff', 'important')
-              htmlItem.style.setProperty('border-bottom', '1px solid #374151', 'important')
-              htmlItem.style.setProperty('padding', '12px 16px', 'important')
-              htmlItem.style.setProperty('cursor', 'pointer', 'important')
-
-              // Style all text elements inside
-              const textElements = htmlItem.querySelectorAll('span, .pac-item-query, .pac-matched')
-              textElements.forEach((textEl: Element) => {
-                (textEl as HTMLElement).style.setProperty('color', '#ffffff', 'important')
-              })
-
-              // Add hover effects WITHOUT cloning (to preserve Google's event listeners)
-              htmlItem.addEventListener('mouseenter', () => {
-                htmlItem.style.setProperty('background-color', '#1F2937', 'important')
-              })
-
-              htmlItem.addEventListener('mouseleave', () => {
-                htmlItem.style.setProperty('background-color', '#111827', 'important')
-              })
-            })
-
-            // Hide all Google branding more aggressively
-            const brandingSelectors = [
-              '.pac-logo',
-              '.pac-icon',
-              '[src*="google"]',
-              '[alt*="google"]',
-              '[title*="google"]',
-              '.pac-item:last-child'
-            ]
-
-            brandingSelectors.forEach(selector => {
-              const elements = pacContainer.querySelectorAll(selector)
-              elements.forEach((el: Element) => {
-                (el as HTMLElement).style.setProperty('display', 'none', 'important')
-              })
-            })
-
-            // Check for "Powered by Google" text and hide it
-            const allText = pacContainer.querySelectorAll('*')
-            allText.forEach((el: Element) => {
-              if (el.textContent?.includes('Powered by Google')) {
-                (el as HTMLElement).style.setProperty('display', 'none', 'important')
-              }
-            })
-          }
+          setPredictions([]) // Clear predictions after selection
         }
-
-        // Inject CSS for Google Maps styling
-        const injectGoogleMapsCSS = () => {
-          const existingStyle = document.getElementById('google-maps-dark-theme')
-          if (!existingStyle) {
-            const style = document.createElement('style')
-            style.id = 'google-maps-dark-theme'
-            style.textContent = `
-              .pac-container {
-                background-color: #111827 !important;
-                border: 1px solid #D97706 !important;
-                border-radius: 0.375rem !important;
-                z-index: 9999 !important;
-                margin-top: 4px !important;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-              }
-              .pac-item {
-                background-color: #111827 !important;
-                color: #ffffff !important;
-                border-bottom: 1px solid #374151 !important;
-                padding: 12px 16px !important;
-                cursor: pointer !important;
-              }
-              .pac-item:hover {
-                background-color: #1F2937 !important;
-              }
-              .pac-item span,
-              .pac-item-query,
-              .pac-matched {
-                color: #ffffff !important;
-              }
-              .pac-logo,
-              .pac-icon,
-              [src*="google"],
-              [alt*="google"],
-              [title*="google"],
-              .pac-item:last-child {
-                display: none !important;
-              }
-            `
-            document.head.appendChild(style)
-            console.log('Google Maps CSS injected')
-          }
-        }
-
-        // Inject CSS immediately
-        injectGoogleMapsCSS()
-
-        // Apply styling immediately and on mutations
-        setTimeout(styleAutocompleteDropdown, 100)
-
-        observer = new MutationObserver(() => {
-          setTimeout(styleAutocompleteDropdown, 50)
-        })
-
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true
-        })
-      } catch (error) {
-        console.error('Failed to initialize Google Maps autocomplete:', error)
       }
-    }
-
-    initializeAutocomplete()
-
-    // Return cleanup function
-    return () => {
-      if (observer) {
-        observer.disconnect()
-      }
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current)
-      }
-    }
-  }, [onChange])
+    )
+  }
 
   // Handle clear selection
   const handleClear = () => {
     setQuery('')
     onChange(null)
+    setPredictions([])
     inputRef.current?.focus()
   }
 
+  // Update query when value prop changes
+  useEffect(() => {
+    setQuery(value?.place_name || '')
+  }, [value])
+
   return (
-    <div className={cn("relative", className)}>
+    <div className={className}>
       {label && (
         <Label htmlFor="location-input" className="text-sm font-medium">
           {label}
@@ -248,7 +138,11 @@ export function LocationAutocomplete({
             id="location-input"
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setQuery(val)
+              fetchPredictions(val)
+            }}
             placeholder={placeholder}
             className={cn(
               "pl-10 pr-10 bg-gray-900 border-gray-800 text-white placeholder:text-gray-400",
@@ -257,18 +151,45 @@ export function LocationAutocomplete({
             )}
             required={required}
           />
-          {(query || value) && (
+          {value && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-800"
               onClick={handleClear}
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-800 text-gray-400 hover:text-white"
             >
               <X className="w-4 h-4" />
             </Button>
           )}
         </div>
+
+        {/* Predictions dropdown */}
+        {predictions.length > 0 && (
+          <ul className="absolute z-10 bg-gray-900 border border-gold-500 rounded-md w-full mt-1 max-h-60 overflow-auto">
+            {predictions.map(pred => (
+              <li
+                key={pred.place_id}
+                className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-800 text-white"
+                onClick={() => handleSelectPrediction(pred)}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                <span>
+                  <strong>{pred.structured_formatting.main_text}</strong>{' '}
+                  <small className="opacity-75">{pred.structured_formatting.secondary_text}</small>
+                </span>
+              </li>
+            ))}
+            <li className="px-4 py-2 text-xs text-gray-400 text-center">Powered by Google</li>
+          </ul>
+        )}
+
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gold-500"></div>
+          </div>
+        )}
       </div>
 
       {error && (
