@@ -156,6 +156,11 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
                 >
                   {event.place_nickname || event.place_name || event.location}
                 </span>
+                {event.place_nickname && (event.place_name || event.location) && (
+                  <div className="text-xs text-muted-foreground/70 truncate">
+                    {event.place_name || event.location}
+                  </div>
+                )}
               </div>
             </div>
           </div>

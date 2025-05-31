@@ -131,12 +131,23 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     e.preventDefault()
     if (!user || isSubmitting) return
 
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast.error('Event title is required')
+      return
+    }
+
+    if (!formData.locationData && !formData.location.trim()) {
+      toast.error('Event location is required')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const eventData = {
-        title: formData.title,
-        place_nickname: formData.place_nickname || null,
-        location: formData.locationData?.place_name || formData.location,
+        title: formData.title.trim(),
+        place_nickname: formData.place_nickname?.trim() || null,
+        location: formData.locationData?.place_name || formData.location.trim(),
         latitude: formData.locationData?.latitude || null,
         longitude: formData.locationData?.longitude || null,
         place_id: formData.locationData?.place_id || null,
@@ -165,24 +176,29 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         })(),
         drink_type: formData.drink_type,
         vibe: formData.vibe,
-        notes: formData.notes,
+        notes: formData.notes?.trim() || null,
         is_public: formData.is_public,
         created_by: user.id,
         crew_id: selectedCrew || null // Add crew_id if a crew is selected
       }
 
-      const { data: event, error } = await supabase
+      // Create the event first
+      const { data: event, error: eventError } = await supabase
         .from('events')
         .insert(eventData)
         .select()
         .single()
 
-      if (error) throw error
+      if (eventError) {
+        throw new Error(`Failed to create event: ${eventError.message}`)
+      }
+
+      const createdEventId = event.id
 
       // If crew is selected, add all crew members as event members
       if (selectedCrew && crewMembers.length > 0) {
         const eventMembers = crewMembers.map(member => ({
-          event_id: event.id,
+          event_id: createdEventId,
           user_id: member.user_id,
           invited_by: user.id,
           status: 'accepted'
@@ -192,15 +208,19 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
           .from('event_members')
           .insert(eventMembers)
 
-        if (membersError) throw membersError
+        if (membersError) {
+          // If inserting event members fails, delete the created event to maintain consistency
+          await supabase.from('events').delete().eq('id', createdEventId)
+          throw new Error(`Failed to add crew members: ${membersError.message}`)
+        }
       }
 
-      // Show success and close modal
+      // Success - close modal and notify
       toast.success('Event created successfully! 🍺')
-      setOpen(false) // Close the modal immediately
+      setOpen(false)
       onEventCreated?.()
-    } catch (error) {
-      toast.error('Failed to create event')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create event')
     } finally {
       setIsSubmitting(false)
     }

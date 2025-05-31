@@ -599,8 +599,14 @@ export function EventDetail() {
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <MapPin className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="font-medium text-foreground">{event.location}</p>
-                    <p className="text-sm text-muted-foreground">Tap to navigate</p>
+                    <p className="font-medium text-foreground">
+                      {event.place_nickname || event.place_name || event.location}
+                    </p>
+                    {event.place_nickname && (event.place_name || event.location) && (
+                      <p className="text-sm text-muted-foreground">
+                        {event.place_name || event.location}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
