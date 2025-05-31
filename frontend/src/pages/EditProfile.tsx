@@ -92,13 +92,13 @@ export function EditProfile() {
 
       setProfile(profileData)
       setFormData({
-        display_name: profileData.display_name || '',
-        bio: profileData.bio || '',
-        tagline: profileData.tagline || '',
-        favorite_drink: profileData.favorite_drink || 'none',
-        avatar_url: profileData.avatar_url || '',
-        profile_visibility: profileData.profile_visibility || 'public',
-        show_crews_publicly: profileData.show_crews_publicly ?? true
+        display_name: profileData?.display_name || '',
+        bio: profileData?.bio || '',
+        tagline: profileData?.tagline || '',
+        favorite_drink: profileData?.favorite_drink || 'none',
+        avatar_url: profileData?.avatar_url || '',
+        profile_visibility: (profileData as any)?.profile_visibility || 'public',
+        show_crews_publicly: (profileData as any)?.show_crews_publicly ?? true
       })
       setHasLoaded(true)
     } catch (error: any) {

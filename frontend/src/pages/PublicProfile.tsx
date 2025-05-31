@@ -8,10 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Users, Calendar, MapPin, Lock } from 'lucide-react'
+import { ArrowLeft, Users, Calendar, Lock } from 'lucide-react'
 import { UserStats } from '@/components/UserStats'
 import { CrewCard } from '@/components/CrewCard'
-import { toast } from 'sonner'
 import type { UserProfile, Crew } from '@/types'
 
 export function PublicProfile() {
@@ -42,7 +41,7 @@ export function PublicProfile() {
     try {
       // Try to get the user profile
       const profileData = await getUserProfile(userId)
-      
+
       if (!profileData) {
         setError('User not found')
         return
@@ -146,7 +145,7 @@ export function PublicProfile() {
               Back
             </Button>
           </div>
-          
+
           <Card>
             <CardContent className="text-center py-12">
               <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -176,7 +175,7 @@ export function PublicProfile() {
               Back
             </Button>
           </div>
-          
+
           {isOwnProfile && (
             <Link to="/profile/edit">
               <Button variant="outline" size="sm">
@@ -196,18 +195,18 @@ export function PublicProfile() {
                   {getAvatarFallback(profile)}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-3xl font-display font-bold text-foreground mb-2">
                   {getDisplayName(profile)}
                 </h1>
-                
+
                 {profile.tagline && (
                   <p className="text-lg text-primary font-medium italic mb-3">
                     "{profile.tagline}"
                   </p>
                 )}
-                
+
                 {profile.bio && (
                   <p className="text-muted-foreground mb-4 max-w-md">
                     {profile.bio}
@@ -220,7 +219,7 @@ export function PublicProfile() {
                       🍺 {profile.favorite_drink}
                     </Badge>
                   )}
-                  
+
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     Joined {new Date(profile.created_at).toLocaleDateString()}
@@ -250,7 +249,6 @@ export function PublicProfile() {
                     key={crew.id}
                     crew={crew}
                     onCrewUpdated={() => {}}
-                    showActions={false}
                   />
                 ))}
               </div>
@@ -265,7 +263,7 @@ export function PublicProfile() {
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                 <Lock className="h-4 w-4" />
                 <span className="text-sm">
-                  {profile.profile_visibility === 'crew_only' 
+                  {profile.profile_visibility === 'crew_only'
                     ? 'This profile is only visible to crew members'
                     : 'This profile has limited visibility'
                   }

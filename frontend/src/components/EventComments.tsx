@@ -4,20 +4,20 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import { MessageCircle, Send, Trash2 } from 'lucide-react'
+import { MessageCircle, Send } from 'lucide-react'
 import { toast } from 'sonner'
-import { 
-  getEventComments, 
-  addEventComment, 
-  addCommentReaction, 
-  removeCommentReaction 
+import {
+  getEventComments,
+  addEventComment,
+  addCommentReaction,
+  removeCommentReaction
 } from '@/lib/eventMediaService'
 import type { EventComment, EventCommentReaction } from '@/types'
 
 interface EventCommentsProps {
   eventId: string
   canComment: boolean
-  canModerate: boolean
+  canModerate?: boolean
 }
 
 const REACTION_EMOJIS: EventCommentReaction['reaction'][] = ['🍻', '🙌', '🤘', '🥴', '😂', '❤️', '🔥']
@@ -50,7 +50,7 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!newComment.trim()) {
       toast.error('Please enter a comment')
       return
@@ -83,11 +83,11 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
       if (existingReaction) {
         // Remove reaction
         await removeCommentReaction(commentId, reaction)
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
+        setComments(prev => prev.map(c =>
+          c.id === commentId
             ? {
                 ...c,
-                reactions: c.reactions?.filter(r => 
+                reactions: c.reactions?.filter(r =>
                   !(r.user_id === user.id && r.reaction === reaction)
                 )
               }
@@ -96,8 +96,8 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
       } else {
         // Add reaction
         await addCommentReaction(commentId, reaction)
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
+        setComments(prev => prev.map(c =>
+          c.id === commentId
             ? {
                 ...c,
                 reactions: [
@@ -159,7 +159,7 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
           Comments ({comments.length})
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Add Comment Form */}
         {canComment && (
@@ -212,7 +212,7 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
                       {comment.user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm">
@@ -222,7 +222,7 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
                         {new Date(comment.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    
+
                     <p className="text-sm text-foreground whitespace-pre-wrap">
                       {comment.content}
                     </p>
@@ -237,7 +237,7 @@ export function EventComments({ eventId, canComment, canModerate }: EventComment
                       const reactionCounts = getReactionCounts(comment.reactions)
                       const count = reactionCounts[emoji] || 0
                       const hasReacted = hasUserReacted(comment.reactions, emoji)
-                      
+
                       return (
                         <Button
                           key={emoji}

@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS crew_invitations (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better performance
-CREATE INDEX crew_invitations_invite_code_idx ON crew_invitations(invite_code);
-CREATE INDEX crew_invitations_crew_id_idx ON crew_invitations(crew_id);
-CREATE INDEX crew_invitations_created_by_idx ON crew_invitations(created_by);
+-- Create indexes for better performance (only if they don't exist)
+CREATE INDEX IF NOT EXISTS crew_invitations_invite_code_idx ON crew_invitations(invite_code);
+CREATE INDEX IF NOT EXISTS crew_invitations_crew_id_idx ON crew_invitations(crew_id);
+CREATE INDEX IF NOT EXISTS crew_invitations_created_by_idx ON crew_invitations(created_by);
 
 -- Enable Row Level Security
 ALTER TABLE crew_invitations ENABLE ROW LEVEL SECURITY;
@@ -80,6 +80,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger for updated_at
-CREATE TRIGGER update_crew_invitations_updated_at 
+CREATE TRIGGER update_crew_invitations_updated_at
     BEFORE UPDATE ON crew_invitations
     FOR EACH ROW EXECUTE FUNCTION update_crew_invitations_updated_at();

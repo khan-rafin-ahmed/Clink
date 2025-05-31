@@ -2,9 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Camera, Upload, X, Trash2, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { getEventPhotos, uploadEventPhoto, deleteEventPhoto } from '@/lib/eventMediaService'
@@ -67,7 +64,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
       const newPhoto = await uploadEventPhoto(eventId, file, caption)
       setPhotos(prev => [newPhoto, ...prev])
       toast.success('Photo uploaded successfully! 📸')
-      
+
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -127,7 +124,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
             <Camera className="h-5 w-5" />
             Event Gallery ({photos.length})
           </CardTitle>
-          
+
           {canUpload && (
             <div className="flex items-center gap-2">
               <input
@@ -159,7 +156,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {photos.length === 0 ? (
           <div className="text-center py-8">
@@ -193,7 +190,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
                 </div>
-                
+
                 {/* Photo overlay with uploader info */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="flex items-center gap-2">
@@ -226,13 +223,13 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
             >
               <X className="h-4 w-4" />
             </Button>
-            
+
             <img
               src={selectedPhoto.photo_url}
               alt={selectedPhoto.caption || 'Event photo'}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
-            
+
             {/* Photo details */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
               <div className="flex items-center justify-between">
@@ -252,7 +249,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
                     </p>
                   </div>
                 </div>
-                
+
                 {canDeletePhoto(selectedPhoto) && (
                   <Button
                     variant="destructive"
@@ -264,7 +261,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
                   </Button>
                 )}
               </div>
-              
+
               {selectedPhoto.caption && (
                 <p className="text-white mt-2">{selectedPhoto.caption}</p>
               )}
