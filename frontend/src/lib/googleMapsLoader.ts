@@ -26,9 +26,8 @@ export function loadGoogleMapsAPI(): Promise<void> {
   isLoading = true;
   loadPromise = new Promise((resolve, reject) => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
-      console.warn('Google Maps API key is not configured. Location features will not work.');
       reject(new Error('Google Maps API key is not configured'));
       return;
     }

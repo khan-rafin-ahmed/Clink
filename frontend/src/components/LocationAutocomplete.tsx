@@ -47,7 +47,7 @@ export function LocationAutocomplete({
         autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService()
         placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDivRef.current)
       } catch (error) {
-        console.error('Failed to initialize Google Maps services:', error)
+        // Failed to initialize Google Maps services
       }
     }
 

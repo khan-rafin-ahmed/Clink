@@ -1,9 +1,9 @@
 import { supabase } from './supabase'
 import { toast } from 'sonner'
 
-export type NotificationType = 
-  | 'event_rsvp' 
-  | 'event_reminder' 
+export type NotificationType =
+  | 'event_rsvp'
+  | 'event_reminder'
   | 'crew_invite_accepted'
   | 'event_update'
   | 'event_cancelled'
@@ -39,7 +39,6 @@ class NotificationService {
    */
   async initializePushNotifications(): Promise<boolean> {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications not supported')
       return false
     }
 
@@ -47,17 +46,14 @@ class NotificationService {
       // Request permission
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
-        console.warn('Push notification permission denied')
         return false
       }
 
       // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw.js')
-      console.log('Service worker registered:', registration)
+      await navigator.serviceWorker.register('/sw.js')
 
       return true
     } catch (error) {
-      console.error('Failed to initialize push notifications:', error)
       return false
     }
   }
@@ -79,7 +75,6 @@ class NotificationService {
         })
 
       if (error) {
-        console.error('Failed to create notification:', error)
         return
       }
 
@@ -89,7 +84,7 @@ class NotificationService {
       // Send push notification if enabled
       await this.sendPushNotification(notification)
     } catch (error) {
-      console.error('Error creating notification:', error)
+      // Error creating notification
     }
   }
 
@@ -98,7 +93,7 @@ class NotificationService {
    */
   private showToastNotification(notification: NotificationData): void {
     const emoji = this.getNotificationEmoji(notification.type)
-    
+
     const eventId = notification.data?.eventId
     const eventTitle = notification.data?.eventTitle
 
@@ -233,13 +228,11 @@ class NotificationService {
         .eq('read', false)
 
       if (error) {
-        console.error('Failed to get unread count:', error)
         return 0
       }
 
       return count || 0
     } catch (error) {
-      console.error('Error getting unread count:', error)
       return 0
     }
   }
@@ -269,7 +262,7 @@ export const notificationTriggers = {
    */
   async onEventReminder(eventId: string, eventTitle: string, attendeeIds: string[]): Promise<void> {
     const notification = NotificationService.getInstance()
-    
+
     for (const userId of attendeeIds) {
       await notification.createNotification({
         user_id: userId,

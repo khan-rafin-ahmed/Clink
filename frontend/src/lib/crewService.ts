@@ -10,8 +10,6 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       return []
     }
 
-    console.log('🔍 getUserCrews: Fetching crews for user:', currentUserId)
-
     // Use a more robust approach that avoids potential RLS issues
     // First, get the crew IDs where the user is a member
     const { data: membershipData, error: membershipError } = await supabase
@@ -21,17 +19,14 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       .eq('status', 'accepted')
 
     if (membershipError) {
-      console.error('❌ Error fetching user crews:', membershipError)
       throw membershipError
     }
 
     if (!membershipData || membershipData.length === 0) {
-      console.log('✅ getUserCrews: No crew memberships found')
       return []
     }
 
     const crewIds = membershipData.map(m => m.crew_id)
-    console.log('🔍 getUserCrews: Found crew IDs:', crewIds)
 
     // Then fetch the crew details directly
     const { data: crewsData, error: crewsError } = await supabase
@@ -204,7 +199,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
       .in('user_id', allUserIds)
 
     if (profileError) {
-      console.warn('Error fetching user profiles:', profileError)
+      // Continue without profiles if there's an error
     }
 
     // Create result array

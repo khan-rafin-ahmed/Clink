@@ -77,7 +77,6 @@ export function RSVPButton({ eventId, initialAttendees = [] }: RSVPButtonProps) 
         toast.success('Added to attendees!')
       }
     } catch (error) {
-      console.error('RSVP error:', error)
       toast.error('Failed to update RSVP')
     } finally {
       setIsLoading(false)
@@ -136,4 +135,4 @@ export function RSVPButton({ eventId, initialAttendees = [] }: RSVPButtonProps) 
       </Popover>
     </div>
   )
-} 
+}

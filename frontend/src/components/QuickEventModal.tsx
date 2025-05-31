@@ -120,7 +120,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
   // Add handler for location change
   const handleLocationChange = (locationData: LocationData | null) => {
-    console.log('Location changed in QuickEventModal:', locationData)
     setFormData(prev => ({
       ...prev,
       location: locationData?.place_name || '',
@@ -130,7 +129,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user || isSubmitting) return
 
     setIsSubmitting(true)
     try {
@@ -177,14 +176,11 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         if (membersError) throw membersError
       }
 
-      setCreatedEvent({
-        share_url: `${window.location.origin}/event/${event.event_code || event.id}`,
-        event_code: event.event_code || event.id
-      })
-      setStep(3)
+      // Show success and close modal
+      toast.success('Event created successfully! 🍺')
+      setOpen(false) // Close the modal immediately
       onEventCreated?.()
     } catch (error) {
-      console.error('Error creating event:', error)
       toast.error('Failed to create event')
     } finally {
       setIsSubmitting(false)
@@ -204,16 +200,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       case 1:
         const hasTitle = formData.title.trim().length > 0;
         const hasLocation = formData.locationData !== null || formData.location.trim().length > 0;
-        const isValid = hasTitle && hasLocation;
-        console.log('Step 1 validation:', {
-          title: formData.title.trim(),
-          locationData: formData.locationData,
-          location: formData.location,
-          hasTitle,
-          hasLocation,
-          isValid
-        });
-        return isValid;
+        return hasTitle && hasLocation;
       case 2:
         return formData.time && formData.drink_type;
       case 3:

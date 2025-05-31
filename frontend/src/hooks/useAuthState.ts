@@ -116,22 +116,13 @@ export function useAuthDependentData<T>(
     ...fetchOptions
   } = options
 
-  // Enhanced error handler that logs auth issues
+  // Enhanced error handler
   const enhancedErrorHandler = useCallback((error: Error) => {
-    console.error('🚨 useAuthDependentData Error:', {
-      error: error.message,
-      authState,
-      userId: user?.id,
-      requireAuth,
-      enabled,
-      shouldRender
-    })
-
     // Call original error handler if provided
     if (onError) {
       onError(error)
     }
-  }, [onError, authState, user?.id, requireAuth, enabled, shouldRender])
+  }, [onError])
 
   // STRONGEST GUARDS: Determine if we should fetch data
   const shouldFetch = useMemo(() => {

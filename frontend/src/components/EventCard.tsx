@@ -9,6 +9,7 @@ import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
 import { CompactStaticMapThumbnail } from '@/components/StaticMapThumbnail'
+import { calculateAttendeeCount } from '@/lib/eventUtils'
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
@@ -44,6 +45,9 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
   const eventUrl = `${window.location.origin}/event/${event.event_code || event.id}`
 
   const isHost = user && event.created_by === user.id
+
+  // Calculate attendee count using the same logic as EventDetail
+  const attendeeCount = calculateAttendeeCount(event)
 
   // Format event time and get status badge
   const formatEventTime = (dateTime: string) => {
@@ -156,14 +160,24 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
                     }}
                     className="rounded-full"
                   />
-                  <span className="text-sm text-muted-foreground truncate">
-                    {event.place_name || event.location}
-                  </span>
+                  <div className="truncate">
+                    {event.place_nickname && (
+                      <div className="font-medium text-foreground">{event.place_nickname}</div>
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      {event.place_name || event.location}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <>
                   <MapPin className="w-4 h-4" />
-                  <span className="truncate">{event.location}</span>
+                  <div className="truncate">
+                    {event.place_nickname && (
+                      <div className="font-medium text-foreground">{event.place_nickname}</div>
+                    )}
+                    <span className="text-sm text-muted-foreground">{event.location}</span>
+                  </div>
                 </>
               )}
             </div>
@@ -189,7 +203,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           </Badge>
           <div className="flex items-center gap-1 text-sm">
             <Users className="w-4 h-4" />
-            {(event.rsvp_count || 0) === 0 ? (
+            {attendeeCount === 0 ? (
               isHost ? (
                 <span className="text-muted-foreground">
                   No one has joined yet
@@ -201,7 +215,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               )
             ) : (
               <span className="text-muted-foreground">
-                {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
+                {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} going
               </span>
             )}
           </div>

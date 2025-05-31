@@ -24,7 +24,6 @@ export async function getGoogleAvatarUrl(userId: string): Promise<string | null>
     })
 
     if (error) {
-      console.warn('Failed to fetch Google avatar via RPC:', error)
       googleAvatarCache.set(userId, null)
       return null
     }
@@ -33,7 +32,6 @@ export async function getGoogleAvatarUrl(userId: string): Promise<string | null>
     googleAvatarCache.set(userId, avatarUrl)
     return avatarUrl
   } catch (error) {
-    console.warn('Error fetching Google avatar:', error)
     googleAvatarCache.set(userId, null)
     return null
   }
@@ -61,7 +59,6 @@ export async function getCurrentUserGoogleAvatar(): Promise<string | null> {
 
     return googleAvatar
   } catch (error) {
-    console.warn('Failed to fetch current user Google avatar:', error)
     return null
   }
 }

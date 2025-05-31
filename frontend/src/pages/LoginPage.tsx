@@ -49,14 +49,11 @@ export function LoginPage() {
 
     setIsLoading(true)
     try {
-      console.log('Sending magic link to:', email)
       await signInWithMagicLink(email, `${window.location.origin}/auth/callback`)
 
-      console.log('Magic link sent successfully')
       setMagicLinkSent(true)
       toast.success('Magic link sent! Check your email 📧')
     } catch (error: any) {
-      console.error('Magic link failed:', error)
       toast.error(error.message || 'Failed to send magic link')
     } finally {
       setIsLoading(false)
@@ -65,10 +62,8 @@ export function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      console.log('Attempting Google sign in...')
       await signInWithGoogle()
     } catch (error: any) {
-      console.error('Google sign in error:', error)
       toast.error('Google sign in failed')
     }
   }

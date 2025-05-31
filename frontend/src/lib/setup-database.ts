@@ -9,7 +9,6 @@ export async function setupDatabase() {
       .limit(1)
 
     if (error) {
-      console.error('Database setup needed:', error.message)
       return {
         success: false,
         error: error.message,
@@ -17,14 +16,12 @@ export async function setupDatabase() {
       }
     }
 
-    console.log('Database is set up correctly')
     return {
       success: true,
       data,
       needsSetup: false
     }
   } catch (err: any) {
-    console.error('Database connection error:', err)
     return {
       success: false,
       error: err.message,
@@ -36,7 +33,7 @@ export async function setupDatabase() {
 export async function testAuth() {
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
-    
+
     if (error) {
       return {
         success: false,

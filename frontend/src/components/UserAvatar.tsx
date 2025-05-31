@@ -54,7 +54,6 @@ function useGoogleAvatar(userId?: string) {
 
         setGoogleAvatarUrl(avatarUrl)
       } catch (error) {
-        console.warn('Failed to fetch Google avatar:', error)
         setGoogleAvatarUrl(null)
       } finally {
         setLoading(false)

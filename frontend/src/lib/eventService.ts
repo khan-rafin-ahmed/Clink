@@ -4,13 +4,10 @@ import type { Event, RsvpStatus, UserProfile } from '@/types'
 
 
 export async function getEventDetails(eventId: string) {
-  // STRONGEST GUARD: Validate input parameters
+  // Validate input parameters
   if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
-    console.error('🚨 getEventDetails: Invalid eventId provided:', eventId)
     throw new Error('Invalid event ID provided')
   }
-
-  console.log('🔍 getEventDetails: Fetching event details for eventId:', eventId)
 
   try {
     const { data: event, error } = await supabase
@@ -30,20 +27,14 @@ export async function getEventDetails(eventId: string) {
       .single()
 
     if (error) {
-      console.error('🚨 getEventDetails: Supabase error:', error)
-
       if (error.code === 'PGRST116') {
-        console.log('📭 getEventDetails: No event found for eventId:', eventId)
         throw new Error('Event not found')
       }
-
       throw error
     }
 
-    console.log('✅ getEventDetails: Event loaded for eventId:', eventId)
     return event
   } catch (error) {
-    console.error('🚨 getEventDetails: Unexpected error:', error)
     throw error
   }
 }
@@ -158,7 +149,6 @@ export async function createEventWithShareableLink(eventData: {
     .single()
 
   if (error) {
-    console.error('Error creating event:', error)
     throw error
   }
 
@@ -187,8 +177,6 @@ export async function createEventWithShareableLink(eventData: {
 }
 
 export async function getPublicEvents(): Promise<Event[]> {
-  console.log('🔍 getPublicEvents: Fetching public events')
-
   try {
     // First, get all public events
     const { data: events, error } = await supabase
@@ -205,16 +193,12 @@ export async function getPublicEvents(): Promise<Event[]> {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('🚨 getPublicEvents: Supabase error:', error)
       throw new Error('Failed to fetch public events')
     }
 
     if (!events || events.length === 0) {
-      console.log('📭 getPublicEvents: No public events found')
       return []
     }
-
-    console.log('✅ getPublicEvents: Loaded public events:', events.length)
 
     // Get event IDs for batch queries
     const eventIds = events.map(event => event.id)
@@ -226,7 +210,7 @@ export async function getPublicEvents(): Promise<Event[]> {
       .in('event_id', eventIds)
 
     if (rsvpError) {
-      console.warn('⚠️ getPublicEvents: Could not fetch RSVPs:', rsvpError)
+      // Continue without RSVPs if there's an error
     }
 
     // Batch fetch event members for all events
@@ -236,21 +220,19 @@ export async function getPublicEvents(): Promise<Event[]> {
       .in('event_id', eventIds)
 
     if (memberError) {
-      console.warn('⚠️ getPublicEvents: Could not fetch event members:', memberError)
+      // Continue without event members if there's an error
     }
 
     // Get current user (this is optional for public events)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError) {
-      console.warn('⚠️ getPublicEvents: Could not get user (proceeding without user data):', userError)
+      // Continue without user data if there's an error
     }
 
     // If user is logged in and has valid ID, check which events they've joined
     let userRsvps: any[] = []
     if (user && user.id) {
-      console.log('🔍 getPublicEvents: Checking user RSVPs for user:', user.id)
-
       const { data: rsvpData, error: rsvpError } = await supabase
         .from('rsvps')
         .select('event_id, status')
@@ -258,13 +240,10 @@ export async function getPublicEvents(): Promise<Event[]> {
         .eq('status', 'going')
 
       if (rsvpError) {
-        console.warn('⚠️ getPublicEvents: Could not fetch user RSVPs (proceeding without RSVP data):', rsvpError)
+        // Continue without user RSVP data if there's an error
       } else {
         userRsvps = rsvpData || []
-        console.log('✅ getPublicEvents: User RSVPs loaded:', userRsvps.length)
       }
-    } else {
-      console.log('📭 getPublicEvents: No authenticated user, proceeding without RSVP data')
     }
 
     // Transform the data with correct attendee counting (matching EventDetail logic exactly)
@@ -314,10 +293,8 @@ export async function getPublicEvents(): Promise<Event[]> {
       }
     })
 
-    console.log('✅ getPublicEvents: Events transformed successfully')
     return transformedEvents
   } catch (error) {
-    console.error('🚨 getPublicEvents: Unexpected error:', error)
     throw error
   }
 }
@@ -338,7 +315,6 @@ export async function joinEvent(eventId: string): Promise<void> {
     })
 
   if (error) {
-    console.error('Error joining event:', error)
     throw new Error('Failed to join event')
   }
 }
@@ -351,7 +327,6 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
     .single()
 
   if (error) {
-    console.error('Error fetching user profile:', error)
     throw new Error('Failed to fetch user profile')
   }
 
@@ -359,18 +334,13 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 }
 
 export async function getUserAccessibleEvents() {
-  console.log('🔍 getUserAccessibleEvents: Fetching user accessible events')
-
   try {
     const { data: { user } } = await supabase.auth.getUser()
 
-    // STRONGEST GUARD: Validate user authentication
+    // Validate user authentication
     if (!user || !user.id) {
-      console.error('🚨 getUserAccessibleEvents: User not authenticated or missing ID:', { user: !!user, userId: user?.id })
       throw new Error('User authentication required')
     }
-
-    console.log('🔍 getUserAccessibleEvents: Authenticated user:', user.id)
 
     // Get public events with RSVP and event member data for consistent attendee counting
     const { data: events, error } = await supabase
@@ -409,22 +379,17 @@ export async function getUserAccessibleEvents() {
       .limit(20)
 
     if (error) {
-      console.error('🚨 getUserAccessibleEvents: Supabase error:', error)
       throw error
     }
 
-    console.log('✅ getUserAccessibleEvents: Loaded events:', events?.length || 0)
     return events || []
   } catch (error) {
-    console.error('🚨 getUserAccessibleEvents: Unexpected error:', error)
     throw error
   }
 }
 
 // Respond to event invitation (accept/decline)
 export async function respondToEventInvitation(eventMemberId: string, response: 'accepted' | 'declined') {
-  console.log('🔄 respondToEventInvitation: Responding to invitation:', eventMemberId, response)
-
   try {
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -444,14 +409,11 @@ export async function respondToEventInvitation(eventMemberId: string, response: 
       .single()
 
     if (error) {
-      console.error('❌ respondToEventInvitation: Error:', error)
       throw error
     }
 
-    console.log('✅ respondToEventInvitation: Response recorded:', data)
     return data
   } catch (error) {
-    console.error('💥 respondToEventInvitation: Unexpected error:', error)
     throw error
   }
 }

@@ -31,7 +31,6 @@ export function DeleteEventDialog({ event, open, onOpenChange, onEventDeleted }:
       onOpenChange(false)
       onEventDeleted()
     } catch (error) {
-      console.error('Error deleting event:', error)
       toast.error('Failed to delete session. Please try again.')
     } finally {
       setIsDeleting(false)

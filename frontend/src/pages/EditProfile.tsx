@@ -98,8 +98,6 @@ export function EditProfile() {
       })
       setHasLoaded(true)
     } catch (error: any) {
-      console.error('Error loading profile:', error)
-
       // Provide more specific error messages
       if (error.message?.includes('Content-Length')) {
         toast.error('Database connection issue. The favorite_drink column may not exist yet.')

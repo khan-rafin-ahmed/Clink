@@ -183,7 +183,6 @@ export function EventDetail() {
           if (!rsvpError) {
             eventData.rsvps = rsvpData || []
           } else {
-            console.warn('Could not load RSVPs:', rsvpError)
             eventData.rsvps = []
           }
 
@@ -197,11 +196,9 @@ export function EventDetail() {
           if (!memberError) {
             eventData.event_members = memberData || []
           } else {
-            console.warn('Could not load event members:', memberError)
             eventData.event_members = []
           }
         } catch (err) {
-          console.warn('Error loading event attendees:', err)
           eventData.rsvps = []
           eventData.event_members = []
         }
@@ -209,7 +206,6 @@ export function EventDetail() {
 
       if (!eventData) {
         if (error) {
-          console.error('Error loading event:', error)
           // If it's a permission error and user is not logged in, suggest login
           if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'PGRST116' && !user) {
             sessionStorage.setItem('redirectAfterLogin', window.location.pathname)

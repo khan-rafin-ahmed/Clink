@@ -71,8 +71,6 @@ export function useUserStats(refreshTrigger?: number): UseUserStatsReturn {
     setError(null)
 
     try {
-      console.log('Fetching fresh user stats')
-
       // Use count queries for better performance
       const [totalEventsResult, upcomingEventsResult, totalRSVPsResult] = await Promise.allSettled([
         // Total events count
