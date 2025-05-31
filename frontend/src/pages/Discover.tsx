@@ -489,7 +489,6 @@ function DiscoverContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredEvents.map((event) => {
-              const { user } = useAuth()
               return (
                 <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
                   <CardHeader className="pb-3">
