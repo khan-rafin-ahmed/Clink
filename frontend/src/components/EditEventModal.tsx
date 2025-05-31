@@ -162,7 +162,16 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       // Calculate event time
       let eventDateTime = new Date()
       if (formData.time === 'tonight') {
-        eventDateTime.setHours(20, 0, 0, 0) // 8 PM tonight
+        // 'Later Tonight' should always be tonight, not tomorrow
+        const now = new Date()
+        if (now.getHours() >= 20) {
+          // If it's already past 8 PM, set to 1 hour from now (but still tonight)
+          eventDateTime = new Date(now)
+          eventDateTime.setHours(eventDateTime.getHours() + 1, 0, 0, 0)
+        } else {
+          // If it's before 8 PM, set to 8 PM tonight
+          eventDateTime.setHours(20, 0, 0, 0)
+        }
       } else if (formData.time === 'custom' && formData.custom_time) {
         eventDateTime = new Date(formData.custom_time)
       }

@@ -160,15 +160,16 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
           if (formData.time === 'custom' && formData.custom_time) {
             return new Date(formData.custom_time).toISOString();
           } else if (formData.time === 'tonight') {
-            // If 'Later Tonight' is selected, set to 8 PM tonight if current time is before 8 PM,
-            // otherwise set to 8 PM tomorrow.
-            if (now < tonight) {
-              return tonight.toISOString();
+            // 'Later Tonight' should always be tonight at 8 PM, regardless of current time
+            // If it's already past 8 PM, set it to a reasonable time later tonight (current time + 1 hour)
+            if (now.getHours() >= 20) {
+              // If it's already past 8 PM, set to 1 hour from now (but still tonight)
+              const laterTonight = new Date(now);
+              laterTonight.setHours(laterTonight.getHours() + 1, 0, 0, 0);
+              return laterTonight.toISOString();
             } else {
-              const tomorrow = new Date(now);
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              tomorrow.setHours(20, 0, 0, 0);
-              return tomorrow.toISOString();
+              // If it's before 8 PM, set to 8 PM tonight
+              return tonight.toISOString();
             }
           } else { // 'now'
             return now.toISOString();
