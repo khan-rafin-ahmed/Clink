@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
-import { CompactStaticMapThumbnail } from '@/components/StaticMapThumbnail'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
