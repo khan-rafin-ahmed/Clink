@@ -488,103 +488,106 @@ function DiscoverContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredEvents.map((event) => (
-              <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg line-clamp-2">
-                          {event.title}
-                        </h3>
+            {filteredEvents.map((event) => {
+              const { user } = useAuth()
+              return (
+                <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-lg line-clamp-2">
+                            {event.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <Calendar className="w-4 h-4" />
+                          {formatEventTime(event.date_time)}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-4 h-4" />
+                          {event.location}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <Calendar className="w-4 h-4" />
-                        {formatEventTime(event.date_time)}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4" />
-                        {event.location}
+                      <div className="flex items-center gap-1 text-primary">
+                        {getDrinkIcon(event.drink_type)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-primary">
-                      {getDrinkIcon(event.drink_type)}
-                    </div>
-                  </div>
-                </CardHeader>
+                  </CardHeader>
 
-                <CardContent className="pt-0">
-                  {/* Event Description */}
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                    {event.notes}
-                  </p>
+                  <CardContent className="pt-0">
+                    {/* Event Description */}
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {event.notes}
+                    </p>
 
-                  {/* Vibe Badge and RSVP Count */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <Badge variant="outline" className={getVibeColor(event.vibe)}>
-                      {event.vibe}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Users className="w-4 h-4" />
-                      <span className="text-muted-foreground">
-                        {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Host Info */}
-                  <UserHoverCard
-                    userId={event.created_by}
-                    displayName={event.creator?.display_name}
-                    avatarUrl={event.creator?.avatar_url}
-                    isHost={true}
-                  >
-                    <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
-                      <UserAvatar
-                        userId={event.created_by}
-                        displayName={event.creator?.display_name}
-                        avatarUrl={event.creator?.avatar_url}
-                        size="xs"
-                      />
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          Hosted by {event.creator?.display_name || 'Anonymous'}
+                    {/* Vibe Badge and RSVP Count */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Badge variant="outline" className={getVibeColor(event.vibe)}>
+                        {event.vibe}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Users className="w-4 h-4" />
+                        <span className="text-muted-foreground">
+                          {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
                         </span>
-                        {/* Crew badge removed - using Crew System now */}
                       </div>
                     </div>
-                  </UserHoverCard>
 
-                  {/* Action Buttons */}
-                  <div className="space-y-2">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <JoinEventButton
-                        eventId={event.id}
-                        initialJoined={event.user_has_joined}
-                        onJoinChange={(joined) => handleJoinChange(event.id, joined)}
-                        className="flex-1"
-                        isHost={event.created_by === user?.id}
-                      />
-                      <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">
-                          <span className="hidden sm:inline">View Details</span>
-                          <span className="sm:hidden">Details</span>
-                        </Button>
-                      </Link>
-                    </div>
-                    <Button
-                      onClick={() => handleShareEvent(event)}
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-muted-foreground hover:text-primary"
+                    {/* Host Info */}
+                    <UserHoverCard
+                      userId={event.created_by}
+                      displayName={event.creator?.display_name}
+                      avatarUrl={event.creator?.avatar_url}
+                      isHost={true}
                     >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share Session
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
+                        <UserAvatar
+                          userId={event.created_by}
+                          displayName={event.creator?.display_name}
+                          avatarUrl={event.creator?.avatar_url}
+                          size="xs"
+                        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            Hosted by {event.creator?.display_name || 'Anonymous'}
+                          </span>
+                          {/* Crew badge removed - using Crew System now */}
+                        </div>
+                      </div>
+                    </UserHoverCard>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <JoinEventButton
+                          eventId={event.id}
+                          initialJoined={event.user_has_joined}
+                          onJoinChange={(joined) => handleJoinChange(event.id, joined)}
+                          className="flex-1"
+                          isHost={event.created_by === user?.id}
+                        />
+                        <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">Details</span>
+                          </Button>
+                        </Link>
+                      </div>
+                      <Button
+                        onClick={() => handleShareEvent(event)}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-muted-foreground hover:text-primary"
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share Session
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>
