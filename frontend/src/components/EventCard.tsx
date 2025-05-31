@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
-import { calculateAttendeeCount } from '@/lib/eventUtils'
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
@@ -45,9 +44,9 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
 
   const isHost = user && event.created_by === user.id
 
-  // Calculate attendee count using the same logic as EventDetail
-  const attendeeCount = calculateAttendeeCount(event)
-  const displayCount = isHost ? attendeeCount + 1 : attendeeCount
+  // Use the precomputed rsvp_count (which already includes host and guests)
+  const attendeeCount = event.rsvp_count || 0
+  const displayCount = attendeeCount
 
   // Format event time and get status badge
   const formatEventTime = (dateTime: string) => {
@@ -180,19 +179,9 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           </Badge>
           <div className="flex items-center gap-1 text-sm">
             <Users className="w-4 h-4" />
-            {displayCount === 0 && !isHost ? (
-              <span className="text-primary font-medium animate-pulse">
-                Be the first to raise hell! ✨
-              </span>
-            ) : displayCount === 1 && isHost ? (
-              <span className="text-muted-foreground">
-                No guests yet
-              </span>
-            ) : (
-              <span className="text-muted-foreground">
-                {displayCount} {displayCount === 1 ? 'person' : 'people'} going
-              </span>
-            )}
+            <span className="text-muted-foreground">
+              {displayCount} {displayCount === 1 ? 'person' : 'people'} going
+            </span>
           </div>
         </div>
 
