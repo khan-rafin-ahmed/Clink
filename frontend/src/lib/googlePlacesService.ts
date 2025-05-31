@@ -93,7 +93,7 @@ class GooglePlacesService {
       await new Promise(resolve => setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest))
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Clear existing debounce timer
       if (this.debounceTimer) {
         clearTimeout(this.debounceTimer)
