@@ -13,20 +13,21 @@ export interface AttendeeInfo {
 
 /**
  * Calculate total attendee count for an event
+ * Host is ALWAYS counted as attending (minimum 1)
  * Combines RSVPs and event members, avoiding duplicates
  */
 export function calculateAttendeeCount(event: Event): number {
   if (!event) return 0
 
-  // Always count the host as an attendee
-  const uniqueAttendeeIds = new Set<string>();
+  // Always count the host as an attendee (host is always attending)
+  const uniqueAttendeeIds = new Set<string>()
   if (event.created_by) {
-    uniqueAttendeeIds.add(event.created_by);
+    uniqueAttendeeIds.add(event.created_by)
   }
 
   // Get RSVPs with status 'going'
   const rsvpAttendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
-  
+
   // Get event members with status 'accepted' (crew members)
   const eventMembers = event.event_members?.filter(member => member.status === 'accepted') || []
 
@@ -113,12 +114,12 @@ export function hasUserJoined(event: Event, userId: string): boolean {
   if (!event || !userId) return false
 
   // Check RSVPs
-  const hasRsvp = event.rsvps?.some(rsvp => 
+  const hasRsvp = event.rsvps?.some(rsvp =>
     rsvp.user_id === userId && rsvp.status === 'going'
   ) || false
 
   // Check event members (crew)
-  const hasCrewMembership = event.event_members?.some(member => 
+  const hasCrewMembership = event.event_members?.some(member =>
     member.user_id === userId && member.status === 'accepted'
   ) || false
 
@@ -135,14 +136,14 @@ export function getUserJoinStatus(event: Event, userId: string): 'not_joined' | 
   if (event.created_by === userId) return 'host'
 
   // Check RSVPs
-  const hasRsvp = event.rsvps?.some(rsvp => 
+  const hasRsvp = event.rsvps?.some(rsvp =>
     rsvp.user_id === userId && rsvp.status === 'going'
   )
 
   if (hasRsvp) return 'rsvp'
 
   // Check event members (crew)
-  const hasCrewMembership = event.event_members?.some(member => 
+  const hasCrewMembership = event.event_members?.some(member =>
     member.user_id === userId && member.status === 'accepted'
   )
 
@@ -163,8 +164,8 @@ export function getLocationDisplayName(event: Event): string {
  * Check if event has valid coordinates for map display
  */
 export function hasValidCoordinates(event: Event): boolean {
-  return !!(event.latitude && event.longitude && 
-    typeof event.latitude === 'number' && 
+  return !!(event.latitude && event.longitude &&
+    typeof event.latitude === 'number' &&
     typeof event.longitude === 'number' &&
     event.latitude >= -90 && event.latitude <= 90 &&
     event.longitude >= -180 && event.longitude <= 180)
@@ -191,23 +192,23 @@ export function getEventTimingStatus(dateTime: string): 'past' | 'now' | 'today'
 export function formatEventTiming(dateTime: string): string {
   const status = getEventTimingStatus(dateTime)
   const date = new Date(dateTime)
-  
+
   switch (status) {
     case 'past':
       return 'Event ended'
     case 'now':
       return 'Happening now!'
     case 'today':
-      return `Today at ${date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
+      return `Today at ${date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       })}`
     case 'tomorrow':
-      return `Tomorrow at ${date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
+      return `Tomorrow at ${date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       })}`
     default:
       return date.toLocaleDateString('en-US', {

@@ -26,6 +26,7 @@ import {
   Crown
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
+import { calculateAttendeeCount } from '@/lib/eventUtils'
 
 interface EventWithRsvps extends Event {
   rsvps: Array<{
@@ -493,9 +494,14 @@ export function EventDetail() {
 
   const { date } = formatDateTime(event.date_time)
 
-  // Combine attendees from both RSVPs and event members
+  // Use consistent attendee counting logic
+  const goingCount = calculateAttendeeCount(event)
+  const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
+  const isHost = user && event.created_by === user.id
+
+  // Get all attendees for display (excluding host from the list since host is always attending)
   const rsvpAttendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
-  const eventMembers = event.event_members || []
+  const eventMembers = event.event_members?.filter(member => member.status === 'accepted') || []
 
   // Create a Set to track unique user IDs to avoid duplicates
   const uniqueAttendeeIds = new Set<string>()
@@ -522,10 +528,6 @@ export function EventDetail() {
     }
   })
 
-  // Count hosts + guests
-  const goingCount = (event.created_by ? 1 : 0) + allAttendees.length
-  const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
-  const isHost = user && event.created_by === user.id
   const attendees = allAttendees
 
   return (

@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           setError(null)
           setIsInitialized(true)
-          isInitialLoadRef.current = false // Mark initial load as complete
+          // Don't mark initial load as complete here - let the auth state change handler do it
         }
       } catch (err: any) {
         if (mountedRef.current) {
@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newUser = session?.user ?? null
 
       // Handle user sign in with robust profile creation
+      // Only show welcome for actual sign-in events, not initial page loads
       if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
         welcomeShownRef.current.add(newUser.id)
 
@@ -119,6 +120,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(newUser)
       setLoading(false)
       setError(null)
+
+      // Mark initial load as complete after first auth state change
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false
+      }
     })
 
     return () => {

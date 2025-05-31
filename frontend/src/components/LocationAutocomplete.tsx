@@ -92,15 +92,18 @@ export function LocationAutocomplete({
       { placeId: pred.place_id },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          // Prioritize place name over formatted address for display
+          const displayName = place.name || place.formatted_address || ''
+
           const locationData: LocationData = {
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng(),
             place_id: place.place_id || '',
-            place_name: place.formatted_address || place.name || '',
+            place_name: displayName,
             address: place.formatted_address
           }
 
-          setQuery(locationData.place_name)
+          setQuery(displayName)
           onChange(locationData)
           setPredictions([]) // Clear predictions after selection
         }

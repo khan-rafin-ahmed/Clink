@@ -74,7 +74,7 @@ export function FilterControlsSkeleton() {
         <SkeletonBox className="h-10 w-32" />
         <SkeletonBox className="h-10 w-32" />
       </div>
-      
+
       {/* Stats row */}
       <div className="flex items-center justify-between">
         <SkeletonBox className="h-5 w-32" />
@@ -100,6 +100,65 @@ export function ProfileSkeleton() {
           </div>
         </div>
         <SkeletonBox className="h-10 w-32 rounded-md" />
+      </div>
+    </div>
+  )
+}
+
+// Full profile page skeleton
+export function ProfilePageSkeleton() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-card rounded-xl p-8 border border-border">
+        {/* Profile Header Skeleton */}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-8">
+          {/* Avatar Skeleton */}
+          <SkeletonBox className="w-24 h-24 rounded-full" />
+
+          <div className="flex-1 space-y-4">
+            {/* Name Skeleton */}
+            <SkeletonBox className="h-8 w-48" />
+
+            {/* Bio Skeleton */}
+            <div className="space-y-2">
+              <SkeletonBox className="h-4 w-full" />
+              <SkeletonBox className="h-4 w-3/4" />
+            </div>
+
+            {/* Favorite Drink Skeleton */}
+            <SkeletonBox className="h-6 w-32 rounded-full" />
+
+            {/* Stats Skeleton */}
+            <div className="flex items-center space-x-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="text-center">
+                  <SkeletonBox className="h-8 w-12 mb-1" />
+                  <SkeletonBox className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Stats Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-muted/50 rounded-lg p-4">
+              <SkeletonBox className="h-8 w-8 mx-auto mb-2" />
+              <SkeletonBox className="h-4 w-full mb-2" />
+              <SkeletonBox className="h-6 w-20 mx-auto" />
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Activity Skeleton */}
+        <div>
+          <SkeletonBox className="h-6 w-40 mb-4" />
+          <div className="text-center py-8">
+            <SkeletonBox className="w-12 h-12 mx-auto mb-4" />
+            <SkeletonBox className="h-4 w-48 mx-auto" />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -156,9 +215,9 @@ export function FullPageSkeleton() {
 }
 
 // Error fallback component
-export function ErrorFallback({ 
-  error, 
-  onRetry, 
+export function ErrorFallback({
+  error,
+  onRetry,
   title = "Something went wrong",
   description = "We encountered an error while loading this page."
 }: {
@@ -171,13 +230,13 @@ export function ErrorFallback({
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center mb-6">
-          <img 
-            src="/thirstee-logo.svg" 
-            alt="Thirstee" 
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
             className="h-16 w-auto"
           />
         </div>
-        
+
         <div className="space-y-4">
           <h1 className="text-2xl font-display font-bold text-foreground">
             {title}
@@ -185,7 +244,7 @@ export function ErrorFallback({
           <p className="text-muted-foreground">
             {description}
           </p>
-          
+
           {error && (
             <details className="text-left bg-destructive/10 border border-destructive/20 rounded-lg p-4 mt-4">
               <summary className="cursor-pointer text-sm font-medium text-destructive mb-2">
@@ -200,14 +259,14 @@ export function ErrorFallback({
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {onRetry && (
-            <button 
+            <button
               onClick={onRetry}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
             >
               Try Again
             </button>
           )}
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
             className="px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors"
           >

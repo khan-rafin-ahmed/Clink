@@ -282,9 +282,8 @@ export async function getPublicEvents(): Promise<Event[]> {
         }
       })
 
-      const totalAttendees = allAttendees.length
-
-
+      // Host is always counted as attending (minimum 1)
+      const totalAttendees = allAttendees.length + (event.created_by ? 1 : 0)
 
       return {
         ...event,

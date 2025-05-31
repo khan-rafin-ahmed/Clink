@@ -22,6 +22,7 @@ import {
   Coffee
 } from 'lucide-react'
 import type { Event } from '@/types'
+import { calculateAttendeeCount } from '@/lib/eventUtils'
 
 interface EventCardProps {
   event: Event & {
@@ -44,8 +45,8 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
 
   const isHost = user && event.created_by === user.id
 
-  // Use the precomputed rsvp_count (which already includes host and guests)
-  const attendeeCount = event.rsvp_count || 0
+  // Use consistent attendee counting logic (host is always counted)
+  const attendeeCount = calculateAttendeeCount(event)
   const displayCount = attendeeCount
 
   // Format event time and get status badge
@@ -149,11 +150,11 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
               <div className="truncate max-w-[200px]">
-                <span 
-                  className="text-sm text-muted-foreground truncate" 
-                  title={event.place_name || event.location}
+                <span
+                  className="text-sm text-muted-foreground truncate"
+                  title={event.place_nickname || event.place_name || event.location}
                 >
-                  {event.place_name || event.location}
+                  {event.place_nickname || event.place_name || event.location}
                 </span>
               </div>
             </div>

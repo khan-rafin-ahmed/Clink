@@ -10,7 +10,7 @@ import { Users } from 'lucide-react'
 // import { FollowButton } from '@/components/FollowButton' // Removed - using Crew System now
 import { getInnerCircleCount } from '@/lib/followService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
-import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
+import { ProfilePageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 
 // Helper functions for drink display
 function getDrinkEmoji(drinkType: string): string {
@@ -49,8 +49,6 @@ function getDrinkLabel(drinkType: string): string {
 
 // Data loading function (outside component for stability)
 const loadProfileData = async (_user: any, userId: string) => {
-  console.log('🔍 loadProfileData: Loading profile data for userId:', userId)
-
   try {
     const [profileData, countsData, innerCircleCountData] = await Promise.all([
       getUserProfile(userId),
@@ -58,14 +56,12 @@ const loadProfileData = async (_user: any, userId: string) => {
       getInnerCircleCount(userId)
     ])
 
-    console.log('✅ loadProfileData: Profile data loaded successfully')
     return {
       profile: profileData,
       followCounts: countsData,
       innerCircleCount: innerCircleCountData
     }
   } catch (error) {
-    console.error('🚨 loadProfileData: Error loading profile data:', error)
     throw error
   }
 }
@@ -101,13 +97,12 @@ export function Profile() {
     refetch
   } = useAuthDependentData(fetchProfileData, {
     requireAuth: false, // Profile viewing doesn't require auth
-    onSuccess: (data) => console.log('✅ Profile data loaded:', data?.profile?.display_name),
     onError: () => toast.error('Failed to load profile')
   })
 
   // Show loading skeleton while auth or data is loading
   if (isLoading) {
-    return <FullPageSkeleton />
+    return <ProfilePageSkeleton />
   }
 
   // Show error fallback if there's an error
