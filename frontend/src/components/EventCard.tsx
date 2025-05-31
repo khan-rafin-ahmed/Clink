@@ -148,38 +148,10 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               {formatEventTime(event.date_time)}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {event.latitude && event.longitude ? (
-                <div className="flex items-center gap-2">
-                  <CompactStaticMapThumbnail
-                    location={{
-                      latitude: event.latitude,
-                      longitude: event.longitude,
-                      place_name: event.place_name || event.location,
-                      place_id: event.place_id || '',
-                      address: event.place_name || event.location
-                    }}
-                    className="rounded-full"
-                  />
-                  <div className="truncate">
-                    {event.place_nickname && (
-                      <div className="font-medium text-foreground">{event.place_nickname}</div>
-                    )}
-                    <span className="text-sm text-muted-foreground">
-                      {event.place_name || event.location}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <MapPin className="w-4 h-4" />
-                  <div className="truncate">
-                    {event.place_nickname && (
-                      <div className="font-medium text-foreground">{event.place_nickname}</div>
-                    )}
-                    <span className="text-sm text-muted-foreground">{event.location}</span>
-                  </div>
-                </>
-              )}
+              <MapPin className="w-4 h-4" />
+              <div className="truncate">
+                <span className="text-sm text-muted-foreground">{event.place_name || event.location}</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1 text-primary">
