@@ -141,9 +141,28 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         longitude: formData.locationData?.longitude || null,
         place_id: formData.locationData?.place_id || null,
         place_name: formData.locationData?.place_name || null,
-        date_time: formData.time === 'custom'
-          ? new Date(formData.custom_time).toISOString()
-          : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        date_time: (() => {
+          const now = new Date();
+          const tonight = new Date(now);
+          tonight.setHours(20, 0, 0, 0); // Set to 8 PM
+
+          if (formData.time === 'custom' && formData.custom_time) {
+            return new Date(formData.custom_time).toISOString();
+          } else if (formData.time === 'tonight') {
+            // If 'Later Tonight' is selected, set to 8 PM tonight if current time is before 8 PM,
+            // otherwise set to 8 PM tomorrow.
+            if (now < tonight) {
+              return tonight.toISOString();
+            } else {
+              const tomorrow = new Date(now);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              tomorrow.setHours(20, 0, 0, 0);
+              return tomorrow.toISOString();
+            }
+          } else { // 'now'
+            return now.toISOString();
+          }
+        })(),
         drink_type: formData.drink_type,
         vibe: formData.vibe,
         notes: formData.notes,

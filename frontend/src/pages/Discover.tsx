@@ -78,6 +78,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
         )
       `)
       .eq('is_public', true) // Ensure only public events are fetched
+      .gte('date_time', new Date().toISOString()) // Filter for upcoming events
       .order('date_time', { ascending: true }) // Order by date
 
     if (publicEventsError) {

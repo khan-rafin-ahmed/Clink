@@ -133,7 +133,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     { value: 'beer', label: 'Beer', emoji: '🍺' },
     { value: 'wine', label: 'Wine', emoji: '🍷' },
     { value: 'whiskey', label: 'Whiskey', emoji: '🥃' },
-    { value: 'cocktails', label: 'Cocktails', emoji: '��' },
+    { value: 'cocktails', label: 'Cocktails', emoji: '🍸' },
     { value: 'shots', label: 'Shots', emoji: '🥂' },
     { value: 'mixed', label: 'Mixed', emoji: '🍹' }
   ]
