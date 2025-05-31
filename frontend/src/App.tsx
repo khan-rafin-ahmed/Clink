@@ -43,7 +43,11 @@ function App() {
               <Route path="/events" element={<Events />} />
               <Route path="/discover" element={<Discover />} />
               <Route path="/events/:eventId" element={<EventDetails />} />
-              <Route path="/event/:eventCode" element={<EventDetail />} />
+
+              {/* Modern slug-based routing */}
+              <Route path="/event/:slug" element={<EventDetail />} />
+              <Route path="/private-event/:slug" element={<EventDetail />} />
+
               <Route path="/profile/:userId" element={<PublicProfile />} />
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />

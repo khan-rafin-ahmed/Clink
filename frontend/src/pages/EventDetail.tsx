@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { supabase } from '@/lib/supabase'
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import type { Event, RsvpStatus } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { getEventBySlug } from '@/lib/eventService'
 
 interface EventWithRsvps extends Event {
   rsvps: Array<{
@@ -48,7 +49,8 @@ interface EventWithRsvps extends Event {
 }
 
 export function EventDetail() {
-  const { eventCode } = useParams<{ eventCode: string }>()
+  const { slug } = useParams<{ slug: string }>()
+  const location = useLocation()
   const { user, loading: authLoading, error: authError } = useAuth()
   const { goBackSmart } = useSmartNavigation()
   const { handleDeleteSuccess } = useActionNavigation()
@@ -57,6 +59,9 @@ export function EventDetail() {
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
   const loadingRef = useRef(false)
+
+  // Determine if this is a private event based on the route
+  const isPrivateEvent = location.pathname.startsWith('/private-event/')
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -75,10 +80,10 @@ export function EventDetail() {
   }, [])
 
   useEffect(() => {
-    if (eventCode) {
+    if (slug) {
       loadEvent()
     }
-  }, [eventCode])
+  }, [slug])
 
   useEffect(() => {
     // Update join status when user changes
@@ -145,34 +150,74 @@ export function EventDetail() {
 
   const loadEvent = useCallback(async () => {
     // Prevent multiple simultaneous loads
-    if (loadingRef.current || !mountedRef.current) return
+    if (loadingRef.current || !mountedRef.current || !slug) return
 
     try {
       loadingRef.current = true
       setLoading(true)
       setError(null)
 
-      // First try to find event by event_code, then fall back to id for backward compatibility
+      // Use modern slug-based approach
       let eventData = null
 
-      // Try finding by event_code first (basic event info only)
-      const { data: eventByCode, error: codeError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('event_code', eventCode)
-        .maybeSingle()
+      try {
+        eventData = await getEventBySlug(slug, isPrivateEvent)
+      } catch (slugError: any) {
+        // If slug-based approach fails, try legacy event_code approach for backward compatibility
+        if (slugError.message === 'Event not found') {
+          const { data: eventByCode, error: codeError } = await supabase
+            .from('events')
+            .select(`
+              *,
+              rsvps (
+                id,
+                status,
+                user_id,
+                users (
+                  email
+                )
+              ),
+              event_members (
+                id,
+                status,
+                user_id,
+                invited_by
+              )
+            `)
+            .eq('event_code', slug)
+            .maybeSingle()
 
-      if (eventByCode && !codeError) {
-        eventData = eventByCode
-      } else {
-        // Fall back to finding by id for backward compatibility
-        const { data: eventById } = await supabase
-          .from('events')
-          .select('*')
-          .eq('id', eventCode)
-          .maybeSingle()
+          if (eventByCode && !codeError) {
+            eventData = eventByCode
+          } else {
+            // Final fallback to ID-based lookup
+            const { data: eventById } = await supabase
+              .from('events')
+              .select(`
+                *,
+                rsvps (
+                  id,
+                  status,
+                  user_id,
+                  users (
+                    email
+                  )
+                ),
+                event_members (
+                  id,
+                  status,
+                  user_id,
+                  invited_by
+                )
+              `)
+              .eq('id', slug)
+              .maybeSingle()
 
-        eventData = eventById
+            eventData = eventById
+          }
+        } else {
+          throw slugError
+        }
       }
 
       // If we found the event, load RSVPs and event members separately
@@ -254,7 +299,7 @@ export function EventDetail() {
       }
       loadingRef.current = false
     }
-  }, [eventCode, mountedRef])
+  }, [slug, isPrivateEvent, mountedRef])
 
   const loadHostInfo = async (hostId: string) => {
     if (!mountedRef.current) return
@@ -869,7 +914,7 @@ export function EventDetail() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         title={event?.title || 'Event'}
-        url={`${window.location.origin}/event/${eventCode}`}
+        url={`${window.location.origin}${isPrivateEvent ? '/private-event' : '/event'}/${slug}`}
       />
 
       {/* Edit Modal */}

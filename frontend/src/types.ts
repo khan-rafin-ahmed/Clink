@@ -50,6 +50,8 @@ export interface Event {
   drink_type?: string
   vibe?: string
   is_public: boolean
+  public_slug?: string | null
+  private_slug?: string | null
   created_by: string
   created_at: string
   updated_at: string

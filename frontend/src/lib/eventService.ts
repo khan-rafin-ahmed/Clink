@@ -3,6 +3,68 @@ import type { Event, RsvpStatus, UserProfile } from '@/types'
 
 
 
+/**
+ * Get event by slug (modern approach with proper public/private handling)
+ */
+export async function getEventBySlug(slug: string, isPrivate: boolean = false) {
+  if (!slug || typeof slug !== 'string' || slug.trim() === '') {
+    throw new Error('Invalid event slug provided')
+  }
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const query = supabase
+      .from('events')
+      .select(`
+        *,
+        rsvps (
+          id,
+          status,
+          user_id,
+          users (
+            email
+          )
+        ),
+        event_members (
+          id,
+          status,
+          user_id,
+          invited_by
+        )
+      `)
+
+    // Use appropriate slug column based on event type
+    const event = isPrivate
+      ? await query.eq('private_slug', slug).single()
+      : await query.eq('public_slug', slug).single()
+
+    if (event.error) {
+      if (event.error.code === 'PGRST116') {
+        throw new Error('Event not found')
+      }
+      throw event.error
+    }
+
+    // For private events, verify user has access
+    if (isPrivate && user) {
+      const hasAccess = await checkEventAccess(event.data.id, user.id)
+      if (!hasAccess) {
+        throw new Error('You do not have permission to view this private event')
+      }
+    } else if (isPrivate && !user) {
+      throw new Error('Please sign in to view this private event')
+    }
+
+    return event.data
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Legacy function for backward compatibility
+ */
 export async function getEventDetails(eventId: string) {
   // Validate input parameters
   if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
@@ -42,6 +104,53 @@ export async function getEventDetails(eventId: string) {
     return event
   } catch (error) {
     throw error
+  }
+}
+
+/**
+ * Check if user has access to an event
+ */
+export async function checkEventAccess(eventId: string, userId: string): Promise<boolean> {
+  try {
+    // Get event details
+    const { data: event } = await supabase
+      .from('events')
+      .select('created_by, is_public')
+      .eq('id', eventId)
+      .single()
+
+    if (!event) return false
+
+    // Public events are accessible to everyone
+    if (event.is_public) return true
+
+    // User is the host
+    if (event.created_by === userId) return true
+
+    // Check if user RSVP'd
+    const { data: rsvp } = await supabase
+      .from('rsvps')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'going')
+      .maybeSingle()
+
+    if (rsvp) return true
+
+    // Check if user was invited (private events)
+    const { data: member } = await supabase
+      .from('event_members')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    return !!member
+  } catch (error) {
+    console.error('Error checking event access:', error)
+    return false
   }
 }
 
@@ -133,7 +242,20 @@ export async function createEventWithShareableLink(eventData: {
     throw new Error('Failed to generate unique event code')
   }
 
-  // Create the event with the event_code
+  // Generate appropriate slug based on event visibility
+  const { data: slugData, error: slugError } = await supabase.rpc('generate_event_slug', {
+    event_title: eventData.title,
+    is_public_event: eventData.is_public
+  })
+
+  if (slugError) {
+    console.error('Error generating slug:', slugError)
+    throw new Error('Failed to generate event slug')
+  }
+
+  const slug = slugData
+
+  // Create the event with the event_code and slug
   const { data: event, error } = await supabase
     .from('events')
     .insert({
@@ -148,6 +270,8 @@ export async function createEventWithShareableLink(eventData: {
       vibe: eventData.vibe,
       notes: eventData.notes,
       is_public: eventData.is_public,
+      public_slug: eventData.is_public ? slug : null,
+      private_slug: eventData.is_public ? null : slug,
       created_by: user.id,
       event_code: eventCode,
     })

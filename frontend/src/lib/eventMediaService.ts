@@ -151,12 +151,10 @@ export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
   }
 
   try {
+    // Get photos first
     const { data: photos, error } = await supabase
       .from('event_photos')
-      .select(`
-        *,
-        uploader:uploaded_by(display_name, avatar_url)
-      `)
+      .select('*')
       .eq('event_id', eventId)
       .order('created_at', { ascending: false })
 
@@ -164,7 +162,22 @@ export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
       throw new Error(`Failed to fetch photos: ${error.message}`)
     }
 
-    return photos || []
+    if (!photos || photos.length === 0) {
+      return []
+    }
+
+    // Get uploader profiles for all photos
+    const uploaderIds = [...new Set(photos.map(p => p.uploaded_by))]
+    const { data: uploaderProfiles } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', uploaderIds)
+
+    // Combine data
+    return photos.map(photo => ({
+      ...photo,
+      uploader: uploaderProfiles?.find(u => u.user_id === photo.uploaded_by)
+    }))
   } catch (error) {
     console.error('Error fetching event photos:', error)
     throw error
