@@ -107,7 +107,7 @@ export function EventDetail() {
     }
   }, [isAuthReady, user, isPrivateEvent])
 
-  // Helper to compute whether current user is “joined”
+  // Helper to compute whether current user is "joined"
   const computeIsJoined = (
     evt: EventWithRsvps | null,
     usr: any | null
@@ -244,7 +244,7 @@ export function EventDetail() {
     loadEvent()
   }, [sessionReady, slug, loadEvent])
 
-  // Load host’s profile info
+  // Load host's profile info
   const loadHostInfo = async (hostId: string) => {
     if (!mountedRef.current) return
 
@@ -308,7 +308,7 @@ export function EventDetail() {
     )
   }
 
-  // If auth isn’t ready or we’re loading the event, show skeleton
+  // If auth isn't ready or we're loading the event, show skeleton
   if (!isAuthReady || loading) {
     return <FullPageSkeleton />
   }
@@ -338,14 +338,14 @@ export function EventDetail() {
     )
   }
 
-  // If event is still null (shouldn’t happen if no error), show placeholder
+  // If event is still null (shouldn't happen if no error), show placeholder
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Event not found</h1>
           <p className="text-muted-foreground">
-            This event doesn’t exist or has been removed.
+            This event doesn't exist or has been removed.
           </p>
           <Button onClick={goBackSmart}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -405,7 +405,7 @@ export function EventDetail() {
       event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted'))
 
   // Emoji helpers
-  const getDrinkEmoji = (drinkType?: string) => {
+  const getDrinkEmoji = (drinkType?: string | null) => {
     const drinkEmojis: Record<string, string> = {
       beer: '🍺',
       wine: '🍷',
