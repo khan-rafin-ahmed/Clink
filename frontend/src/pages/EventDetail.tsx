@@ -80,12 +80,12 @@ export function EventDetail() {
     }
   }, [])
 
-  // Only load event when auth is ready
+  // Load event when auth is ready OR for public events immediately
   useEffect(() => {
-    if (slug && isAuthReady) {
+    if (slug && (isAuthReady || !isPrivateEvent)) {
       loadEvent()
     }
-  }, [slug, isAuthReady])
+  }, [slug, isAuthReady, isPrivateEvent])
 
   useEffect(() => {
     // Update join status when user changes
@@ -163,7 +163,8 @@ export function EventDetail() {
       let eventData = null
 
       try {
-        eventData = await getEventBySlug(slug, isPrivateEvent)
+        // Pass current user to avoid auth race conditions
+        eventData = await getEventBySlug(slug, isPrivateEvent, user)
       } catch (slugError: any) {
         // If slug-based approach fails, try legacy event_code approach for backward compatibility
         if (slugError.message === 'Event not found') {
@@ -244,7 +245,18 @@ export function EventDetail() {
 
       // Check if event is public or user has access
       if (!eventData.is_public && !user) {
-        // Store current URL for redirect after login
+        // For private events, wait a bit longer for auth to initialize
+        if (!isAuthReady) {
+          // Auth is still loading, wait and retry
+          setTimeout(() => {
+            if (mountedRef.current) {
+              loadEvent()
+            }
+          }, 500)
+          return
+        }
+
+        // Auth is ready but no user - redirect to login
         sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
         toast.error('Please sign in to view this private event')
         return

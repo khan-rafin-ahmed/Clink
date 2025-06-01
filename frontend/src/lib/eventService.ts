@@ -5,14 +5,20 @@ import type { Event, RsvpStatus, UserProfile } from '@/types'
 
 /**
  * Get event by slug (modern approach with proper public/private handling)
+ * Uses session-based auth to avoid race conditions
  */
-export async function getEventBySlug(slug: string, isPrivate: boolean = false) {
+export async function getEventBySlug(slug: string, isPrivate: boolean = false, currentUser?: any) {
   if (!slug || typeof slug !== 'string' || slug.trim() === '') {
     throw new Error('Invalid event slug provided')
   }
 
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    // Use provided user or get from session (not getUser which makes API call)
+    let user = currentUser
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      user = session?.user || null
+    }
 
     // Get event without problematic joins first
     const { data: eventData, error: eventError } = isPrivate
@@ -432,7 +438,9 @@ export async function getPublicEvents(): Promise<Event[]> {
 }
 
 export async function joinEvent(eventId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use session instead of getUser to avoid race conditions
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -467,7 +475,9 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 
 export async function getUserAccessibleEvents() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    // Use session instead of getUser to avoid race conditions
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
 
     // Validate user authentication
     if (!user || !user.id) {
