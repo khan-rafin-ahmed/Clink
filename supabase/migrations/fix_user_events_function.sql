@@ -40,7 +40,7 @@ BEGIN
            e.date_time, e.drink_type, e.vibe, e.notes, e.is_public, e.created_by,
            e.created_at, e.updated_at, e.event_code, e.public_slug, e.private_slug
     FROM events e
-    WHERE e.created_by = user_id
+    WHERE e.created_by = get_user_accessible_events.user_id
       AND (
         (include_past = false AND e.date_time >= NOW()) OR
         (include_past = true AND e.date_time < NOW())
@@ -55,9 +55,9 @@ BEGIN
     FROM events e
     INNER JOIN rsvps r ON e.id = r.event_id
     WHERE e.is_public = true
-      AND r.user_id = user_id
+      AND r.user_id = get_user_accessible_events.user_id
       AND r.status = 'going'
-      AND e.created_by != user_id
+      AND e.created_by != get_user_accessible_events.user_id
       AND (
         (include_past = false AND e.date_time >= NOW()) OR
         (include_past = true AND e.date_time < NOW())
@@ -72,9 +72,9 @@ BEGIN
     FROM events e
     INNER JOIN event_members em ON e.id = em.event_id
     WHERE e.is_public = false
-      AND em.user_id = user_id
+      AND em.user_id = get_user_accessible_events.user_id
       AND em.status = 'accepted'
-      AND e.created_by != user_id
+      AND e.created_by != get_user_accessible_events.user_id
       AND (
         (include_past = false AND e.date_time >= NOW()) OR
         (include_past = true AND e.date_time < NOW())
@@ -94,7 +94,7 @@ BEGIN
     LEFT JOIN (
       SELECT event_id, status
       FROM rsvps
-      WHERE user_id = user_id
+      WHERE rsvps.user_id = get_user_accessible_events.user_id
     ) user_rsvps ON ae.id = user_rsvps.event_id
   )
   SELECT es.id, es.title, es.location, es.latitude, es.longitude, es.place_id, es.place_name,

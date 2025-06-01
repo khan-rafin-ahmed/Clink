@@ -61,13 +61,11 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
   try {
     console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
 
-    // Get public events without problematic joins
+    // Get public events using RPC to bypass RLS issues
     const { data: publicEvents, error: publicEventsError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('is_public', true) // Ensure only public events are fetched
-      .gte('date_time', new Date().toISOString()) // Filter for upcoming events
-      .order('date_time', { ascending: true }) // Order by date
+      .rpc('get_public_events_for_discover', {
+        limit_count: 50
+      })
 
     if (publicEventsError) {
       console.error('❌ Error loading public events:', publicEventsError)
@@ -82,7 +80,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     }
 
     // Get event IDs for batch queries
-    const eventIds = publicEvents.map(event => event.id)
+    const eventIds = publicEvents.map((event: any) => event.id)
 
     // Batch fetch RSVPs for all events
     const { data: allRsvps, error: rsvpError } = await supabase
@@ -105,7 +103,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     }
 
     // Get unique creator IDs to batch fetch profiles
-    const creatorIds = [...new Set(publicEvents.map(event => event.created_by))]
+    const creatorIds = [...new Set(publicEvents.map((event: any) => event.created_by))]
     console.log('👥 Loading profiles for creators:', creatorIds.length)
 
     // Batch fetch all creator profiles
@@ -123,7 +121,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     // Batch fetch user's join statuses if logged in
     let userJoinStatuses = new Map()
     if (currentUser) {
-      const eventIds = publicEvents.map(event => event.id)
+      const eventIds = publicEvents.map((event: any) => event.id)
       const { data: rsvps, error: rsvpError } = await supabase
         .from('rsvps')
         .select('event_id, status')
@@ -143,7 +141,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     }
 
     // Map events with their creators and join status, and calculate attendee count
-    const eventsWithCreators: EventWithCreator[] = publicEvents.map(event => {
+    const eventsWithCreators: EventWithCreator[] = publicEvents.map((event: any) => {
       const profile = profiles?.find(p => p.user_id === event.created_by)
 
       // Add RSVPs and event members to the event object
