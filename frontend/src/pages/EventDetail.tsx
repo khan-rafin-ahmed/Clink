@@ -30,28 +30,40 @@ import {
   Trash2,
   Crown
 } from 'lucide-react'
-import type { Event, RsvpStatus, User } from '@/types'
+import type { Event, RsvpStatus } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
-interface EventWithRsvps extends Event {
+interface EventWithRsvps {
+  id: string
+  created_by: string
+  title: string
+  date_time: string
+  is_public: boolean
+  drink_type?: string | null
+  vibe?: string | null
+  notes?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  place_nickname?: string | null
+  place_name?: string | null
+  location?: string | null
+  place_id?: string | null
   rsvps: Array<{
     id: string
     status: RsvpStatus
     user_id: string
-    users: { email: string } | null
   }>
   event_members?: Array<{
     id: string
-    status: RsvpStatus
+    status: string
     user_id: string
   }>
   host?: {
     id: string
     display_name: string | null
     avatar_url: string | null
-    email?: string
   }
   end_time?: string
 }
@@ -111,7 +123,7 @@ export function EventDetail() {
   // Helper to compute whether current user is “joined”
   const computeIsJoined = (
     evt: EventWithRsvps | null,
-    usr: User | null
+    usr: any | null
   ): boolean => {
     if (!evt || !usr) return false
     const rsvp = evt.rsvps.find(r => r.user_id === usr.id)
@@ -350,7 +362,7 @@ export function EventDetail() {
   }
 
   // Prepare data for rendering
-  const { date } = new Date(event.date_time).toLocaleDateString('en-US', {
+  const date = new Date(event.date_time).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -796,12 +808,12 @@ export function EventDetail() {
           {/* Past Event Gallery & Comments - Only for attendees */}
           {isPastEvent && userAttended && (
             <>
-              <ToastRecap
-                event={event}
-                attendeeCount={goingCount}
-                photoCount={0} // updated by EventGallery
-                commentCount={0} // updated by EventComments
-              />
+          <ToastRecap
+            event={event as any}
+            attendeeCount={goingCount}
+            photoCount={0} // updated by EventGallery
+            commentCount={0} // updated by EventComments
+          />
 
               <EventGallery
                 eventId={event.id}
@@ -832,7 +844,7 @@ export function EventDetail() {
       {/* Edit Modal */}
       {event && (
         <EditEventModal
-          event={event}
+          event={event as any}
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onEventUpdated={() => loadEvent()}
@@ -842,7 +854,7 @@ export function EventDetail() {
       {/* Delete Dialog */}
       {event && (
         <DeleteEventDialog
-          event={event}
+          event={event as any}
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
           onEventDeleted={() => {
