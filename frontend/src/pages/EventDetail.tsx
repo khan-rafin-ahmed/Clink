@@ -30,7 +30,7 @@ import {
   Trash2,
   Crown
 } from 'lucide-react'
-import type { Event, RsvpStatus } from '@/types'
+import type { RsvpStatus } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
@@ -107,19 +107,6 @@ export function EventDetail() {
     }
   }, [isAuthReady, user, isPrivateEvent])
 
-  // 2️⃣ Once sessionReady is true, fetch the event
-  useEffect(() => {
-    if (!sessionReady || !slug) return
-    loadEvent()
-  }, [sessionReady, slug, loadEvent])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
-
   // Helper to compute whether current user is “joined”
   const computeIsJoined = (
     evt: EventWithRsvps | null,
@@ -131,9 +118,8 @@ export function EventDetail() {
     return rsvp?.status === 'going' || member?.status === 'accepted'
   }
 
-  // 3️⃣ Main loader for event + RSVPs + members + host + participants
+  // 2️⃣ Main loader for event + RSVPs + members + host + participants
   const loadEvent = useCallback(async () => {
-    // Prevent concurrent loads or missing slug
     if (loadingRef.current || !mountedRef.current || !slug) return
 
     try {
@@ -141,35 +127,33 @@ export function EventDetail() {
       setLoading(true)
       setError(null)
 
-      // Attempt slug-based fetch with permission/error handling
       let eventData: EventWithRsvps | null = null
       try {
         eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
       } catch (slugErr: any) {
-        // 3.a 🔐 If user is not authorized to view private event
+        // If user is not authorized to view private event
         if (slugErr.code === 'PGRST116' && !user) {
           sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
           toast.error('Please sign in to view this private event')
           return
         }
-        // 3.b 🚫 If event not found at all
+        // If event not found at all
         if (slugErr.message === 'Event not found') {
           toast.error('Event not found')
           goBackSmart()
           return
         }
-        // 3.c ❗ Unexpected errors—rethrow
+        // Unexpected errors—rethrow
         throw slugErr
       }
 
-      // If slug-based fetch succeeded or fallback logic inside getEventBySlug resolved, proceed
       if (!eventData) {
         toast.error('Event not found')
         goBackSmart()
         return
       }
 
-      // 3.d Load RSVPs
+      // Load RSVPs
       try {
         const { data: rsvpData, error: rsvpError } = await supabase
           .from('rsvps')
@@ -181,7 +165,7 @@ export function EventDetail() {
         eventData.rsvps = []
       }
 
-      // 3.e Load event members (crew)
+      // Load event members (crew)
       try {
         const { data: memberData, error: memberError } = await supabase
           .from('event_members')
@@ -194,21 +178,19 @@ export function EventDetail() {
         eventData.event_members = []
       }
 
-      // 3.f At this point, we have eventData with its rsvps + event_members
       if (!mountedRef.current) return
       setEvent(eventData)
 
-      // 3.g Update “joined” status
       if (user) {
         setIsJoined(computeIsJoined(eventData, user))
       } else {
         setIsJoined(false)
       }
 
-      // 3.h Load host information
+      // Load host information
       await loadHostInfo(eventData.created_by)
 
-      // 3.i Load participant profiles (RSVP + members)
+      // Load participant profiles
       const rsvpUserIds = eventData.rsvps.map(r => r.user_id)
       const memberUserIds = eventData.event_members?.map(m => m.user_id) || []
       const allUserIds = Array.from(new Set([...rsvpUserIds, ...memberUserIds]))
@@ -233,7 +215,7 @@ export function EventDetail() {
             setParticipantProfiles(profileMap)
           }
         } catch {
-          // Silent catch—participantProfiles stays as-is if error
+          // silent
         }
       }
     } catch (err) {
@@ -248,6 +230,19 @@ export function EventDetail() {
       loadingRef.current = false
     }
   }, [slug, isPrivateEvent, user, isAuthReady, goBackSmart, mountedRef])
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  // 3️⃣ Once sessionReady is true, fetch the event
+  useEffect(() => {
+    if (!sessionReady || !slug) return
+    loadEvent()
+  }, [sessionReady, slug, loadEvent])
 
   // Load host’s profile info
   const loadHostInfo = async (hostId: string) => {
@@ -288,7 +283,7 @@ export function EventDetail() {
     }
   }
 
-  // Update join status if user changes or event ID changes
+  // Update join status if user or event changes
   useEffect(() => {
     setIsJoined(computeIsJoined(event, user || null))
   }, [user, event])
@@ -313,12 +308,12 @@ export function EventDetail() {
     )
   }
 
-  // If auth isn’t ready or we’re loading event, show skeleton
+  // If auth isn’t ready or we’re loading the event, show skeleton
   if (!isAuthReady || loading) {
     return <FullPageSkeleton />
   }
 
-  // If we set an error in state (e.g. “Please sign in” or “Event not found”), show it
+  // If we set an error in state, show it
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -369,7 +364,7 @@ export function EventDetail() {
     day: 'numeric'
   })
 
-  const goingCount = calculateAttendeeCount(event)
+  const goingCount = calculateAttendeeCount(event as any)
   const maybeCount = event.rsvps.filter(r => r.status === 'maybe').length
   const isHost = user && event.created_by === user.id
 
@@ -409,7 +404,7 @@ export function EventDetail() {
       event.rsvps.some(r => r.user_id === user.id && r.status === 'going') ||
       event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted'))
 
-  // Emoji helpers (unchanged)
+  // Emoji helpers
   const getDrinkEmoji = (drinkType?: string) => {
     const drinkEmojis: Record<string, string> = {
       beer: '🍺',
@@ -472,7 +467,6 @@ export function EventDetail() {
     return `${startTime} - All Night`
   }
 
-  // JSX rendering
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -562,11 +556,11 @@ export function EventDetail() {
                   <MapPin className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium text-foreground">
-                      {event.place_nickname || event.place_name || event.location}
+                      {event.place_nickname ?? event.place_name ?? event.location ?? ''}
                     </p>
                     {(event.place_nickname && (event.place_name || event.location)) && (
                       <p className="text-sm text-muted-foreground">
-                        {event.place_name || event.location}
+                        {event.place_name ?? event.location ?? ''}
                       </p>
                     )}
                   </div>
@@ -584,15 +578,15 @@ export function EventDetail() {
                 <UserAvatar
                   userId={event.created_by}
                   displayName={
-                    event.host?.display_name || `Host ${event.created_by.slice(-4) || ''}`
+                    event.host?.display_name ?? `Host ${event.created_by.slice(-4) || ''}`
                   }
-                  avatarUrl={event.host?.avatar_url}
+                  avatarUrl={event.host?.avatar_url ?? undefined}
                   size="lg"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name || `Host ${event.created_by.slice(-4) || ''}`}
+                      {event.host?.display_name ?? `Host ${event.created_by.slice(-4) || ''}`}
                     </h3>
                     {isHost && (
                       <Badge
@@ -654,7 +648,7 @@ export function EventDetail() {
             </div>
 
             {/* Location Map Section */}
-            {event.latitude && event.longitude && (
+            {event.latitude != null && event.longitude != null && (
               <div className="p-6 border-b border-border/50">
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
@@ -664,9 +658,9 @@ export function EventDetail() {
                   location={{
                     latitude: event.latitude,
                     longitude: event.longitude,
-                    place_name: event.place_name || event.location,
-                    place_id: event.place_id || '',
-                    address: event.place_name || event.location
+                    place_name: event.place_nickname ?? event.place_name ?? event.location ?? '',
+                    place_id: event.place_id ?? '',
+                    address: event.place_name ?? event.location ?? ''
                   }}
                   height={300}
                   className="rounded-lg"
@@ -719,19 +713,18 @@ export function EventDetail() {
                       const profile = participantProfiles[rsvp.user_id] || {}
                       const displayName =
                         profile.display_name || `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
-
                       return (
                         <div key={rsvp.user_id || index} className="flex-shrink-0">
                           <UserHoverCard
                             userId={rsvp.user_id}
                             displayName={displayName}
-                            avatarUrl={profile.avatar_url}
+                            avatarUrl={profile.avatar_url ?? undefined}
                           >
                             <div className="flex flex-col items-center gap-2 p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px]">
                               <UserAvatar
                                 userId={rsvp.user_id}
                                 displayName={displayName}
-                                avatarUrl={profile.avatar_url}
+                                avatarUrl={profile.avatar_url ?? undefined}
                                 size="md"
                               />
                               <p className="text-xs font-medium text-center text-foreground truncate w-full">
@@ -808,12 +801,12 @@ export function EventDetail() {
           {/* Past Event Gallery & Comments - Only for attendees */}
           {isPastEvent && userAttended && (
             <>
-          <ToastRecap
-            event={event as any}
-            attendeeCount={goingCount}
-            photoCount={0} // updated by EventGallery
-            commentCount={0} // updated by EventComments
-          />
+              <ToastRecap
+                event={event as any}
+                attendeeCount={goingCount}
+                photoCount={0}
+                commentCount={0}
+              />
 
               <EventGallery
                 eventId={event.id}
