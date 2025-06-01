@@ -65,7 +65,7 @@ export function useRobustAuth(): RobustAuthState {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mountedRef.current) return
 
       // Handle auth state changes
