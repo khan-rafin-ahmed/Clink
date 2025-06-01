@@ -658,9 +658,9 @@ export function EventDetail() {
                   location={{
                     latitude: event.latitude,
                     longitude: event.longitude,
-                    place_name: (event.place_nickname ?? event.place_name ?? event.location) ?? '',
+                    place_name: String(event.place_nickname ?? event.place_name ?? event.location ?? ''),
                     place_id: event.place_id ?? '',
-                    address: (event.place_name ?? event.location ?? '') ?? ''
+                    address: String(event.place_name ?? event.location ?? '')
                   }}
                   height={300}
                   className="rounded-lg"
