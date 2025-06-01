@@ -57,7 +57,7 @@ function App() {
           <footer className="bg-card border-t border-border py-6 mt-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <p className="text-sm text-muted-foreground">
-                © 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘
+                © 2025 Thirstee. Built by Roughin while drinking beers and raising hell 🍺 
               </p>
             </div>
           </footer>
