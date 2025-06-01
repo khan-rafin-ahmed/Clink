@@ -1,3 +1,5 @@
+// frontend/src/pages/EventDetail.tsx
+
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useAuthState } from '@/hooks/useAuthState'
@@ -28,7 +30,7 @@ import {
   Trash2,
   Crown
 } from 'lucide-react'
-import type { Event, RsvpStatus } from '@/types'
+import type { Event, RsvpStatus, User } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
@@ -39,6 +41,11 @@ interface EventWithRsvps extends Event {
     status: RsvpStatus
     user_id: string
     users: { email: string } | null
+  }>
+  event_members?: Array<{
+    id: string
+    status: RsvpStatus
+    user_id: string
   }>
   host?: {
     id: string
@@ -55,9 +62,17 @@ export function EventDetail() {
   const { user, isReady: isAuthReady, error: authError } = useAuthState()
   const { goBackSmart } = useSmartNavigation()
   const { handleDeleteSuccess } = useActionNavigation()
+
+  // Local component state
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isJoined, setIsJoined] = useState(false)
+  const [participantProfiles, setParticipantProfiles] = useState<
+    Record<string, { display_name: string | null; avatar_url: string | null }>
+  >({})
+  const [sessionReady, setSessionReady] = useState(false)
+
   const mountedRef = useRef(true)
   const loadingRef = useRef(false)
 
@@ -67,91 +82,46 @@ export function EventDetail() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isJoined, setIsJoined] = useState(false)
 
-  // Load participant profiles state - must be declared before any conditional returns
-  const [participantProfiles, setParticipantProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({})
+  // 1️⃣ Wait for authentication to finish (useAuthState)
+  useEffect(() => {
+    if (!isAuthReady) return
+
+    if (user || !isPrivateEvent) {
+      setSessionReady(true)
+    } else {
+      setError('Please sign in to view this private event')
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+    }
+  }, [isAuthReady, user, isPrivateEvent])
+
+  // 2️⃣ Once sessionReady is true, fetch the event
+  useEffect(() => {
+    if (!sessionReady || !slug) return
+    loadEvent()
+  }, [sessionReady, slug, loadEvent])
 
   // Cleanup on unmount
   useEffect(() => {
-    mountedRef.current = true
     return () => {
       mountedRef.current = false
     }
   }, [])
 
-  // Load event when auth is ready OR for public events immediately
-  useEffect(() => {
-    if (slug && (isAuthReady || !isPrivateEvent)) {
-      loadEvent()
-    }
-  }, [slug, isAuthReady, isPrivateEvent])
+  // Helper to compute whether current user is “joined”
+  const computeIsJoined = (
+    evt: EventWithRsvps | null,
+    usr: User | null
+  ): boolean => {
+    if (!evt || !usr) return false
+    const rsvp = evt.rsvps.find(r => r.user_id === usr.id)
+    const member = evt.event_members?.find(m => m.user_id === usr.id)
+    return rsvp?.status === 'going' || member?.status === 'accepted'
+  }
 
-  useEffect(() => {
-    // Update join status when user changes
-    if (!mountedRef.current) return
-
-    if (user && event) {
-      const userRsvpData = event.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-      const userEventMember = event.event_members?.find((member: any) => member.user_id === user.id)
-      setIsJoined(userRsvpData?.status === 'going' || userEventMember?.status === 'accepted')
-    } else {
-      setIsJoined(false)
-    }
-  }, [user, event?.id]) // Only depend on user and event.id, not the entire event object
-
-  // Load participant profiles - MOVED HERE to ensure consistent hook order
-  useEffect(() => {
-    const loadParticipantProfiles = async () => {
-      if (!mountedRef.current || !event) return
-
-      // Collect user IDs from both RSVPs and event members
-      const rsvpUserIds = event.rsvps?.map(rsvp => rsvp.user_id).filter(Boolean) || []
-      const memberUserIds = event.event_members?.map(member => member.user_id).filter(Boolean) || []
-      const allUserIds = [...new Set([...rsvpUserIds, ...memberUserIds])]
-
-      if (allUserIds.length === 0) return
-
-      try {
-        const { data: profiles, error } = await supabase
-          .from('user_profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', allUserIds)
-
-        if (!mountedRef.current) return // Check again after async operation
-
-        if (!error && profiles) {
-          const profileMap = profiles.reduce((acc, profile) => {
-            acc[profile.user_id] = {
-              display_name: profile.display_name,
-              avatar_url: profile.avatar_url
-            }
-            return acc
-          }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
-
-          setParticipantProfiles(profileMap)
-        }
-      } catch (error) {
-        if (mountedRef.current) {
-          console.warn('Error loading participant profiles:', error)
-        }
-      }
-    }
-
-    loadParticipantProfiles()
-  }, [event?.rsvps, event?.event_members])
-
-  const handleEventUpdated = useCallback(() => {
-    loadEvent()
-  }, [])
-
-  const handleEventDeleted = useCallback(() => {
-    toast.success('Session deleted successfully!')
-    handleDeleteSuccess('event')
-  }, [handleDeleteSuccess])
-
+  // 3️⃣ Main loader for event + RSVPs + members + host + participants
   const loadEvent = useCallback(async () => {
-    // Prevent multiple simultaneous loads
+    // Prevent concurrent loads or missing slug
     if (loadingRef.current || !mountedRef.current || !slug) return
 
     try {
@@ -159,124 +129,103 @@ export function EventDetail() {
       setLoading(true)
       setError(null)
 
-      // Use modern slug-based approach
-      let eventData = null
-
+      // Attempt slug-based fetch with permission/error handling
+      let eventData: EventWithRsvps | null = null
       try {
-        // Pass current user to avoid auth race conditions
-        eventData = await getEventBySlug(slug, isPrivateEvent, user)
-      } catch (slugError: any) {
-        // If slug-based approach fails, try legacy event_code approach for backward compatibility
-        if (slugError.message === 'Event not found') {
-          // Try event_code lookup without problematic joins
-          const { data: eventByCode, error: codeError } = await supabase
-            .from('events')
-            .select('*')
-            .eq('event_code', slug)
-            .maybeSingle()
-
-          if (eventByCode && !codeError) {
-            eventData = eventByCode
-          } else {
-            // Final fallback to ID-based lookup
-            const { data: eventById, error: idError } = await supabase
-              .from('events')
-              .select('*')
-              .eq('id', slug)
-              .maybeSingle()
-
-            if (eventById && !idError) {
-              eventData = eventById
-            } else {
-              throw new Error('Event not found')
-            }
-          }
-        } else {
-          throw slugError
+        eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
+      } catch (slugErr: any) {
+        // 3.a 🔐 If user is not authorized to view private event
+        if (slugErr.code === 'PGRST116' && !user) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+          toast.error('Please sign in to view this private event')
+          return
         }
+        // 3.b 🚫 If event not found at all
+        if (slugErr.message === 'Event not found') {
+          toast.error('Event not found')
+          goBackSmart()
+          return
+        }
+        // 3.c ❗ Unexpected errors—rethrow
+        throw slugErr
       }
 
-      // If we found the event, load RSVPs and event members separately
-      if (eventData && !error) {
-        try {
-          // Load RSVPs
-          const { data: rsvpData, error: rsvpError } = await supabase
-            .from('rsvps')
-            .select('id, status, user_id')
-            .eq('event_id', eventData.id)
-
-          if (!rsvpError) {
-            eventData.rsvps = rsvpData || []
-          } else {
-            eventData.rsvps = []
-          }
-
-          // Load event members (crew members who were automatically added)
-          const { data: memberData, error: memberError } = await supabase
-            .from('event_members')
-            .select('id, status, user_id')
-            .eq('event_id', eventData.id)
-            .eq('status', 'accepted')
-
-          if (!memberError) {
-            eventData.event_members = memberData || []
-          } else {
-            eventData.event_members = []
-          }
-        } catch (err) {
-          eventData.rsvps = []
-          eventData.event_members = []
-        }
-      }
-
+      // If slug-based fetch succeeded or fallback logic inside getEventBySlug resolved, proceed
       if (!eventData) {
-        if (error) {
-          // If it's a permission error and user is not logged in, suggest login
-          if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'PGRST116' && !user) {
-            sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
-            toast.error('Please sign in to view this event')
-            return
-          }
-        }
         toast.error('Event not found')
         goBackSmart()
         return
       }
 
-      // Check if event is public or user has access
-      if (!eventData.is_public && !user) {
-        // For private events, wait a bit longer for auth to initialize
-        if (!isAuthReady) {
-          // Auth is still loading, wait and retry
-          setTimeout(() => {
-            if (mountedRef.current) {
-              loadEvent()
-            }
-          }, 500)
-          return
-        }
+      // 3.d Load RSVPs
+      try {
+        const { data: rsvpData, error: rsvpError } = await supabase
+          .from('rsvps')
+          .select('id, status, user_id')
+          .eq('event_id', eventData.id)
 
-        // Auth is ready but no user - redirect to login
-        sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
-        toast.error('Please sign in to view this private event')
-        return
+        eventData.rsvps = rsvpError ? [] : rsvpData || []
+      } catch {
+        eventData.rsvps = []
       }
 
-      if (!mountedRef.current) return // Check before setting state
+      // 3.e Load event members (crew)
+      try {
+        const { data: memberData, error: memberError } = await supabase
+          .from('event_members')
+          .select('id, status, user_id')
+          .eq('event_id', eventData.id)
+          .eq('status', 'accepted')
 
+        eventData.event_members = memberError ? [] : memberData || []
+      } catch {
+        eventData.event_members = []
+      }
+
+      // 3.f At this point, we have eventData with its rsvps + event_members
+      if (!mountedRef.current) return
       setEvent(eventData)
 
-      // Check user's RSVP status (both RSVP and event member)
+      // 3.g Update “joined” status
       if (user) {
-        const userRsvpData = eventData.rsvps?.find((rsvp: any) => rsvp.user_id === user.id)
-        const userEventMember = eventData.event_members?.find((member: any) => member.user_id === user.id)
-        setIsJoined(userRsvpData?.status === 'going' || userEventMember?.status === 'accepted')
+        setIsJoined(computeIsJoined(eventData, user))
+      } else {
+        setIsJoined(false)
       }
 
-      // Load host information
+      // 3.h Load host information
       await loadHostInfo(eventData.created_by)
-    } catch (error) {
-      console.error('Error loading event:', error)
+
+      // 3.i Load participant profiles (RSVP + members)
+      const rsvpUserIds = eventData.rsvps.map(r => r.user_id)
+      const memberUserIds = eventData.event_members?.map(m => m.user_id) || []
+      const allUserIds = Array.from(new Set([...rsvpUserIds, ...memberUserIds]))
+
+      if (allUserIds.length > 0) {
+        try {
+          const { data: profiles, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', allUserIds)
+
+          if (!mountedRef.current) return
+          if (!profileError && profiles) {
+            const profileMap = profiles.reduce((acc, profile) => {
+              acc[profile.user_id] = {
+                display_name: profile.display_name,
+                avatar_url: profile.avatar_url
+              }
+              return acc
+            }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
+
+            setParticipantProfiles(profileMap)
+          }
+        } catch {
+          // Silent catch—participantProfiles stays as-is if error
+        }
+      }
+    } catch (err) {
+      console.error('Error loading event:', err)
       if (mountedRef.current) {
         toast.error('Failed to load event')
       }
@@ -286,8 +235,9 @@ export function EventDetail() {
       }
       loadingRef.current = false
     }
-  }, [slug, isPrivateEvent, mountedRef])
+  }, [slug, isPrivateEvent, user, isAuthReady, goBackSmart, mountedRef])
 
+  // Load host’s profile info
   const loadHostInfo = async (hostId: string) => {
     if (!mountedRef.current) return
 
@@ -298,159 +248,40 @@ export function EventDetail() {
         .eq('user_id', hostId)
         .single()
 
-      if (!mountedRef.current) return // Check again after async operation
-
+      if (!mountedRef.current) return
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading host info:', error)
         return
       }
 
-      // Always set host data, even if profile is null (we'll handle fallbacks in the UI)
-      if (mountedRef.current) {
-        setEvent(prev => prev ? {
-          ...prev,
-          host: hostProfile ? {
+      const hostData = hostProfile
+        ? {
             id: hostProfile.user_id,
             display_name: hostProfile.display_name,
             avatar_url: hostProfile.avatar_url
-          } : {
+          }
+        : {
             id: hostId,
             display_name: null,
             avatar_url: null
           }
-        } : null)
-      }
-    } catch (error) {
+
       if (mountedRef.current) {
-        console.error('Error loading host info:', error)
+        setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        console.error('Error loading host info:', err)
       }
     }
   }
 
-  // const loadParticipants = async (rsvps: any[]) => {
-  //   if (!rsvps.length) {
-  //     setParticipants([])
-  //     return
-  //   }
+  // Update join status if user changes or event ID changes
+  useEffect(() => {
+    setIsJoined(computeIsJoined(event, user || null))
+  }, [user, event])
 
-  //   try {
-  //     const userIds = rsvps.map(rsvp => rsvp.user_id)
-
-  //     const { data: profiles, error } = await supabase
-  //       .from('user_profiles')
-  //       .select('user_id, display_name, avatar_url')
-  //       .in('user_id', userIds)
-
-  //     if (error) {
-  //       console.error('Error loading participant profiles:', error)
-  //       setParticipants(rsvps)
-  //       return
-  //     }
-
-  //     const participantsWithProfiles = rsvps.map(rsvp => ({
-  //       ...rsvp,
-  //       profile: profiles?.find(p => p.user_id === rsvp.user_id) || null
-  //     }))
-
-  //     setParticipants(participantsWithProfiles)
-  //   } catch (error) {
-  //     console.error('Error loading participants:', error)
-  //     setParticipants(rsvps)
-  //   }
-  // }
-
-  const handleJoinChange = (joined: boolean) => {
-    setIsJoined(joined)
-    // Reload the event data to get updated RSVP counts and participant profiles
-    loadEvent()
-  }
-
-  const formatDateTime = (dateTime: string) => {
-    const date = new Date(dateTime)
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-    }
-  }
-
-  const getDrinkEmoji = (drinkType?: string) => {
-    const drinkEmojis: Record<string, string> = {
-      beer: '🍺',
-      wine: '🍷',
-      whiskey: '🥃',
-      cocktails: '🍸',
-      shots: '🥂',
-      mixed: '🍹'
-    }
-    return drinkEmojis[drinkType || ''] || '🍻'
-  }
-
-  const getVibeEmoji = (vibe?: string) => {
-    const vibeEmojis: Record<string, string> = {
-      casual: '😎',
-      party: '🎉',
-      chill: '🧘',
-      wild: '🤪',
-      classy: '🎩'
-    }
-    return vibeEmojis[vibe || ''] || '✨'
-  }
-
-  const getTimingEmoji = (dateTime: string) => {
-    const eventDate = new Date(dateTime)
-    const now = new Date()
-    const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
-
-    if (diffHours <= 1) return '🔥' // Right now/very soon
-    if (diffHours <= 6) return '⚡' // Today
-    if (diffHours <= 24) return '🎉' // Tonight
-    if (diffHours <= 48) return '🌟' // Tomorrow
-    return '📅' // Future
-  }
-
-  const getTimingLabel = (dateTime: string) => {
-    const eventDate = new Date(dateTime)
-    const now = new Date()
-    const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
-
-    if (diffHours <= 1) return 'Right Now'
-    if (diffHours <= 6) return 'Today'
-    if (diffHours <= 24) return 'Tonight'
-    if (diffHours <= 48) return 'Tomorrow'
-    return 'Upcoming'
-  }
-
-  const formatEventTiming = (dateTime: string, endTime?: string) => {
-    const startDate = new Date(dateTime)
-    const startTime = startDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
-
-    if (endTime) {
-      const endDate = new Date(endTime)
-      const endTimeFormatted = endDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-      return `${startTime} - ${endTimeFormatted}`
-    }
-
-    return `${startTime} - All Night`
-  }
-
-  // Show auth error
+  // If auth state itself has an error, show that
   if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -470,12 +301,12 @@ export function EventDetail() {
     )
   }
 
-  // Show loading state
+  // If auth isn’t ready or we’re loading event, show skeleton
   if (!isAuthReady || loading) {
     return <FullPageSkeleton />
   }
 
-  // Show error state
+  // If we set an error in state (e.g. “Please sign in” or “Event not found”), show it
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -500,12 +331,15 @@ export function EventDetail() {
     )
   }
 
+  // If event is still null (shouldn’t happen if no error), show placeholder
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Event not found</h1>
-          <p className="text-muted-foreground">This event doesn't exist or has been removed.</p>
+          <p className="text-muted-foreground">
+            This event doesn’t exist or has been removed.
+          </p>
           <Button onClick={goBackSmart}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
@@ -515,19 +349,23 @@ export function EventDetail() {
     )
   }
 
-  const { date } = formatDateTime(event.date_time)
+  // Prepare data for rendering
+  const { date } = new Date(event.date_time).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 
-  // Use consistent attendee counting logic
   const goingCount = calculateAttendeeCount(event)
-  const maybeCount = event.rsvps?.filter(rsvp => rsvp.status === 'maybe').length || 0
+  const maybeCount = event.rsvps.filter(r => r.status === 'maybe').length
   const isHost = user && event.created_by === user.id
 
-  // Get all attendees for display (excluding host from the list since host is always attending)
-  const rsvpAttendees = event.rsvps?.filter(rsvp => rsvp.status === 'going') || []
-  const eventMembers = event.event_members?.filter(member => member.status === 'accepted') || []
+  const rsvpAttendees = event.rsvps.filter(r => r.status === 'going')
+  const eventMembers = event.event_members?.filter(m => m.status === 'accepted') || []
 
-  // Create a Set to track unique user IDs to avoid duplicates
-  const uniqueAttendeeIds = new Set<string>()
+  // Merge RSVPs + crew members into a deduplicated attendees list
+  const uniqueIds = new Set<string>()
   const allAttendees: Array<{
     id: string
     user_id: string
@@ -535,34 +373,94 @@ export function EventDetail() {
     source: 'rsvp' | 'crew'
   }> = []
 
-  // Add RSVP attendees first
-  rsvpAttendees.forEach(rsvp => {
-    if (!uniqueAttendeeIds.has(rsvp.user_id)) {
-      uniqueAttendeeIds.add(rsvp.user_id)
-      allAttendees.push({ ...rsvp, source: 'rsvp' })
+  rsvpAttendees.forEach(r => {
+    if (!uniqueIds.has(r.user_id)) {
+      uniqueIds.add(r.user_id)
+      allAttendees.push({ ...r, source: 'rsvp' })
+    }
+  })
+  eventMembers.forEach(m => {
+    if (!uniqueIds.has(m.user_id)) {
+      uniqueIds.add(m.user_id)
+      allAttendees.push({ ...m, status: 'going', source: 'crew' })
     }
   })
 
-  // Add event members (crew members) if they're not already in RSVPs
-  eventMembers.forEach(member => {
-    if (!uniqueAttendeeIds.has(member.user_id)) {
-      uniqueAttendeeIds.add(member.user_id)
-      allAttendees.push({ ...member, status: 'going', source: 'crew' })
+  const now = new Date()
+  const eventDate = new Date(event.date_time)
+  const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+  const isPastEvent = diffHours < 0
+
+  const userAttended =
+    user &&
+    (isHost ||
+      event.rsvps.some(r => r.user_id === user.id && r.status === 'going') ||
+      event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted'))
+
+  // Emoji helpers (unchanged)
+  const getDrinkEmoji = (drinkType?: string) => {
+    const drinkEmojis: Record<string, string> = {
+      beer: '🍺',
+      wine: '🍷',
+      whiskey: '🥃',
+      cocktails: '🍸',
+      shots: '🥂',
+      mixed: '🍹'
     }
-  })
+    return drinkEmojis[drinkType || ''] || '🍻'
+  }
 
-  const attendees = allAttendees
+  const getVibeEmoji = (vibe?: string) => {
+    const vibeEmojis: Record<string, string> = {
+      casual: '😎',
+      party: '🎉',
+      chill: '🧘',
+      wild: '🤪',
+      classy: '🎩'
+    }
+    return vibeEmojis[vibe || ''] || '✨'
+  }
 
-  // Check if event is in the past
-  const isPastEvent = new Date(event.date_time) < new Date()
+  const getTimingEmoji = (dateTime: string) => {
+    const eventDateTime = new Date(dateTime)
+    const diffHrs = (eventDateTime.getTime() - new Date().getTime()) / (1000 * 60 * 60)
+    if (diffHrs <= 1) return '🔥'
+    if (diffHrs <= 6) return '⚡'
+    if (diffHrs <= 24) return '🎉'
+    if (diffHrs <= 48) return '🌟'
+    return '📅'
+  }
 
-  // Check if current user attended the event
-  const userAttended = user && (
-    isHost ||
-    event.rsvps?.some(rsvp => rsvp.user_id === user.id && rsvp.status === 'going') ||
-    event.event_members?.some(member => member.user_id === user.id && member.status === 'accepted')
-  )
+  const getTimingLabel = (dateTime: string) => {
+    const eventDateTime = new Date(dateTime)
+    const diffHrs = (eventDateTime.getTime() - new Date().getTime()) / (1000 * 60 * 60)
+    if (diffHrs <= 1) return 'Right Now'
+    if (diffHrs <= 6) return 'Today'
+    if (diffHrs <= 24) return 'Tonight'
+    if (diffHrs <= 48) return 'Tomorrow'
+    return 'Upcoming'
+  }
 
+  const formatEventTiming = (dateTime: string, endTime?: string) => {
+    const startDate = new Date(dateTime)
+    const startTime = startDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+    if (endTime) {
+      const endDate = new Date(endTime)
+      const endTimeFormatted = endDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+      return `${startTime} - ${endTimeFormatted}`
+    }
+    return `${startTime} - All Night`
+  }
+
+  // JSX rendering
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -574,20 +472,31 @@ export function EventDetail() {
               Back
             </Button>
             <div className="flex items-center gap-2">
-              {/* Host Actions */}
               {isHost && (
                 <>
-                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="hover:bg-primary/10">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="hover:bg-primary/10"
+                  >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:bg-destructive/10">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="text-destructive hover:bg-destructive/10"
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </Button>
                 </>
               )}
-              <Button variant="outline" onClick={() => setIsShareModalOpen(true)} className="hover:bg-primary/10">
+              <Button
+                variant="outline"
+                onClick={() => setIsShareModalOpen(true)}
+                className="hover:bg-primary/10"
+              >
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
@@ -608,10 +517,16 @@ export function EventDetail() {
                       </h1>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-lg">{getTimingEmoji(event.date_time)}</span>
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                        <Badge
+                          variant="secondary"
+                          className="bg-primary/10 text-primary border-primary/20"
+                        >
                           {getTimingLabel(event.date_time)}
                         </Badge>
-                        <Badge variant={event.is_public ? 'default' : 'secondary'} className="ml-2">
+                        <Badge
+                          variant={event.is_public ? 'default' : 'secondary'}
+                          className="ml-2"
+                        >
                           {event.is_public ? 'Public' : 'Private'}
                         </Badge>
                       </div>
@@ -625,7 +540,9 @@ export function EventDetail() {
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <Clock className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="font-medium text-foreground">{formatEventTiming(event.date_time, event.end_time)}</p>
+                    <p className="font-medium text-foreground">
+                      {formatEventTiming(event.date_time, event.end_time)}
+                    </p>
                     <p className="text-sm text-muted-foreground">{date}</p>
                   </div>
                 </div>
@@ -635,7 +552,7 @@ export function EventDetail() {
                     <p className="font-medium text-foreground">
                       {event.place_nickname || event.place_name || event.location}
                     </p>
-                    {event.place_nickname && (event.place_name || event.location) && (
+                    {(event.place_nickname && (event.place_name || event.location)) && (
                       <p className="text-sm text-muted-foreground">
                         {event.place_name || event.location}
                       </p>
@@ -644,34 +561,41 @@ export function EventDetail() {
                 </div>
               </div>
             </div>
+
             {/* Host Information Section */}
             <div className="p-6 border-b border-border/50">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
                 <Crown className="w-5 h-5 text-primary" />
                 Hosted By
               </h2>
-
               <div className="flex items-center gap-4 p-4 bg-muted/20 rounded-lg">
                 <UserAvatar
                   userId={event.created_by}
-                  displayName={event.host?.display_name || `Host ${event.created_by?.slice(-4) || ''}`}
+                  displayName={
+                    event.host?.display_name || `Host ${event.created_by.slice(-4) || ''}`
+                  }
                   avatarUrl={event.host?.avatar_url}
                   size="lg"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name || `Host ${event.created_by?.slice(-4) || ''}`}
+                      {event.host?.display_name || `Host ${event.created_by.slice(-4) || ''}`}
                     </h3>
                     {isHost && (
-                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      <Badge
+                        variant="secondary"
+                        className="bg-primary/10 text-primary border-primary/20"
+                      >
                         <Crown className="w-3 h-3 mr-1" />
                         You're hosting!
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {isHost ? "You're the host of this epic session!" : "Ready to raise some hell with you!"}
+                    {isHost
+                      ? "You're the host of this epic session!"
+                      : "Ready to raise some hell with you!"}
                   </p>
                 </div>
               </div>
@@ -686,7 +610,9 @@ export function EventDetail() {
                   <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
                     <Wine className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="font-medium text-foreground capitalize">{event.drink_type}</p>
+                      <p className="font-medium text-foreground capitalize">
+                        {event.drink_type}
+                      </p>
                       <p className="text-sm text-muted-foreground">Drink of choice</p>
                     </div>
                   </div>
@@ -695,14 +621,15 @@ export function EventDetail() {
                   <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
                     <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
                     <div>
-                      <p className="font-medium text-foreground capitalize">{event.vibe} Vibe</p>
+                      <p className="font-medium text-foreground capitalize">
+                        {event.vibe} Vibe
+                      </p>
                       <p className="text-sm text-muted-foreground">Party atmosphere</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Notes */}
               {event.notes && (
                 <div className="p-4 bg-muted/20 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
@@ -775,11 +702,11 @@ export function EventDetail() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Horizontal scrollable attendees */}
                   <div className="flex gap-3 overflow-x-auto pb-2">
-                    {attendees.slice(0, 8).map((rsvp, index) => {
+                    {allAttendees.slice(0, 8).map((rsvp, index) => {
                       const profile = participantProfiles[rsvp.user_id] || {}
-                      const displayName = profile.display_name || `User ${rsvp.user_id?.slice(-4) || 'Anonymous'}`
+                      const displayName =
+                        profile.display_name || `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
 
                       return (
                         <div key={rsvp.user_id || index} className="flex-shrink-0">
@@ -803,11 +730,13 @@ export function EventDetail() {
                         </div>
                       )
                     })}
-                    {attendees.length > 8 && (
+                    {allAttendees.length > 8 && (
                       <div className="flex-shrink-0 flex items-center justify-center p-3 bg-muted/20 rounded-lg min-w-[80px]">
                         <div className="text-center">
                           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                            <span className="text-sm font-semibold text-primary">+{attendees.length - 8}</span>
+                            <span className="text-sm font-semibold text-primary">
+                              +{allAttendees.length - 8}
+                            </span>
                           </div>
                           <p className="text-xs text-muted-foreground">more</p>
                         </div>
@@ -824,14 +753,21 @@ export function EventDetail() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-foreground">Ready to join the party?</h3>
-                      <p className="text-sm text-muted-foreground">Let the host know you're coming!</p>
+                      <h3 className="font-semibold text-foreground">
+                        Ready to join the party?
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Let the host know you're coming!
+                      </p>
                     </div>
                   </div>
                   <JoinEventButton
                     eventId={event.id}
                     initialJoined={isJoined}
-                    onJoinChange={handleJoinChange}
+                    onJoinChange={joined => {
+                      setIsJoined(joined)
+                      loadEvent()
+                    }}
                     className="w-full"
                     size="lg"
                   />
@@ -845,7 +781,9 @@ export function EventDetail() {
                 <div className="text-center py-4">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Crown className="w-5 h-5 text-primary" />
-                    <span className="font-semibold text-foreground">You're hosting this session!</span>
+                    <span className="font-semibold text-foreground">
+                      You're hosting this session!
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Share the event link to invite more people to the party
@@ -858,26 +796,23 @@ export function EventDetail() {
           {/* Past Event Gallery & Comments - Only for attendees */}
           {isPastEvent && userAttended && (
             <>
-              {/* Toast Recap */}
               <ToastRecap
                 event={event}
                 attendeeCount={goingCount}
-                photoCount={0} // Will be updated by EventGallery
-                commentCount={0} // Will be updated by EventComments
+                photoCount={0} // updated by EventGallery
+                commentCount={0} // updated by EventComments
               />
 
-              {/* Event Gallery */}
               <EventGallery
                 eventId={event.id}
-                canUpload={!!userAttended}
-                canModerate={!!isHost}
+                canUpload={Boolean(userAttended)}
+                canModerate={Boolean(isHost)}
               />
 
-              {/* Event Comments */}
               <EventComments
                 eventId={event.id}
-                canComment={!!userAttended}
-                canModerate={!!isHost}
+                canComment={Boolean(userAttended)}
+                canModerate={Boolean(isHost)}
               />
             </>
           )}
@@ -888,8 +823,10 @@ export function EventDetail() {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        title={event?.title || 'Event'}
-        url={`${window.location.origin}${isPrivateEvent ? '/private-event' : '/event'}/${slug}`}
+        title={event.title || 'Event'}
+        url={`${window.location.origin}${
+          isPrivateEvent ? '/private-event' : '/event'
+        }/${slug}`}
       />
 
       {/* Edit Modal */}
@@ -898,7 +835,7 @@ export function EventDetail() {
           event={event}
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
-          onEventUpdated={handleEventUpdated}
+          onEventUpdated={() => loadEvent()}
         />
       )}
 
@@ -908,7 +845,10 @@ export function EventDetail() {
           event={event}
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
-          onEventDeleted={handleEventDeleted}
+          onEventDeleted={() => {
+            toast.success('Event deleted successfully!')
+            handleDeleteSuccess('event')
+          }}
         />
       )}
     </div>
