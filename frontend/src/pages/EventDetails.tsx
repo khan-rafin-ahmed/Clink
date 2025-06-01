@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
+import { supabase } from '@/lib/supabase'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import { EditEventModal } from '@/components/EditEventModal'
@@ -24,11 +25,27 @@ import { toast } from 'sonner'
 import { Edit, Trash2 } from 'lucide-react'
 
 // Data loading function (outside component for stability)
-const loadEventDetailsData = async (_user: any, eventId: string) => {
-  console.log('🔍 loadEventDetailsData: Loading event details for eventId:', eventId)
+const loadEventDetailsData = async (_user: any, eventIdOrSlug: string) => {
+  console.log('🔍 loadEventDetailsData: Loading event details for:', eventIdOrSlug)
 
   try {
-    const eventData = await getEventDetails(eventId)
+    // Try fetching by ID first
+    let eventData = await getEventDetails(eventIdOrSlug)
+
+    // If not found by ID, attempt to fetch by public_slug
+    if (!eventData) {
+      const { data: publicEvt, error: publicErr } = await supabase
+        .from('events')
+        .select('*')
+        .eq('public_slug', eventIdOrSlug)
+        .maybeSingle()
+
+      if (publicErr) {
+        throw publicErr
+      }
+      eventData = publicEvt
+    }
+
     console.log('✅ loadEventDetailsData: Event details loaded successfully')
     return eventData
   } catch (error) {
