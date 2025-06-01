@@ -655,13 +655,16 @@ export function EventDetail() {
                   Event Location
                 </h2>
                 <InteractiveMap
-                  location={{
-                    latitude: event.latitude,
-                    longitude: event.longitude,
-                    place_name: event.place_nickname ?? event.place_name ?? event.location ?? '',
-                    place_id: event.place_id ?? '',
-                    address: event.place_name ?? event.location ?? ''
-                  }}
+  location={{
+    latitude: event.latitude,
+    longitude: event.longitude,
+    // If both place_nickname and place_name/location are null, turn it into an empty string
+    place_name: (event.place_nickname ?? event.place_name ?? event.location) ?? '',
+    // If place_id is null/undefined, make it an empty string
+    place_id: event.place_id ?? '',
+    // Similarly, address expects a string
+    address: (event.place_name ?? event.location) ?? ''
+  }}
                   height={300}
                   className="rounded-lg"
                 />
