@@ -52,7 +52,7 @@ interface EventWithRsvps extends Event {
 export function EventDetail() {
   const { slug } = useParams<{ slug: string }>()
   const location = useLocation()
-  const { user, isReady: isAuthReady, authState, error: authError } = useAuthState()
+  const { user, isReady: isAuthReady, error: authError } = useAuthState()
   const { goBackSmart } = useSmartNavigation()
   const { handleDeleteSuccess } = useActionNavigation()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
