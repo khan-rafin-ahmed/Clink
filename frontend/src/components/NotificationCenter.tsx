@@ -161,7 +161,7 @@ export function NotificationCenter() {
             </div>
 
             {/* Crew invitation actions */}
-            {notification.type === 'crew_invitation' && !notification.read && (
+            {notification.type === 'crew_invitation' && !notification.read && notification.data?.crew_member_id && (
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 <Button
                   size="sm"
@@ -190,6 +190,8 @@ export function NotificationCenter() {
                 </Button>
               </div>
             )}
+
+
 
             {/* Event invitation actions */}
             {notification.type === 'event_invitation' && !notification.read && (

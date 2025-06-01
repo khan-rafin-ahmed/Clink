@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { createCrew } from '@/lib/crewService'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { createCrew, inviteUserToCrew, searchUsersForInvite } from '@/lib/crewService'
 import type { CreateCrewData } from '@/types'
 import { toast } from 'sonner'
 import { Loader2, Users, Globe, Lock, PartyPopper, Coffee, Flame, Crown, Star } from 'lucide-react'
@@ -24,6 +26,13 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
     description: ''
   })
 
+  // Member invitation state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
+  const [isSearching, setIsSearching] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const vibeOptions = [
     { value: 'casual', label: 'Casual', emoji: '😎', icon: Coffee, description: 'Laid back vibes' },
     { value: 'party', label: 'Party', emoji: '🎉', icon: PartyPopper, description: 'Ready to rage' },
@@ -32,6 +41,42 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
     { value: 'classy', label: 'Classy', emoji: '🥂', icon: Crown, description: 'Sophisticated' },
     { value: 'other', label: 'Other', emoji: '⭐', icon: Star, description: 'Something else' }
   ]
+
+  // Search for users to invite
+  const handleSearchUsers = useCallback(async (query: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchUsersForInvite(query)
+        setSearchResults(results)
+      } catch (error) {
+        console.error('Error searching users:', error)
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+  }, [])
+
+  // Toggle member selection
+  const toggleMemberSelection = (userId: string) => {
+    const newSelected = new Set(selectedMembers)
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId)
+    } else {
+      newSelected.add(userId)
+    }
+    setSelectedMembers(newSelected)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,8 +89,25 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
     setIsSubmitting(true)
 
     try {
-      await createCrew(formData)
-      toast.success('🍺 Hell yeah! Crew created successfully!')
+      // Create the crew first
+      const newCrew = await createCrew(formData)
+
+      // Invite selected members if any
+      if (selectedMembers.size > 0) {
+        const invitePromises = Array.from(selectedMembers).map(userId =>
+          inviteUserToCrew(newCrew.id, userId)
+        )
+
+        try {
+          await Promise.all(invitePromises)
+          toast.success(`🍺 Crew created and ${selectedMembers.size} invite${selectedMembers.size > 1 ? 's' : ''} sent!`)
+        } catch (inviteError) {
+          console.error('Error sending invites:', inviteError)
+          toast.success('🍺 Crew created! Some invites may have failed.')
+        }
+      } else {
+        toast.success('🍺 Hell yeah! Crew created successfully!')
+      }
 
       // Reset form and close modal
       setFormData({
@@ -54,6 +116,9 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
         visibility: 'private',
         description: ''
       })
+      setSearchQuery('')
+      setSearchResults([])
+      setSelectedMembers(new Set())
       setOpen(false)
       onCrewCreated?.()
     } catch (error: any) {
@@ -183,6 +248,73 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
               className="mt-1"
               maxLength={200}
             />
+          </div>
+
+          {/* Invite Members */}
+          <div>
+            <Label className="text-sm font-medium mb-3 block">
+              Invite Members (Optional)
+            </Label>
+            <div className="space-y-3">
+              {/* Search Input */}
+              <div className="relative">
+                <Input
+                  placeholder="Search by username..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    handleSearchUsers(e.target.value)
+                  }}
+                  className="pr-10"
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="border rounded-lg p-2 max-h-32 overflow-y-auto">
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.user_id}
+                      className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                        selectedMembers.has(user.user_id)
+                          ? 'bg-primary/10 border border-primary/20'
+                          : 'hover:bg-muted'
+                      }`}
+                      onClick={() => toggleMemberSelection(user.user_id)}
+                    >
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback className="text-xs">
+                          {user.display_name?.charAt(0)?.toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {user.display_name || 'Unknown User'}
+                        </p>
+                      </div>
+                      {selectedMembers.has(user.user_id) && (
+                        <Badge variant="secondary" className="text-xs">
+                          Selected
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected Members Count */}
+              {selectedMembers.size > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedMembers.size} member{selectedMembers.size > 1 ? 's' : ''} will be invited
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Action Buttons */}

@@ -41,7 +41,23 @@ interface EventCardProps {
 export function EventCard({ event, showHostActions = false, onEdit, onDelete }: EventCardProps) {
   const { user } = useAuth()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const eventUrl = `${window.location.origin}/event/${event.event_code || event.id}`
+
+  // Generate proper URL based on event privacy and slug
+  const getEventUrl = () => {
+    const baseUrl = window.location.origin
+
+    // Use proper slug for modern routing
+    if (event.is_public && event.public_slug) {
+      return `${baseUrl}/event/${event.public_slug}`
+    } else if (!event.is_public && event.private_slug) {
+      return `${baseUrl}/private-event/${event.private_slug}`
+    }
+
+    // Fallback to event_code for backward compatibility
+    return `${baseUrl}/event/${event.event_code || event.id}`
+  }
+
+  const eventUrl = getEventUrl()
 
   const isHost = user && event.created_by === user.id
 
@@ -247,7 +263,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           {/* Main Actions Row */}
           <div className="flex gap-2">
             {/* View Details Button */}
-            <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
+            <Link to={getEventUrl().replace(window.location.origin, '')} className="flex-1">
               <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
                 <span className="hidden sm:inline">View Details</span>
                 <span className="sm:hidden">Details</span>
