@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
-import { useAuth } from '@/lib/auth-context'
+import { useAuthState } from '@/hooks/useAuthState'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -31,6 +31,7 @@ import {
 import type { Event, RsvpStatus } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventBySlug } from '@/lib/eventService'
+import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 interface EventWithRsvps extends Event {
   rsvps: Array<{
@@ -51,7 +52,7 @@ interface EventWithRsvps extends Event {
 export function EventDetail() {
   const { slug } = useParams<{ slug: string }>()
   const location = useLocation()
-  const { user, loading: authLoading, error: authError } = useAuth()
+  const { user, isReady: isAuthReady, authState, error: authError } = useAuthState()
   const { goBackSmart } = useSmartNavigation()
   const { handleDeleteSuccess } = useActionNavigation()
   const [event, setEvent] = useState<EventWithRsvps | null>(null)
@@ -79,11 +80,12 @@ export function EventDetail() {
     }
   }, [])
 
+  // Only load event when auth is ready
   useEffect(() => {
-    if (slug) {
+    if (slug && isAuthReady) {
       loadEvent()
     }
-  }, [slug])
+  }, [slug, isAuthReady])
 
   useEffect(() => {
     // Update join status when user changes
@@ -457,20 +459,8 @@ export function EventDetail() {
   }
 
   // Show loading state
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <img
-            src="/thirstee-logo.svg"
-            alt="Thirstee"
-            className="h-16 w-auto mx-auto mb-4"
-          />
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading event...</p>
-        </div>
-      </div>
-    )
+  if (!isAuthReady || loading) {
+    return <FullPageSkeleton />
   }
 
   // Show error state
