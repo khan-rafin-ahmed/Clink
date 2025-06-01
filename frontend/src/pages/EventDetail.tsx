@@ -130,18 +130,34 @@ export function EventDetail() {
       let eventData: EventWithRsvps | null = null
 
       if (!isPrivateEvent) {
-        const { data: publicEvt, error: publicErr } = await supabase
-          .from('events')
-          .select('*')
-          .eq('public_slug', slug)
-          .maybeSingle()
+        // First try to load by ID if the slug looks like a UUID
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
+          const { data: eventById, error: idError } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', slug)
+            .maybeSingle()
 
-        if (publicErr || !publicEvt) {
-          toast.error('Event not found')
-          goBackSmart()
-          return
+          if (!idError && eventById) {
+            eventData = eventById as EventWithRsvps
+          }
         }
-        eventData = publicEvt as EventWithRsvps
+
+        // If not found by ID, try public_slug
+        if (!eventData) {
+          const { data: publicEvt, error: publicErr } = await supabase
+            .from('events')
+            .select('*')
+            .eq('public_slug', slug)
+            .maybeSingle()
+
+          if (publicErr || !publicEvt) {
+            toast.error('Event not found')
+            goBackSmart()
+            return
+          }
+          eventData = publicEvt as EventWithRsvps
+        }
       } else {
         try {
           eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
