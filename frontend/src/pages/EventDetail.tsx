@@ -128,23 +128,36 @@ export function EventDetail() {
       setError(null)
 
       let eventData: EventWithRsvps | null = null
-      try {
-        eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
-      } catch (slugErr: any) {
-        // If user is not authorized to view private event
-        if (slugErr.code === 'PGRST116' && !user) {
-          sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
-          toast.error('Please sign in to view this private event')
-          return
-        }
-        // If event not found at all
-        if (slugErr.message === 'Event not found') {
+
+      if (!isPrivateEvent) {
+        const { data: publicEvt, error: publicErr } = await supabase
+          .from('events')
+          .select('*')
+          .eq('public_slug', slug)
+          .maybeSingle()
+
+        if (publicErr || !publicEvt) {
           toast.error('Event not found')
           goBackSmart()
           return
         }
-        // Unexpected errors—rethrow
-        throw slugErr
+        eventData = publicEvt as EventWithRsvps
+      } else {
+        try {
+          eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
+        } catch (slugErr: any) {
+          if (slugErr.code === 'PGRST116' && !user) {
+            sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+            toast.error('Please sign in to view this private event')
+            return
+          }
+          if (slugErr.message === 'Event not found') {
+            toast.error('Event not found')
+            goBackSmart()
+            return
+          }
+          throw slugErr
+        }
       }
 
       if (!eventData) {
