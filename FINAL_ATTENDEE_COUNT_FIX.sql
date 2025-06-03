@@ -1,19 +1,8 @@
-# Apply Attendee Count Fix
+-- FINAL ATTENDEE COUNT CONSISTENCY FIX
+-- This SQL fixes the "column event_id does not exist" error and ensures
+-- profile event cards show the same count as event detail pages
 
-## Instructions
-
-1. Go to your Supabase dashboard
-2. Navigate to SQL Editor
-3. Copy and paste the following SQL to fix the attendee count consistency issue:
-
-**Note**: This SQL has been fixed to remove `CREATE INDEX CONCURRENTLY` commands that cause transaction block errors in Supabase migrations.
-
-```sql
--- Fix attendee count consistency across profile and event detail pages
--- This ensures the profile event cards show the same count as the event details page
--- by properly counting host + RSVPs + crew members with deduplication
-
--- Drop and recreate the get_user_accessible_events function with proper attendee counting
+-- Drop and recreate the get_user_accessible_events function with corrected SQL
 DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
 
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
@@ -93,7 +82,7 @@ BEGIN
   ),
   attendee_counts AS (
     -- Calculate total unique attendees for each event
-    SELECT
+    SELECT 
       event_id,
       COUNT(DISTINCT user_id) as total_attendees
     FROM (
@@ -102,17 +91,17 @@ BEGIN
       FROM rsvps r
       INNER JOIN accessible_events ae ON r.event_id = ae.id
       WHERE r.status = 'going'
-
+      
       UNION
-
+      
       -- Event members with status 'accepted' (crew members)
       SELECT em.event_id, em.user_id
       FROM event_members em
       INNER JOIN accessible_events ae ON em.event_id = ae.id
       WHERE em.status = 'accepted'
-
+      
       UNION
-
+      
       -- Always include the host
       SELECT ae.id as event_id, ae.created_by as user_id
       FROM accessible_events ae
@@ -148,19 +137,3 @@ GRANT EXECUTE ON FUNCTION get_user_accessible_events(UUID, BOOLEAN, INTEGER) TO 
 
 -- Refresh the schema cache
 NOTIFY pgrst, 'reload schema';
-```
-
-## What this fixes
-
-- **Profile event cards** now show the same attendee count as **Event Details** pages
-- Properly counts: Host (always +1) + RSVPs with status 'going' + Crew members with status 'accepted'
-- Deduplicates attendees (if someone is both RSVP'd and a crew member, they're only counted once)
-- Ensures minimum count of 1 (the host is always attending)
-
-## Frontend changes
-
-The EventCard component has been updated to handle both scenarios:
-- When event data comes from RPC function (uses computed `rsvp_count`)
-- When event data comes with full RSVP/member arrays (uses `calculateAttendeeCount` utility)
-
-This ensures consistent behavior across all pages in the app.

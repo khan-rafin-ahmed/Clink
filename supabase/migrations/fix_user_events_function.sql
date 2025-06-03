@@ -80,40 +80,41 @@ BEGIN
         (include_past = true AND e.date_time < NOW())
       )
   ),
+  attendee_counts AS (
+    -- Calculate total unique attendees for each event
+    SELECT
+      event_id,
+      COUNT(DISTINCT user_id) as total_attendees
+    FROM (
+      -- RSVPs with status 'going'
+      SELECT r.event_id, r.user_id
+      FROM rsvps r
+      INNER JOIN accessible_events ae ON r.event_id = ae.id
+      WHERE r.status = 'going'
+
+      UNION
+
+      -- Event members with status 'accepted' (crew members)
+      SELECT em.event_id, em.user_id
+      FROM event_members em
+      INNER JOIN accessible_events ae ON em.event_id = ae.id
+      WHERE em.status = 'accepted'
+
+      UNION
+
+      -- Always include the host
+      SELECT ae.id as event_id, ae.created_by as user_id
+      FROM accessible_events ae
+      WHERE ae.created_by IS NOT NULL
+    ) all_attendees
+    GROUP BY event_id
+  ),
   event_stats AS (
     SELECT ae.*,
-           COALESCE(attendee_counts.total_attendees, 1) as rsvp_count, -- Always at least 1 (host)
+           COALESCE(ac.total_attendees, 1) as rsvp_count, -- Always at least 1 (host)
            COALESCE(user_rsvps.status, null) as user_rsvp_status
     FROM accessible_events ae
-    LEFT JOIN (
-      -- Calculate total unique attendees (RSVPs + crew members + host)
-      SELECT
-        event_id,
-        (
-          -- Count unique attendees from RSVPs and event_members
-          SELECT COUNT(DISTINCT user_id)
-          FROM (
-            -- RSVPs with status 'going'
-            SELECT r.user_id
-            FROM rsvps r
-            WHERE r.event_id = ae_inner.id AND r.status = 'going'
-
-            UNION
-
-            -- Event members with status 'accepted' (crew members)
-            SELECT em.user_id
-            FROM event_members em
-            WHERE em.event_id = ae_inner.id AND em.status = 'accepted'
-
-            UNION
-
-            -- Always include the host
-            SELECT ae_inner.created_by
-            WHERE ae_inner.created_by IS NOT NULL
-          ) unique_attendees
-        ) as total_attendees
-      FROM accessible_events ae_inner
-    ) attendee_counts ON ae.id = attendee_counts.event_id
+    LEFT JOIN attendee_counts ac ON ae.id = ac.event_id
     LEFT JOIN (
       SELECT event_id, status
       FROM rsvps
