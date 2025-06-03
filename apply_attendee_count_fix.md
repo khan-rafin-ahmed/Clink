@@ -1,10 +1,19 @@
--- Fix the get_user_accessible_events function to handle both upcoming and past events
--- This prevents duplicates and ensures proper privacy filtering
+# Apply Attendee Count Fix
 
--- Drop the existing function
-DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, INTEGER);
+## Instructions
 
--- Create an improved function that handles both upcoming and past events
+1. Go to your Supabase dashboard
+2. Navigate to SQL Editor
+3. Copy and paste the following SQL to fix the attendee count consistency issue:
+
+```sql
+-- Fix attendee count consistency across profile and event detail pages
+-- This ensures the profile event cards show the same count as the event details page
+-- by properly counting host + RSVPs + crew members with deduplication
+
+-- Drop and recreate the get_user_accessible_events function with proper attendee counting
+DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
+
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
   user_id UUID,
   include_past BOOLEAN DEFAULT false,
@@ -65,7 +74,7 @@ BEGIN
 
     UNION
 
-    -- Private events user was invited to and accepted
+    -- Private events user is invited to as crew member
     SELECT e.id, e.title, e.location, e.latitude, e.longitude, e.place_id, e.place_name,
            e.date_time, e.drink_type, e.vibe, e.notes, e.is_public, e.created_by,
            e.created_at, e.updated_at, e.event_code, e.public_slug, e.private_slug
@@ -87,26 +96,26 @@ BEGIN
     FROM accessible_events ae
     LEFT JOIN (
       -- Calculate total unique attendees (RSVPs + crew members + host)
-      SELECT
-        event_id,
+      SELECT 
+        ae_inner.id as event_id,
         (
           -- Count unique attendees from RSVPs and event_members
-          SELECT COUNT(DISTINCT user_id)
+          SELECT COUNT(DISTINCT user_id) 
           FROM (
             -- RSVPs with status 'going'
             SELECT r.user_id
             FROM rsvps r
             WHERE r.event_id = ae_inner.id AND r.status = 'going'
-
+            
             UNION
-
+            
             -- Event members with status 'accepted' (crew members)
             SELECT em.user_id
             FROM event_members em
             WHERE em.event_id = ae_inner.id AND em.status = 'accepted'
-
+            
             UNION
-
+            
             -- Always include the host
             SELECT ae_inner.created_by
             WHERE ae_inner.created_by IS NOT NULL
@@ -136,3 +145,19 @@ GRANT EXECUTE ON FUNCTION get_user_accessible_events(UUID, BOOLEAN, INTEGER) TO 
 
 -- Refresh the schema cache
 NOTIFY pgrst, 'reload schema';
+```
+
+## What this fixes
+
+- **Profile event cards** now show the same attendee count as **Event Details** pages
+- Properly counts: Host (always +1) + RSVPs with status 'going' + Crew members with status 'accepted'
+- Deduplicates attendees (if someone is both RSVP'd and a crew member, they're only counted once)
+- Ensures minimum count of 1 (the host is always attending)
+
+## Frontend changes
+
+The EventCard component has been updated to handle both scenarios:
+- When event data comes from RPC function (uses computed `rsvp_count`)
+- When event data comes with full RSVP/member arrays (uses `calculateAttendeeCount` utility)
+
+This ensures consistent behavior across all pages in the app.

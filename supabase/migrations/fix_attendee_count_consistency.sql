@@ -1,10 +1,10 @@
--- Fix the get_user_accessible_events function to handle both upcoming and past events
--- This prevents duplicates and ensures proper privacy filtering
+-- Fix attendee count consistency across profile and event detail pages
+-- This ensures the profile event cards show the same count as the event details page
+-- by properly counting host + RSVPs + crew members with deduplication
 
--- Drop the existing function
-DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, INTEGER);
+-- Drop and recreate the get_user_accessible_events function with proper attendee counting
+DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
 
--- Create an improved function that handles both upcoming and past events
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
   user_id UUID,
   include_past BOOLEAN DEFAULT false,
@@ -65,7 +65,7 @@ BEGIN
 
     UNION
 
-    -- Private events user was invited to and accepted
+    -- Private events user is invited to as crew member
     SELECT e.id, e.title, e.location, e.latitude, e.longitude, e.place_id, e.place_name,
            e.date_time, e.drink_type, e.vibe, e.notes, e.is_public, e.created_by,
            e.created_at, e.updated_at, e.event_code, e.public_slug, e.private_slug
@@ -87,26 +87,26 @@ BEGIN
     FROM accessible_events ae
     LEFT JOIN (
       -- Calculate total unique attendees (RSVPs + crew members + host)
-      SELECT
-        event_id,
+      SELECT 
+        ae_inner.id as event_id,
         (
           -- Count unique attendees from RSVPs and event_members
-          SELECT COUNT(DISTINCT user_id)
+          SELECT COUNT(DISTINCT user_id) 
           FROM (
             -- RSVPs with status 'going'
             SELECT r.user_id
             FROM rsvps r
             WHERE r.event_id = ae_inner.id AND r.status = 'going'
-
+            
             UNION
-
+            
             -- Event members with status 'accepted' (crew members)
             SELECT em.user_id
             FROM event_members em
             WHERE em.event_id = ae_inner.id AND em.status = 'accepted'
-
+            
             UNION
-
+            
             -- Always include the host
             SELECT ae_inner.created_by
             WHERE ae_inner.created_by IS NOT NULL

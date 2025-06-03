@@ -65,16 +65,39 @@ BEGIN
       AND e.date_time >= NOW()
   ),
   event_stats AS (
-    SELECT ae.*, 
-           COALESCE(rsvp_counts.going_count, 0) as rsvp_count,
+    SELECT ae.*,
+           COALESCE(attendee_counts.total_attendees, 1) as rsvp_count, -- Always at least 1 (host)
            COALESCE(user_rsvps.status, null) as user_rsvp_status
     FROM accessible_events ae
     LEFT JOIN (
-      SELECT event_id, COUNT(*) as going_count
-      FROM rsvps
-      WHERE status = 'going'
-      GROUP BY event_id
-    ) rsvp_counts ON ae.id = rsvp_counts.event_id
+      -- Calculate total unique attendees (RSVPs + crew members + host)
+      SELECT
+        event_id,
+        (
+          -- Count unique attendees from RSVPs and event_members
+          SELECT COUNT(DISTINCT user_id)
+          FROM (
+            -- RSVPs with status 'going'
+            SELECT r.user_id
+            FROM rsvps r
+            WHERE r.event_id = ae_inner.id AND r.status = 'going'
+
+            UNION
+
+            -- Event members with status 'accepted' (crew members)
+            SELECT em.user_id
+            FROM event_members em
+            WHERE em.event_id = ae_inner.id AND em.status = 'accepted'
+
+            UNION
+
+            -- Always include the host
+            SELECT ae_inner.created_by
+            WHERE ae_inner.created_by IS NOT NULL
+          ) unique_attendees
+        ) as total_attendees
+      FROM accessible_events ae_inner
+    ) attendee_counts ON ae.id = attendee_counts.event_id
     LEFT JOIN (
       SELECT event_id, status
       FROM rsvps

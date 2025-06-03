@@ -61,9 +61,12 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
 
   const isHost = user && event.created_by === user.id
 
-  // Use consistent attendee counting logic (host is always counted)
-  const attendeeCount = calculateAttendeeCount(event)
-  const displayCount = attendeeCount
+  // Use consistent attendee counting logic
+  // If event has rsvp_count from RPC function, use that (already includes host + RSVPs + crew)
+  // Otherwise, calculate from the event data (for events loaded with full RSVP/member data)
+  const displayCount = event.rsvp_count !== undefined
+    ? event.rsvp_count
+    : calculateAttendeeCount(event)
 
   // Format event time and get status badge
   const formatEventTime = (dateTime: string) => {
