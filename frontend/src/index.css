@@ -6,35 +6,64 @@
 
 @layer base {
   :root {
+    /* Enhanced Color Palette - Deep Slate + Gold Theme */
     --background: 0 0% 3.9%; /* Deep Black */
     --foreground: 0 0% 98%; /* Near White */
 
-    --card: 0 0% 5%; /* Slightly lighter dark for cards */
+    --card: 0 0% 5.5%; /* Enhanced card background */
     --card-foreground: 0 0% 98%;
+    --card-hover: 0 0% 7%; /* Card hover state */
 
-    --popover: 0 0% 5%;
+    --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 43 74% 49%; /* Bold Gold */
     --primary-foreground: 0 0% 10%; /* Dark text on Gold */
+    --primary-hover: 43 74% 55%; /* Lighter gold for hover */
+    --primary-muted: 43 74% 20%; /* Muted gold for backgrounds */
 
     --secondary: 0 0% 14.9%; /* Dark gray for secondary elements */
     --secondary-foreground: 0 0% 98%;
+    --secondary-hover: 0 0% 18%; /* Secondary hover state */
 
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 65.1%;
 
-    --accent: 0 0% 14.9%;
+    --accent: 43 30% 25%; /* Warm accent color */
     --accent-foreground: 0 0% 98%;
+    --accent-hover: 43 30% 30%;
 
     --destructive: 0 84.2% 60.2%; /* Red for errors/destructive actions */
     --destructive-foreground: 0 0% 98%;
+    --destructive-hover: 0 84.2% 65%;
 
     --border: 0 0% 14.9%; /* Dark border */
+    --border-hover: 43 74% 30%; /* Gold border on hover */
     --input: 0 0% 14.9%;
     --ring: 43 74% 49%; /* Gold ring on focus */
 
+    --success: 142 76% 36%; /* Success green */
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%; /* Warning orange */
+    --warning-foreground: 0 0% 98%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(43 74% 49%) 0%, hsl(43 74% 35%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 5.5%) 0%, hsl(0 0% 4%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 3.9%) 0%, hsl(43 74% 8%) 100%);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-gold: 0 0 20px rgb(212 175 55 / 0.3);
+    --shadow-gold-lg: 0 0 30px rgb(212 175 55 / 0.4);
+
     --radius: 0.5rem; /* Standard border radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
   }
 
   body {
@@ -54,14 +83,101 @@
     color: hsl(var(--foreground));
   }
 
-  /* Custom animations and effects */
+  /* Enhanced animations and micro-interactions */
   @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.5); }
+    0%, 100% { box-shadow: var(--shadow-gold); }
+    50% { box-shadow: var(--shadow-gold-lg); }
   }
 
+  @keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Micro-interaction classes */
   .glow-on-hover:hover {
     animation: glow 2s ease-in-out infinite;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    background-size: 200px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--shadow-gold);
+  }
+
+  .interactive-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .interactive-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: hsl(var(--border-hover));
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   /* Remove default link underlines */
@@ -72,5 +188,36 @@
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
+  }
+
+  /* Enhanced gradient backgrounds */
+  .bg-gradient-hero {
+    background: linear-gradient(135deg,
+      hsl(var(--background)) 0%,
+      hsl(var(--card)) 50%,
+      hsl(var(--background)) 100%);
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary-foreground)) 100%);
+  }
+
+  .bg-gradient-card {
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--card) / 0.8) 100%);
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-foreground)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

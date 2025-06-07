@@ -21,12 +21,14 @@ import { User, LogOut, Settings, Edit, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
 import { NotificationBell } from './NotificationBell'
+import { CommandMenu, CommandMenuTrigger, useCommandMenu } from './CommandMenu'
 import type { UserProfile } from '@/types'
 
 export function Navbar() {
   const { user, signOut } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const commandMenu = useCommandMenu()
 
   useEffect(() => {
     if (user) {
@@ -51,15 +53,18 @@ export function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
+            {/* Command Menu Search */}
+            <div className="w-64">
+              <CommandMenuTrigger onOpen={() => commandMenu.setOpen(true)} />
+            </div>
+
             <Link
               to="/discover"
               className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
               Discover
             </Link>
-
-
 
             {user ? (
               <>
@@ -270,6 +275,12 @@ export function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Command Menu */}
+      <CommandMenu
+        open={commandMenu.open}
+        onOpenChange={commandMenu.setOpen}
+      />
     </nav>
   )
 }

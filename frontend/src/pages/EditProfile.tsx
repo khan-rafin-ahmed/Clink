@@ -166,15 +166,25 @@ export function EditProfile() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <img
-            src="/thirstee-logo.svg"
-            alt="Thirstee"
-            className="h-16 w-auto mx-auto mb-4"
-          />
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Loading your profile...</p>
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
+
+        <div className="relative flex h-screen items-center justify-center">
+          <div className="text-center space-y-6 fade-in">
+            <div className="relative">
+              <img
+                src="/thirstee-logo.svg"
+                alt="Thirstee"
+                className="h-20 w-auto hover-scale"
+              />
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+            </div>
+            <div className="space-y-3">
+              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+              <p className="text-lg text-muted-foreground font-medium">Loading your profile...</p>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -185,30 +195,48 @@ export function EditProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" size="sm" onClick={goBackSmart}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Header */}
+        <div className="flex items-center gap-4 mb-8 fade-in">
+          <Button variant="outline" size="lg" onClick={goBackSmart} className="group backdrop-blur-sm">
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-              <User className="h-8 w-8" />
-              Edit Profile
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground flex items-center gap-3">
+              <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              Edit <span className="bg-gradient-primary bg-clip-text text-transparent">Profile</span>
             </h1>
-            <p className="text-muted-foreground">
-              Update your profile information
+            <p className="text-muted-foreground text-lg">
+              Update your profile information and preferences
             </p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Enhanced Profile Card */}
+        <div className="slide-up" style={{ animationDelay: '0.2s' }}>
+          <Card className="bg-gradient-card border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm shadow-xl">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-2xl font-heading font-bold flex items-center justify-center gap-3">
+                <span className="text-3xl">✏️</span>
+                Profile Information
+              </CardTitle>
+              <p className="text-muted-foreground">
+                Customize how others see you in the Thirstee community
+              </p>
+            </CardHeader>
+            <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Avatar Section */}
               <AvatarUpload
@@ -359,6 +387,7 @@ export function EditProfile() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )

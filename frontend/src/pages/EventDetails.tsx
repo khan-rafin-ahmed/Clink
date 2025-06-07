@@ -160,44 +160,76 @@ export function EventDetails() {
   const eventUrl = `${window.location.origin}/events/${event.id}`
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="outline"
-            onClick={goBackSmart}
-          >
-            ← Back
-          </Button>
-          <div className="flex items-center gap-2">
-            {/* Host Actions */}
-            {user && event.created_by === user.id && (
-              <>
-                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
-              </>
-            )}
-            <button onClick={() => setIsShareModalOpen(true)} className="flex items-center space-x-1 text-muted-foreground hover:text-foreground">
-              Share
-            </button>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-12 fade-in">
+          <div className="flex items-center justify-between mb-6">
+            <Button
+              variant="outline"
+              onClick={goBackSmart}
+              size="lg"
+              className="group backdrop-blur-sm"
+            >
+              <span className="mr-2 group-hover:-translate-x-1 transition-transform">←</span>
+              Back
+            </Button>
+            <div className="flex items-center gap-3">
+              {/* Host Actions */}
+              {user && event.created_by === user.id && (
+                <>
+                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="group backdrop-blur-sm">
+                    <Edit className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive group backdrop-blur-sm">
+                    <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                    Delete
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" onClick={() => setIsShareModalOpen(true)} className="group backdrop-blur-sm">
+                <span className="mr-2 group-hover:scale-110 transition-transform">📤</span>
+                Share
+              </Button>
+            </div>
+          </div>
+
+          {/* Event Title & Info */}
+          <div className="text-center space-y-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground">
+              {event.title}
+            </h1>
+
+            <div className="bg-gradient-card rounded-2xl p-6 lg:p-8 border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm">
+              <div className="grid sm:grid-cols-2 gap-6 text-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📅</span>
+                  <span className="text-foreground font-medium">{format(new Date(event.date_time), 'PPP p')}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📍</span>
+                  <span className="text-foreground font-medium">{event.location}</span>
+                </div>
+              </div>
+              {event.notes && (
+                <div className="mt-6 pt-6 border-t border-border/50">
+                  <p className="text-muted-foreground leading-relaxed">{event.notes}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 mb-4">
-          <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
-          {/* Crew badge removed - using Crew System now */}
-        </div>
-        <div className="mt-4 space-y-2 text-muted-foreground">
-          <p>📅 {format(new Date(event.date_time), 'PPP p')}</p>
-          <p>📍 {event.location}</p>
-          {event.notes && <p className="mt-4">{event.notes}</p>}
-        </div>
-      </div>
 
       {user && (
         <div className="mb-8 p-4 bg-card rounded-lg border">
@@ -289,6 +321,7 @@ export function EventDetails() {
           onEventDeleted={handleEventDeleted}
         />
       )}
+      </div>
     </div>
   )
 }

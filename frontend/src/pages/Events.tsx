@@ -123,29 +123,48 @@ function EventsContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-foreground">Discover Sessions 🍻</h1>
-        <p className="text-muted-foreground mt-1">Find drinking sessions to join</p>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      {!events || events.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="mb-8">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">🔍</span>
-            </div>
-            <h2 className="text-2xl font-display font-bold text-foreground mb-2">No sessions found</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              No public sessions available right now. Check back later or create your own!
-            </p>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Header */}
+        <div className="text-center mb-12 fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-6">
+            <span className="text-primary font-medium">Your Events</span>
           </div>
-          <Button onClick={() => navigate('/profile')} size="lg" className="font-semibold">
-            🍻 Create a Session
-          </Button>
+          <h1 className="text-4xl sm:text-5xl font-display font-bold text-foreground mb-4">
+            Your <span className="bg-gradient-primary bg-clip-text text-transparent">Sessions</span> 🍻
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Manage and discover drinking sessions you're part of
+          </p>
         </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+        <div className="slide-up" style={{ animationDelay: '0.3s' }}>
+          {!events || events.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-gold">
+                <span className="text-5xl">🔍</span>
+              </div>
+              <h2 className="text-3xl font-display font-bold text-foreground mb-4">No Sessions Found</h2>
+              <p className="text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
+                No sessions available right now. Check back later or create your own epic session!
+              </p>
+              <Button onClick={() => navigate('/profile')} size="xl" className="group hover-glow">
+                🍻 Create a Session
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {events.map(event => {
             const userRsvp = event.rsvps?.find(r => r.user_id === user.id)
 
@@ -180,26 +199,34 @@ function EventsContent() {
             }
 
             return (
-              <div key={event.id} className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{getDrinkEmoji(event.drink_type || 'beer')}</span>
-                    <span className="text-lg">{getVibeEmoji(event.vibe || 'casual')}</span>
-                    {event.is_public ? (
-                      <Globe className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Lock className="w-4 h-4 text-orange-500" />
-                    )}
+              <div key={event.id} className="scale-in" style={{ animationDelay: `${0.4 + (events.indexOf(event) * 0.1)}s` }}>
+                <div className="bg-gradient-card rounded-2xl p-6 border border-border hover:border-border-hover transition-all duration-300 hover-lift backdrop-blur-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-3xl">{getDrinkEmoji(event.drink_type || 'beer')}</span>
+                      <span className="text-2xl">{getVibeEmoji(event.vibe || 'casual')}</span>
+                      {event.is_public ? (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 rounded-full">
+                          <Globe className="w-3 h-3 text-green-500" />
+                          <span className="text-xs text-green-500 font-medium">Public</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-full">
+                          <Lock className="w-3 h-3 text-orange-500" />
+                          <span className="text-xs text-orange-500 font-medium">Private</span>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/events/${event.id}`)}
+                      className="group backdrop-blur-sm"
+                    >
+                      View Details
+                      <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/events/${event.id}`)}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    View Details
-                  </Button>
-                </div>
 
                 <h3 className="text-lg font-semibold text-foreground mb-2">{event.title}</h3>
 
@@ -252,12 +279,15 @@ function EventsContent() {
                       </SelectContent>
                     </Select>
                   </div>
+                  </div>
                 </div>
               </div>
             )
           })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

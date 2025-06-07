@@ -10,10 +10,12 @@ import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
-// import { InnerCircleBadge } from '@/components/InnerCircleBadge' // Removed - using Crew System now
+import { EnhancedEventCard } from '@/components/EnhancedEventCard'
+// import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
   FullPageSkeleton,
-  ErrorFallback
+  ErrorFallback,
+  EventCardSkeleton
 } from '@/components/SkeletonLoaders'
 import {
   Search,
@@ -191,6 +193,7 @@ function DiscoverContent() {
   const [drinkFilter, setDrinkFilter] = useState<string>('all')
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
+  // const commandMenu = useCommandMenu()
   const { user } = useAuth()
 
   // Create a stable fetch function that will receive the user from the hook
@@ -409,15 +412,28 @@ function DiscoverContent() {
 
   // Main content render
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
-            Discover Epic Sessions 🍻
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Header */}
+        <div className="text-center mb-12 fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-6">
+            <span className="text-primary font-medium">Discover Events</span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground mb-6">
+            Discover Epic <span className="bg-gradient-primary bg-clip-text text-transparent">Sessions</span> 🍻
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Find amazing drinking sessions happening near you. Join the party and make some memories!
+          <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            Find amazing drinking sessions happening near you. Join the party and make some legendary memories!
           </p>
         </div>
 
@@ -516,24 +532,32 @@ function DiscoverContent() {
           </div>
         </div>
 
-        {/* Events Grid */}
-        {filteredEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">No sessions found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your filters or search terms to find the perfect party
-            </p>
-            <Button onClick={() => {
-              setSearchQuery('')
-              setFilterBy('all')
-              setDrinkFilter('all')
-            }}>
-              Clear Filters
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Enhanced Events Grid */}
+        <div className="slide-up" style={{ animationDelay: '0.4s' }}>
+          {filteredEvents.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-5xl">🔍</span>
+              </div>
+              <h3 className="text-2xl font-heading font-bold mb-3">No Sessions Found</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
+                Try adjusting your filters or search terms to find the perfect party
+              </p>
+              <Button
+                size="lg"
+                onClick={() => {
+                  setSearchQuery('')
+                  setFilterBy('all')
+                  setDrinkFilter('all')
+                }}
+                className="group hover-glow"
+              >
+                🔄 Clear Filters
+                <span className="ml-2 group-hover:rotate-180 transition-transform">↻</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {filteredEvents.map((event) => {
               return (
                 <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
@@ -635,6 +659,7 @@ function DiscoverContent() {
             })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Share Modal */}
@@ -649,6 +674,12 @@ function DiscoverContent() {
           url={`${window.location.origin}/event/${selectedEventForShare.event_code || selectedEventForShare.id}`}
         />
       )}
+
+      {/* Command Menu - Temporarily disabled */}
+      {/* <CommandMenu
+        open={commandMenu.open}
+        onOpenChange={commandMenu.setOpen}
+      /> */}
     </div>
   )
 }

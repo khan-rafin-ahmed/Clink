@@ -19,7 +19,8 @@ import {
   Wine,
   Beer,
   Martini,
-  Coffee
+  Coffee,
+  ArrowRight
 } from 'lucide-react'
 import type { Event } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
@@ -150,15 +151,15 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
   const statusBadge = getStatusBadge(event.date_time)
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className="interactive-card group">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-lg line-clamp-2">
+              <h3 className="font-heading font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
                 {event.title}
               </h3>
-              <Badge variant={statusBadge.variant}>
+              <Badge variant={statusBadge.variant} size="sm">
                 {statusBadge.text}
               </Badge>
             </div>
@@ -267,9 +268,10 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           <div className="flex gap-2">
             {/* View Details Button */}
             <Link to={getEventUrl().replace(window.location.origin, '')} className="flex-1">
-              <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
+              <Button variant="outline" className="w-full group/btn">
                 <span className="hidden sm:inline">View Details</span>
                 <span className="sm:hidden">Details</span>
+                <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
               </Button>
             </Link>
 
@@ -277,8 +279,8 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             <Button
               onClick={() => setIsShareModalOpen(true)}
               variant="ghost"
-              size="sm"
-              className="px-3 text-muted-foreground hover:text-primary hover:bg-primary/10"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10 hover-scale"
             >
               <Share2 className="w-4 h-4" />
               <span className="sr-only">Share</span>

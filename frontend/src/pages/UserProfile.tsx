@@ -10,6 +10,7 @@ import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
@@ -29,6 +30,7 @@ interface EnhancedEvent extends Event {
 
 export function UserProfile() {
   const { user, loading } = useAuth()
+  const navigate = useNavigate()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -265,10 +267,20 @@ export function UserProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading your profile...</p>
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
+
+        <div className="relative flex h-screen items-center justify-center">
+          <div className="text-center space-y-6 fade-in">
+            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold animate-pulse">
+              <span className="text-3xl">👤</span>
+            </div>
+            <div className="space-y-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+              <p className="text-lg text-muted-foreground font-medium">Loading your profile...</p>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -285,169 +297,226 @@ export function UserProfile() {
   const displayedPastSessions = pastSessions.slice((pastPage - 1) * itemsPerPage, pastPage * itemsPerPage)
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Profile Header */}
-          <div className="text-center space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
-                <AvatarImage src={userProfile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xl sm:text-2xl font-bold">
-                  {avatarFallback}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center sm:text-left space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                  {displayName}'s Profile 🍻
-                </h1>
-                {userProfile?.tagline && (
-                  <p className="text-sm sm:text-base text-primary font-medium italic">
-                    "{userProfile.tagline}"
-                  </p>
-                )}
-                {userProfile?.bio && (
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    {userProfile.bio}
-                  </p>
-                )}
-              </div>
-            </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
 
-            <div className="bg-primary/10 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                <strong>Signed in as:</strong> {user.email}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ready to raise some hell? Let's get this party started!
-              </p>
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8">
+          {/* Enhanced Profile Header */}
+          <div className="text-center space-y-8 fade-in">
+            <div className="relative">
+              {/* Profile Avatar & Info */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
+                <div className="relative group">
+                  <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-primary/20 shadow-gold hover-scale">
+                    <AvatarImage src={userProfile?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl sm:text-4xl font-bold">
+                      {avatarFallback}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+
+                <div className="text-center sm:text-left space-y-3">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground">
+                    {displayName}'s <span className="bg-gradient-primary bg-clip-text text-transparent">Profile</span> 🍻
+                  </h1>
+                  {userProfile?.tagline && (
+                    <p className="text-lg sm:text-xl text-primary font-medium italic">
+                      "{userProfile.tagline}"
+                    </p>
+                  )}
+                  {userProfile?.bio && (
+                    <p className="text-base text-muted-foreground max-w-md leading-relaxed">
+                      {userProfile.bio}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Enhanced Status Card */}
+              <div className="bg-gradient-card rounded-2xl p-6 max-w-lg mx-auto mt-8 border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <p className="text-sm font-medium text-foreground">
+                    <strong>Signed in as:</strong> {user.email}
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Ready to raise some hell? Let's get this party started! 🤘
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* User Stats */}
-          <UserStats className="max-w-2xl mx-auto" refreshTrigger={statsRefresh} />
+          {/* Enhanced User Stats */}
+          <div className="slide-up" style={{ animationDelay: '0.2s' }}>
+            <UserStats className="max-w-2xl mx-auto" refreshTrigger={statsRefresh} />
+          </div>
 
-          {/* Next Event Banner */}
+          {/* Enhanced Next Event Banner */}
           {user?.id && (
-            <NextEventBanner
-              userId={user.id}
-              className="max-w-4xl mx-auto"
-            />
+            <div className="slide-up" style={{ animationDelay: '0.3s' }}>
+              <NextEventBanner
+                userId={user.id}
+                className="max-w-4xl mx-auto"
+              />
+            </div>
           )}
 
-          {/* Quick Actions */}
-          <div className="text-center space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <QuickEventModal
-                trigger={
-                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
-                    <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">Create New Session</span>
-                    <span className="sm:hidden">Raise Some Hell</span>
-                  </Button>
-                }
-                onEventCreated={handleEventCreated}
-              />
-
-              <CreateCrewModal
-                trigger={
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold">
-                    <Users className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">Create Crew</span>
-                    <span className="sm:hidden">Build Crew</span>
-                  </Button>
-                }
-                onCrewCreated={handleCrewCreated}
-              />
-            </div>
-          </div>
-
-          {/* Crews You're In */}
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-                Crews You're In
-              </h2>
-            </div>
-
-            {userCrews.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {userCrews.map((crew) => (
-                  <CrewCard
-                    key={crew.id}
-                    crew={crew}
-                    onCrewUpdated={handleCrewUpdated}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Crews Yet</h3>
-                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
-                  Create your first crew to organize your drinking buddies and make event planning easier.
-                </p>
-                <CreateCrewModal
-                  trigger={
-                    <Button className="w-full sm:w-auto">
-                      <Users className="mr-2 h-4 w-4" />
-                      Create Your First Crew
-                    </Button>
-                  }
-                  onCrewCreated={handleCrewCreated}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Upcoming Sessions Preview */}
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
-                Your Coming Hell
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Events you're hosting and attending
-              </p>
-            </div>
-
-            {loadingEnhanced ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-muted-foreground">Loading sessions...</p>
-              </div>
-            ) : enhancedSessions.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {enhancedSessions.map((session) => (
-                  <EventCard
-                    key={session.id}
-                    event={session}
-                    showHostActions={session.isHosting}
-                    onEdit={session.isHosting ? handleEdit : undefined}
-                    onDelete={session.isHosting ? handleDelete : undefined}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Upcoming Hell</h3>
-                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
-                  You haven't created or joined any upcoming hell-raising sessions yet.
-                </p>
+          {/* Enhanced Quick Actions */}
+          <div className="slide-up" style={{ animationDelay: '0.4s' }}>
+            <div className="text-center space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-6">
                 <QuickEventModal
                   trigger={
-                    <Button className="w-full sm:w-auto">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Start Raising Hell
+                    <Button size="xl" className="w-full sm:w-auto group hover-glow">
+                      <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                      <span className="hidden sm:inline">🍺 Create New Session</span>
+                      <span className="sm:hidden">🍺 Raise Hell</span>
+                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
                     </Button>
                   }
                   onEventCreated={handleEventCreated}
                 />
+
+                <CreateCrewModal
+                  trigger={
+                    <Button size="xl" variant="outline" className="w-full sm:w-auto group backdrop-blur-sm">
+                      <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <span className="hidden sm:inline">Create Crew</span>
+                      <span className="sm:hidden">Build Crew</span>
+                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                    </Button>
+                  }
+                  onCrewCreated={handleCrewCreated}
+                />
+
+                <Button
+                  size="xl"
+                  variant="outline"
+                  onClick={() => navigate('/profile/edit')}
+                  className="w-full sm:w-auto group backdrop-blur-sm"
+                >
+                  ✏️ Edit Profile
+                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                </Button>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Enhanced Crews Section */}
+          <div className="slide-up" style={{ animationDelay: '0.5s' }}>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold flex items-center gap-3">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  Your <span className="bg-gradient-primary bg-clip-text text-transparent">Crews</span>
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {userCrews.length} crew{userCrews.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {userCrews.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {userCrews.map((crew, index) => (
+                    <div key={crew.id} className="scale-in" style={{ animationDelay: `${0.6 + index * 0.1}s` }}>
+                      <CrewCard
+                        crew={crew}
+                        onCrewUpdated={handleCrewUpdated}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border hover:border-border-hover transition-all duration-300">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Users className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-heading font-bold mb-3">No Crews Yet</h3>
+                  <p className="text-base text-muted-foreground mb-6 px-4 max-w-md mx-auto leading-relaxed">
+                    Create your first crew to organize your drinking buddies and make event planning easier.
+                  </p>
+                  <CreateCrewModal
+                    trigger={
+                      <Button size="lg" className="group hover-glow">
+                        <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                        Create Your First Crew
+                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      </Button>
+                    }
+                    onCrewCreated={handleCrewCreated}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Enhanced Upcoming Sessions */}
+          <div className="slide-up" style={{ animationDelay: '0.6s' }}>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold flex items-center gap-3">
+                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  Your Coming <span className="bg-gradient-primary bg-clip-text text-transparent">Hell</span>
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {enhancedSessions.length} upcoming session{enhancedSessions.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {loadingEnhanced ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Calendar className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                  <p className="text-muted-foreground font-medium">Loading your sessions...</p>
+                </div>
+              ) : enhancedSessions.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {enhancedSessions.map((session, index) => (
+                    <div key={session.id} className="scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
+                      <EventCard
+                        event={session}
+                        showHostActions={session.isHosting}
+                        onEdit={session.isHosting ? handleEdit : undefined}
+                        onDelete={session.isHosting ? handleDelete : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border hover:border-border-hover transition-all duration-300">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Calendar className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-heading font-bold mb-3">No Upcoming Hell</h3>
+                  <p className="text-base text-muted-foreground mb-6 px-4 max-w-md mx-auto leading-relaxed">
+                    You haven't created or joined any upcoming hell-raising sessions yet. Time to change that!
+                  </p>
+                  <QuickEventModal
+                    trigger={
+                      <Button size="lg" className="group hover-glow">
+                        <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                        🍺 Start Raising Hell
+                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      </Button>
+                    }
+                    onEventCreated={handleEventCreated}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Your Past Sessions */}

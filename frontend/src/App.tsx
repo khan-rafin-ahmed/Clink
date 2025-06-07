@@ -15,6 +15,7 @@ import { AuthCallback } from './pages/AuthCallback'
 import { CrewJoin } from './pages/CrewJoin'
 import { CrewDetail } from './pages/CrewDetail'
 import { TestRatings } from './pages/TestRatings'
+import { StyleGuide } from './components/StyleGuide'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -56,6 +57,9 @@ function App() {
 
               {/* Test route for rating components */}
               <Route path="/test-ratings" element={<TestRatings />} />
+
+              {/* Style guide for design system */}
+              <Route path="/style-guide" element={<StyleGuide />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">

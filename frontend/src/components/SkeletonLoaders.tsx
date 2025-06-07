@@ -1,41 +1,114 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
-// Generic skeleton component
-export function SkeletonBox({ className = '', ...props }: { className?: string; [key: string]: any }) {
-  return <Skeleton className={`bg-muted animate-pulse ${className}`} {...props} />
+// Enhanced skeleton component with shimmer effect
+export function SkeletonBox({ className = '', shimmer = true, ...props }: {
+  className?: string
+  shimmer?: boolean
+  [key: string]: any
+}) {
+  return (
+    <Skeleton
+      className={cn(
+        'bg-muted',
+        shimmer ? 'shimmer' : 'animate-pulse',
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-// Event card skeleton for Discover page
-export function EventCardSkeleton() {
-  return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-2">
-            <SkeletonBox className="h-6 w-3/4" />
-            <div className="flex items-center gap-2">
-              <SkeletonBox className="h-4 w-4 rounded-full" />
-              <SkeletonBox className="h-4 w-24" />
-            </div>
-            <div className="flex items-center gap-2">
-              <SkeletonBox className="h-4 w-4 rounded-full" />
-              <SkeletonBox className="h-4 w-32" />
+// Enhanced Event card skeleton for Discover page
+export function EventCardSkeleton({ variant = 'default' }: { variant?: 'default' | 'featured' | 'compact' }) {
+  if (variant === 'compact') {
+    return (
+      <Card className="interactive-card">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <SkeletonBox className="w-16 h-16 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-start justify-between">
+                <SkeletonBox className="h-4 w-24" />
+                <SkeletonBox className="h-5 w-16 rounded-full" />
+              </div>
+              <SkeletonBox className="h-3 w-20" />
+              <div className="flex items-center justify-between">
+                <SkeletonBox className="h-3 w-8" />
+                <SkeletonBox className="h-6 w-12 rounded-md" />
+              </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const isFeatured = variant === 'featured'
+
+  return (
+    <Card className={cn(
+      "interactive-card overflow-hidden",
+      isFeatured && "ring-2 ring-primary/20"
+    )}>
+      {/* Hero Image Skeleton */}
+      <div className={cn(
+        "relative",
+        isFeatured ? "h-48 sm:h-56" : "h-40 sm:h-48"
+      )}>
+        <SkeletonBox className="w-full h-full" />
+
+        {/* Top badges skeleton */}
+        <div className="absolute top-3 left-3 flex gap-2">
           <SkeletonBox className="h-6 w-16 rounded-full" />
+          {isFeatured && <SkeletonBox className="h-6 w-20 rounded-full" />}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+
+        {/* Share button skeleton */}
+        <SkeletonBox className="absolute top-3 right-3 h-8 w-8 rounded-md" />
+
+        {/* Bottom overlay skeleton */}
+        <div className="absolute bottom-3 left-3 right-3 space-y-2">
+          <SkeletonBox className={cn(
+            "w-3/4",
+            isFeatured ? "h-6" : "h-5"
+          )} />
+          <SkeletonBox className="h-4 w-32" />
+        </div>
+      </div>
+
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        {/* Location skeleton */}
         <div className="flex items-center gap-2">
+          <SkeletonBox className="h-4 w-4 rounded-full" />
+          <SkeletonBox className="h-4 w-40" />
+        </div>
+
+        {/* Description skeleton */}
+        <div className="space-y-2">
+          <SkeletonBox className="h-4 w-full" />
+          <SkeletonBox className="h-4 w-2/3" />
+        </div>
+
+        {/* Vibe and stats skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SkeletonBox className="h-6 w-16 rounded-full" />
+            <SkeletonBox className="h-4 w-20" />
+          </div>
+          <SkeletonBox className="h-4 w-8" />
+        </div>
+
+        {/* Host info skeleton */}
+        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
           <SkeletonBox className="h-8 w-8 rounded-full" />
           <SkeletonBox className="h-4 w-24" />
         </div>
-        <SkeletonBox className="h-3 w-full" />
-        <SkeletonBox className="h-3 w-2/3" />
-        <div className="flex items-center justify-between pt-2">
-          <SkeletonBox className="h-4 w-20" />
-          <SkeletonBox className="h-8 w-24 rounded-md" />
+
+        {/* Action buttons skeleton */}
+        <div className="space-y-2">
+          <SkeletonBox className="h-10 w-full rounded-md" />
         </div>
       </CardContent>
     </Card>
