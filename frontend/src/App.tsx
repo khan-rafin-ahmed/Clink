@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/auth-context'
-import { SWRConfig } from 'swr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
@@ -31,8 +30,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SWRConfig value={{ revalidateOnFocus: false }}>
-        <AuthProvider>
+      <AuthProvider>
           <Toaster richColors position="top-right" />
           <Router>
             <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -84,7 +82,6 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
-    </SWRConfig>
   </QueryClientProvider>
   )
 }
