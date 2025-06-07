@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Event, RsvpStatus, UserProfile } from '@/types'
+import { getEventRatingStats } from '@/lib/eventRatingService'
 
 
 
@@ -44,11 +45,16 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false, c
       .select('id, status, user_id, invited_by')
       .eq('event_id', eventData.id)
 
+    // Get rating stats for the event
+    const ratingStats = await getEventRatingStats(eventData.id)
+
     // Combine the data
     const event = {
       ...eventData,
       rsvps: rsvps || [],
-      event_members: eventMembers || []
+      event_members: eventMembers || [],
+      average_rating: ratingStats.averageRating,
+      total_ratings: ratingStats.totalRatings
     }
 
     // For private events, verify user has access
@@ -103,11 +109,16 @@ export async function getEventDetails(eventId: string) {
       .select('id, status, user_id, invited_by')
       .eq('event_id', eventData.id)
 
+    // Get rating stats for the event
+    const ratingStats = await getEventRatingStats(eventData.id)
+
     // Combine the data
     const event = {
       ...eventData,
       rsvps: rsvps || [],
-      event_members: eventMembers || []
+      event_members: eventMembers || [],
+      average_rating: ratingStats.averageRating,
+      total_ratings: ratingStats.totalRatings
     }
 
     return event

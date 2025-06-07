@@ -6,6 +6,7 @@ import { getUserAccessibleEvents } from '@/lib/eventService'
 import { updateRsvp } from '@/lib/eventService'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { StarRatingDisplay } from '@/components/StarRating'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Globe, Lock, Users, Calendar, MapPin } from 'lucide-react'
@@ -215,6 +216,15 @@ function EventsContent() {
                     <Users className="w-4 h-4" />
                     <span>{rsvpCounts.going} going, {rsvpCounts.maybe} maybe</span>
                   </div>
+                  {event.total_ratings && event.total_ratings > 0 && (
+                    <StarRatingDisplay
+                      averageRating={event.average_rating || 0}
+                      totalRatings={event.total_ratings}
+                      size="sm"
+                      variant="compact"
+                      showCount={true}
+                    />
+                  )}
                 </div>
 
                 {event.notes && (

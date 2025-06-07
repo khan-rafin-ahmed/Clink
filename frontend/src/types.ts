@@ -65,6 +65,8 @@ export interface Event {
     } | null
   }[]
   event_members?: EventMember[]
+  average_rating?: number
+  total_ratings?: number
 }
 
 export interface LocationData {
@@ -163,4 +165,18 @@ export interface EventCommentReaction {
   user_id: string
   reaction: '🍻' | '🙌' | '🤘' | '🥴' | '😂' | '❤️' | '🔥'
   created_at: string
+}
+
+export interface EventRating {
+  id: string
+  event_id: string
+  user_id: string
+  rating: number
+  feedback_text?: string | null
+  created_at: string
+  updated_at: string
+  user?: {
+    display_name: string | null
+    avatar_url: string | null
+  }
 }

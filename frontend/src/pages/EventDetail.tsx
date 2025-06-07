@@ -16,6 +16,7 @@ import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { InteractiveMap } from '@/components/InteractiveMap'
 import { EventGallery } from '@/components/EventGallery'
 import { EventComments } from '@/components/EventComments'
+import { EventRatingDisplay } from '@/components/EventRatingDisplay'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
 import {
@@ -66,6 +67,8 @@ interface EventWithRsvps {
     avatar_url: string | null
   }
   end_time?: string
+  average_rating?: number
+  total_ratings?: number
 }
 
 export function EventDetail() {
@@ -847,6 +850,11 @@ export function EventDetail() {
                 eventId={event.id}
                 canComment={Boolean(userAttended)}
                 canModerate={Boolean(isHost)}
+              />
+
+              <EventRatingDisplay
+                event={event as any}
+                className="mt-6"
               />
             </>
           )}

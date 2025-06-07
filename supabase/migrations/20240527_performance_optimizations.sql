@@ -95,7 +95,7 @@ BEGIN
     LEFT JOIN (
       SELECT event_id, status
       FROM rsvps
-      WHERE user_id = user_id
+      WHERE rsvps.user_id = get_user_accessible_events.user_id
     ) user_rsvps ON ae.id = user_rsvps.event_id
   )
   SELECT es.id, es.title, es.location, es.date_time, es.drink_type, es.vibe,
@@ -107,8 +107,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Add additional indexes for better performance (removed CONCURRENTLY to work in transactions)
-CREATE INDEX IF NOT EXISTS events_date_time_public_idx ON events(date_time, is_public) WHERE date_time >= NOW();
+-- Add additional indexes for better performance (removed CONCURRENTLY and NOW() predicate)
+CREATE INDEX IF NOT EXISTS events_date_time_public_idx ON events(date_time, is_public);
 CREATE INDEX IF NOT EXISTS events_created_by_date_idx ON events(created_by, date_time);
 CREATE INDEX IF NOT EXISTS rsvps_event_status_idx ON rsvps(event_id, status);
 CREATE INDEX IF NOT EXISTS rsvps_user_event_idx ON rsvps(user_id, event_id);

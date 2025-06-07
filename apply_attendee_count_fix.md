@@ -6,7 +6,10 @@
 2. Navigate to SQL Editor
 3. Copy and paste the following SQL to fix the attendee count consistency issue:
 
-**Note**: This SQL has been fixed to remove `CREATE INDEX CONCURRENTLY` commands that cause transaction block errors in Supabase migrations.
+**Note**: This SQL has been fixed to:
+- Remove `CREATE INDEX CONCURRENTLY` commands that cause transaction block errors
+- Fix ambiguous `user_id` column references that caused SQL errors
+- Properly structure CTEs to avoid correlated subquery issues
 
 ```sql
 -- Fix attendee count consistency across profile and event detail pages

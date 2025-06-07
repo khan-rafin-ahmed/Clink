@@ -14,6 +14,7 @@ import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
 import { CrewJoin } from './pages/CrewJoin'
 import { CrewDetail } from './pages/CrewDetail'
+import { TestRatings } from './pages/TestRatings'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -52,6 +53,9 @@ function App() {
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />
+
+              {/* Test route for rating components */}
+              <Route path="/test-ratings" element={<TestRatings />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">

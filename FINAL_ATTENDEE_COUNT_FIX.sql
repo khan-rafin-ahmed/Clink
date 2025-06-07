@@ -1,6 +1,6 @@
 -- FINAL ATTENDEE COUNT CONSISTENCY FIX
--- This SQL fixes the "column event_id does not exist" error and ensures
--- profile event cards show the same count as event detail pages
+-- This SQL fixes all SQL errors and ensures profile event cards show the same count as event detail pages
+-- Fixed issues: ambiguous user_id references, immutable function errors, transaction block errors
 
 -- Drop and recreate the get_user_accessible_events function with corrected SQL
 DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
@@ -82,37 +82,37 @@ BEGIN
   ),
   attendee_counts AS (
     -- Calculate total unique attendees for each event
-    SELECT 
-      event_id,
-      COUNT(DISTINCT user_id) as total_attendees
+    SELECT
+      all_attendees.event_id,
+      COUNT(DISTINCT all_attendees.user_id)::INTEGER as total_attendees
     FROM (
       -- RSVPs with status 'going'
       SELECT r.event_id, r.user_id
       FROM rsvps r
       INNER JOIN accessible_events ae ON r.event_id = ae.id
       WHERE r.status = 'going'
-      
+
       UNION
-      
+
       -- Event members with status 'accepted' (crew members)
       SELECT em.event_id, em.user_id
       FROM event_members em
       INNER JOIN accessible_events ae ON em.event_id = ae.id
       WHERE em.status = 'accepted'
-      
+
       UNION
-      
+
       -- Always include the host
       SELECT ae.id as event_id, ae.created_by as user_id
       FROM accessible_events ae
       WHERE ae.created_by IS NOT NULL
     ) all_attendees
-    GROUP BY event_id
+    GROUP BY all_attendees.event_id
   ),
   event_stats AS (
     SELECT ae.*,
            COALESCE(ac.total_attendees, 1) as rsvp_count, -- Always at least 1 (host)
-           COALESCE(user_rsvps.status, null) as user_rsvp_status
+           COALESCE(user_rsvps.status::TEXT, null) as user_rsvp_status
     FROM accessible_events ae
     LEFT JOIN attendee_counts ac ON ae.id = ac.event_id
     LEFT JOIN (
