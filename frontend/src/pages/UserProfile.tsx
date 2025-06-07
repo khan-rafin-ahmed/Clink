@@ -10,7 +10,7 @@ import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
@@ -30,7 +30,6 @@ interface EnhancedEvent extends Event {
 
 export function UserProfile() {
   const { user, loading } = useAuth()
-  const navigate = useNavigate()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -393,16 +392,7 @@ export function UserProfile() {
                   />
                 </div>
 
-                <div className="pt-4 border-t border-border/50">
-                  <Button
-                    variant="ghost"
-                    onClick={() => navigate('/profile/edit')}
-                    className="group text-muted-foreground hover:text-foreground"
-                  >
-                    ✏️ Edit Profile
-                    <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                  </Button>
-                </div>
+
               </div>
             </div>
           </div>

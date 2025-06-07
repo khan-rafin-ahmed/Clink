@@ -24,27 +24,60 @@ export async function submitEventRating(
     throw new Error('You can only rate events you attended')
   }
 
-  // Use upsert to handle both new ratings and updates
-  const { data, error } = await supabase
-    .from('event_ratings')
-    .upsert({
-      event_id: eventId,
-      user_id: user.id,
-      rating,
-      feedback_text: feedbackText,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'event_id,user_id'
-    })
-    .select('*')
-    .single()
+  try {
+    // First check if rating already exists
+    const { data: existingRating } = await supabase
+      .from('event_ratings')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', user.id)
+      .single()
 
-  if (error) {
-    console.error('Error submitting rating:', error)
-    throw new Error('Failed to submit rating')
+    let data, error
+
+    if (existingRating) {
+      // Update existing rating
+      const result = await supabase
+        .from('event_ratings')
+        .update({
+          rating,
+          feedback_text: feedbackText,
+          updated_at: new Date().toISOString()
+        })
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .select('*')
+        .single()
+
+      data = result.data
+      error = result.error
+    } else {
+      // Insert new rating
+      const result = await supabase
+        .from('event_ratings')
+        .insert({
+          event_id: eventId,
+          user_id: user.id,
+          rating,
+          feedback_text: feedbackText
+        })
+        .select('*')
+        .single()
+
+      data = result.data
+      error = result.error
+    }
+
+    if (error) {
+      console.error('Error submitting rating:', error)
+      throw new Error(`Failed to submit rating: ${error.message}`)
+    }
+
+    return data
+  } catch (err: any) {
+    console.error('Error in submitEventRating:', err)
+    throw new Error(`Failed to submit rating: ${err.message || 'Unknown error'}`)
   }
-
-  return data
 }
 
 /**
