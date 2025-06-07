@@ -143,8 +143,8 @@ class CacheService {
    * Get or set pattern - fetch data if not in cache
    */
   async getOrSet<T>(
-    key: string, 
-    fetcher: () => Promise<T>, 
+    key: string,
+    fetcher: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
     const cached = this.get<T>(key)
@@ -155,6 +155,47 @@ class CacheService {
     const data = await fetcher()
     this.set(key, data, ttl)
     return data
+  }
+
+  /**
+   * Invalidate cache entries by pattern
+   */
+  invalidatePattern(pattern: string): void {
+    const regex = new RegExp(pattern)
+
+    // Clear from memory cache
+    for (const key of this.memoryCache.keys()) {
+      if (regex.test(key)) {
+        this.memoryCache.delete(key)
+      }
+    }
+
+    // Clear from localStorage
+    if (this.config.enableLocalStorage) {
+      const keys = Object.keys(localStorage).filter(key =>
+        key.startsWith('thirstee_cache_') && regex.test(key.replace('thirstee_cache_', ''))
+      )
+      keys.forEach(key => localStorage.removeItem(key))
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): {
+    memorySize: number
+    localStorageSize: number
+    totalKeys: number
+  } {
+    const localStorageKeys = this.config.enableLocalStorage
+      ? Object.keys(localStorage).filter(key => key.startsWith('thirstee_cache_')).length
+      : 0
+
+    return {
+      memorySize: this.memoryCache.size,
+      localStorageSize: localStorageKeys,
+      totalKeys: this.memoryCache.size + localStorageKeys
+    }
   }
 
   /**

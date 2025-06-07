@@ -1,10 +1,12 @@
 // frontend/src/pages/EventDetail.tsx
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useAuthState } from '@/hooks/useAuthState'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { supabase } from '@/lib/supabase'
+import { useCachedData } from '@/hooks/useCachedData'
+import { usePageFocus } from '@/hooks/usePageFocus'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ShareModal } from '@/components/ShareModal'
@@ -33,7 +35,6 @@ import {
 } from 'lucide-react'
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
-import { getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 
@@ -56,7 +57,6 @@ export function EventDetail() {
   const [sessionReady, setSessionReady] = useState(false)
 
   const mountedRef = useRef(true)
-  const loadingRef = useRef(false)
 
   // Determine if this is a private event based on the route
   const isPrivateEvent = location.pathname.startsWith('/private-event/')
@@ -88,110 +88,125 @@ export function EventDetail() {
     return rsvp?.status === 'going' || member?.status === 'accepted'
   }
 
-  // 2️⃣ Main loader for event + RSVPs + members + host + participants
-  const loadEvent = useCallback(async () => {
-    if (loadingRef.current || !mountedRef.current || !slug) return
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
-    try {
-      loadingRef.current = true
-      setLoading(true)
-      setError(null)
+  // 3️⃣ Cached event data fetching
+  const eventCacheKey = useMemo(() =>
+    `event_detail_${slug}_${isPrivateEvent ? 'private' : 'public'}`,
+    [slug, isPrivateEvent]
+  )
 
-      let eventData: EventWithRsvps | null = null
+  const eventFetcher = useCallback(async () => {
+    if (!slug) throw new Error('No slug provided')
 
-      if (!isPrivateEvent) {
-        // First try to load by ID if the slug looks like a UUID
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
-          const { data: eventById, error: idError } = await supabase
-            .from('events')
-            .select('*')
-            .eq('id', slug)
-            .maybeSingle()
+    let eventData: EventWithRsvps | null = null
 
-          if (!idError && eventById) {
-            eventData = eventById as EventWithRsvps
-          }
-        }
+    if (!isPrivateEvent) {
+      // First try to load by ID if the slug looks like a UUID
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
+        const { data: eventById, error: idError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle()
 
-        // If not found by ID, try public_slug
-        if (!eventData) {
-          const { data: publicEvt, error: publicErr } = await supabase
-            .from('events')
-            .select('*')
-            .eq('public_slug', slug)
-            .maybeSingle()
-
-          if (publicErr || !publicEvt) {
-            toast.error('Event not found')
-            goBackSmart()
-            return
-          }
-          eventData = publicEvt as EventWithRsvps
-        }
-      } else {
-        try {
-          eventData = await getEventBySlug(slug, isPrivateEvent, user || null)
-        } catch (slugErr: any) {
-          if (slugErr.code === 'PGRST116' && !user) {
-            sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
-            toast.error('Please sign in to view this private event')
-            return
-          }
-          if (slugErr.message === 'Event not found') {
-            toast.error('Event not found')
-            goBackSmart()
-            return
-          }
-          throw slugErr
+        if (!idError && eventById) {
+          eventData = eventById as EventWithRsvps
         }
       }
 
+      // If not found by ID, try public_slug
       if (!eventData) {
-        toast.error('Event not found')
-        goBackSmart()
-        return
+        const { data: publicEvt, error: publicErr } = await supabase
+          .from('events')
+          .select('*')
+          .eq('public_slug', slug)
+          .maybeSingle()
+
+        if (publicErr || !publicEvt) {
+          throw new Error('Event not found')
+        }
+        eventData = publicEvt as EventWithRsvps
       }
+    } else {
+      // Private event logic
+      const { data: privateEvt, error: privateErr } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', slug)
+        .maybeSingle()
 
-      // Load RSVPs
-      try {
-        const { data: rsvpData, error: rsvpError } = await supabase
-          .from('rsvps')
-          .select('id, status, user_id')
-          .eq('event_id', eventData.id)
-
-        eventData.rsvps = rsvpError ? [] : rsvpData || []
-      } catch {
-        eventData.rsvps = []
+      if (privateErr || !privateEvt) {
+        throw new Error('Private event not found')
       }
+      eventData = privateEvt as EventWithRsvps
+    }
 
-      // Load event members (crew)
-      try {
-        const { data: memberData, error: memberError } = await supabase
-          .from('event_members')
-          .select('id, status, user_id')
-          .eq('event_id', eventData.id)
-          .eq('status', 'accepted')
+    // Load RSVPs
+    const { data: rsvpData, error: rsvpError } = await supabase
+      .from('rsvps')
+      .select('id, status, user_id')
+      .eq('event_id', eventData.id)
 
-        eventData.event_members = memberError ? [] : memberData || []
-      } catch {
-        eventData.event_members = []
-      }
+    eventData.rsvps = rsvpError ? [] : rsvpData || []
 
-      if (!mountedRef.current) return
-      setEvent(eventData)
+    // Load event members (crew)
+    const { data: memberData, error: memberError } = await supabase
+      .from('event_members')
+      .select('id, status, user_id')
+      .eq('event_id', eventData.id)
+      .eq('status', 'accepted')
 
+    eventData.event_members = memberError ? [] : memberData || []
+
+    return eventData
+  }, [slug, isPrivateEvent])
+
+  // Use page focus to prevent unnecessary refetches
+  const { markFetched } = usePageFocus()
+
+  const {
+    data: cachedEvent,
+    loading: eventLoading,
+    error: eventError,
+    refetch: refetchEvent
+  } = useCachedData({
+    cacheKey: eventCacheKey,
+    fetcher: eventFetcher,
+    ttl: 2 * 60 * 1000, // 2 minutes cache
+    enabled: sessionReady && !!slug,
+    dependencies: [sessionReady, slug],
+    onSuccess: (data) => {
+      setEvent(data)
       if (user) {
-        setIsJoined(computeIsJoined(eventData, user))
-      } else {
-        setIsJoined(false)
+        setIsJoined(computeIsJoined(data, user))
       }
+      markFetched() // Mark that we've successfully fetched data
+    },
+    onError: (error) => {
+      setError(error.message)
+      if (error.message.includes('not found')) {
+        goBackSmart()
+      }
+    }
+  })
 
+  // Load additional data after main event is cached
+  useEffect(() => {
+    if (!cachedEvent || !mountedRef.current) return
+
+    const loadAdditionalData = async () => {
       // Load host information
-      await loadHostInfo(eventData.created_by)
+      await loadHostInfo(cachedEvent.created_by)
 
       // Load participant profiles
-      const rsvpUserIds = eventData.rsvps.map(r => r.user_id)
-      const memberUserIds = eventData.event_members?.map(m => m.user_id) || []
+      const rsvpUserIds = cachedEvent.rsvps.map(r => r.user_id)
+      const memberUserIds = cachedEvent.event_members?.map(m => m.user_id) || []
       const allUserIds = Array.from(new Set([...rsvpUserIds, ...memberUserIds]))
 
       if (allUserIds.length > 0) {
@@ -217,30 +232,21 @@ export function EventDetail() {
           // silent
         }
       }
-    } catch (err) {
-      if (mountedRef.current) {
-        toast.error('Failed to load event')
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
-      loadingRef.current = false
     }
-  }, [slug, isPrivateEvent, user, isAuthReady, goBackSmart, mountedRef])
 
-  // Clean up on unmount
+    loadAdditionalData()
+  }, [cachedEvent])
+
+  // Update loading and error states
   useEffect(() => {
-    return () => {
-      mountedRef.current = false
+    setLoading(eventLoading)
+  }, [eventLoading])
+
+  useEffect(() => {
+    if (eventError) {
+      setError(eventError.message)
     }
-  }, [])
-
-  // 3️⃣ Once sessionReady is true, fetch the event
-  useEffect(() => {
-    if (!sessionReady || !slug) return
-    loadEvent()
-  }, [sessionReady, slug, loadEvent])
+  }, [eventError])
 
   // Load host's profile info
   const loadHostInfo = async (hostId: string) => {
@@ -321,7 +327,7 @@ export function EventDetail() {
           <h2 className="text-xl font-semibold text-foreground">Error Loading Event</h2>
           <p className="text-muted-foreground">{error}</p>
           <div className="flex gap-2 justify-center">
-            <Button onClick={() => loadEvent()} variant="outline">
+            <Button onClick={() => refetchEvent()} variant="outline">
               Try Again
             </Button>
             <Button onClick={goBackSmart}>
@@ -776,7 +782,7 @@ export function EventDetail() {
                     initialJoined={isJoined}
                     onJoinChange={joined => {
                       setIsJoined(joined)
-                      loadEvent()
+                      refetchEvent()
                     }}
                     className="w-full"
                     size="lg"
@@ -850,7 +856,7 @@ export function EventDetail() {
           event={event as any}
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
-          onEventUpdated={() => loadEvent()}
+          onEventUpdated={() => refetchEvent()}
         />
       )}
 

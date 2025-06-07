@@ -128,42 +128,35 @@ export function useAuthDependentData<T>(
   const shouldFetch = useMemo(() => {
     // Never fetch if disabled
     if (!enabled) {
-      console.log('🔒 useAuthDependentData: Fetch disabled')
       return false
     }
 
     // Never fetch if auth isn't ready
     if (!shouldRender) {
-      console.log('🔒 useAuthDependentData: Auth not ready, shouldRender =', shouldRender)
       return false
     }
 
     // Never fetch if there's an auth error
     if (authError) {
-      console.log('🔒 useAuthDependentData: Auth error present:', authError)
       return false
     }
 
     // If auth is required, STRICTLY validate user exists and has valid ID
     if (requireAuth) {
       if (authState !== 'authenticated') {
-        console.log('🔒 useAuthDependentData: Auth required but not authenticated, authState =', authState)
         return false
       }
 
       if (!user || !user.id) {
-        console.log('🔒 useAuthDependentData: Auth required but user/user.id missing:', { user: !!user, userId: user?.id })
         return false
       }
     }
 
     // For public data, fetch once auth state is determined (but still validate if user exists)
     if (!requireAuth && user && !user.id) {
-      console.log('🔒 useAuthDependentData: User exists but missing ID, blocking fetch')
       return false
     }
 
-    console.log('✅ useAuthDependentData: All guards passed, proceeding with fetch')
     return true
   }, [enabled, shouldRender, authError, requireAuth, authState, user])
 
@@ -177,12 +170,6 @@ export function useAuthDependentData<T>(
     if (!requireAuth && user && !user.id) {
       throw new Error('Invalid user state: User exists but missing ID')
     }
-
-    console.log('🚀 useAuthDependentData: Executing fetch with user:', {
-      userId: user?.id,
-      requireAuth,
-      authState
-    })
 
     return await fetchFunction(user)
   }, [fetchFunction, user, requireAuth, authState])

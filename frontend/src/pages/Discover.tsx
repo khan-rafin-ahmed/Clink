@@ -61,15 +61,12 @@ interface EventWithCreator extends Event {
 // Extracted data loading function with better error handling and caching
 const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator[]> => {
   try {
-    console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
-
     // Create cache key based on user ID (or 'anonymous' for non-logged in users)
     const cacheKey = CacheKeys.discoverEvents(currentUser?.id || 'anonymous')
 
     // Try to get from cache first
     const cached = cacheService.get<EventWithCreator[]>(cacheKey)
     if (cached) {
-      console.log('📦 Using cached events data:', cached.length)
       return cached
     }
 
@@ -116,19 +113,12 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
 
     // Get unique creator IDs to batch fetch profiles
     const creatorIds = [...new Set(publicEvents.map((event: any) => event.created_by))]
-    console.log('👥 Loading profiles for creators:', creatorIds.length)
 
     // Batch fetch all creator profiles
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles } = await supabase
       .from('user_profiles')
       .select('user_id, display_name, avatar_url')
       .in('user_id', creatorIds)
-
-    if (profilesError) {
-      console.error('❌ Error loading profiles:', profilesError)
-    } else {
-      console.log('✅ Loaded profiles:', profiles?.length || 0)
-    }
 
     // Batch fetch user's join statuses if logged in
     let userJoinStatuses = new Map()
@@ -226,11 +216,7 @@ function DiscoverContent() {
     fetchEventsData,
     {
       requireAuth: false, // Public data - doesn't require auth
-      onSuccess: (data: EventWithCreator[]) => {
-        console.log('✅ Events loaded successfully:', data?.length || 0, 'events')
-      },
-      onError: (error: Error) => {
-        console.error('❌ Failed to load events:', error)
+      onError: () => {
         toast.error('Failed to load events. Please try again.')
       },
       retryCount: 2,

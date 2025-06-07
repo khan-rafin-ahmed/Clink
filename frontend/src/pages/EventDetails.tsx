@@ -26,8 +26,6 @@ import { Edit, Trash2 } from 'lucide-react'
 
 // Data loading function (outside component for stability)
 const loadEventDetailsData = async (_user: any, eventIdOrSlug: string) => {
-  console.log('🔍 loadEventDetailsData: Loading event details for:', eventIdOrSlug)
-
   try {
     // Try fetching by ID first
     let eventData = await getEventDetails(eventIdOrSlug)
@@ -75,7 +73,7 @@ export function EventDetails() {
     )
   }
 
-  // Create stable fetch function
+  // Create stable fetch function with memoization
   const fetchEventData = useCallback(async (user: any) => {
     return loadEventDetailsData(user, eventId)
   }, [eventId])
