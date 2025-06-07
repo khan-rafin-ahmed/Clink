@@ -32,7 +32,9 @@ export function Navbar() {
 
   useEffect(() => {
     if (user) {
-      getUserProfile(user.id).then(setUserProfile).catch(console.error)
+      getUserProfile(user.id).then(setUserProfile).catch(() => {
+        // Silently handle profile loading errors
+      })
     }
   }, [user])
 

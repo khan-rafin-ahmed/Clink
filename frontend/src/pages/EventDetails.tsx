@@ -46,10 +46,8 @@ const loadEventDetailsData = async (_user: any, eventIdOrSlug: string) => {
       eventData = publicEvt
     }
 
-    console.log('✅ loadEventDetailsData: Event details loaded successfully')
     return eventData
   } catch (error) {
-    console.error('🚨 loadEventDetailsData: Error loading event details:', error)
     throw error
   }
 }
@@ -91,7 +89,6 @@ export function EventDetails() {
     refetch
   } = useAuthDependentData(fetchEventData, {
     requireAuth: false, // Event viewing doesn't require auth
-    onSuccess: (data) => console.log('✅ Event details loaded:', data?.title),
     onError: () => toast.error('Failed to load event details')
   })
 

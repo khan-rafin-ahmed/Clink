@@ -289,7 +289,6 @@ export function EventDetail() {
 
       if (!mountedRef.current) return
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading host info:', error)
         return
       }
 
@@ -309,9 +308,7 @@ export function EventDetail() {
         setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
       }
     } catch (err) {
-      if (mountedRef.current) {
-        console.error('Error loading host info:', err)
-      }
+      // Error loading host info - fail silently
     }
   }
 

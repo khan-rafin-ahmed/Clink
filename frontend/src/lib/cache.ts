@@ -1,19 +1,57 @@
-// Simple in-memory cache for performance optimization
+// Enhanced in-memory cache for performance optimization
 interface CacheEntry<T> {
   data: T
   timestamp: number
   ttl: number
+  accessCount: number
+  lastAccessed: number
 }
 
-class SimpleCache {
+class EnhancedCache {
   private cache = new Map<string, CacheEntry<any>>()
   private readonly DEFAULT_TTL = 5 * 60 * 1000 // 5 minutes
+  private readonly MAX_ENTRIES = 1000 // Prevent memory leaks
+  private cleanupInterval: NodeJS.Timeout | null = null
+
+  constructor() {
+    // Start cleanup interval
+    this.startCleanupInterval()
+  }
+
+  private startCleanupInterval(): void {
+    // Clean up every 2 minutes
+    this.cleanupInterval = setInterval(() => this.cleanup(), 2 * 60 * 1000)
+  }
+
+  private evictLRU(): void {
+    if (this.cache.size <= this.MAX_ENTRIES) return
+
+    // Find least recently used entry
+    let oldestKey = ''
+    let oldestTime = Date.now()
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.lastAccessed < oldestTime) {
+        oldestTime = entry.lastAccessed
+        oldestKey = key
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
+    }
+  }
 
   set<T>(key: string, data: T, ttl: number = this.DEFAULT_TTL): void {
+    // Evict LRU if cache is full
+    this.evictLRU()
+
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
+      accessCount: 0,
+      lastAccessed: Date.now()
     })
   }
 
@@ -27,6 +65,10 @@ class SimpleCache {
       return null
     }
 
+    // Update access statistics
+    entry.accessCount++
+    entry.lastAccessed = now
+
     return entry.data
   }
 
@@ -38,21 +80,60 @@ class SimpleCache {
     this.cache.clear()
   }
 
-  // Clear expired entries
+  // Clear expired entries and get cache stats
   cleanup(): void {
     const now = Date.now()
+    let expiredCount = 0
+
     for (const [key, entry] of this.cache.entries()) {
       if (now - entry.timestamp > entry.ttl) {
         this.cache.delete(key)
+        expiredCount++
       }
     }
   }
+
+  // Get cache statistics
+  getStats(): {
+    size: number
+    maxSize: number
+    hitRate: number
+    totalEntries: number
+  } {
+    let totalAccess = 0
+    let totalEntries = 0
+
+    for (const entry of this.cache.values()) {
+      totalAccess += entry.accessCount
+      totalEntries++
+    }
+
+    return {
+      size: this.cache.size,
+      maxSize: this.MAX_ENTRIES,
+      hitRate: totalAccess > 0 ? (totalAccess / totalEntries) : 0,
+      totalEntries
+    }
+  }
+
+  // Destroy cache and cleanup
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+    this.cache.clear()
+  }
 }
 
-export const cache = new SimpleCache()
+export const cache = new EnhancedCache()
 
-// Auto cleanup every 10 minutes
-setInterval(() => cache.cleanup(), 10 * 60 * 1000)
+// Cleanup on page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    cache.destroy()
+  })
+}
 
 // Cache keys
 export const CACHE_KEYS = {
@@ -64,7 +145,16 @@ export const CACHE_KEYS = {
   IS_FOLLOWING: (followerId: string, followingId: string) => `is_following_${followerId}_${followingId}`,
   GOOGLE_PLACES_PREDICTIONS: (query: string, options: string) => `places_predictions_${query}_${options}`,
   GOOGLE_PLACE_DETAILS: (placeId: string) => `place_details_${placeId}`,
-  EVENT_ATTENDANCE: (eventId: string, userId: string) => `event_attendance_${eventId}_${userId}`
+  EVENT_ATTENDANCE: (eventId: string, userId: string) => `event_attendance_${eventId}_${userId}`,
+  // Navigation and page caching
+  EVENT_DETAIL: (eventId: string) => `event_detail_${eventId}`,
+  EVENT_RATINGS: (eventId: string) => `event_ratings_${eventId}`,
+  USER_EVENT_RATING: (eventId: string, userId: string) => `user_event_rating_${eventId}_${userId}`,
+  PAGE_DATA: (pageKey: string, path: string) => `page_data_${pageKey}_${path}`,
+  NAVIGATION_STATE: (path: string) => `nav_state_${path}`,
+  DISCOVER_EVENTS: (filters: string) => `discover_events_${filters}`,
+  CREW_DETAILS: (crewId: string) => `crew_details_${crewId}`,
+  CREW_MEMBERS: (crewId: string) => `crew_members_${crewId}`
 }
 
 // Helper function for cached API calls
