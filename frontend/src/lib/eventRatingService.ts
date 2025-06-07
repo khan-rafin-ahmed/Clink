@@ -36,13 +36,7 @@ export async function submitEventRating(
     }, {
       onConflict: 'event_id,user_id'
     })
-    .select(`
-      *,
-      user:user_profiles!user_id (
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('*')
     .single()
 
   if (error) {
@@ -62,13 +56,7 @@ export async function getUserEventRating(eventId: string): Promise<EventRating |
 
   const { data, error } = await supabase
     .from('event_ratings')
-    .select(`
-      *,
-      user:user_profiles!user_id (
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('*')
     .eq('event_id', eventId)
     .eq('user_id', user.id)
     .single()
@@ -90,13 +78,7 @@ export async function getUserEventRating(eventId: string): Promise<EventRating |
 export async function getEventRatings(eventId: string): Promise<EventRating[]> {
   const { data, error } = await supabase
     .from('event_ratings')
-    .select(`
-      *,
-      user:user_profiles!user_id (
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('*')
     .eq('event_id', eventId)
     .order('created_at', { ascending: false })
 
@@ -116,20 +98,26 @@ export async function getEventRatingStats(eventId: string): Promise<{
   totalRatings: number
 }> {
   const { data, error } = await supabase
-    .rpc('get_event_average_rating', { event_uuid: eventId })
-    .single()
+    .from('event_ratings')
+    .select('rating')
+    .eq('event_id', eventId)
 
   if (error) {
     console.error('Error fetching rating stats:', error)
     return { averageRating: 0, totalRatings: 0 }
   }
 
-  // Type assertion for the RPC response
-  const ratingData = data as { average_rating?: number; total_ratings?: number } | null
+  if (!data || data.length === 0) {
+    return { averageRating: 0, totalRatings: 0 }
+  }
+
+  const totalRatings = data.length
+  const sumRatings = data.reduce((sum, rating) => sum + rating.rating, 0)
+  const averageRating = Math.round((sumRatings / totalRatings) * 10) / 10
 
   return {
-    averageRating: ratingData?.average_rating || 0,
-    totalRatings: ratingData?.total_ratings || 0
+    averageRating,
+    totalRatings
   }
 }
 
@@ -143,18 +131,42 @@ export async function canUserRateEvent(eventId: string, userId?: string): Promis
     userId = user.id
   }
 
-  const { data, error } = await supabase
-    .rpc('can_user_rate_event', { 
-      event_uuid: eventId, 
-      user_uuid: userId 
-    })
+  try {
+    // Check if user attended the event or is the host
+    const { data: rsvpData } = await supabase
+      .from('rsvps')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'going')
+      .single()
 
-  if (error) {
+    if (rsvpData) return true
+
+    // Check if user was invited as crew member
+    const { data: memberData } = await supabase
+      .from('event_members')
+      .select('status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
+      .single()
+
+    if (memberData) return true
+
+    // Check if user is the host
+    const { data: eventData } = await supabase
+      .from('events')
+      .select('created_by')
+      .eq('id', eventId)
+      .eq('created_by', userId)
+      .single()
+
+    return !!eventData
+  } catch (error) {
     console.error('Error checking rating permission:', error)
     return false
   }
-
-  return data || false
 }
 
 /**

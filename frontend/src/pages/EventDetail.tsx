@@ -500,32 +500,42 @@ export function EventDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="space-y-6">
-          {/* Header Section */}
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={goBackSmart} className="hover:bg-primary/10">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="space-y-8">
+          {/* Enhanced Header Section */}
+          <div className="flex items-center justify-between fade-in">
+            <Button variant="outline" onClick={goBackSmart} size="lg" className="group backdrop-blur-sm">
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
               Back
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {isHost && (
                 <>
                   <Button
                     variant="outline"
                     onClick={() => setIsEditModalOpen(true)}
-                    className="hover:bg-primary/10"
+                    className="group backdrop-blur-sm"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
+                    <Edit className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                     Edit
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setIsDeleteDialogOpen(true)}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive group backdrop-blur-sm"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                     Delete
                   </Button>
                 </>
@@ -533,16 +543,16 @@ export function EventDetail() {
               <Button
                 variant="outline"
                 onClick={() => setIsShareModalOpen(true)}
-                className="hover:bg-primary/10"
+                className="group backdrop-blur-sm"
               >
-                <Share2 className="w-4 h-4 mr-2" />
+                <Share2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                 Share
               </Button>
             </div>
           </div>
 
-          {/* Main Event Card */}
-          <div className="bg-gradient-to-br from-card via-card to-card/80 border border-border rounded-xl overflow-hidden">
+          {/* Enhanced Main Event Card */}
+          <div className="slide-up bg-gradient-card border border-border hover:border-border-hover rounded-2xl overflow-hidden shadow-xl backdrop-blur-sm" style={{ animationDelay: '0.2s' }}>
             {/* Event Header */}
             <div className="p-6 border-b border-border/50">
               <div className="flex items-start justify-between mb-4">

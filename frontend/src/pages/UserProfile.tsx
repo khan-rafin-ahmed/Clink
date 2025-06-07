@@ -342,18 +342,7 @@ export function UserProfile() {
                 </div>
               </div>
 
-              {/* Enhanced Status Card */}
-              <div className="bg-gradient-card rounded-2xl p-6 max-w-lg mx-auto mt-8 border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-sm font-medium text-foreground">
-                    <strong>Signed in as:</strong> {user.email}
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Ready to raise some hell? Let's get this party started! 🤘
-                </p>
-              </div>
+
             </div>
           </div>
 
@@ -374,41 +363,46 @@ export function UserProfile() {
 
           {/* Enhanced Quick Actions */}
           <div className="slide-up" style={{ animationDelay: '0.4s' }}>
-            <div className="text-center space-y-6">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-6">
-                <QuickEventModal
-                  trigger={
-                    <Button size="xl" className="w-full sm:w-auto group hover-glow">
-                      <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
-                      <span className="hidden sm:inline">🍺 Create New Session</span>
-                      <span className="sm:hidden">🍺 Raise Hell</span>
-                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                    </Button>
-                  }
-                  onEventCreated={handleEventCreated}
-                />
+            <div className="bg-gradient-card rounded-2xl p-6 lg:p-8 border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm">
+              <div className="text-center space-y-6">
+                <h3 className="text-xl font-heading font-bold text-foreground">
+                  Ready to Raise Hell? 🍻
+                </h3>
 
-                <CreateCrewModal
-                  trigger={
-                    <Button size="xl" variant="outline" className="w-full sm:w-auto group backdrop-blur-sm">
-                      <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                      <span className="hidden sm:inline">Create Crew</span>
-                      <span className="sm:hidden">Build Crew</span>
-                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                    </Button>
-                  }
-                  onCrewCreated={handleCrewCreated}
-                />
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <QuickEventModal
+                    trigger={
+                      <Button size="lg" className="w-full sm:w-auto group hover-glow">
+                        <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                        🍺 Create Session
+                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      </Button>
+                    }
+                    onEventCreated={handleEventCreated}
+                  />
 
-                <Button
-                  size="xl"
-                  variant="outline"
-                  onClick={() => navigate('/profile/edit')}
-                  className="w-full sm:w-auto group backdrop-blur-sm"
-                >
-                  ✏️ Edit Profile
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                </Button>
+                  <CreateCrewModal
+                    trigger={
+                      <Button size="lg" variant="outline" className="w-full sm:w-auto group backdrop-blur-sm">
+                        <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                        Build Crew
+                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      </Button>
+                    }
+                    onCrewCreated={handleCrewCreated}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-border/50">
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/profile/edit')}
+                    className="group text-muted-foreground hover:text-foreground"
+                  >
+                    ✏️ Edit Profile
+                    <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

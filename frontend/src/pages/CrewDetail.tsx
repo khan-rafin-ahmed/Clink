@@ -265,10 +265,20 @@ export function CrewDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Loading crew...</span>
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
+
+        <div className="relative flex h-screen items-center justify-center">
+          <div className="text-center space-y-6 fade-in">
+            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold animate-pulse">
+              <Users className="h-10 w-10 text-primary-foreground" />
+            </div>
+            <div className="space-y-3">
+              <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+              <p className="text-lg text-muted-foreground font-medium">Loading crew...</p>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -318,23 +328,34 @@ export function CrewDetail() {
   const isCreator = crew.is_creator
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="relative max-w-4xl mx-auto p-4 space-y-8">
+        {/* Enhanced Header */}
+        <div className="flex items-center gap-4 fade-in">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="lg"
             onClick={() => navigate('/profile')}
-            className="text-muted-foreground hover:text-foreground"
+            className="group backdrop-blur-sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Profile
           </Button>
         </div>
 
-        {/* Top Section - Crew Info */}
-        <Card>
+        {/* Enhanced Top Section - Crew Info */}
+        <div className="slide-up" style={{ animationDelay: '0.2s' }}>
+          <Card className="bg-gradient-card border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm shadow-xl">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-2">
@@ -685,6 +706,7 @@ export function CrewDetail() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )
