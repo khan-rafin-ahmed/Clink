@@ -3,7 +3,8 @@ import { type DialogProps } from "@radix-ui/react-dialog"
 import { Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 const Command = React.forwardRef<
   HTMLDivElement,
@@ -26,6 +27,12 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg max-w-lg">
+        <VisuallyHidden>
+          <DialogTitle>Command Menu</DialogTitle>
+          <DialogDescription>
+            Search for commands, navigate to pages, or perform quick actions
+          </DialogDescription>
+        </VisuallyHidden>
         <Command>
           {children}
         </Command>

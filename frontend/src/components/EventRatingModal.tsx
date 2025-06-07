@@ -68,7 +68,6 @@ export function EventRatingModal({
       onRatingSubmitted?.(ratingData)
       onClose()
     } catch (error: any) {
-      console.error('Error submitting rating:', error)
       toast.error(error.message || 'Failed to submit rating')
     } finally {
       setIsSubmitting(false)

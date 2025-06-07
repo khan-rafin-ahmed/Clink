@@ -34,7 +34,6 @@ export async function submitEventRating(
       .maybeSingle()
 
     if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking existing rating:', checkError)
       throw new Error(`Failed to check existing rating: ${checkError.message}`)
     }
 
@@ -42,7 +41,6 @@ export async function submitEventRating(
 
     if (existingRating) {
       // Update existing rating
-      console.log('Updating existing rating for event:', eventId)
       const result = await supabase
         .from('event_ratings')
         .update({
@@ -59,7 +57,6 @@ export async function submitEventRating(
       error = result.error
     } else {
       // Insert new rating
-      console.log('Inserting new rating for event:', eventId)
       const result = await supabase
         .from('event_ratings')
         .insert({
@@ -76,7 +73,6 @@ export async function submitEventRating(
     }
 
     if (error) {
-      console.error('Database error submitting rating:', error)
       throw new Error(`Database error: ${error.message || error.details || 'Unknown database error'}`)
     }
 
@@ -84,10 +80,8 @@ export async function submitEventRating(
       throw new Error('No data returned from rating submission')
     }
 
-    console.log('Rating submitted successfully:', data)
     return data
   } catch (err: any) {
-    console.error('Error in submitEventRating:', err)
     // Don't double-wrap the error message
     if (err.message && err.message.includes('Failed to submit rating')) {
       throw err
@@ -114,7 +108,6 @@ export async function getUserEventRating(eventId: string): Promise<EventRating |
     if (error.code === 'PGRST116') {
       return null // No rating found
     }
-    console.error('Error fetching user rating:', error)
     return null
   }
 
@@ -132,7 +125,6 @@ export async function getEventRatings(eventId: string): Promise<EventRating[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching event ratings:', error)
     return []
   }
 
@@ -152,7 +144,6 @@ export async function getEventRatingStats(eventId: string): Promise<{
     .eq('event_id', eventId)
 
   if (error) {
-    console.error('Error fetching rating stats:', error)
     return { averageRating: 0, totalRatings: 0 }
   }
 
@@ -213,7 +204,6 @@ export async function canUserRateEvent(eventId: string, userId?: string): Promis
 
     return !!eventData
   } catch (error) {
-    console.error('Error checking rating permission:', error)
     return false
   }
 }
@@ -234,7 +224,6 @@ export async function deleteEventRating(eventId: string): Promise<void> {
     .eq('user_id', user.id)
 
   if (error) {
-    console.error('Error deleting rating:', error)
     throw new Error('Failed to delete rating')
   }
 }
@@ -250,7 +239,6 @@ export async function hasEventConcluded(eventId: string): Promise<boolean> {
     .single()
 
   if (error) {
-    console.error('Error checking event date:', error)
     return false
   }
 
@@ -294,7 +282,6 @@ export async function getUnratedAttendedEvents(userId?: string): Promise<any[]> 
     .not('event_ratings.user_id', 'eq', userId)
 
   if (error) {
-    console.error('Error fetching unrated events:', error)
     return []
   }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -325,6 +325,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
           <DialogTitle className="text-2xl font-display font-bold text-foreground">
             Time to Raise Some Hell! 🍺
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Create a drinking session in 60 seconds. Step {step} of 3.
+          </DialogDescription>
           <div className="flex space-x-2 mt-4">
             {[1, 2, 3].map((i) => (
               <div

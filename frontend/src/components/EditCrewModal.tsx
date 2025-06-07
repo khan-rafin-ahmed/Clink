@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -89,6 +89,9 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
           <DialogTitle className="text-white text-xl font-bold">
             Edit Crew
           </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Update your crew's details and settings.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

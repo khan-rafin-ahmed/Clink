@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,6 +151,9 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
             <Users className="w-5 h-5 text-primary" />
             Create Your Crew 🍺
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Build your drinking squad and invite your regular buddies for easy session planning.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
