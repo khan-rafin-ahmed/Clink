@@ -26,6 +26,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const welcomeShownRef = useRef(new Set<string>()) // Track users who have been welcomed
   const isInitialLoadRef = useRef(true) // Track if this is the initial page load
 
+  // Restore welcomed users from session storage so refreshes don't trigger again
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('welcomeShownIds')
+      if (stored) {
+        const ids: string[] = JSON.parse(stored)
+        welcomeShownRef.current = new Set(ids)
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [])
+
   useEffect(() => {
     mountedRef.current = true
 
@@ -70,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Only show welcome for actual sign-in events, not initial page loads
       if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
         welcomeShownRef.current.add(newUser.id)
+        sessionStorage.setItem('welcomeShownIds', JSON.stringify(Array.from(welcomeShownRef.current)))
 
         // Determine if this is a new user
         const userIsNew = isNewUser(newUser)
@@ -104,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_OUT') {
         // Clear welcome tracking
         welcomeShownRef.current.clear()
+        sessionStorage.removeItem('welcomeShownIds')
 
         toast.success('See you later! 👋')
         // Redirect to home page after sign out

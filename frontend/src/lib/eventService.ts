@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Event, RsvpStatus, UserProfile } from '@/types'
 import { getEventRatingStats } from '@/lib/eventRatingService'
+import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
 
 
 
@@ -14,6 +15,13 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false, c
   }
 
   try {
+    // Try cache first using slug as key
+    const cacheKey = CacheKeys.eventDetails(slug)
+    const cached = cacheService.get<Event>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     // Use provided user or get from session (not getUser which makes API call)
     let user = currentUser
     if (!user) {
@@ -67,6 +75,9 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false, c
       throw new Error('Please sign in to view this private event')
     }
 
+    // Cache the result for faster subsequent loads
+    cacheService.set(cacheKey, event, CacheTTL.MEDIUM)
+
     return event
   } catch (error) {
     throw error
@@ -83,6 +94,12 @@ export async function getEventDetails(eventId: string) {
   }
 
   try {
+    const cacheKey = CacheKeys.eventDetails(eventId)
+    const cached = cacheService.get<Event>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     // Get event without problematic joins first
     const { data: eventData, error: eventError } = await supabase
       .from('events')
@@ -120,6 +137,8 @@ export async function getEventDetails(eventId: string) {
       average_rating: ratingStats.averageRating,
       total_ratings: ratingStats.totalRatings
     }
+
+    cacheService.set(cacheKey, event, CacheTTL.MEDIUM)
 
     return event
   } catch (error) {
@@ -580,6 +599,8 @@ export async function updateEvent(id: string, event: Partial<Event>) {
     .single()
 
   if (error) throw error
+
+  invalidateEventCache(id)
   return data
 }
 
@@ -590,4 +611,10 @@ export async function deleteEvent(id: string) {
     .eq('id', id)
 
   if (error) throw error
+
+  invalidateEventCache(id)
+}
+
+export function invalidateEventCache(eventId: string) {
+  cacheService.delete(CacheKeys.eventDetails(eventId))
 }
