@@ -198,25 +198,7 @@ class CacheService {
     }
   }
 
-  /**
-   * Invalidate cache entries by pattern
-   */
-  invalidatePattern(pattern: string): void {
-    // Memory cache
-    for (const key of this.memoryCache.keys()) {
-      if (key.includes(pattern)) {
-        this.memoryCache.delete(key)
-      }
-    }
 
-    // localStorage
-    if (this.config.enableLocalStorage) {
-      const keys = Object.keys(localStorage).filter(key => 
-        key.startsWith('thirstee_cache_') && key.includes(pattern)
-      )
-      keys.forEach(key => localStorage.removeItem(key))
-    }
-  }
 }
 
 // Create singleton instance
