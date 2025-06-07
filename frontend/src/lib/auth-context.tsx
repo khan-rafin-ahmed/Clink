@@ -77,15 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Handle post-auth setup (profile creation, avatar, welcome message)
         setTimeout(async () => {
           try {
-            console.log('🔧 AuthContext: Starting post-auth setup')
             await handlePostAuthSetup(newUser, userIsNew)
-            console.log('✅ AuthContext: Post-auth setup completed')
           } catch (error: any) {
-            console.error('💥 AuthContext: Post-auth setup failed:', error)
-
             // Show user-friendly error based on error type
             if (error.message?.includes('duplicate key') || error.code === '23505') {
-              console.log('⚠️ AuthContext: Profile already exists, continuing...')
               // Don't show error for duplicate key - this is expected in some cases
             } else {
               // Show error to user for other types of failures

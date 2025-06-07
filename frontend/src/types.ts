@@ -69,6 +69,41 @@ export interface Event {
   total_ratings?: number
 }
 
+export interface EventWithRsvps {
+  id: string
+  created_by: string
+  title: string
+  date_time: string
+  is_public: boolean
+  drink_type?: string | null
+  vibe?: string | null
+  notes?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  place_nickname?: string | null
+  place_name?: string | null
+  location?: string | null
+  place_id?: string | null
+  rsvps: Array<{
+    id: string
+    status: RsvpStatus
+    user_id: string
+  }>
+  event_members?: Array<{
+    id: string
+    status: string
+    user_id: string
+  }>
+  host?: {
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+  }
+  end_time?: string
+  average_rating?: number
+  total_ratings?: number
+}
+
 export interface LocationData {
   latitude: number
   longitude: number

@@ -31,45 +31,12 @@ import {
   Trash2,
   Crown
 } from 'lucide-react'
-import type { RsvpStatus } from '@/types'
+import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
-interface EventWithRsvps {
-  id: string
-  created_by: string
-  title: string
-  date_time: string
-  is_public: boolean
-  drink_type?: string | null
-  vibe?: string | null
-  notes?: string | null
-  latitude?: number | null
-  longitude?: number | null
-  place_nickname?: string | null
-  place_name?: string | null
-  location?: string | null
-  place_id?: string | null
-  rsvps: Array<{
-    id: string
-    status: RsvpStatus
-    user_id: string
-  }>
-  event_members?: Array<{
-    id: string
-    status: string
-    user_id: string
-  }>
-  host?: {
-    id: string
-    display_name: string | null
-    avatar_url: string | null
-  }
-  end_time?: string
-  average_rating?: number
-  total_ratings?: number
-}
+
 
 export function EventDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -251,7 +218,6 @@ export function EventDetail() {
         }
       }
     } catch (err) {
-      console.error('Error loading event:', err)
       if (mountedRef.current) {
         toast.error('Failed to load event')
       }
