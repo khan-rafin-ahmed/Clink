@@ -20,9 +20,7 @@ import {
   Martini,
   Coffee,
   ArrowRight,
-  Clock,
-  Heart,
-  MessageCircle
+  Clock
 } from 'lucide-react'
 import type { Event } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
@@ -85,7 +83,6 @@ export function EnhancedEventCard({
   // Get status badge
   const getStatusBadge = () => {
     const eventDate = new Date(event.date_time)
-    const now = new Date()
     const isPastEvent = isPast(eventDate)
 
     if (isPastEvent) return { text: 'Past', variant: 'secondary' as const }

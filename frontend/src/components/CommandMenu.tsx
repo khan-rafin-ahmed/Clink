@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -24,7 +23,6 @@ import {
   User,
   Settings,
   Plus,
-  Filter,
   TrendingUp,
   Clock
 } from 'lucide-react'
@@ -59,10 +57,10 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput 
-        placeholder="Search events, locations, or navigate..." 
+      <CommandInput
+        placeholder="Search events, locations, or navigate..."
         value={searchQuery}
-        onValueChange={setSearchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
       />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>

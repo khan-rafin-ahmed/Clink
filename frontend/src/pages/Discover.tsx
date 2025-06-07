@@ -10,12 +10,11 @@ import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { UserHoverCard } from '@/components/UserHoverCard'
-import { EnhancedEventCard } from '@/components/EnhancedEventCard'
+// import { EnhancedEventCard } from '@/components/EnhancedEventCard'
 // import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
   FullPageSkeleton,
-  ErrorFallback,
-  EventCardSkeleton
+  ErrorFallback
 } from '@/components/SkeletonLoaders'
 import {
   Search,
