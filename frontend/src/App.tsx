@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/auth-context'
+import { SWRConfig } from 'swr'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
 import { HomePage } from './pages/HomePage'
@@ -18,15 +20,25 @@ import { TestRatings } from './pages/TestRatings'
 import { StyleGuide } from './components/StyleGuide'
 import { Toaster } from 'sonner'
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
 function App() {
   return (
-    <AuthProvider>
-      <Toaster richColors position="top-right" />
-      <Router>
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
+    <QueryClientProvider client={queryClient}>
+      <SWRConfig value={{ revalidateOnFocus: false }}>
+        <AuthProvider>
+          <Toaster richColors position="top-right" />
+          <Router>
+            <div className="min-h-screen bg-background text-foreground flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Routes>
               <Route path="/" element={
                 <AuthRedirect>
                   <HomePage />
@@ -72,6 +84,8 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
+    </SWRConfig>
+  </QueryClientProvider>
   )
 }
 

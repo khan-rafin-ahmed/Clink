@@ -61,10 +61,10 @@ export function UserProfile() {
   }, [user, loading])
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       getUserProfile(user.id).then(setUserProfile).catch(console.error)
     }
-  }, [user])
+  }, [user?.id])
 
   // Fetch user crews
   const fetchUserCrews = async () => {
