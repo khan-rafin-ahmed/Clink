@@ -124,9 +124,12 @@ export async function getEventRatingStats(eventId: string): Promise<{
     return { averageRating: 0, totalRatings: 0 }
   }
 
+  // Type assertion for the RPC response
+  const ratingData = data as { average_rating?: number; total_ratings?: number } | null
+
   return {
-    averageRating: data.average_rating || 0,
-    totalRatings: data.total_ratings || 0
+    averageRating: ratingData?.average_rating || 0,
+    totalRatings: ratingData?.total_ratings || 0
   }
 }
 
