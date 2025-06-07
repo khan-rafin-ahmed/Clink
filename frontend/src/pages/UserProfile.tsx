@@ -15,6 +15,8 @@ import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
+import { useCacheInvalidation } from '@/hooks/useCachedData'
+import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -41,6 +43,7 @@ export function UserProfile() {
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const [pastPage, setPastPage] = useState(1)
+  const { invalidatePattern, invalidateKey } = useCacheInvalidation()
 
   const itemsPerPage = 10
 
@@ -78,9 +81,20 @@ export function UserProfile() {
     }
   }, [user?.id, crewsRefresh])
 
-  // Fetch enhanced session data with creator info and RSVP counts
+  // Cached fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {
     if (!user) return
+
+    const cacheKey = CacheKeys.userEvents(user.id)
+
+    // Try to get from cache first
+    const cached = cacheService.get<{ upcoming: any[], past: any[] }>(cacheKey)
+    if (cached) {
+      setEnhancedSessions(cached.upcoming || [])
+      setPastSessions(cached.past || [])
+      setLoadingEnhanced(false)
+      return
+    }
 
     setLoadingEnhanced(true)
     try {
@@ -213,6 +227,12 @@ export function UserProfile() {
       // Sort all past events by date (most recent first)
       allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
       setPastSessions(allPastEvents)
+
+      // Cache the results
+      cacheService.set(cacheKey, {
+        upcoming: allUpcomingEvents,
+        past: allPastEvents
+      }, CacheTTL.SHORT)
     } catch (error) {
       console.error('Error fetching enhanced sessions:', error)
     } finally {
@@ -221,6 +241,12 @@ export function UserProfile() {
   }
 
   const handleEventCreated = () => {
+    // Invalidate relevant caches
+    if (user) {
+      invalidateKey(CacheKeys.userEvents(user.id))
+      invalidateKey(CacheKeys.userStats(user.id))
+      invalidatePattern('discover_events')
+    }
     // Trigger both stats and sessions refresh
     setStatsRefresh(prev => prev + 1)
     setSessionsRefresh(prev => prev + 1)
@@ -228,10 +254,18 @@ export function UserProfile() {
   }
 
   const handleCrewCreated = () => {
+    // Invalidate crew cache
+    if (user) {
+      invalidateKey(CacheKeys.userCrews(user.id))
+    }
     setCrewsRefresh(prev => prev + 1)
   }
 
   const handleCrewUpdated = () => {
+    // Invalidate crew cache
+    if (user) {
+      invalidateKey(CacheKeys.userCrews(user.id))
+    }
     setCrewsRefresh(prev => prev + 1)
   }
 
@@ -244,6 +278,13 @@ export function UserProfile() {
   }
 
   const handleEventUpdated = () => {
+    // Invalidate relevant caches
+    if (user) {
+      invalidateKey(CacheKeys.userEvents(user.id))
+      invalidateKey(CacheKeys.userStats(user.id))
+      invalidatePattern('discover_events')
+      invalidatePattern('event_details')
+    }
     setSessionsRefresh(prev => prev + 1)
     setStatsRefresh(prev => prev + 1)
     setEditingEvent(null)
@@ -251,6 +292,13 @@ export function UserProfile() {
   }
 
   const handleEventDeleted = () => {
+    // Invalidate relevant caches
+    if (user) {
+      invalidateKey(CacheKeys.userEvents(user.id))
+      invalidateKey(CacheKeys.userStats(user.id))
+      invalidatePattern('discover_events')
+      invalidatePattern('event_details')
+    }
     setSessionsRefresh(prev => prev + 1)
     setStatsRefresh(prev => prev + 1)
     setDeletingEvent(null)

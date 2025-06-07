@@ -26,17 +26,23 @@ export async function submitEventRating(
 
   try {
     // First check if rating already exists
-    const { data: existingRating } = await supabase
+    const { data: existingRating, error: checkError } = await supabase
       .from('event_ratings')
       .select('id')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing rating:', checkError)
+      throw new Error(`Failed to check existing rating: ${checkError.message}`)
+    }
 
     let data, error
 
     if (existingRating) {
       // Update existing rating
+      console.log('Updating existing rating for event:', eventId)
       const result = await supabase
         .from('event_ratings')
         .update({
@@ -53,6 +59,7 @@ export async function submitEventRating(
       error = result.error
     } else {
       // Insert new rating
+      console.log('Inserting new rating for event:', eventId)
       const result = await supabase
         .from('event_ratings')
         .insert({
@@ -69,13 +76,22 @@ export async function submitEventRating(
     }
 
     if (error) {
-      console.error('Error submitting rating:', error)
-      throw new Error(`Failed to submit rating: ${error.message}`)
+      console.error('Database error submitting rating:', error)
+      throw new Error(`Database error: ${error.message || error.details || 'Unknown database error'}`)
     }
 
+    if (!data) {
+      throw new Error('No data returned from rating submission')
+    }
+
+    console.log('Rating submitted successfully:', data)
     return data
   } catch (err: any) {
     console.error('Error in submitEventRating:', err)
+    // Don't double-wrap the error message
+    if (err.message && err.message.includes('Failed to submit rating')) {
+      throw err
+    }
     throw new Error(`Failed to submit rating: ${err.message || 'Unknown error'}`)
   }
 }

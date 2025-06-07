@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { RobustPageWrapper } from '@/components/PageWrapper'
+import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -57,10 +58,20 @@ interface EventWithCreator extends Event {
   rsvp_count: number;
 }
 
-// Extracted data loading function with better error handling
+// Extracted data loading function with better error handling and caching
 const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator[]> => {
   try {
     console.log('🔍 Loading events data for user:', currentUser?.id || 'anonymous')
+
+    // Create cache key based on user ID (or 'anonymous' for non-logged in users)
+    const cacheKey = CacheKeys.discoverEvents(currentUser?.id || 'anonymous')
+
+    // Try to get from cache first
+    const cached = cacheService.get<EventWithCreator[]>(cacheKey)
+    if (cached) {
+      console.log('📦 Using cached events data:', cached.length)
+      return cached
+    }
 
     // Get public events using RPC to bypass RLS issues
     const { data: publicEvents, error: publicEventsError } = await supabase
@@ -176,6 +187,10 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     })
 
     console.log('🎉 Successfully loaded events with creators:', eventsWithCreators.length)
+
+    // Cache the results
+    cacheService.set(cacheKey, eventsWithCreators, CacheTTL.SHORT)
+
     return eventsWithCreators
   } catch (error) {
     console.error('💥 Error in loadEventsData:', error)
