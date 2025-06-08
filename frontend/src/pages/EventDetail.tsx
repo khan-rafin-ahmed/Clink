@@ -19,6 +19,7 @@ import { InteractiveMap } from '@/components/InteractiveMap'
 import { EventGallery } from '@/components/EventGallery'
 import { EventComments } from '@/components/EventComments'
 import { ReviewsPanel } from '@/components/ReviewsPanel'
+import { EventRatingBadge } from '@/components/EventRatingBadge'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
 import {
@@ -35,6 +36,7 @@ import {
 } from 'lucide-react'
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { getEventRatingStats } from '@/lib/eventRatingService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 
@@ -163,6 +165,11 @@ export function EventDetail() {
       .eq('status', 'accepted')
 
     eventData.event_members = memberError ? [] : memberData || []
+
+    // Load rating stats for the event
+    const ratingStats = await getEventRatingStats(eventData.id)
+    eventData.average_rating = ratingStats.averageRating
+    eventData.total_ratings = ratingStats.totalRatings
 
     return eventData
   }, [slug, isPrivateEvent])
@@ -528,10 +535,21 @@ export function EventDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">{getDrinkEmoji(event.drink_type)}</span>
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                        {event.title}
-                      </h1>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+                          {event.title}
+                        </h1>
+                        {/* Event Rating Badge - Show if event has ratings */}
+                        {event.total_ratings && event.total_ratings > 0 && (
+                          <EventRatingBadge
+                            averageRating={event.average_rating || 0}
+                            reviewCount={event.total_ratings || 0}
+                            size="md"
+                            className="ml-2"
+                          />
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-lg">{getTimingEmoji(event.date_time)}</span>
                         <Badge
