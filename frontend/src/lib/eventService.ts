@@ -85,33 +85,57 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false, c
 }
 
 /**
- * Legacy function for backward compatibility
+ * Legacy function for backward compatibility - now handles both IDs and slugs
  */
-export async function getEventDetails(eventId: string) {
+export async function getEventDetails(eventIdOrSlug: string) {
   // Validate input parameters
-  if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
-    throw new Error('Invalid event ID provided')
+  if (!eventIdOrSlug || typeof eventIdOrSlug !== 'string' || eventIdOrSlug.trim() === '') {
+    throw new Error('Invalid event ID or slug provided')
   }
 
   try {
-    const cacheKey = CacheKeys.eventDetails(eventId)
+    const cacheKey = CacheKeys.eventDetails(eventIdOrSlug)
     const cached = cacheService.get<Event>(cacheKey)
     if (cached) {
       return cached
     }
 
-    // Get event without problematic joins first
-    const { data: eventData, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .single()
+    let eventData = null
+    let eventError = null
+
+    // First try to query by ID if it looks like a UUID
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventIdOrSlug)) {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventIdOrSlug)
+        .maybeSingle()
+
+      eventData = data
+      eventError = error
+    }
+
+    // If not found by ID or not a UUID, try by public_slug
+    if (!eventData && !eventError) {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('public_slug', eventIdOrSlug)
+        .maybeSingle()
+
+      eventData = data
+      eventError = error
+    }
 
     if (eventError) {
       if (eventError.code === 'PGRST116') {
         throw new Error('Event not found')
       }
       throw eventError
+    }
+
+    if (!eventData) {
+      throw new Error('Event not found')
     }
 
     // Get RSVPs separately to avoid foreign key issues
@@ -138,7 +162,11 @@ export async function getEventDetails(eventId: string) {
       total_ratings: ratingStats.totalRatings
     }
 
+    // Cache using both the original key and the event ID for better cache hits
     cacheService.set(cacheKey, event, CacheTTL.MEDIUM)
+    if (eventIdOrSlug !== eventData.id) {
+      cacheService.set(CacheKeys.eventDetails(eventData.id), event, CacheTTL.MEDIUM)
+    }
 
     return event
   } catch (error) {

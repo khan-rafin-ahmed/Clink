@@ -4,7 +4,6 @@ import { format } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
-import { supabase } from '@/lib/supabase'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import { EditEventModal } from '@/components/EditEventModal'
@@ -27,23 +26,8 @@ import { Edit, Trash2 } from 'lucide-react'
 // Data loading function (outside component for stability)
 const loadEventDetailsData = async (_user: any, eventIdOrSlug: string) => {
   try {
-    // Try fetching by ID first
-    let eventData = await getEventDetails(eventIdOrSlug)
-
-    // If not found by ID, attempt to fetch by public_slug
-    if (!eventData) {
-      const { data: publicEvt, error: publicErr } = await supabase
-        .from('events')
-        .select('*')
-        .eq('public_slug', eventIdOrSlug)
-        .maybeSingle()
-
-      if (publicErr) {
-        throw publicErr
-      }
-      eventData = publicEvt
-    }
-
+    // getEventDetails now handles both IDs and slugs automatically
+    const eventData = await getEventDetails(eventIdOrSlug)
     return eventData
   } catch (error) {
     throw error
