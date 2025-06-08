@@ -120,11 +120,11 @@ export function EventDetail() {
         throw error
       }
     } else {
-      // Private event logic - query by ID for private events
+      // Private event logic - query by private_slug for private events
       const { data: privateEvt, error: privateErr } = await supabase
         .from('events')
         .select('*')
-        .eq('id', slug)
+        .eq('private_slug', slug)
         .maybeSingle()
 
       if (privateErr || !privateEvt) {
