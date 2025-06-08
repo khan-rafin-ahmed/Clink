@@ -154,6 +154,18 @@ export async function uploadEventPhoto(file: File, userId: string, eventId: stri
 }
 
 /**
+ * Uploads an event cover image specifically
+ */
+export async function uploadEventCover(file: File, userId: string): Promise<UploadResult> {
+  return uploadFile(file, userId, {
+    bucket: 'event-covers',
+    folder: 'covers', // Group all cover images in covers folder
+    maxSizeBytes: 5 * 1024 * 1024, // 5MB for cover images
+    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  })
+}
+
+/**
  * Creates a preview URL for a file before upload
  */
 export function createFilePreview(file: File): string {

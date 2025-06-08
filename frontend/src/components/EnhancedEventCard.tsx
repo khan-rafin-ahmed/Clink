@@ -25,6 +25,7 @@ import {
 import type { Event } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { cn } from '@/lib/utils'
+import { getEventCoverImage, getVibeFallbackGradient, getVibeEmoji } from '@/lib/coverImageUtils'
 
 interface EnhancedEventCardProps {
   event: Event & {
@@ -115,27 +116,26 @@ export function EnhancedEventCard({
     }
   }
 
-  // Generate placeholder image based on event type
+  // Generate placeholder image based on event vibe
   const getPlaceholderImage = () => {
-    const gradients = {
-      beer: 'from-amber-500/20 to-orange-500/20',
-      wine: 'from-red-500/20 to-purple-500/20',
-      cocktails: 'from-pink-500/20 to-blue-500/20',
-      whiskey: 'from-amber-700/20 to-brown-500/20',
-      default: 'from-primary/20 to-accent/20'
-    }
-    
-    const gradient = gradients[event.drink_type as keyof typeof gradients] || gradients.default
-    
+    const gradient = getVibeFallbackGradient(event.vibe)
+    const vibeEmoji = getVibeEmoji(event.vibe)
+
     return (
-      <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+      <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
         <div className="text-center space-y-2">
-          <div className="text-4xl opacity-60">
-            {getDrinkIcon()}
+          <div className="text-4xl opacity-80">
+            {vibeEmoji}
           </div>
           <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-            {event.drink_type || 'Event'}
+            {event.vibe || 'Event'}
           </div>
+        </div>
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="w-full h-full" style={{
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`
+          }} />
         </div>
       </div>
     )
@@ -148,9 +148,9 @@ export function EnhancedEventCard({
           <div className="flex items-center gap-3">
             {/* Compact Image */}
             <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-card-hover">
-              {event.hero_image_url && !imageError ? (
+              {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
                 <img
-                  src={event.hero_image_url}
+                  src={getEventCoverImage(event.cover_image_url, event.vibe)}
                   alt={event.title}
                   className="w-full h-full object-cover"
                   onLoad={() => setImageLoaded(true)}
@@ -209,9 +209,9 @@ export function EnhancedEventCard({
         "relative overflow-hidden",
         isFeatured ? "h-48 sm:h-56" : "h-40 sm:h-48"
       )}>
-        {event.hero_image_url && !imageError ? (
+        {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
           <img
-            src={event.hero_image_url}
+            src={getEventCoverImage(event.cover_image_url, event.vibe)}
             alt={event.title}
             className={cn(
               "w-full h-full object-cover transition-transform duration-300 group-hover:scale-105",

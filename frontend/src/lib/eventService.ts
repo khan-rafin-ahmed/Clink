@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Event, RsvpStatus, UserProfile } from '@/types'
+import { getDefaultCoverImage } from './coverImageUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
 import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
 
@@ -240,9 +241,15 @@ export async function updateRsvp(eventId: string, userId: string, status: RsvpSt
 }
 
 export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'updated_at'>) {
+  // Assign default cover image if not provided
+  const eventWithCover = {
+    ...event,
+    cover_image_url: event.cover_image_url || getDefaultCoverImage(event.vibe)
+  }
+
   const { data, error } = await supabase
     .from('events')
-    .insert(event)
+    .insert(eventWithCover)
     .select()
     .single()
 
@@ -322,6 +329,9 @@ export async function createEventWithShareableLink(eventData: {
 
   const slug = slugData
 
+  // Assign default cover image based on vibe
+  const defaultCoverImage = getDefaultCoverImage(eventData.vibe)
+
   // Create the event with the event_code and slug
   const { data: event, error } = await supabase
     .from('events')
@@ -341,6 +351,7 @@ export async function createEventWithShareableLink(eventData: {
       private_slug: eventData.is_public ? null : slug,
       created_by: user.id,
       event_code: eventCode,
+      cover_image_url: defaultCoverImage,
     })
     .select()
     .single()

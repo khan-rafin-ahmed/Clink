@@ -10,8 +10,10 @@ import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { useAuth } from '@/lib/auth-context'
 import { getUserCrews } from '@/lib/crewService'
 import { getCrewMembers } from '@/lib/crewService'
+import { uploadEventCover } from '@/lib/fileUpload'
+import { getDefaultCoverImage, getEventCoverImage } from '@/lib/coverImageUtils'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Check, Upload, X } from 'lucide-react'
 import type { Crew, CrewMember, LocationData } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -91,7 +93,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     notes: '',
     custom_time: '',
     is_public: true,
-    invited_users: [] as string[]
+    invited_users: [] as string[],
+    cover_image: null as File | null,
+    cover_image_url: null as string | null
   })
 
   const drinkTypes = [
@@ -111,6 +115,30 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     { value: 'wild', label: 'Wild Night', emoji: '🔥' },
     { value: 'classy', label: 'Classy Evening', emoji: '🥂' }
   ]
+
+  // Cover image handling
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Cover image must be less than 5MB')
+        return
+      }
+
+      // Validate file type
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error('Cover image must be JPEG, PNG, or WebP')
+        return
+      }
+
+      setFormData(prev => ({ ...prev, cover_image: file }))
+    }
+  }
+
+  const removeCoverImage = () => {
+    setFormData(prev => ({ ...prev, cover_image: null, cover_image_url: null }))
+  }
 
   const timeOptions = [
     { value: 'now', label: 'Right Now!', emoji: '🚀' },
@@ -144,6 +172,23 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
     setIsSubmitting(true)
     try {
+      // Upload cover image if provided
+      let coverImageUrl = null
+      if (formData.cover_image) {
+        try {
+          const uploadResult = await uploadEventCover(formData.cover_image, user.id)
+          coverImageUrl = uploadResult.url
+        } catch (uploadError: any) {
+          toast.error(`Failed to upload cover image: ${uploadError.message}`)
+          // Continue with event creation using default cover
+        }
+      }
+
+      // If no custom cover uploaded, use default based on vibe
+      if (!coverImageUrl) {
+        coverImageUrl = getDefaultCoverImage(formData.vibe)
+      }
+
       const eventData = {
         title: formData.title.trim(),
         place_nickname: formData.place_nickname?.trim() || null,
@@ -179,7 +224,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         vibe: formData.vibe,
         notes: formData.notes?.trim() || null,
         is_public: formData.is_public,
-        created_by: user.id
+        created_by: user.id,
+        cover_image_url: coverImageUrl
         // Note: crew_id is not a column in events table, crew relationship is handled via event_members table
       }
 
@@ -264,7 +310,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       notes: '',
       custom_time: '',
       is_public: true,
-      invited_users: []
+      invited_users: [],
+      cover_image: null,
+      cover_image_url: null
     })
     setStep(1)
     setCreatedEvent(null)
@@ -459,6 +507,71 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       <div className="text-xs font-medium">{vibe.label}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Cover Image Upload */}
+              <div>
+                <Label className="text-sm font-medium">Event Cover Image (optional)</Label>
+                <div className="mt-2 space-y-3">
+                  {/* Preview current cover */}
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border bg-muted">
+                    {formData.cover_image ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={URL.createObjectURL(formData.cover_image)}
+                          alt="Cover preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeCoverImage}
+                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <div className="text-2xl opacity-60">
+                            {vibes.find((v: any) => v.value === formData.vibe)?.emoji || '✨'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Default {formData.vibe} cover will be used
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload button */}
+                  <div className="flex gap-2">
+                    <label className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleCoverImageChange}
+                        className="hidden"
+                      />
+                      <div className="w-full p-3 border border-border rounded-lg text-center cursor-pointer hover:border-primary/50 transition-colors">
+                        <Upload className="w-4 h-4 mx-auto mb-1" />
+                        <div className="text-xs font-medium">Upload Cover</div>
+                        <div className="text-xs text-muted-foreground">Max 5MB</div>
+                      </div>
+                    </label>
+                    {formData.cover_image && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={removeCoverImage}
+                        className="px-3"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 

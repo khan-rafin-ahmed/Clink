@@ -1,6 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Cover image utility functions
+const VIBE_COVER_IMAGES: Record<string, string> = {
+  casual: '/assets/covers/Casual Hang.webp',
+  party: '/assets/covers/Party Mode.webp',
+  shots: '/assets/covers/Shots Night.webp',
+  chill: '/assets/covers/Chill Vibes.webp',
+  wild: '/assets/covers/Wild Night.webp',
+  classy: '/assets/covers/Classy Evening.webp',
+  other: '/assets/covers/default-event-cover.webp'
+}
+
+function getDefaultCoverImage(vibe?: string): string {
+  if (!vibe || !(vibe in VIBE_COVER_IMAGES)) {
+    return VIBE_COVER_IMAGES.other
+  }
+  return VIBE_COVER_IMAGES[vibe]
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -18,6 +36,7 @@ interface CreateEventRequest {
   vibe?: string
   notes?: string
   is_public: boolean
+  cover_image_url?: string | null
 }
 
 // Generate a shorter, more user-friendly event ID
@@ -110,6 +129,9 @@ serve(async (req) => {
       )
     }
 
+    // Assign default cover image if not provided
+    const coverImageUrl = eventData.cover_image_url || getDefaultCoverImage(eventData.vibe)
+
     // Create the event
     const { data: event, error: eventError } = await supabaseClient
       .from('events')
@@ -127,6 +149,7 @@ serve(async (req) => {
         is_public: eventData.is_public,
         event_code: eventCode,
         created_by: user.id,
+        cover_image_url: coverImageUrl,
       })
       .select()
       .single()

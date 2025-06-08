@@ -22,6 +22,7 @@ import { ReviewsPanel } from '@/components/ReviewsPanel'
 import { EventRatingBadge } from '@/components/EventRatingBadge'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
+import { getEventCoverImage, getVibeFallbackGradient, getVibeEmoji } from '@/lib/coverImageUtils'
 import {
   MapPin,
   Users,
@@ -514,6 +515,50 @@ export function EventDetail() {
             </div>
           </div>
 
+          {/* Event Cover Image */}
+          <div className="slide-up rounded-2xl overflow-hidden shadow-xl" style={{ animationDelay: '0.1s' }}>
+            <div className="relative h-64 sm:h-80 lg:h-96">
+              {getEventCoverImage(event.cover_image_url, event.vibe) ? (
+                <img
+                  src={getEventCoverImage(event.cover_image_url, event.vibe)}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${getVibeFallbackGradient(event.vibe)} flex items-center justify-center relative`}>
+                  <div className="text-center space-y-4">
+                    <div className="text-6xl opacity-80">
+                      {getVibeEmoji(event.vibe)}
+                    </div>
+                    <div className="text-xl text-white font-medium uppercase tracking-wide">
+                      {event.vibe || 'Event'}
+                    </div>
+                  </div>
+                  {/* Subtle pattern overlay */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="w-full h-full" style={{
+                      backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px)`
+                    }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Gradient overlay for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              {/* Event title overlay */}
+              <div className="absolute bottom-6 left-6 right-6">
+                <h1 className="text-white font-heading font-bold text-3xl sm:text-4xl lg:text-5xl line-clamp-2 drop-shadow-lg mb-2">
+                  {event.title}
+                </h1>
+                <div className="flex items-center gap-3 text-white/90">
+                  <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
+                  <span className="text-lg font-medium capitalize">{event.vibe} Vibe</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Enhanced Main Event Card */}
           <div className="slide-up bg-gradient-card border border-border hover:border-border-hover rounded-2xl overflow-hidden shadow-xl backdrop-blur-sm" style={{ animationDelay: '0.2s' }}>
             {/* Event Header */}
@@ -594,15 +639,15 @@ export function EventDetail() {
                 <UserAvatar
                   userId={event.created_by}
                   displayName={
-                    event.host?.display_name ?? `Host ${event.created_by.slice(-4) || ''}`
+                    event.host?.display_name || event.host?.nickname || 'Event Host'
                   }
-                  avatarUrl={event.host?.avatar_url ?? undefined}
+                  avatarUrl={event.host?.avatar_url || undefined}
                   size="lg"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name ?? `Host ${event.created_by.slice(-4) || ''}`}
+                      {event.host?.display_name || event.host?.nickname || 'Event Host'}
                     </h3>
                     {isHost && (
                       <Badge

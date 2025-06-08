@@ -57,6 +57,7 @@ export interface Event {
   created_at: string
   updated_at: string
   event_code?: string
+  cover_image_url?: string | null
   rsvps?: {
     id: string
     status: RsvpStatus
@@ -85,6 +86,7 @@ export interface EventWithRsvps {
   place_name?: string | null
   location?: string | null
   place_id?: string | null
+  cover_image_url?: string | null
   rsvps: Array<{
     id: string
     status: RsvpStatus
@@ -98,6 +100,7 @@ export interface EventWithRsvps {
   host?: {
     id: string
     display_name: string | null
+    nickname?: string | null
     avatar_url: string | null
   }
   end_time?: string
@@ -126,6 +129,7 @@ export interface CreateEventDto {
   vibe?: string
   is_public: boolean
   created_by: string
+  cover_image_url?: string | null
 }
 
 export interface Crew {

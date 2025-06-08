@@ -9,9 +9,11 @@ import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { updateEvent } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
 import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
+import { uploadEventCover } from '@/lib/fileUpload'
+import { getDefaultCoverImage, getEventCoverImage } from '@/lib/coverImageUtils'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Users, Check } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Check, Upload, X } from 'lucide-react'
 import type { Event, LocationData } from '@/types'
 import type { Crew, CrewMember } from '@/types'
 
@@ -53,6 +55,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     notes: event.notes || '',
     custom_time: customTimeValue,
     is_public: event.is_public,
+    cover_image: null as File | null,
+    cover_image_url: (event as any).cover_image_url || null
   })
 
   // Load user crews when modal opens
@@ -94,6 +98,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       notes: event.notes || '',
       custom_time: customTimeValue,
       is_public: event.is_public,
+      cover_image: null,
+      cover_image_url: (event as any).cover_image_url || null
     })
     setStep(1)
     // Reset crew selection when event changes
@@ -153,11 +159,52 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     { value: 'classy', label: 'Classy Evening', emoji: '🥂' }
   ]
 
+  // Cover image handling
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Cover image must be less than 5MB')
+        return
+      }
+
+      // Validate file type
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error('Cover image must be JPEG, PNG, or WebP')
+        return
+      }
+
+      setFormData(prev => ({ ...prev, cover_image: file }))
+    }
+  }
+
+  const removeCoverImage = () => {
+    setFormData(prev => ({ ...prev, cover_image: null, cover_image_url: null }))
+  }
+
   async function handleSubmit() {
     if (step !== 4) return
 
     try {
       setIsSubmitting(true)
+
+      // Upload cover image if provided
+      let coverImageUrl = formData.cover_image_url
+      if (formData.cover_image) {
+        try {
+          const uploadResult = await uploadEventCover(formData.cover_image, user!.id)
+          coverImageUrl = uploadResult.url
+        } catch (uploadError: any) {
+          toast.error(`Failed to upload cover image: ${uploadError.message}`)
+          // Continue with event update using existing cover
+        }
+      }
+
+      // If no custom cover and vibe changed, update to new default
+      if (!coverImageUrl && !formData.cover_image) {
+        coverImageUrl = getDefaultCoverImage(formData.vibe)
+      }
 
       // Calculate event time
       let eventDateTime = new Date()
@@ -189,6 +236,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
         vibe: formData.vibe,
         notes: formData.notes || null,
         is_public: formData.is_public,
+        cover_image_url: coverImageUrl
       }
 
       console.log('Updating event with data:', updateData)
@@ -396,6 +444,86 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                       <div className="text-xs font-medium">{vibe.label}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Cover Image Upload */}
+              <div>
+                <Label className="text-sm font-medium">Event Cover Image (optional)</Label>
+                <div className="mt-2 space-y-3">
+                  {/* Preview current cover */}
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border bg-muted">
+                    {formData.cover_image ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={URL.createObjectURL(formData.cover_image)}
+                          alt="Cover preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeCoverImage}
+                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : formData.cover_image_url ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={formData.cover_image_url}
+                          alt="Current cover"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeCoverImage}
+                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <div className="text-2xl opacity-60">
+                            {vibes.find((v: any) => v.value === formData.vibe)?.emoji || '✨'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Default {formData.vibe} cover will be used
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload button */}
+                  <div className="flex gap-2">
+                    <label className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleCoverImageChange}
+                        className="hidden"
+                      />
+                      <div className="w-full p-3 border border-border rounded-lg text-center cursor-pointer hover:border-primary/50 transition-colors">
+                        <Upload className="w-4 h-4 mx-auto mb-1" />
+                        <div className="text-xs font-medium">Upload Cover</div>
+                        <div className="text-xs text-muted-foreground">Max 5MB</div>
+                      </div>
+                    </label>
+                    {(formData.cover_image || formData.cover_image_url) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={removeCoverImage}
+                        className="px-3"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 

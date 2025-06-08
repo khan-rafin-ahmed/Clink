@@ -122,7 +122,7 @@ export function StarRatingDisplay({
         <span className="text-sm font-semibold text-foreground tabular-nums">
           {averageRating.toFixed(1)}
         </span>
-        {showCount && (
+        {showCount && totalRatings > 0 && (
           <span className="text-xs text-muted-foreground font-medium">
             ({totalRatings})
           </span>
@@ -156,7 +156,7 @@ export function StarRatingDisplay({
         <span className="font-semibold text-foreground tabular-nums">
           {averageRating.toFixed(1)}
         </span>
-        {showCount && (
+        {showCount && totalRatings > 0 && (
           <span className="text-sm text-muted-foreground font-medium">
             ({totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})
           </span>

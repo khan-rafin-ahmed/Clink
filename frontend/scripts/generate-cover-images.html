@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Event Cover Images</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .canvas-container { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .download-link { display: block; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Event Cover Image Generator</h1>
+    <p>This will generate placeholder cover images for each event vibe.</p>
+    
+    <div id="canvases"></div>
+    
+    <script>
+        const vibes = [
+            { name: 'Casual Hang', gradient: ['#10B981', '#3B82F6'], emoji: '😎' },
+            { name: 'Party Mode', gradient: ['#EF4444', '#EC4899'], emoji: '🎉' },
+            { name: 'Shots Night', gradient: ['#F59E0B', '#F97316'], emoji: '🥃' },
+            { name: 'Chill Vibes', gradient: ['#3B82F6', '#8B5CF6'], emoji: '🌙' },
+            { name: 'Wild Night', gradient: ['#8B5CF6', '#EF4444'], emoji: '🔥' },
+            { name: 'Classy Evening', gradient: ['#F59E0B', '#EAB308'], emoji: '🥂' },
+            { name: 'default-event-cover', gradient: ['#6B7280', '#4B5563'], emoji: '✨' }
+        ];
+
+        function createCoverImage(vibe) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 450; // 16:9 aspect ratio
+            const ctx = canvas.getContext('2d');
+
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, vibe.gradient[0]);
+            gradient.addColorStop(1, vibe.gradient[1]);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add overlay pattern
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            for (let i = 0; i < canvas.width; i += 40) {
+                for (let j = 0; j < canvas.height; j += 40) {
+                    if ((i + j) % 80 === 0) {
+                        ctx.fillRect(i, j, 20, 20);
+                    }
+                }
+            }
+
+            // Add vibe text
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add emoji
+            ctx.font = '72px Arial';
+            ctx.fillText(vibe.emoji, canvas.width / 2, canvas.height / 2 - 40);
+            
+            // Add text
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText(vibe.name.replace('default-event-cover', 'Event'), canvas.width / 2, canvas.height / 2 + 40);
+
+            // Add subtle border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
+            return canvas;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/webp', 0.9);
+            link.textContent = `Download ${filename}`;
+            link.className = 'download-link';
+            return link;
+        }
+
+        // Generate all cover images
+        const container = document.getElementById('canvases');
+        
+        vibes.forEach(vibe => {
+            const canvasContainer = document.createElement('div');
+            canvasContainer.className = 'canvas-container';
+            
+            const title = document.createElement('h3');
+            title.textContent = vibe.name;
+            canvasContainer.appendChild(title);
+            
+            const canvas = createCoverImage(vibe);
+            canvasContainer.appendChild(canvas);
+            
+            const downloadLink = downloadCanvas(canvas, `${vibe.name}.webp`);
+            canvasContainer.appendChild(downloadLink);
+            
+            container.appendChild(canvasContainer);
+        });
+    </script>
+</body>
+</html>
