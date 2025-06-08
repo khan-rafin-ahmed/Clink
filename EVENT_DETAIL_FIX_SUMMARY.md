@@ -14,7 +14,7 @@ The error `https://arpphimkotjvnfoacquj.supabase.co/rest/v1/events?select=*&id=e
 
 ## ✅ **Solution Implemented**
 
-### Updated `getEventDetails()` Function
+### 1. Updated `getEventDetails()` Function
 
 **File**: `frontend/src/lib/eventService.ts`
 
@@ -31,18 +31,29 @@ The error `https://arpphimkotjvnfoacquj.supabase.co/rest/v1/events?select=*&id=e
    ```
 
 2. **Fallback Strategy**: If not found by ID, tries by `public_slug`
-
 3. **Improved Caching**: Caches using both the original key and event ID for better cache hits
-
 4. **Better Error Handling**: Clearer error messages and proper null checks
+
+### 2. Fixed EventDetail Component
+
+**File**: `frontend/src/pages/EventDetail.tsx`
+
+**Root Cause**: The modern EventDetail component had its own event fetching logic that was still using direct Supabase queries instead of the fixed `getEventDetails` function.
+
+**Changes Made**:
+1. **Replaced Custom Logic**: Removed duplicate event fetching code
+2. **Used Fixed Function**: Now uses `getEventDetails(slug)` for public events
+3. **Added Import**: Imported `getEventDetails` from eventService
+4. **Maintained Private Event Logic**: Kept separate logic for private events
 
 ### Key Improvements
 
 - ✅ **Backward Compatibility**: Legacy routes still work
-- ✅ **Modern Slug Support**: New slug-based URLs work correctly  
+- ✅ **Modern Slug Support**: New slug-based URLs work correctly
 - ✅ **UUID Detection**: Automatically detects if parameter is UUID or slug
 - ✅ **Dual Caching**: Improves cache hit rates
 - ✅ **Error Handling**: Better error messages and fallbacks
+- ✅ **Code Consistency**: Both EventDetail components now use the same logic
 
 ## 🔧 **Technical Details**
 

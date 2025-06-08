@@ -37,6 +37,7 @@ import {
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
+import { getEventDetails } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 
@@ -109,34 +110,17 @@ export function EventDetail() {
     let eventData: EventWithRsvps | null = null
 
     if (!isPrivateEvent) {
-      // First try to load by ID if the slug looks like a UUID
-      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
-        const { data: eventById, error: idError } = await supabase
-          .from('events')
-          .select('*')
-          .eq('id', slug)
-          .maybeSingle()
-
-        if (!idError && eventById) {
-          eventData = eventById as EventWithRsvps
-        }
-      }
-
-      // If not found by ID, try public_slug
-      if (!eventData) {
-        const { data: publicEvt, error: publicErr } = await supabase
-          .from('events')
-          .select('*')
-          .eq('public_slug', slug)
-          .maybeSingle()
-
-        if (publicErr || !publicEvt) {
+      // Use the fixed getEventDetails function that handles both UUIDs and slugs
+      try {
+        eventData = await getEventDetails(slug) as EventWithRsvps
+      } catch (error: any) {
+        if (error.message.includes('Event not found')) {
           throw new Error('Event not found')
         }
-        eventData = publicEvt as EventWithRsvps
+        throw error
       }
     } else {
-      // Private event logic
+      // Private event logic - query by ID for private events
       const { data: privateEvt, error: privateErr } = await supabase
         .from('events')
         .select('*')
