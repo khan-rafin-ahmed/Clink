@@ -18,7 +18,7 @@ import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { InteractiveMap } from '@/components/InteractiveMap'
 import { EventGallery } from '@/components/EventGallery'
 import { EventComments } from '@/components/EventComments'
-import { EventRatingDisplay } from '@/components/EventRatingDisplay'
+import { ReviewsPanel } from '@/components/ReviewsPanel'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
 import {
@@ -831,7 +831,10 @@ export function EventDetail() {
                 canModerate={Boolean(isHost)}
               />
 
-              <EventRatingDisplay
+              <ReviewsPanel
+                eventName={event.title || 'Event'}
+                averageRating={event.average_rating || 0}
+                reviewCount={event.total_ratings || 0}
                 event={event as any}
                 className="mt-6"
               />

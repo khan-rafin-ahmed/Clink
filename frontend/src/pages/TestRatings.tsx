@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { StarRating, StarRatingDisplay } from '@/components/StarRating'
 import { EventRatingModal } from '@/components/EventRatingModal'
+import { ReviewsPanel } from '@/components/ReviewsPanel'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -28,11 +29,61 @@ export function TestRatings() {
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Modern Rating System
+            Google Reviews Style Panel
           </h1>
           <p className="text-muted-foreground text-lg">
-            Testing the redesigned star rating components with modern styling
+            Testing the new ReviewsPanel component with Google Reviews styling
           </p>
+        </div>
+
+        {/* New Google Reviews Style Panel */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Google Reviews Style Panel</h2>
+
+          {/* With Reviews */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">With Reviews (4.4 rating, 737 reviews)</h3>
+            <ReviewsPanel
+              eventName="Loki Restaurant & Bar"
+              averageRating={4.4}
+              reviewCount={737}
+              event={mockEvent}
+            />
+          </div>
+
+          {/* Empty State */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Empty State (No reviews yet)</h3>
+            <ReviewsPanel
+              eventName="New Event - No Reviews"
+              averageRating={0}
+              reviewCount={0}
+              event={mockEvent}
+            />
+          </div>
+
+          {/* Different Rating Examples */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">High Rating (4.8)</h3>
+              <ReviewsPanel
+                eventName="Amazing Cocktail Night"
+                averageRating={4.8}
+                reviewCount={156}
+                event={mockEvent}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Half Star (3.5)</h3>
+              <ReviewsPanel
+                eventName="Mixed Reviews Event"
+                averageRating={3.5}
+                reviewCount={42}
+                event={mockEvent}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Interactive Star Rating */}

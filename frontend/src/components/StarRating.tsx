@@ -70,16 +70,11 @@ export function StarRating({
                 sizeClasses[size],
                 'transition-all duration-200 ease-out',
                 star <= displayRating
-                  ? 'fill-gradient-to-br from-primary to-primary/80 text-primary drop-shadow-sm'
+                  ? 'fill-amber-500 text-amber-500 drop-shadow-sm'
                   : 'fill-none text-muted-foreground/40 hover:text-muted-foreground/60',
                 !readonly && star <= displayRating && 'shadow-sm',
                 !readonly && 'hover:drop-shadow-md'
               )}
-              style={{
-                fill: star <= displayRating
-                  ? 'hsl(var(--primary))'
-                  : 'transparent'
-              }}
             />
           </button>
         ))}
