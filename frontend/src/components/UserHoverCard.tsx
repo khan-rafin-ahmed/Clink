@@ -142,6 +142,13 @@ export function UserHoverCard({
                   )}
                 </div>
 
+                {/* Nickname */}
+                {profile?.nickname && (
+                  <div className="text-sm text-yellow-400 italic mb-2">
+                    aka {profile.nickname} 🍻
+                  </div>
+                )}
+
                 {/* Favorite Drink */}
                 {favoriteDrink && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">

@@ -195,7 +195,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
     // Get user profiles for all users
     const { data: profiles, error: profileError } = await supabase
       .from('user_profiles')
-      .select('user_id, display_name, avatar_url')
+      .select('user_id, display_name, nickname, avatar_url')
       .in('user_id', allUserIds)
 
     if (profileError) {
@@ -238,6 +238,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
           user: {
             id: creatorProfile.user_id,
             display_name: creatorProfile.display_name,
+            nickname: creatorProfile.nickname,
             avatar_url: creatorProfile.avatar_url
           }
         })
@@ -256,10 +257,12 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
           user: profile ? {
             id: profile.user_id,
             display_name: profile.display_name,
+            nickname: profile.nickname,
             avatar_url: profile.avatar_url
           } : {
             id: member.user_id,
             display_name: 'Unknown User',
+            nickname: null,
             avatar_url: null
           }
         })
@@ -291,7 +294,7 @@ export async function getCrewPendingRequests(crewId: string): Promise<CrewMember
   const userIds = Array.from(new Set((rows || []).map(r => r.user_id)));
   const { data: profiles, error: profileError } = await supabase
     .from('user_profiles')
-    .select('user_id, display_name, avatar_url')
+    .select('user_id, display_name, nickname, avatar_url')
     .in('user_id', userIds);
   if (profileError) throw profileError;
 
@@ -301,7 +304,7 @@ export async function getCrewPendingRequests(crewId: string): Promise<CrewMember
     return {
       ...row,
       user: prof
-        ? { id: prof.user_id, display_name: prof.display_name, avatar_url: prof.avatar_url }
+        ? { id: prof.user_id, display_name: prof.display_name, nickname: prof.nickname, avatar_url: prof.avatar_url }
         : undefined
     };
   });

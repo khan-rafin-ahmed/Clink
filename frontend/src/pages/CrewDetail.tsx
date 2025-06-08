@@ -695,6 +695,11 @@ export function CrewDetail() {
                             </Badge>
                           )}
                         </div>
+                        {member.user?.nickname && (
+                          <p className="text-sm text-yellow-400 italic">
+                            aka {member.user.nickname} 🍻
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           Joined {new Date(member.joined_at).toLocaleDateString()}
                         </p>

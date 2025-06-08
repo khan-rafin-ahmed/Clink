@@ -158,12 +158,13 @@ export function UserProfile() {
             if (!isHosting) {
               const { data: eventCreatorData } = await supabase
                 .from('user_profiles')
-                .select('display_name, avatar_url, user_id')
+                .select('display_name, nickname, avatar_url, user_id')
                 .eq('user_id', event.created_by)
                 .single()
 
               creatorData = eventCreatorData || {
                 display_name: 'Unknown Host',
+                nickname: null,
                 avatar_url: null,
                 user_id: event.created_by
               }
@@ -203,12 +204,13 @@ export function UserProfile() {
             if (!isHosting) {
               const { data: eventCreatorData } = await supabase
                 .from('user_profiles')
-                .select('display_name, avatar_url, user_id')
+                .select('display_name, nickname, avatar_url, user_id')
                 .eq('user_id', event.created_by)
                 .single()
 
               creatorData = eventCreatorData || {
                 display_name: 'Unknown Host',
+                nickname: null,
                 avatar_url: null,
                 user_id: event.created_by
               }
@@ -546,6 +548,11 @@ export function UserProfile() {
                   <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground">
                     {displayName}'s <span className="bg-gradient-primary bg-clip-text text-transparent">Profile</span> 🍻
                   </h1>
+                  {userProfile?.nickname && (
+                    <p className="text-lg sm:text-xl text-yellow-400 font-medium italic">
+                      aka {userProfile.nickname} 🐉
+                    </p>
+                  )}
                   {userProfile?.tagline && (
                     <p className="text-lg sm:text-xl text-primary font-medium italic">
                       "{userProfile.tagline}"

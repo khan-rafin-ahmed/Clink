@@ -39,6 +39,7 @@ export function EditProfile() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [formData, setFormData] = useState({
     display_name: '',
+    nickname: '',
     bio: '',
     tagline: '',
     favorite_drink: '',
@@ -80,6 +81,7 @@ export function EditProfile() {
           id: '',
           user_id: user.id,
           display_name: user.email?.split('@')[0] || 'User',
+          nickname: null,
           bio: null,
           tagline: null,
           avatar_url: null,
@@ -93,6 +95,7 @@ export function EditProfile() {
       setProfile(profileData)
       setFormData({
         display_name: profileData?.display_name || '',
+        nickname: profileData?.nickname || '',
         bio: profileData?.bio || '',
         tagline: profileData?.tagline || '',
         favorite_drink: profileData?.favorite_drink || 'none',
@@ -132,6 +135,7 @@ export function EditProfile() {
 
     const updateData = {
       display_name: formData.display_name.trim() || null,
+      nickname: formData.nickname.trim() || null,
       bio: formData.bio.trim() || null,
       tagline: formData.tagline.trim() || null,
       favorite_drink: formData.favorite_drink === 'none' ? null : formData.favorite_drink || null,
@@ -146,7 +150,12 @@ export function EditProfile() {
       const result = await updateUserProfile(user.id, updateData)
       console.log('[EditProfile] Profile update result:', result)
 
-      toast.success('Profile updated successfully! 🎉')
+      // Show special toast if nickname was set
+      if (updateData.nickname && updateData.nickname !== profile?.nickname) {
+        toast.success(`🔥 You're now known as ${updateData.nickname}`)
+      } else {
+        toast.success('Profile updated successfully! 🎉')
+      }
       handleUpdateSuccess()
     } catch (error) {
       console.error('[EditProfile] Error updating profile:', error)
@@ -260,6 +269,22 @@ export function EditProfile() {
                 />
                 <p className="text-xs text-muted-foreground">
                   This is how others will see your name
+                </p>
+              </div>
+
+              {/* Nickname */}
+              <div className="space-y-2">
+                <Label htmlFor="nickname">Nickname (Optional)</Label>
+                <Input
+                  id="nickname"
+                  type="text"
+                  placeholder="Your drinking nickname... 🍻"
+                  value={formData.nickname}
+                  onChange={(e) => handleInputChange('nickname', e.target.value)}
+                  maxLength={30}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.nickname.length}/30 characters - A fun nickname that shows up throughout the app
                 </p>
               </div>
 

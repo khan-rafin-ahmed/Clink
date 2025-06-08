@@ -5,6 +5,7 @@ export interface UserProfile {
   id: string
   user_id: string
   display_name: string | null
+  nickname: string | null
   bio: string | null
   avatar_url: string | null
   favorite_drink: string | null
@@ -153,6 +154,7 @@ export interface CrewMember {
   user?: {
     id: string
     display_name: string | null
+    nickname: string | null
     avatar_url: string | null
     email?: string
   }

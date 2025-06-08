@@ -54,7 +54,7 @@ export function EventDetail() {
   const [error, setError] = useState<string | null>(null)
   const [isJoined, setIsJoined] = useState(false)
   const [participantProfiles, setParticipantProfiles] = useState<
-    Record<string, { display_name: string | null; avatar_url: string | null }>
+    Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null }>
   >({})
   const [sessionReady, setSessionReady] = useState(false)
 
@@ -220,7 +220,7 @@ export function EventDetail() {
         try {
           const { data: profiles, error: profileError } = await supabase
             .from('user_profiles')
-            .select('user_id, display_name, avatar_url')
+            .select('user_id, display_name, nickname, avatar_url')
             .in('user_id', allUserIds)
 
           if (!mountedRef.current) return
@@ -228,10 +228,11 @@ export function EventDetail() {
             const profileMap = profiles.reduce((acc, profile) => {
               acc[profile.user_id] = {
                 display_name: profile.display_name,
+                nickname: profile.nickname,
                 avatar_url: profile.avatar_url
               }
               return acc
-            }, {} as Record<string, { display_name: string | null; avatar_url: string | null }>)
+            }, {} as Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null }>)
 
             setParticipantProfiles(profileMap)
           }
@@ -262,7 +263,7 @@ export function EventDetail() {
     try {
       const { data: hostProfile, error } = await supabase
         .from('user_profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, nickname, avatar_url')
         .eq('user_id', hostId)
         .single()
 
@@ -275,11 +276,13 @@ export function EventDetail() {
         ? {
             id: hostProfile.user_id,
             display_name: hostProfile.display_name,
+            nickname: hostProfile.nickname,
             avatar_url: hostProfile.avatar_url
           }
         : {
             id: hostId,
             display_name: null,
+            nickname: null,
             avatar_url: null
           }
 
@@ -742,6 +745,7 @@ export function EventDetail() {
                       const profile = participantProfiles[rsvp.user_id] || {}
                       const displayName =
                         profile.display_name || `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
+                      const nicknameDisplay = profile.nickname || displayName
                       return (
                         <div key={rsvp.user_id || index} className="flex-shrink-0">
                           <UserHoverCard
@@ -756,9 +760,16 @@ export function EventDetail() {
                                 avatarUrl={profile.avatar_url ?? undefined}
                                 size="md"
                               />
-                              <p className="text-xs font-medium text-center text-foreground truncate w-full">
-                                {displayName}
-                              </p>
+                              <div className="text-center">
+                                <p className="text-xs font-medium text-foreground truncate w-full">
+                                  {nicknameDisplay}
+                                </p>
+                                {profile.nickname && (
+                                  <p className="text-xs text-yellow-400 italic truncate w-full">
+                                    {profile.nickname} 🍻
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </UserHoverCard>
                         </div>

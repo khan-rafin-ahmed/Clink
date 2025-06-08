@@ -148,6 +148,18 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
     }
   }
 
+  const getHostDisplayName = () => {
+    if (!event.creator) return 'Anonymous'
+
+    // Check if creator has a nickname
+    const creatorData = event.creator as any
+    if (creatorData.nickname) {
+      return creatorData.nickname
+    }
+
+    return event.creator.display_name || 'Anonymous'
+  }
+
   const statusBadge = getStatusBadge(event.date_time)
 
   return (
@@ -227,7 +239,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             />
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || 'Anonymous'}`}
+                {isHost ? 'Hosted by You' : `Hosted by ${getHostDisplayName()}`}
               </span>
               {/* Crew badge removed - using Crew System now */}
             </div>
