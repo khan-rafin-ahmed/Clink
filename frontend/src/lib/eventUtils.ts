@@ -12,6 +12,43 @@ export interface AttendeeInfo {
 }
 
 /**
+ * Filter events into upcoming and past based on current date
+ */
+export function filterEventsByDate<T extends { date_time: string }>(events: T[]): {
+  upcoming: T[]
+  past: T[]
+} {
+  const now = new Date()
+  const upcoming: T[] = []
+  const past: T[] = []
+
+  events.forEach(event => {
+    const eventDate = new Date(event.date_time)
+    if (eventDate >= now) {
+      upcoming.push(event)
+    } else {
+      past.push(event)
+    }
+  })
+
+  return { upcoming, past }
+}
+
+/**
+ * Check if an event is in the past
+ */
+export function isEventPast(dateTime: string): boolean {
+  return new Date(dateTime) < new Date()
+}
+
+/**
+ * Check if an event is upcoming
+ */
+export function isEventUpcoming(dateTime: string): boolean {
+  return new Date(dateTime) >= new Date()
+}
+
+/**
  * Calculate total attendee count for an event
  * Host is ALWAYS counted as attending (minimum 1)
  * Combines RSVPs and event members, avoiding duplicates

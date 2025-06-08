@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
+import { EventTabs } from '@/components/EventTabs'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { Loader2, Edit, Trash2 } from 'lucide-react'
+import { Loader2, Edit, Trash2, Calendar, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { filterEventsByDate } from '@/lib/eventUtils'
 
 type Event = {
   id: string
@@ -30,6 +32,9 @@ export function Dashboard() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
   const navigate = useNavigate()
+
+  // Filter events by date
+  const { upcoming: upcomingEvents, past: pastEvents } = filterEventsByDate(events)
 
   useEffect(() => {
     if (user) {
@@ -110,6 +115,97 @@ export function Dashboard() {
     return drinkMap[drinkType] || '🍻'
   }
 
+  // Render event cards
+  const renderEventCards = (eventList: Event[]) => {
+    if (eventList.length === 0) {
+      return (
+        <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border hover:border-border-hover transition-all duration-300">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="h-10 w-10 text-primary" />
+          </div>
+          <h3 className="text-xl font-heading font-bold mb-3">No Sessions Found</h3>
+          <p className="text-base text-muted-foreground mb-6 px-4 max-w-md mx-auto leading-relaxed">
+            Time to create some hell-raising sessions!
+          </p>
+          <QuickEventModal
+            trigger={
+              <Button size="lg" className="group hover-glow">
+                <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                🍺 Create Your First Session
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Button>
+            }
+            onEventCreated={loadEvents}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {eventList.map(event => (
+          <div key={event.id} className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">{getDrinkEmoji(event.drink_type)}</span>
+                <span className="text-lg">{getVibeEmoji(event.vibe)}</span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  className="text-primary hover:text-primary/80"
+                >
+                  View
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(event)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(event)}
+                  className="text-destructive hover:text-destructive/80"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
+              {event.title}
+            </h3>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-2">
+                <span>📍</span>
+                <span>{event.location}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>📅</span>
+                <span>{formatDate(event.date_time)}</span>
+              </div>
+              {event.notes && (
+                <div className="flex items-start space-x-2 mt-3">
+                  <span>📝</span>
+                  <span className="text-xs">{event.notes}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (!user) {
     navigate('/login')
     return null
@@ -154,67 +250,14 @@ export function Dashboard() {
           />
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events.map(event => (
-            <div key={event.id} className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">{getDrinkEmoji(event.drink_type)}</span>
-                  <span className="text-lg">{getVibeEmoji(event.vibe)}</span>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/events/${event.id}`)}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(event)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(event)}
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-
-              <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
-                {event.title}
-              </h3>
-
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-2">
-                  <span>📍</span>
-                  <span>{event.location}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span>📅</span>
-                  <span>{formatDate(event.date_time)}</span>
-                </div>
-                {event.notes && (
-                  <div className="flex items-start space-x-2 mt-3">
-                    <span>📝</span>
-                    <span className="text-xs">{event.notes}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <EventTabs
+          upcomingEvents={upcomingEvents}
+          pastEvents={pastEvents}
+          upcomingContent={renderEventCards(upcomingEvents)}
+          pastContent={renderEventCards(pastEvents)}
+          storageKey="dashboard_eventTabs"
+          className="mt-8"
+        />
       )}
 
       {/* Edit Modal */}

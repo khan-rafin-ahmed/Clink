@@ -9,6 +9,7 @@ import { EventCard } from '@/components/EventCard'
 import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
+import { EventTabs } from '@/components/EventTabs'
 import { useEffect, useState } from 'react'
 
 import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -343,6 +344,175 @@ export function UserProfile() {
   const pageCount = Math.ceil(pastSessions.length / itemsPerPage)
   const displayedPastSessions = pastSessions.slice((pastPage - 1) * itemsPerPage, pastPage * itemsPerPage)
 
+  // Render upcoming events content
+  const renderUpcomingContent = () => {
+    if (loadingEnhanced) {
+      return (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Calendar className="h-8 w-8 text-primary-foreground" />
+          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+          <p className="text-muted-foreground font-medium">Loading your sessions...</p>
+        </div>
+      )
+    }
+
+    if (enhancedSessions.length === 0) {
+      return (
+        <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border hover:border-border-hover transition-all duration-300">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="h-10 w-10 text-primary" />
+          </div>
+          <h3 className="text-xl font-heading font-bold mb-3">No Upcoming Hell</h3>
+          <p className="text-base text-muted-foreground mb-6 px-4 max-w-md mx-auto leading-relaxed">
+            You haven't created or joined any upcoming hell-raising sessions yet. Time to change that!
+          </p>
+          <QuickEventModal
+            trigger={
+              <Button size="lg" className="group hover-glow">
+                <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                🍺 Start Raising Hell
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Button>
+            }
+            onEventCreated={handleEventCreated}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {enhancedSessions.map((session, index) => (
+          <div key={session.id} className="scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
+            <EventCard
+              event={session}
+              showHostActions={session.isHosting}
+              onEdit={session.isHosting ? handleEdit : undefined}
+              onDelete={session.isHosting ? handleDelete : undefined}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Render past events content
+  const renderPastContent = () => {
+    if (loadingEnhanced) {
+      return (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading past sessions...</p>
+        </div>
+      )
+    }
+
+    if (pastSessions.length === 0) {
+      return (
+        <div className="text-center py-12 bg-card rounded-xl border border-border">
+          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Past Hell</h3>
+          <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
+            Your completed hell-raising sessions (hosted and attended) will appear here.
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {displayedPastSessions.map((session) => (
+            <EventCard
+              key={session.id}
+              event={session}
+              showHostActions={false}
+              onEdit={undefined}
+              onDelete={undefined}
+            />
+          ))}
+        </div>
+        {pageCount > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            {/* Previous Button - Hidden on first page */}
+            {pastPage > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPastPage(p => p - 1)}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+            )}
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => {
+                // Show first page, last page, current page, and pages around current
+                const showPage =
+                  page === 1 ||
+                  page === pageCount ||
+                  Math.abs(page - pastPage) <= 1
+
+                if (!showPage) {
+                  // Show ellipsis for gaps
+                  if (page === pastPage - 2 || page === pastPage + 2) {
+                    return (
+                      <span key={page} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                }
+
+                return (
+                  <Button
+                    key={page}
+                    variant={page === pastPage ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setPastPage(page)}
+                    className={`min-w-[40px] ${
+                      page === pastPage
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                )
+              })}
+            </div>
+
+            {/* Next Button - Hidden on last page */}
+            {pastPage < pageCount && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPastPage(p => p + 1)}
+                className="flex items-center gap-2"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Page Info */}
+        <div className="text-center mt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {((pastPage - 1) * itemsPerPage) + 1} to {Math.min(pastPage * itemsPerPage, pastSessions.length)} of {pastSessions.length} past sessions
+          </p>
+        </div>
+      </>
+    )
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Enhanced Background */}
@@ -493,178 +663,28 @@ export function UserProfile() {
             </div>
           </div>
 
-          {/* Enhanced Upcoming Sessions */}
+          {/* Event Tabs - Upcoming and Past Sessions */}
           <div className="slide-up" style={{ animationDelay: '0.6s' }}>
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h2 className="text-2xl sm:text-3xl font-display font-bold flex items-center gap-3">
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                  Your Coming <span className="bg-gradient-primary bg-clip-text text-transparent">Hell</span>
+                  Your <span className="bg-gradient-primary bg-clip-text text-transparent">Sessions</span>
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {enhancedSessions.length} upcoming session{enhancedSessions.length !== 1 ? 's' : ''}
+                  {enhancedSessions.length + pastSessions.length} total session{(enhancedSessions.length + pastSessions.length) !== 1 ? 's' : ''}
                 </p>
               </div>
 
-              {loadingEnhanced ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <Calendar className="h-8 w-8 text-primary-foreground" />
-                  </div>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                  <p className="text-muted-foreground font-medium">Loading your sessions...</p>
-                </div>
-              ) : enhancedSessions.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {enhancedSessions.map((session, index) => (
-                    <div key={session.id} className="scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
-                      <EventCard
-                        event={session}
-                        showHostActions={session.isHosting}
-                        onEdit={session.isHosting ? handleEdit : undefined}
-                        onDelete={session.isHosting ? handleDelete : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border hover:border-border-hover transition-all duration-300">
-                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="h-10 w-10 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-heading font-bold mb-3">No Upcoming Hell</h3>
-                  <p className="text-base text-muted-foreground mb-6 px-4 max-w-md mx-auto leading-relaxed">
-                    You haven't created or joined any upcoming hell-raising sessions yet. Time to change that!
-                  </p>
-                  <QuickEventModal
-                    trigger={
-                      <Button size="lg" className="group hover-glow">
-                        <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
-                        🍺 Start Raising Hell
-                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                      </Button>
-                    }
-                    onEventCreated={handleEventCreated}
-                  />
-                </div>
-              )}
+              <EventTabs
+                upcomingEvents={enhancedSessions}
+                pastEvents={pastSessions}
+                upcomingContent={renderUpcomingContent()}
+                pastContent={renderPastContent()}
+                storageKey="userProfile_eventTabs"
+                className="mt-6"
+              />
             </div>
-          </div>
-
-          {/* Your Past Sessions */}
-          <div className="space-y-4 sm:space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
-                Your Past Hell
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Events you hosted and attended
-              </p>
-            </div>
-
-            {loadingEnhanced ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-muted-foreground">Loading past sessions...</p>
-              </div>
-            ) : pastSessions.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {displayedPastSessions.map((session) => (
-                    <EventCard
-                      key={session.id}
-                      event={session}
-                      showHostActions={false}
-                      onEdit={undefined}
-                      onDelete={undefined}
-                    />
-                  ))}
-                </div>
-                {pageCount > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    {/* Previous Button - Hidden on first page */}
-                    {pastPage > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPastPage(p => p - 1)}
-                        className="flex items-center gap-2"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                      </Button>
-                    )}
-
-                    {/* Page Numbers */}
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => {
-                        // Show first page, last page, current page, and pages around current
-                        const showPage =
-                          page === 1 ||
-                          page === pageCount ||
-                          Math.abs(page - pastPage) <= 1
-
-                        if (!showPage) {
-                          // Show ellipsis for gaps
-                          if (page === pastPage - 2 || page === pastPage + 2) {
-                            return (
-                              <span key={page} className="px-2 text-muted-foreground">
-                                ...
-                              </span>
-                            )
-                          }
-                          return null
-                        }
-
-                        return (
-                          <Button
-                            key={page}
-                            variant={page === pastPage ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setPastPage(page)}
-                            className={`min-w-[40px] ${
-                              page === pastPage
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:bg-muted'
-                            }`}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
-                    </div>
-
-                    {/* Next Button - Hidden on last page */}
-                    {pastPage < pageCount && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPastPage(p => p + 1)}
-                        className="flex items-center gap-2"
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* Page Info */}
-                <div className="text-center mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Showing {((pastPage - 1) * itemsPerPage) + 1} to {Math.min(pastPage * itemsPerPage, pastSessions.length)} of {pastSessions.length} past sessions
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Past Hell</h3>
-                <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">
-                  Your completed hell-raising sessions (hosted and attended) will appear here.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* App Features */}

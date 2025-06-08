@@ -2,14 +2,11 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { EventRatingModal } from '@/components/EventRatingModal'
 import { useAuth } from '@/lib/auth-context'
-import { toast } from 'sonner'
 import { Star, Info, Edit } from 'lucide-react'
 import {
-  getEventRatings,
   getUserEventRating,
   canUserRateEvent,
-  hasEventConcluded,
-  deleteEventRating
+  hasEventConcluded
 } from '@/lib/eventRatingService'
 import type { Event, EventRating } from '@/types'
 import { cn } from '@/lib/utils'
@@ -19,7 +16,6 @@ interface ReviewsPanelProps {
   averageRating: number
   reviewCount: number
   event: Event
-  reviews?: EventRating[]
   className?: string
 }
 
@@ -28,15 +24,12 @@ export function ReviewsPanel({
   averageRating,
   reviewCount,
   event,
-  reviews = [],
   className
 }: ReviewsPanelProps) {
   const { user } = useAuth()
-  const [ratings, setRatings] = useState<EventRating[]>(reviews)
   const [userRating, setUserRating] = useState<EventRating | null>(null)
   const [canRate, setCanRate] = useState(false)
   const [eventConcluded, setEventConcluded] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [showRatingModal, setShowRatingModal] = useState(false)
 
   useEffect(() => {
@@ -45,12 +38,6 @@ export function ReviewsPanel({
 
   const loadRatingData = async () => {
     try {
-      setLoading(true)
-
-      // Load all ratings for the event
-      const eventRatings = await getEventRatings(event.id)
-      setRatings(eventRatings)
-
       if (user) {
         // Check if user can rate this event
         const canUserRate = await canUserRateEvent(event.id, user.id)
@@ -66,27 +53,12 @@ export function ReviewsPanel({
       }
     } catch (error: any) {
       console.error('Error loading rating data:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleRatingSubmitted = (newRating: EventRating) => {
     setUserRating(newRating)
     loadRatingData() // Reload to get updated averages
-  }
-
-  const handleDeleteRating = async () => {
-    if (!userRating) return
-
-    try {
-      await deleteEventRating(userRating.id)
-      setUserRating(null)
-      toast.success('Rating deleted successfully')
-      loadRatingData()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete rating')
-    }
   }
 
   // Calculate full and half stars for display
