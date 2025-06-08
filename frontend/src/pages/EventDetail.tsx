@@ -22,7 +22,7 @@ import { ReviewsPanel } from '@/components/ReviewsPanel'
 import { EventRatingBadge } from '@/components/EventRatingBadge'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
-import { getEventCoverImage, getVibeFallbackGradient, getVibeEmoji } from '@/lib/coverImageUtils'
+import { getEventCoverImage, getVibeFallbackGradient } from '@/lib/coverImageUtils'
 import {
   MapPin,
   Users,
@@ -528,7 +528,7 @@ export function EventDetail() {
                 <div className={`w-full h-full bg-gradient-to-br ${getVibeFallbackGradient(event.vibe)} flex items-center justify-center relative`}>
                   <div className="text-center space-y-4">
                     <div className="text-6xl opacity-80">
-                      {getVibeEmoji(event.vibe)}
+                      {getVibeEmoji(event.vibe || undefined)}
                     </div>
                     <div className="text-xl text-white font-medium uppercase tracking-wide">
                       {event.vibe || 'Event'}
@@ -552,7 +552,7 @@ export function EventDetail() {
                   {event.title}
                 </h1>
                 <div className="flex items-center gap-3 text-white/90">
-                  <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
+                  <span className="text-xl">{getVibeEmoji(event.vibe || undefined)}</span>
                   <span className="text-lg font-medium capitalize">{event.vibe} Vibe</span>
                 </div>
               </div>
