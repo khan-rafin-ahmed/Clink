@@ -573,10 +573,10 @@ export function EventDetail() {
                           {event.title}
                         </h1>
                         {/* Event Rating Badge - Show if event has ratings */}
-                        {event.total_ratings && event.total_ratings > 0 && (
+                        {((event.total_ratings || 0) > 0 && (event.average_rating || 0) > 0) && (
                           <EventRatingBadge
-                            averageRating={event.average_rating || 0}
-                            reviewCount={event.total_ratings || 0}
+                            averageRating={event.average_rating!}
+                            reviewCount={event.total_ratings!}
                             size="md"
                             className="ml-2"
                           />
@@ -734,7 +734,7 @@ export function EventDetail() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
-                  Who's Coming ({goingCount})
+                  {goingCount > 0 ? `Who's Coming (${goingCount})` : "Who's Coming"}
                 </h2>
                 {maybeCount > 0 && (
                   <Badge variant="outline" className="text-muted-foreground">

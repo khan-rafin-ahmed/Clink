@@ -5,13 +5,8 @@ import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { ShareModal } from '@/components/ShareModal'
-import { JoinEventButton } from '@/components/JoinEventButton'
-import { UserAvatar } from '@/components/UserAvatar'
-import { UserHoverCard } from '@/components/UserHoverCard'
-// import { EnhancedEventCard } from '@/components/EnhancedEventCard'
+import { EnhancedEventCard } from '@/components/EnhancedEventCard'
 // import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
   FullPageSkeleton,
@@ -20,22 +15,16 @@ import {
 import {
   Search,
   Filter,
-  MapPin,
   Calendar,
   Users,
   TrendingUp,
-  Clock,
-  Wine,
-  Beer,
-  Martini,
-  Coffee,
-  Share2
+  Clock
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 
 type SortOption = 'newest' | 'trending' | 'date' | 'popular'
@@ -197,8 +186,6 @@ function DiscoverContent() {
   const [drinkFilter, setDrinkFilter] = useState<string>('all')
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
-  // const commandMenu = useCommandMenu()
-  const { user } = useAuth()
 
   // Create a stable fetch function that will receive the user from the hook
   const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
@@ -298,13 +285,6 @@ function DiscoverContent() {
     setFilteredEvents(filtered)
   }, [searchQuery, sortBy, filterBy, drinkFilter])
 
-  const handleJoinChange = useCallback((_eventId: string, _joined: boolean) => {
-    // Update the specific event's join status without full reload
-    // Note: This would need access to setEvents which we don't have here
-    // For now, we'll just trigger a refetch
-    refetch()
-  }, [refetch])
-
   // Apply filters and sorting when data or filters change
   useEffect(() => {
     if (events && Array.isArray(events)) {
@@ -358,57 +338,7 @@ function DiscoverContent() {
     )
   }
 
-  const handleShareEvent = (event: EventWithCreator) => {
-    setSelectedEventForShare(event)
-    setShareModalOpen(true)
-  }
 
-  const getDrinkIcon = (drinkType?: string) => {
-    switch (drinkType) {
-      case 'beer': return <Beer className="w-4 h-4" />
-      case 'wine': return <Wine className="w-4 h-4" />
-      case 'cocktails': return <Martini className="w-4 h-4" />
-      case 'whiskey': return <Coffee className="w-4 h-4" />
-      default: return <Martini className="w-4 h-4" />
-    }
-  }
-
-  const getVibeColor = (vibe?: string) => {
-    switch (vibe) {
-      case 'energetic': return 'bg-red-500/10 text-red-500 border-red-500/20'
-      case 'chill': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-      case 'sophisticated': return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
-      case 'casual': return 'bg-green-500/10 text-green-500 border-green-500/20'
-      case 'creative': return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-      case 'competitive': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-    }
-  }
-
-  const formatEventTime = (dateTime: string) => {
-    const date = new Date(dateTime)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-
-    const timeStr = date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
-
-    if (date >= today && date < tomorrow) {
-      return `Tonight at ${timeStr}`
-    } else if (date >= tomorrow && date < new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000)) {
-      return `Tomorrow at ${timeStr}`
-    } else {
-      return `${date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      })} at ${timeStr}`
-    }
-  }
 
   // Main content render
   return (
@@ -560,101 +490,19 @@ function DiscoverContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {filteredEvents.map((event) => {
               return (
-                <Card key={event.id} className="hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-lg line-clamp-2">
-                            {event.title}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <Calendar className="w-4 h-4" />
-                          {formatEventTime(event.date_time)}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4" />
-                          {event.location}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-primary">
-                        {getDrinkIcon(event.drink_type)}
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-0">
-                    {/* Event Description */}
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {event.notes}
-                    </p>
-
-                    {/* Vibe Badge and RSVP Count */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="outline" className={getVibeColor(event.vibe)}>
-                        {event.vibe}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Users className="w-4 h-4" />
-                        <span className="text-muted-foreground">
-                          {event.rsvp_count} {event.rsvp_count === 1 ? 'person' : 'people'} going
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Host Info */}
-                    <UserHoverCard
-                      userId={event.created_by}
-                      displayName={event.creator?.display_name}
-                      avatarUrl={event.creator?.avatar_url}
-                      isHost={true}
-                    >
-                      <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
-                        <UserAvatar
-                          userId={event.created_by}
-                          displayName={event.creator?.display_name}
-                          avatarUrl={event.creator?.avatar_url}
-                          size="xs"
-                        />
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            Hosted by {event.creator?.display_name || 'Anonymous'}
-                          </span>
-                          {/* Crew badge removed - using Crew System now */}
-                        </div>
-                      </div>
-                    </UserHoverCard>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <JoinEventButton
-                          eventId={event.id}
-                          initialJoined={event.user_has_joined}
-                          onJoinChange={(joined) => handleJoinChange(event.id, joined)}
-                          className="flex-1"
-                          isHost={event.created_by === user?.id}
-                        />
-                        <Link to={`/event/${event.event_code || event.id}`} className="flex-1">
-                          <Button variant="outline" className="w-full">
-                            <span className="hidden sm:inline">View Details</span>
-                            <span className="sm:hidden">Details</span>
-                          </Button>
-                        </Link>
-                      </div>
-                      <Button
-                        onClick={() => handleShareEvent(event)}
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-muted-foreground hover:text-primary"
-                      >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share Session
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EnhancedEventCard
+                  key={event.id}
+                  event={{
+                    ...event,
+                    creator: event.creator ? {
+                      display_name: event.creator.display_name,
+                      avatar_url: event.creator.avatar_url,
+                      user_id: event.creator.user_id
+                    } : undefined
+                  }}
+                  variant="default"
+                  className="hover:shadow-lg transition-shadow duration-200"
+                />
               )
             })}
           </div>

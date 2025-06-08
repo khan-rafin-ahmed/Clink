@@ -1,17 +1,13 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { RobustPageWrapper } from '@/components/PageWrapper'
 import { getUserAccessibleEvents } from '@/lib/eventService'
-import { updateRsvp } from '@/lib/eventService'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { StarRatingDisplay } from '@/components/StarRating'
+import { EnhancedEventCard } from '@/components/EnhancedEventCard'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
-import { Globe, Lock, Users, Calendar, MapPin } from 'lucide-react'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
-import type { Event, RsvpStatus } from '@/types'
+import type { Event } from '@/types'
 
 // Data loading function (outside component for stability)
 const loadEventsData = async (user: any): Promise<Event[]> => {
@@ -33,7 +29,7 @@ const loadEventsData = async (user: any): Promise<Event[]> => {
 
 function EventsContent() {
   const navigate = useNavigate()
-  const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null)
+
 
   // Create stable fetch function
   const fetchEventsData = useCallback(async (user: any): Promise<Event[]> => {
@@ -46,8 +42,7 @@ function EventsContent() {
     isLoading,
     isError,
     error,
-    refetch,
-    user
+    refetch
   } = useAuthDependentData<Event[]>(
     fetchEventsData,
     {
@@ -64,46 +59,7 @@ function EventsContent() {
     }
   )
 
-  const handleRsvpUpdate = async (eventId: string, status: RsvpStatus) => {
-    if (!user) return
 
-    setUpdatingRsvp(eventId)
-    try {
-      await updateRsvp(eventId, user.id, status)
-      toast.success(`RSVP updated to ${status}!`)
-      // Refetch data to get updated state
-      refetch()
-    } catch (error) {
-      console.error('Error updating RSVP:', error)
-      toast.error('Failed to update RSVP')
-    } finally {
-      setUpdatingRsvp(null)
-    }
-  }
-
-  const getDrinkEmoji = (drinkType: string) => {
-    const emojis: Record<string, string> = {
-      beer: '🍺',
-      wine: '🍷',
-      whiskey: '🥃',
-      cocktails: '🍸',
-      shots: '🥂',
-      mixed: '🍹'
-    }
-    return emojis[drinkType] || '🍻'
-  }
-
-  const getVibeEmoji = (vibe: string) => {
-    const emojis: Record<string, string> = {
-      casual: '😎',
-      party: '🎉',
-      shots: '🥃',
-      chill: '🌙',
-      wild: '🔥',
-      classy: '🥂'
-    }
-    return emojis[vibe] || '😎'
-  }
 
   // Handle loading state
   if (isLoading) {
@@ -166,7 +122,6 @@ function EventsContent() {
           ) : (
             <div className="grid gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {events.map(event => {
-            const userRsvp = event.rsvps?.find(r => r.user_id === user.id)
 
             // Calculate attendee counts using the same logic as other pages
             const rsvpAttendees = (event.rsvps || []).filter((rsvp: any) => rsvp.status === 'going')
@@ -200,87 +155,14 @@ function EventsContent() {
 
             return (
               <div key={event.id} className="scale-in" style={{ animationDelay: `${0.4 + (events.indexOf(event) * 0.1)}s` }}>
-                <div className="bg-gradient-card rounded-2xl p-6 border border-border hover:border-border-hover transition-all duration-300 hover-lift backdrop-blur-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-3xl">{getDrinkEmoji(event.drink_type || 'beer')}</span>
-                      <span className="text-2xl">{getVibeEmoji(event.vibe || 'casual')}</span>
-                      {event.is_public ? (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 rounded-full">
-                          <Globe className="w-3 h-3 text-green-500" />
-                          <span className="text-xs text-green-500 font-medium">Public</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-full">
-                          <Lock className="w-3 h-3 text-orange-500" />
-                          <span className="text-xs text-orange-500 font-medium">Private</span>
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/events/${event.id}`)}
-                      className="group backdrop-blur-sm"
-                    >
-                      View Details
-                      <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
-                    </Button>
-                  </div>
-
-                <h3 className="text-lg font-semibold text-foreground mb-2">{event.title}</h3>
-
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{format(new Date(event.date_time), 'PPP p')}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4" />
-                    <span>{rsvpCounts.going} going, {rsvpCounts.maybe} maybe</span>
-                  </div>
-                  {event.total_ratings && event.total_ratings > 0 && (
-                    <StarRatingDisplay
-                      averageRating={event.average_rating || 0}
-                      totalRatings={event.total_ratings}
-                      size="sm"
-                      variant="compact"
-                      showCount={true}
-                    />
-                  )}
-                </div>
-
-                {event.notes && (
-                  <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mb-4">
-                    {event.notes}
-                  </p>
-                )}
-
-                {/* RSVP Section */}
-                <div className="border-t border-border pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Your RSVP:</span>
-                    <Select
-                      value={userRsvp?.status || ''}
-                      onValueChange={(value) => handleRsvpUpdate(event.id, value as RsvpStatus)}
-                      disabled={updatingRsvp === event.id}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="RSVP" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="going">🍻 Going</SelectItem>
-                        <SelectItem value="maybe">🤔 Maybe</SelectItem>
-                        <SelectItem value="not_going">❌ Can't go</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  </div>
-                </div>
+                <EnhancedEventCard
+                  event={{
+                    ...event,
+                    rsvp_count: rsvpCounts.going
+                  }}
+                  variant="default"
+                  className="bg-gradient-card border-border hover:border-border-hover transition-all duration-300 hover-lift backdrop-blur-sm"
+                />
               </div>
             )
           })}

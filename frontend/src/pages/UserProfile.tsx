@@ -5,7 +5,7 @@ import { QuickEventModal } from '@/components/QuickEventModal'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { UserStats } from '@/components/UserStats'
-import { EventCard } from '@/components/EventCard'
+import { EnhancedEventCard } from '@/components/EnhancedEventCard'
 import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
@@ -388,11 +388,12 @@ export function UserProfile() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {enhancedSessions.map((session, index) => (
           <div key={session.id} className="scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
-            <EventCard
+            <EnhancedEventCard
               event={session}
               showHostActions={session.isHosting}
               onEdit={session.isHosting ? handleEdit : undefined}
               onDelete={session.isHosting ? handleDelete : undefined}
+              variant="default"
             />
           </div>
         ))}
@@ -427,12 +428,13 @@ export function UserProfile() {
       <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {displayedPastSessions.map((session) => (
-            <EventCard
+            <EnhancedEventCard
               key={session.id}
               event={session}
               showHostActions={false}
               onEdit={undefined}
               onDelete={undefined}
+              variant="default"
             />
           ))}
         </div>
