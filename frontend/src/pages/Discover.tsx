@@ -35,6 +35,7 @@ interface EventWithCreator extends Event {
     id: string;
     user_id: string;
     display_name: string | null;
+    nickname?: string | null;
     avatar_url: string | null;
     bio: string | null;
     favorite_drink: string | null;
@@ -100,14 +101,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
       console.error('❌ Error loading event members:', memberError)
     }
 
-    // Get unique creator IDs to batch fetch profiles
-    const creatorIds = [...new Set(publicEvents.map((event: any) => event.created_by))]
-
-    // Batch fetch all creator profiles
-    const { data: profiles } = await supabase
-      .from('user_profiles')
-      .select('user_id, display_name, avatar_url')
-      .in('user_id', creatorIds)
+    // Creator info is now included in the RPC response, no need for separate fetch
 
     // Batch fetch user's join statuses if logged in
     let userJoinStatuses = new Map()
@@ -133,7 +127,18 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
 
     // Map events with their creators and join status, and calculate attendee count
     const eventsWithCreators: EventWithCreator[] = publicEvents.map((event: any) => {
-      const profile = profiles?.find(p => p.user_id === event.created_by)
+      // Creator info is now included in the RPC response
+      const creatorInfo = (event.creator_display_name || event.creator_nickname) ? {
+        id: event.created_by,
+        user_id: event.created_by,
+        display_name: event.creator_display_name,
+        nickname: event.creator_nickname,
+        avatar_url: event.creator_avatar_url,
+        bio: null,
+        favorite_drink: null,
+        created_at: '',
+        updated_at: ''
+      } : undefined
 
       // Add RSVPs and event members to the event object
       const eventRsvps = allRsvps?.filter(rsvp => rsvp.event_id === event.id) || []
@@ -150,16 +155,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
 
       return {
         ...eventWithData,
-        creator: profile ? {
-          id: profile.user_id,
-          user_id: profile.user_id,
-          display_name: profile.display_name,
-          avatar_url: profile.avatar_url,
-          bio: null,
-          favorite_drink: null,
-          created_at: '',
-          updated_at: ''
-        } : undefined,
+        creator: creatorInfo,
         user_has_joined: userJoinStatuses.get(event.id) || false,
         rsvp_count: attendeeCount
       }
@@ -215,15 +211,34 @@ function DiscoverContent() {
   const applyFiltersAndSort = useCallback((eventsData: EventWithCreator[]) => {
     let filtered = [...eventsData]
 
-    // Apply search filter
+    // Apply enhanced search filter (elastic-like search)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(query) ||
-        event.location.toLowerCase().includes(query) ||
-        event.notes?.toLowerCase().includes(query) ||
-        event.creator?.display_name?.toLowerCase().includes(query)
-      )
+      filtered = filtered.filter(event => {
+        // Search in event title
+        const titleMatch = event.title.toLowerCase().includes(query)
+
+        // Search in location (both location and place_name)
+        const locationMatch = event.location.toLowerCase().includes(query) ||
+          event.place_name?.toLowerCase().includes(query)
+
+        // Search in event description/notes
+        const notesMatch = event.notes?.toLowerCase().includes(query)
+
+        // Search in creator info (display name and nickname)
+        const creatorMatch = event.creator?.display_name?.toLowerCase().includes(query) ||
+          event.creator?.nickname?.toLowerCase().includes(query)
+
+        // Search in drink type and vibe
+        const drinkTypeMatch = event.drink_type?.toLowerCase().includes(query)
+        const vibeMatch = event.vibe?.toLowerCase().includes(query)
+
+        // Search in place nickname
+        const placeNicknameMatch = event.place_nickname?.toLowerCase().includes(query)
+
+        return titleMatch || locationMatch || notesMatch || creatorMatch ||
+               drinkTypeMatch || vibeMatch || placeNicknameMatch
+      })
     }
 
     // Apply drink type filter

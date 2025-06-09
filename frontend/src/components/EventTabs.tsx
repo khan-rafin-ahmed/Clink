@@ -24,11 +24,15 @@ export function EventTabs({
 }: EventTabsProps) {
   const [activeTab, setActiveTab] = useState<string>('upcoming')
 
-  // Load saved tab from localStorage on mount
+  // Load saved tab from localStorage on mount, but always default to 'upcoming'
   useEffect(() => {
     const savedTab = localStorage.getItem(storageKey)
     if (savedTab && (savedTab === 'upcoming' || savedTab === 'past')) {
       setActiveTab(savedTab)
+    } else {
+      // Always default to 'upcoming' if no saved preference
+      setActiveTab('upcoming')
+      localStorage.setItem(storageKey, 'upcoming')
     }
   }, [storageKey])
 
