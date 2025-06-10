@@ -164,30 +164,38 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
         raw_user_meta_data: (user as any).raw_user_meta_data
       })
 
-      // Try using RPC function first (if trigger is disabled)
+      // Try using RPC function first (more reliable when trigger is disabled)
       try {
         console.log('🔧 ensureUserProfileExists: Trying RPC function approach')
         const { data: rpcResult, error: rpcError } = await supabase
           .rpc('create_profile_for_user', { target_user_id: user.id })
 
+        console.log('🔧 ensureUserProfileExists: RPC result:', { rpcResult, rpcError })
+
         if (!rpcError && rpcResult === true) {
           console.log('✅ ensureUserProfileExists: Profile created via RPC function')
 
+          // Wait a moment for the profile to be available
+          await new Promise(resolve => setTimeout(resolve, 500))
+
           // Fetch the created profile
-          const { data: createdProfile } = await supabase
+          const { data: createdProfile, error: fetchError } = await supabase
             .from('user_profiles')
             .select('id, user_id, display_name')
             .eq('user_id', user.id)
             .single()
 
-          if (createdProfile) {
+          if (createdProfile && !fetchError) {
+            console.log('✅ ensureUserProfileExists: Profile fetched successfully:', createdProfile.id)
             return createdProfile
+          } else {
+            console.log('⚠️ ensureUserProfileExists: Could not fetch created profile, trying direct insert')
           }
         } else {
-          console.log('⚠️ ensureUserProfileExists: RPC function failed or not available, trying direct insert')
+          console.log('⚠️ ensureUserProfileExists: RPC function failed, trying direct insert. Error:', rpcError)
         }
       } catch (rpcError) {
-        console.log('⚠️ ensureUserProfileExists: RPC function not available, trying direct insert')
+        console.log('⚠️ ensureUserProfileExists: RPC function not available, trying direct insert. Error:', rpcError)
       }
 
       // Fallback to direct insert
