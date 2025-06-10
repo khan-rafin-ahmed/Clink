@@ -38,16 +38,20 @@ export async function signInWithGoogle() {
           access_type: 'offline',
           prompt: 'consent',
         },
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${window.location.origin}/auth/callback`,
+        // Skip automatic profile creation to handle it manually
+        skipBrowserRedirect: false
       }
     })
 
     if (error) {
+      console.error('❌ Google OAuth Error:', error)
       throw error
     }
 
     return { success: true }
   } catch (error) {
+    console.error('❌ signInWithGoogle failed:', error)
     throw error
   }
 }

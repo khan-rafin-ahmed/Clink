@@ -148,11 +148,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authSignInWithGoogle()
     } catch (error: any) {
+      console.error('❌ Google sign-in error:', error)
+
       // Handle specific Google OAuth errors
-      if (error.message?.includes('server_error')) {
+      if (error.message?.includes('Database error saving new user')) {
+        toast.error('Google sign-in had a setup issue. Please try again or use magic link! 📧')
+      } else if (error.message?.includes('server_error')) {
         toast.error('Google sign-in temporarily unavailable. Please try magic link! 📧')
       } else if (error.message?.includes('Provider not found')) {
         toast.error('Google sign-in not configured. Please try magic link! 📧')
+      } else if (error.message?.includes('OAuth exchange failed')) {
+        toast.error('Google sign-in authentication failed. Please try again or use magic link! 📧')
       } else {
         toast.error('Google sign-in failed. Please try magic link instead! 📧')
       }

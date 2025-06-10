@@ -115,6 +115,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
     id: user.id,
     email: user.email,
     user_metadata: user.user_metadata,
+    raw_user_meta_data: (user as any).raw_user_meta_data,
     created_at: user.created_at
   })
 
@@ -146,14 +147,22 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
       const displayName = user.user_metadata?.full_name ||
                          user.user_metadata?.name ||
                          user.user_metadata?.display_name ||
-                         // Also try raw_user_meta_data if available (though TypeScript doesn't know about it)
+                         // Also try raw_user_meta_data if available (Google OAuth often stores data here)
                          (user as any).raw_user_meta_data?.full_name ||
                          (user as any).raw_user_meta_data?.name ||
                          (user as any).raw_user_meta_data?.display_name ||
+                         // Try first name + last name combination
+                         ((user.user_metadata?.first_name || (user as any).raw_user_meta_data?.first_name) &&
+                          (user.user_metadata?.last_name || (user as any).raw_user_meta_data?.last_name) ?
+                          `${user.user_metadata?.first_name || (user as any).raw_user_meta_data?.first_name} ${user.user_metadata?.last_name || (user as any).raw_user_meta_data?.last_name}` : null) ||
                          (user.email ? user.email.split('@')[0] : null) ||
                          'User'
 
       console.log('📝 ensureUserProfileExists: Creating profile with display_name:', displayName)
+      console.log('🔍 ensureUserProfileExists: Available metadata sources:', {
+        user_metadata: user.user_metadata,
+        raw_user_meta_data: (user as any).raw_user_meta_data
+      })
 
       // Try using RPC function first (if trigger is disabled)
       try {
@@ -220,6 +229,12 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
           if (fetchError) {
             console.error('❌ ensureUserProfileExists: Failed to fetch existing profile:', fetchError)
           }
+        }
+
+        // Handle permission/RLS errors specifically
+        if (error.message?.includes('permission') || error.message?.includes('RLS') || error.message?.includes('policy')) {
+          console.error('❌ ensureUserProfileExists: Permission/RLS error detected')
+          throw new Error('Profile creation failed due to permissions. This may be a database configuration issue.')
         }
 
         if (attempt === maxRetries) {

@@ -245,29 +245,62 @@ export function Navbar() {
                     </>
                   ) : (
                     <>
-                      {/* Auth Buttons */}
-                      <div className="border-t border-border pt-4 mt-4 space-y-3">
-                        <Link
-                          to="/login"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      {/* Welcome Message */}
+                      <div className="border-t border-border pt-6 mt-4">
+                        <div className="text-center mb-6">
+                          <h3 className="text-lg font-semibold text-foreground mb-2">
+                            Ready to raise some hell? 🍻
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Join Thirstee and discover epic drinking events near you
+                          </p>
+                        </div>
+
+                        {/* Primary Auth Actions */}
+                        <div className="space-y-3">
+                          <Link
+                            to="/login"
+                            onClick={() => setIsMobileMenuOpen(false)}
                           >
-                            Log in
-                          </Button>
-                        </Link>
-                        <Link
-                          to="/login"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          <Button
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                            <Button
+                              size="lg"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3"
+                            >
+                              Log in
+                            </Button>
+                          </Link>
+
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t border-border" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                              <span className="bg-background px-2 text-muted-foreground">
+                                New to Thirstee?
+                              </span>
+                            </div>
+                          </div>
+
+                          <Link
+                            to="/login"
+                            onClick={() => setIsMobileMenuOpen(false)}
                           >
-                            Sign up
-                          </Button>
-                        </Link>
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              className="w-full border-primary/20 text-primary hover:bg-primary/10 hover:text-primary font-medium py-3"
+                            >
+                              Sign up free
+                            </Button>
+                          </Link>
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="mt-6 text-center">
+                          <p className="text-xs text-muted-foreground">
+                            Join thousands of party animals already on Thirstee
+                          </p>
+                        </div>
                       </div>
                     </>
                   )}

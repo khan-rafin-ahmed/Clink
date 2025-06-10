@@ -253,7 +253,19 @@ export function EventDetail() {
         .single()
 
       if (!mountedRef.current) return
-      if (error && error.code !== 'PGRST116') {
+
+      // If no profile found, provide a better fallback
+      if (error && error.code === 'PGRST116') {
+        const hostData = {
+          id: hostId,
+          display_name: `User ${hostId.slice(-4)}`, // Better fallback than "Event Host"
+          nickname: null,
+          avatar_url: null
+        }
+
+        if (mountedRef.current) {
+          setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
+        }
         return
       }
 
@@ -266,7 +278,7 @@ export function EventDetail() {
           }
         : {
             id: hostId,
-            display_name: null,
+            display_name: `User ${hostId.slice(-4)}`, // Better fallback than "Event Host"
             nickname: null,
             avatar_url: null
           }
@@ -275,7 +287,18 @@ export function EventDetail() {
         setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
       }
     } catch (err) {
-      // Error loading host info - fail silently
+      // Error loading host info - provide fallback
+      if (mountedRef.current) {
+        setEvent(prev => (prev ? {
+          ...prev,
+          host: {
+            id: hostId,
+            display_name: `User ${hostId.slice(-4)}`,
+            nickname: null,
+            avatar_url: null
+          }
+        } : prev))
+      }
     }
   }
 
@@ -639,7 +662,7 @@ export function EventDetail() {
                 <UserAvatar
                   userId={event.created_by}
                   displayName={
-                    event.host?.display_name || event.host?.nickname || 'Event Host'
+                    event.host?.display_name || event.host?.nickname || `User ${event.created_by.slice(-4)}`
                   }
                   avatarUrl={event.host?.avatar_url || undefined}
                   size="lg"
@@ -647,7 +670,7 @@ export function EventDetail() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name || event.host?.nickname || 'Event Host'}
+                      {event.host?.display_name || event.host?.nickname || `User ${event.created_by.slice(-4)}`}
                     </h3>
                     {isHost && (
                       <Badge

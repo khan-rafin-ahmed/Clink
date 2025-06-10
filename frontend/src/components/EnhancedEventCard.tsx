@@ -301,19 +301,19 @@ export function EnhancedEventCard({
         {/* Host Info */}
         <UserHoverCard
           userId={event.created_by}
-          displayName={event.creator?.display_name}
+          displayName={event.creator?.display_name || `User ${event.created_by.slice(-4)}`}
           avatarUrl={event.creator?.avatar_url}
           isHost={true}
         >
           <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
             <UserAvatar
               userId={event.created_by}
-              displayName={event.creator?.display_name}
+              displayName={event.creator?.display_name || `User ${event.created_by.slice(-4)}`}
               avatarUrl={event.creator?.avatar_url}
               size="sm"
             />
             <span className="text-sm text-muted-foreground">
-              {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || 'Anonymous'}`}
+              {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || event.creator?.nickname || `User ${event.created_by.slice(-4)}`}`}
             </span>
           </div>
         </UserHoverCard>

@@ -149,7 +149,10 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
   }
 
   const getHostDisplayName = () => {
-    if (!event.creator) return 'Anonymous'
+    if (!event.creator) {
+      // Fallback to a more descriptive name using the user ID
+      return `User ${event.created_by.slice(-4)}`
+    }
 
     // Check if creator has a nickname
     const creatorData = event.creator as any
@@ -157,7 +160,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
       return creatorData.nickname
     }
 
-    return event.creator.display_name || 'Anonymous'
+    return event.creator.display_name || `User ${event.created_by.slice(-4)}`
   }
 
   const statusBadge = getStatusBadge(event.date_time)
@@ -226,14 +229,14 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
         {/* Host Info */}
         <UserHoverCard
           userId={event.created_by}
-          displayName={event.creator?.display_name}
+          displayName={event.creator?.display_name || getHostDisplayName()}
           avatarUrl={event.creator?.avatar_url}
           isHost={true}
         >
           <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
             <UserAvatar
               userId={event.created_by}
-              displayName={event.creator?.display_name}
+              displayName={event.creator?.display_name || getHostDisplayName()}
               avatarUrl={event.creator?.avatar_url}
               size="xs"
             />

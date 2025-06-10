@@ -553,47 +553,37 @@ export async function getUserAccessibleEvents() {
       throw new Error('User authentication required')
     }
 
-    // Get public events with RSVP and event member data for consistent attendee counting
+    // Get events with creator information using the database function
     const { data: events, error } = await supabase
-      .from('events')
-      .select(`
-        id,
-        title,
-        location,
-        latitude,
-        longitude,
-        place_id,
-        place_name,
-        date_time,
-        drink_type,
-        vibe,
-        notes,
-        is_public,
-        created_by,
-        created_at,
-        updated_at,
-        event_code,
-        rsvps (
-          id,
-          status,
-          user_id
-        ),
-        event_members (
-          id,
-          status,
-          user_id
-        )
-      `)
-      .eq('is_public', true)
-      .gte('date_time', new Date().toISOString())
-      .order('date_time', { ascending: true })
-      .limit(20)
+      .rpc('get_user_accessible_events', {
+        user_id: user.id,
+        include_past: false,
+        event_limit: 50
+      })
 
     if (error) {
       throw error
     }
 
-    return events || []
+    // Transform the data to include creator object for compatibility with EventCard
+    const eventsWithCreators = (events || []).map((event: any) => {
+      const creator = (event.creator_display_name || event.creator_nickname) ? {
+        display_name: event.creator_display_name,
+        nickname: event.creator_nickname,
+        avatar_url: event.creator_avatar_url,
+        user_id: event.created_by
+      } : undefined
+
+      return {
+        ...event,
+        creator,
+        // Ensure we have the required fields for EventCard
+        rsvps: [], // Will be populated by the RPC function's rsvp_count
+        event_members: []
+      }
+    })
+
+    return eventsWithCreators
   } catch (error) {
     throw error
   }
