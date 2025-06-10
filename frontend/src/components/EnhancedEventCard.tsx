@@ -313,7 +313,7 @@ export function EnhancedEventCard({
               size="sm"
             />
             <span className="text-sm text-muted-foreground">
-              {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || event.creator?.nickname || `User ${event.created_by.slice(-4)}`}`}
+              {isHost ? 'Hosted by You' : `Hosted by ${event.creator?.display_name || `User ${event.created_by.slice(-4)}`}`}
             </span>
           </div>
         </UserHoverCard>
