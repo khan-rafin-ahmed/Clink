@@ -108,15 +108,7 @@ export async function getEventDetails(eventIdOrSlug: string) {
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventIdOrSlug)) {
       const { data, error } = await supabase
         .from('events')
-        .select(`
-          *,
-          creator:user_profiles!events_created_by_fkey (
-            user_id,
-            display_name,
-            nickname,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('id', eventIdOrSlug)
         .maybeSingle()
 
@@ -128,15 +120,7 @@ export async function getEventDetails(eventIdOrSlug: string) {
     if (!eventData && !eventError) {
       const { data, error } = await supabase
         .from('events')
-        .select(`
-          *,
-          creator:user_profiles!events_created_by_fkey (
-            user_id,
-            display_name,
-            nickname,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('public_slug', eventIdOrSlug)
         .maybeSingle()
 
@@ -153,6 +137,18 @@ export async function getEventDetails(eventIdOrSlug: string) {
 
     if (!eventData) {
       throw new Error('Event not found')
+    }
+
+    // Get creator information separately
+    let creator = null
+    if (eventData.created_by) {
+      const { data: creatorData } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, nickname, avatar_url')
+        .eq('user_id', eventData.created_by)
+        .single()
+
+      creator = creatorData
     }
 
     // Get RSVPs separately to avoid foreign key issues
@@ -173,6 +169,7 @@ export async function getEventDetails(eventIdOrSlug: string) {
     // Combine the data
     const event = {
       ...eventData,
+      creator,
       rsvps: rsvps || [],
       event_members: eventMembers || [],
       average_rating: ratingStats.averageRating,

@@ -1,10 +1,10 @@
--- Fix ambiguous user_id column reference in get_user_accessible_events function
--- This resolves the "column reference user_id is ambiguous" error
+-- Fix get_user_accessible_events function to include creator information
+-- This resolves the issue where profile events show empty and event details fail
 
 -- Drop the existing function
 DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
 
--- Create the fixed function with proper table aliases
+-- Create the fixed function with creator information
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
   user_id UUID,
   include_past BOOLEAN DEFAULT false,
@@ -84,33 +84,26 @@ BEGIN
       )
   ),
   attendee_counts AS (
-    -- Calculate total unique attendees for each event
-    SELECT
-      event_id,
-      COUNT(DISTINCT user_id) as total_attendees
-    FROM (
-      -- RSVPs with status 'going'
-      SELECT r.event_id, r.user_id
-      FROM rsvps r
-      INNER JOIN accessible_events ae ON r.event_id = ae.id
-      WHERE r.status = 'going'
-
-      UNION
-
-      -- Event members with status 'accepted' (crew members)
-      SELECT em.event_id, em.user_id
-      FROM event_members em
-      INNER JOIN accessible_events ae ON em.event_id = ae.id
-      WHERE em.status = 'accepted'
-
-      UNION
-
-      -- Always include the host
-      SELECT ae.id as event_id, ae.created_by as user_id
-      FROM accessible_events ae
-      WHERE ae.created_by IS NOT NULL
-    ) all_attendees
-    GROUP BY event_id
+    SELECT 
+      ae.id as event_id,
+      (
+        1 + -- Host always counts as 1
+        COALESCE((
+          SELECT COUNT(DISTINCT r.user_id)
+          FROM rsvps r
+          WHERE r.event_id = ae.id
+            AND r.status = 'going'
+            AND r.user_id != ae.created_by -- Don't double-count host
+        ), 0) +
+        COALESCE((
+          SELECT COUNT(DISTINCT em.user_id)
+          FROM event_members em
+          WHERE em.event_id = ae.id
+            AND em.status = 'accepted'
+            AND em.user_id != ae.created_by -- Don't double-count host
+        ), 0)
+      ) as total_attendees
+    FROM accessible_events ae
   ),
   event_stats AS (
     SELECT ae.*,
