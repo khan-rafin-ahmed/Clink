@@ -5,7 +5,6 @@ import { getSessionInfo, isSessionValid, refreshSessionIfNeeded } from '@/lib/se
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { RefreshCw, Clock, CheckCircle, XCircle, User, Calendar } from 'lucide-react'
 
 export function SessionTest() {

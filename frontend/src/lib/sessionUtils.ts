@@ -6,7 +6,7 @@ import { supabase } from './supabase'
  */
 
 // Custom storage implementation that works better on mobile
-class SessionStorage {
+class ThirsteeSessionStorage {
   private prefix = 'thirstee-session-'
 
   set(key: string, value: string): void {
@@ -16,7 +16,7 @@ class SessionStorage {
     } catch (error) {
       console.warn('localStorage failed, falling back to sessionStorage:', error)
       try {
-        sessionStorage.setItem(this.prefix + key, value)
+        window.sessionStorage.setItem(this.prefix + key, value)
       } catch (sessionError) {
         console.warn('sessionStorage also failed:', sessionError)
       }
@@ -28,9 +28,9 @@ class SessionStorage {
       // Try localStorage first
       const value = localStorage.getItem(this.prefix + key)
       if (value) return value
-      
+
       // Fallback to sessionStorage
-      return sessionStorage.getItem(this.prefix + key)
+      return window.sessionStorage.getItem(this.prefix + key)
     } catch (error) {
       console.warn('Storage access failed:', error)
       return null
@@ -40,7 +40,7 @@ class SessionStorage {
   remove(key: string): void {
     try {
       localStorage.removeItem(this.prefix + key)
-      sessionStorage.removeItem(this.prefix + key)
+      window.sessionStorage.removeItem(this.prefix + key)
     } catch (error) {
       console.warn('Storage removal failed:', error)
     }
@@ -51,16 +51,16 @@ class SessionStorage {
       // Clear all thirstee session data
       const keys = Object.keys(localStorage).filter(key => key.startsWith(this.prefix))
       keys.forEach(key => localStorage.removeItem(key))
-      
-      const sessionKeys = Object.keys(sessionStorage).filter(key => key.startsWith(this.prefix))
-      sessionKeys.forEach(key => sessionStorage.removeItem(key))
+
+      const sessionKeys = Object.keys(window.sessionStorage).filter(key => key.startsWith(this.prefix))
+      sessionKeys.forEach(key => window.sessionStorage.removeItem(key))
     } catch (error) {
       console.warn('Storage clear failed:', error)
     }
   }
 }
 
-export const sessionStorage = new SessionStorage()
+export const thirsteeSessionStorage = new ThirsteeSessionStorage()
 
 /**
  * Check if the current session is valid and not expired
@@ -218,10 +218,10 @@ export function setupSessionRefresh(): () => void {
  */
 export function handleSessionError(error: any): void {
   console.warn('Session error:', error)
-  
+
   // Clear potentially corrupted session data
-  sessionStorage.clear()
-  
+  thirsteeSessionStorage.clear()
+
   // If it's an auth error, redirect to login
   if (error?.message?.includes('JWT') || error?.message?.includes('session')) {
     console.log('Session appears corrupted, redirecting to login...')
