@@ -54,12 +54,43 @@ export async function getEventBySlug(slug: string, isPrivate: boolean = false, c
       .select('id, status, user_id, invited_by')
       .eq('event_id', eventData.id)
 
+    // Get creator information separately
+    let creator = null
+    if (eventData.created_by) {
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, nickname, avatar_url')
+        .eq('user_id', eventData.created_by)
+        .single()
+
+      // If no profile found, create a fallback creator object
+      if (creatorError && creatorError.code === 'PGRST116') {
+        creator = {
+          user_id: eventData.created_by,
+          display_name: `User ${eventData.created_by.slice(-4)}`,
+          nickname: null,
+          avatar_url: null
+        }
+      } else if (!creatorError && creatorData) {
+        creator = creatorData
+      } else {
+        // Fallback for any other error
+        creator = {
+          user_id: eventData.created_by,
+          display_name: `User ${eventData.created_by.slice(-4)}`,
+          nickname: null,
+          avatar_url: null
+        }
+      }
+    }
+
     // Get rating stats for the event
     const ratingStats = await getEventRatingStats(eventData.id)
 
     // Combine the data
     const event = {
       ...eventData,
+      creator,
       rsvps: rsvps || [],
       event_members: eventMembers || [],
       average_rating: ratingStats.averageRating,
@@ -142,13 +173,31 @@ export async function getEventDetails(eventIdOrSlug: string) {
     // Get creator information separately
     let creator = null
     if (eventData.created_by) {
-      const { data: creatorData } = await supabase
+      const { data: creatorData, error: creatorError } = await supabase
         .from('user_profiles')
         .select('user_id, display_name, nickname, avatar_url')
         .eq('user_id', eventData.created_by)
         .single()
 
-      creator = creatorData
+      // If no profile found, create a fallback creator object
+      if (creatorError && creatorError.code === 'PGRST116') {
+        creator = {
+          user_id: eventData.created_by,
+          display_name: `User ${eventData.created_by.slice(-4)}`,
+          nickname: null,
+          avatar_url: null
+        }
+      } else if (!creatorError && creatorData) {
+        creator = creatorData
+      } else {
+        // Fallback for any other error
+        creator = {
+          user_id: eventData.created_by,
+          display_name: `User ${eventData.created_by.slice(-4)}`,
+          nickname: null,
+          avatar_url: null
+        }
+      }
     }
 
     // Get RSVPs separately to avoid foreign key issues

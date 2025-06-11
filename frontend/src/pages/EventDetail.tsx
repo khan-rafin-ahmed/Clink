@@ -38,7 +38,7 @@ import {
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount } from '@/lib/eventUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
-import { getEventDetails } from '@/lib/eventService'
+import { getEventDetails, getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 
@@ -121,17 +121,15 @@ export function EventDetail() {
         throw error
       }
     } else {
-      // Private event logic - query by private_slug for private events
-      const { data: privateEvt, error: privateErr } = await supabase
-        .from('events')
-        .select('*')
-        .eq('private_slug', slug)
-        .maybeSingle()
-
-      if (privateErr || !privateEvt) {
-        throw new Error('Private event not found')
+      // Private event logic - use getEventBySlug for consistency
+      try {
+        eventData = await getEventBySlug(slug, true) as EventWithRsvps
+      } catch (error: any) {
+        if (error.message.includes('not found')) {
+          throw new Error('Private event not found')
+        }
+        throw error
       }
-      eventData = privateEvt as EventWithRsvps
     }
 
     // Load RSVPs
@@ -193,28 +191,25 @@ export function EventDetail() {
     if (!cachedEvent || !mountedRef.current) return
 
     const loadAdditionalData = async () => {
-      // Set host information from the event data (now included via JOIN)
-      if (cachedEvent.creator && Array.isArray(cachedEvent.creator) && cachedEvent.creator.length > 0) {
-        const creatorData = cachedEvent.creator[0]
-        const hostData = {
-          id: creatorData.user_id,
-          display_name: creatorData.display_name,
-          nickname: creatorData.nickname,
-          avatar_url: creatorData.avatar_url
+      // Set host information from the event data
+      if (cachedEvent.creator) {
+        let creatorData: any = cachedEvent.creator
+
+        // Handle case where creator might be an array (shouldn't happen but defensive)
+        if (Array.isArray(cachedEvent.creator) && cachedEvent.creator.length > 0) {
+          creatorData = cachedEvent.creator[0]
         }
-        setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
-      } else if (cachedEvent.creator && !Array.isArray(cachedEvent.creator)) {
-        // Handle case where creator is a single object
-        const creatorData = cachedEvent.creator as any
+
+        // Convert creator to host format
         const hostData = {
-          id: creatorData.user_id,
-          display_name: creatorData.display_name,
-          nickname: creatorData.nickname,
-          avatar_url: creatorData.avatar_url
+          id: creatorData.user_id || cachedEvent.created_by,
+          display_name: creatorData.display_name || null,
+          nickname: creatorData.nickname || null,
+          avatar_url: creatorData.avatar_url || null
         }
         setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
       } else {
-        // Fallback: load host information separately if not included
+        // Fallback: load host information separately if creator not included
         await loadHostInfo(cachedEvent.created_by)
       }
 
@@ -396,6 +391,20 @@ export function EventDetail() {
       </div>
     )
   }
+
+  // Helper function to safely get creator data
+  const getCreatorData = () => {
+    if (!event.creator) return null
+    if (Array.isArray(event.creator) && event.creator.length > 0) {
+      return event.creator[0]
+    }
+    if (!Array.isArray(event.creator)) {
+      return event.creator as any
+    }
+    return null
+  }
+
+  const creatorData = getCreatorData()
 
   // Prepare data for rendering
   const date = new Date(event.date_time).toLocaleDateString('en-US', {
@@ -684,16 +693,30 @@ export function EventDetail() {
                 <UserAvatar
                   userId={event.created_by}
                   displayName={
-                    event.host?.display_name || event.host?.nickname || `User ${event.created_by.slice(-4)}`
+                    event.host?.display_name ||
+                    event.host?.nickname ||
+                    creatorData?.display_name ||
+                    creatorData?.nickname ||
+                    `User ${event.created_by.slice(-4)}`
                   }
-                  avatarUrl={event.host?.avatar_url || undefined}
+                  avatarUrl={event.host?.avatar_url || creatorData?.avatar_url || undefined}
                   size="lg"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">
-                      {event.host?.display_name || event.host?.nickname || `User ${event.created_by.slice(-4)}`}
+                      {event.host?.display_name ||
+                       event.host?.nickname ||
+                       creatorData?.display_name ||
+                       creatorData?.nickname ||
+                       `User ${event.created_by.slice(-4)}`}
                     </h3>
+                    {/* Show nickname in italic gold if available */}
+                    {(event.host?.nickname || creatorData?.nickname) && (
+                      <span className="text-yellow-400 italic text-sm">
+                        aka {event.host?.nickname || creatorData?.nickname} 🍻
+                      </span>
+                    )}
                     {isHost && (
                       <Badge
                         variant="secondary"
