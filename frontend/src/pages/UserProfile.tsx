@@ -122,35 +122,78 @@ export function UserProfile() {
 
       // Get all events user has access to with proper privacy filtering
       // This prevents duplicates and ensures proper privacy filtering
-      const [
-        allUpcomingResult,
-        allPastResult
-      ] = await Promise.all([
-        // Upcoming events (hosted, RSVP'd, or invited)
-        supabase.rpc('get_user_accessible_events', {
-          user_id: user.id,
-          include_past: false,
-          event_limit: 50
-        }),
+      // Use direct queries instead of RPC function for better reliability
+      const now = new Date().toISOString()
 
-        // Past events (hosted or attended)
-        supabase.rpc('get_user_accessible_events', {
-          user_id: user.id,
-          include_past: true,
-          event_limit: 50
-        })
+      const [
+        hostedUpcomingResult,
+        hostedPastResult,
+        rsvpUpcomingResult,
+        rsvpPastResult
+      ] = await Promise.all([
+        // Events user created (upcoming)
+        supabase
+          .from('events')
+          .select('*')
+          .eq('created_by', user.id)
+          .gte('date_time', now)
+          .order('date_time', { ascending: true }),
+
+        // Events user created (past)
+        supabase
+          .from('events')
+          .select('*')
+          .eq('created_by', user.id)
+          .lt('date_time', now)
+          .order('date_time', { ascending: false }),
+
+        // Events user RSVP'd to (upcoming)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps!inner(status)
+          `)
+          .eq('rsvps.user_id', user.id)
+          .eq('rsvps.status', 'going')
+          .neq('created_by', user.id)
+          .gte('date_time', now)
+          .order('date_time', { ascending: true }),
+
+        // Events user RSVP'd to (past)
+        supabase
+          .from('events')
+          .select(`
+            *,
+            rsvps!inner(status)
+          `)
+          .eq('rsvps.user_id', user.id)
+          .eq('rsvps.status', 'going')
+          .neq('created_by', user.id)
+          .lt('date_time', now)
+          .order('date_time', { ascending: false })
       ])
 
 
 
-      // Process upcoming events with proper creator info
-      let allUpcomingEvents = []
+      // Combine all upcoming events
+      let allUpcomingEvents: any[] = []
 
-      if (allUpcomingResult.error) {
-        console.error('Error fetching upcoming events:', allUpcomingResult.error)
-      } else {
-        // Process all upcoming events and add creator info
-        const upcomingEventsWithCreators = await Promise.all((allUpcomingResult.data || []).map(async (event: any) => {
+      // Add hosted upcoming events
+      if (hostedUpcomingResult.data) {
+        allUpcomingEvents = [...allUpcomingEvents, ...hostedUpcomingResult.data]
+      }
+
+      // Add RSVP'd upcoming events
+      if (rsvpUpcomingResult.data) {
+        allUpcomingEvents = [...allUpcomingEvents, ...rsvpUpcomingResult.data]
+      }
+
+
+
+      // Process upcoming events with proper creator info
+      if (allUpcomingEvents.length > 0) {
+        const upcomingEventsWithCreators = await Promise.all(allUpcomingEvents.map(async (event: any) => {
           const isHosting = event.created_by === user.id
 
           // Get creator info - use RPC response data or fetch separately if missing
@@ -201,21 +244,30 @@ export function UserProfile() {
         allUpcomingEvents = upcomingEventsWithCreators
       }
 
-
-
       // Sort all upcoming events by date
-      allUpcomingEvents.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+      allUpcomingEvents.sort((a: any, b: any) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+
 
       setEnhancedSessions(allUpcomingEvents)
 
-      // Process past events with proper creator info
-      let allPastEvents = []
+      // Combine all past events
+      let allPastEvents: any[] = []
 
-      if (allPastResult.error) {
-        console.error('Error fetching past events:', allPastResult.error)
-      } else {
-        // Process all past events and add creator info
-        const pastEventsWithCreators = await Promise.all((allPastResult.data || []).map(async (event: any) => {
+      // Add hosted past events
+      if (hostedPastResult.data) {
+        allPastEvents = [...allPastEvents, ...hostedPastResult.data]
+      }
+
+      // Add RSVP'd past events
+      if (rsvpPastResult.data) {
+        allPastEvents = [...allPastEvents, ...rsvpPastResult.data]
+      }
+
+
+
+      // Process past events with proper creator info
+      if (allPastEvents.length > 0) {
+        const pastEventsWithCreators = await Promise.all(allPastEvents.map(async (event: any) => {
           const isHosting = event.created_by === user.id
 
           // Get creator info - use RPC response data or fetch separately if missing
@@ -267,7 +319,8 @@ export function UserProfile() {
       }
 
       // Sort all past events by date (most recent first)
-      allPastEvents.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+      allPastEvents.sort((a: any, b: any) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
+
       setPastSessions(allPastEvents)
 
       // Cache the results

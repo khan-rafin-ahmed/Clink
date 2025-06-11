@@ -109,7 +109,6 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
       // Only update state if component is still mounted
       if (mountedRef.current) {
         setStats(newStats)
-        console.log('Stats updated:', newStats)
       }
 
     } catch (err) {
