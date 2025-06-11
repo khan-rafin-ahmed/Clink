@@ -1,10 +1,10 @@
--- Fix the get_user_accessible_events function to handle both upcoming and past events
--- This prevents duplicates and ensures proper privacy filtering
+-- Fix ambiguous user_id column reference in get_user_accessible_events function
+-- This resolves the "column reference user_id is ambiguous" error
 
 -- Drop the existing function
-DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, INTEGER);
+DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
 
--- Create an improved function that handles both upcoming and past events
+-- Create the fixed function with proper table aliases
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
   user_id UUID,
   include_past BOOLEAN DEFAULT false,

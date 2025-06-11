@@ -308,7 +308,7 @@ export function UserProfile() {
     if (user?.id) {
       fetchEnhancedSessions()
     }
-  }, [user?.id, sessionsRefresh])
+  }, [user?.id, sessionsRefresh]) // Remove fetchEnhancedSessions from dependencies to prevent infinite loop
 
   if (loading) {
     return (

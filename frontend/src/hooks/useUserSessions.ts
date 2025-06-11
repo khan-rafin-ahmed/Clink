@@ -85,31 +85,68 @@ export function useUserSessions(refreshTrigger?: number): UseUserSessionsReturn 
     try {
       console.log('Fetching fresh user sessions for user:', user.id)
 
-      // Use the database function to get all accessible events
-      const [upcomingResult, pastResult] = await Promise.all([
-        // Get upcoming events (hosted, RSVP'd, or invited)
-        supabase.rpc('get_user_accessible_events', {
-          user_id: user.id,
-          include_past: false,
-          event_limit: 50
-        }),
+      // Try the database function first, fallback to direct queries if it fails
+      let upcomingResult, pastResult
 
-        // Get past events (hosted or attended)
-        supabase.rpc('get_user_accessible_events', {
-          user_id: user.id,
-          include_past: true,
-          event_limit: 50
-        })
-      ])
+      try {
+        // Use the database function to get all accessible events
+        [upcomingResult, pastResult] = await Promise.all([
+          // Get upcoming events (hosted, RSVP'd, or invited)
+          supabase.rpc('get_user_accessible_events', {
+            user_id: user.id,
+            include_past: false,
+            event_limit: 50
+          }),
+
+          // Get past events (hosted or attended)
+          supabase.rpc('get_user_accessible_events', {
+            user_id: user.id,
+            include_past: true,
+            event_limit: 50
+          })
+        ])
+      } catch (rpcError) {
+        console.warn('Database function failed, using fallback queries:', rpcError)
+
+        // Fallback to direct table queries
+        [upcomingResult, pastResult] = await Promise.all([
+          // Get upcoming events created by user
+          supabase
+            .from('events')
+            .select('*')
+            .eq('created_by', user.id)
+            .gte('date_time', new Date().toISOString())
+            .order('date_time', { ascending: true })
+            .limit(50),
+
+          // Get past events created by user
+          supabase
+            .from('events')
+            .select('*')
+            .eq('created_by', user.id)
+            .lt('date_time', new Date().toISOString())
+            .order('date_time', { ascending: false })
+            .limit(50)
+        ])
+      }
 
       if (upcomingResult.error) {
         console.error('Error loading upcoming sessions:', upcomingResult.error)
-        throw new Error(`Failed to load upcoming sessions: ${upcomingResult.error.message}`)
+        // Don't throw immediately, try to handle gracefully
+        setError(`Failed to load upcoming sessions: ${upcomingResult.error.message}`)
+        setUpcomingSessions([])
       }
 
       if (pastResult.error) {
         console.error('Error loading past sessions:', pastResult.error)
-        throw new Error(`Failed to load past sessions: ${pastResult.error.message}`)
+        // Don't throw immediately, try to handle gracefully
+        setError(`Failed to load past sessions: ${pastResult.error.message}`)
+        setPastSessions([])
+      }
+
+      // If both failed, then throw
+      if (upcomingResult.error && pastResult.error) {
+        throw new Error('Failed to load both upcoming and past sessions')
       }
 
       const upcomingEvents = upcomingResult.data || []

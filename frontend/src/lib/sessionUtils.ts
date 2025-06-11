@@ -185,10 +185,10 @@ export function setupSessionRefresh(): () => void {
   let refreshInterval: NodeJS.Timeout | null = null
   let visibilityListener: (() => void) | null = null
 
-  // Set up periodic refresh (every 5 minutes)
+  // Set up periodic refresh (every 15 minutes to reduce HTTP requests)
   refreshInterval = setInterval(async () => {
     await refreshSessionIfNeeded()
-  }, 5 * 60 * 1000)
+  }, 15 * 60 * 1000)
 
   // Refresh when app becomes visible (mobile focus handling)
   if (typeof document !== 'undefined') {

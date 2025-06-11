@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
 
-    // Set up session health check interval
+    // Set up session health check interval - reduced frequency to prevent HTTP/2 errors
     const sessionHealthCheck = setInterval(async () => {
       if (!mountedRef.current) return
 
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.warn('Session health check failed:', error)
       }
-    }, 5 * 60 * 1000) // Check every 5 minutes
+    }, 15 * 60 * 1000) // Check every 15 minutes instead of 5 to reduce requests
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

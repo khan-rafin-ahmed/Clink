@@ -31,13 +31,13 @@ export function NotificationCenter() {
     loadNotifications()
     loadUnreadCount()
 
-    // Poll for new notifications every 30 seconds
+    // Poll for new notifications every 2 minutes to reduce HTTP requests
     const interval = setInterval(() => {
       loadUnreadCount()
       if (isOpen) {
         loadNotifications() // Refresh notifications when panel is open
       }
-    }, 30000)
+    }, 120000) // Changed from 30s to 2 minutes
 
     return () => clearInterval(interval)
   }, [isOpen])

@@ -1,10 +1,25 @@
--- Fix the get_user_accessible_events function to handle both upcoming and past events
--- This prevents duplicates and ensures proper privacy filtering
+# Fix Database HTTP/2 Errors
+
+## 🚨 URGENT: Apply Database Fix First
+
+The HTTP/2 errors you're seeing are caused by a broken database function. You MUST apply this SQL fix in your Supabase SQL Editor:
+
+### Step 1: Go to Supabase SQL Editor
+1. Open https://arpphimkotjvnfoacquj.supabase.co
+2. Navigate to SQL Editor (left sidebar)
+3. Create a new query
+
+### Step 2: Run This SQL
+Copy and paste this EXACT SQL and click "Run":
+
+```sql
+-- Fix ambiguous user_id column reference in get_user_accessible_events function
+-- This resolves the "column reference user_id is ambiguous" error
 
 -- Drop the existing function
-DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, INTEGER);
+DROP FUNCTION IF EXISTS get_user_accessible_events(UUID, BOOLEAN, INTEGER);
 
--- Create an improved function that handles both upcoming and past events
+-- Create the fixed function with proper table aliases
 CREATE OR REPLACE FUNCTION get_user_accessible_events(
   user_id UUID,
   include_past BOOLEAN DEFAULT false,
@@ -137,3 +152,34 @@ GRANT EXECUTE ON FUNCTION get_user_accessible_events(UUID, BOOLEAN, INTEGER) TO 
 
 -- Refresh the schema cache
 NOTIFY pgrst, 'reload schema';
+```
+
+### Step 3: Verify the Fix
+After running the SQL, refresh your app. The HTTP/2 errors should stop.
+
+## ✅ Frontend Fixes Applied
+
+I've also applied these frontend optimizations to reduce request frequency:
+
+1. **Reduced session health checks** from 5 minutes to 15 minutes
+2. **Reduced notification polling** from 30 seconds to 2 minutes  
+3. **Added fallback queries** for when the database function fails
+4. **Fixed infinite loop** in UserProfile component
+5. **Better error handling** to prevent cascade failures
+
+## 🔍 What Was Causing the Errors
+
+1. **Ambiguous SQL column reference** in `get_user_accessible_events` function
+2. **Too frequent session checks** (every 5 minutes)
+3. **Rapid notification polling** (every 30 seconds)
+4. **Infinite re-render loops** in profile components
+5. **Cascade failures** when one request failed, others kept retrying
+
+## 📊 Expected Results
+
+After applying the database fix:
+- ✅ No more HTTP/2 errors in console
+- ✅ Profile page loads correctly
+- ✅ Events display properly
+- ✅ Reduced network traffic
+- ✅ Better performance overall

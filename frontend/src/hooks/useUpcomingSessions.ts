@@ -81,13 +81,33 @@ export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpco
     try {
       console.log('Fetching fresh upcoming sessions for user:', user.id)
 
-      // Use the database function to get all accessible upcoming events
-      // This includes events the user created, RSVP'd to, or was invited to
-      const { data: events, error: eventsError } = await supabase.rpc('get_user_accessible_events', {
-        user_id: user.id,
-        include_past: false,
-        event_limit: limit
-      })
+      let events, eventsError
+
+      try {
+        // Use the database function to get all accessible upcoming events
+        // This includes events the user created, RSVP'd to, or was invited to
+        const result = await supabase.rpc('get_user_accessible_events', {
+          user_id: user.id,
+          include_past: false,
+          event_limit: limit
+        })
+        events = result.data
+        eventsError = result.error
+      } catch (rpcError) {
+        console.warn('Database function failed, using fallback query:', rpcError)
+
+        // Fallback to direct table query for events created by user
+        const result = await supabase
+          .from('events')
+          .select('*')
+          .eq('created_by', user.id)
+          .gte('date_time', new Date().toISOString())
+          .order('date_time', { ascending: true })
+          .limit(limit)
+
+        events = result.data
+        eventsError = result.error
+      }
 
       if (eventsError) {
         console.error('Error loading upcoming sessions:', eventsError)
