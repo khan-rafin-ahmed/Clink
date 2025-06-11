@@ -86,11 +86,12 @@ export function useUserSessions(refreshTrigger?: number): UseUserSessionsReturn 
       console.log('Fetching fresh user sessions for user:', user.id)
 
       // Try the database function first, fallback to direct queries if it fails
-      let upcomingResult, pastResult
+      let upcomingResult: any
+      let pastResult: any
 
       try {
         // Use the database function to get all accessible events
-        [upcomingResult, pastResult] = await Promise.all([
+        const results = await Promise.all([
           // Get upcoming events (hosted, RSVP'd, or invited)
           supabase.rpc('get_user_accessible_events', {
             user_id: user.id,
@@ -105,11 +106,14 @@ export function useUserSessions(refreshTrigger?: number): UseUserSessionsReturn 
             event_limit: 50
           })
         ])
+
+        upcomingResult = results[0]
+        pastResult = results[1]
       } catch (rpcError) {
         console.warn('Database function failed, using fallback queries:', rpcError)
 
         // Fallback to direct table queries
-        [upcomingResult, pastResult] = await Promise.all([
+        const results = await Promise.all([
           // Get upcoming events created by user
           supabase
             .from('events')
@@ -128,16 +132,19 @@ export function useUserSessions(refreshTrigger?: number): UseUserSessionsReturn 
             .order('date_time', { ascending: false })
             .limit(50)
         ])
+
+        upcomingResult = results[0]
+        pastResult = results[1]
       }
 
-      if (upcomingResult.error) {
+      if (upcomingResult?.error) {
         console.error('Error loading upcoming sessions:', upcomingResult.error)
         // Don't throw immediately, try to handle gracefully
         setError(`Failed to load upcoming sessions: ${upcomingResult.error.message}`)
         setUpcomingSessions([])
       }
 
-      if (pastResult.error) {
+      if (pastResult?.error) {
         console.error('Error loading past sessions:', pastResult.error)
         // Don't throw immediately, try to handle gracefully
         setError(`Failed to load past sessions: ${pastResult.error.message}`)
@@ -145,12 +152,12 @@ export function useUserSessions(refreshTrigger?: number): UseUserSessionsReturn 
       }
 
       // If both failed, then throw
-      if (upcomingResult.error && pastResult.error) {
+      if (upcomingResult?.error && pastResult?.error) {
         throw new Error('Failed to load both upcoming and past sessions')
       }
 
-      const upcomingEvents = upcomingResult.data || []
-      const pastEvents = pastResult.data || []
+      const upcomingEvents = upcomingResult?.data || []
+      const pastEvents = pastResult?.data || []
 
       console.log('Found', upcomingEvents.length, 'upcoming events')
       console.log('Found', pastEvents.length, 'past events')
