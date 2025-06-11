@@ -108,7 +108,15 @@ export async function getEventDetails(eventIdOrSlug: string) {
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventIdOrSlug)) {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          creator:user_profiles!events_created_by_fkey (
+            user_id,
+            display_name,
+            nickname,
+            avatar_url
+          )
+        `)
         .eq('id', eventIdOrSlug)
         .maybeSingle()
 
@@ -120,7 +128,15 @@ export async function getEventDetails(eventIdOrSlug: string) {
     if (!eventData && !eventError) {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          creator:user_profiles!events_created_by_fkey (
+            user_id,
+            display_name,
+            nickname,
+            avatar_url
+          )
+        `)
         .eq('public_slug', eventIdOrSlug)
         .maybeSingle()
 

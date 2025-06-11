@@ -193,8 +193,30 @@ export function EventDetail() {
     if (!cachedEvent || !mountedRef.current) return
 
     const loadAdditionalData = async () => {
-      // Load host information
-      await loadHostInfo(cachedEvent.created_by)
+      // Set host information from the event data (now included via JOIN)
+      if (cachedEvent.creator && Array.isArray(cachedEvent.creator) && cachedEvent.creator.length > 0) {
+        const creatorData = cachedEvent.creator[0]
+        const hostData = {
+          id: creatorData.user_id,
+          display_name: creatorData.display_name,
+          nickname: creatorData.nickname,
+          avatar_url: creatorData.avatar_url
+        }
+        setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
+      } else if (cachedEvent.creator && !Array.isArray(cachedEvent.creator)) {
+        // Handle case where creator is a single object
+        const creatorData = cachedEvent.creator as any
+        const hostData = {
+          id: creatorData.user_id,
+          display_name: creatorData.display_name,
+          nickname: creatorData.nickname,
+          avatar_url: creatorData.avatar_url
+        }
+        setEvent(prev => (prev ? { ...prev, host: hostData } : prev))
+      } else {
+        // Fallback: load host information separately if not included
+        await loadHostInfo(cachedEvent.created_by)
+      }
 
       // Load participant profiles
       const rsvpUserIds = cachedEvent.rsvps.map(r => r.user_id)

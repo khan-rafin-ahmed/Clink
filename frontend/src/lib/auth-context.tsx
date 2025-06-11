@@ -52,7 +52,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
         if (sessionError) {
+          console.warn('Session error during initialization:', sessionError)
           setError(sessionError.message)
+        }
+
+        // If we have a session, ensure it's still valid and refresh if needed
+        if (session) {
+          const now = Math.floor(Date.now() / 1000)
+          const expiresAt = session.expires_at || 0
+
+          // If session expires within 5 minutes, try to refresh it
+          if (expiresAt - now < 300) {
+            console.log('Session expires soon, attempting refresh...')
+            try {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+              if (refreshError) {
+                console.warn('Session refresh failed:', refreshError)
+              } else if (refreshData.session) {
+                console.log('Session refreshed successfully')
+              }
+            } catch (refreshErr) {
+              console.warn('Session refresh error:', refreshErr)
+            }
+          }
         }
 
         if (mountedRef.current) {
@@ -63,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Don't mark initial load as complete here - let the auth state change handler do it
         }
       } catch (err: any) {
+        console.error('Auth initialization error:', err)
         if (mountedRef.current) {
           setError(err.message || 'Authentication initialization failed')
           setLoading(false)
@@ -72,6 +95,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initializeAuth()
+
+    // Set up session health check interval
+    const sessionHealthCheck = setInterval(async () => {
+      if (!mountedRef.current) return
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const now = Math.floor(Date.now() / 1000)
+          const expiresAt = session.expires_at || 0
+
+          // If session expires within 10 minutes, refresh it
+          if (expiresAt - now < 600) {
+            console.log('Proactive session refresh triggered')
+            await supabase.auth.refreshSession()
+          }
+        }
+      } catch (error) {
+        console.warn('Session health check failed:', error)
+      }
+    }, 5 * 60 * 1000) // Check every 5 minutes
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -139,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe()
+      clearInterval(sessionHealthCheck)
       mountedRef.current = false
       initializingRef.current = false
     }

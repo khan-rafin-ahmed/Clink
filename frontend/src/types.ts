@@ -103,6 +103,17 @@ export interface EventWithRsvps {
     nickname?: string | null
     avatar_url: string | null
   }
+  creator?: Array<{
+    user_id: string
+    display_name: string | null
+    nickname: string | null
+    avatar_url: string | null
+  }> | {
+    user_id: string
+    display_name: string | null
+    nickname: string | null
+    avatar_url: string | null
+  }
   end_time?: string
   average_rating?: number
   total_ratings?: number

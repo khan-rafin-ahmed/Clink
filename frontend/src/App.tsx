@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/auth-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { setupSessionRefresh } from './lib/sessionUtils'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
 import { HomePage } from './pages/HomePage'
@@ -16,6 +18,7 @@ import { AuthCallback } from './pages/AuthCallback'
 import { CrewJoin } from './pages/CrewJoin'
 import { CrewDetail } from './pages/CrewDetail'
 import { TestRatings } from './pages/TestRatings'
+import { SessionTest } from './pages/SessionTest'
 import { StyleGuide } from './components/StyleGuide'
 import { Toaster } from 'sonner'
 
@@ -28,6 +31,12 @@ const queryClient = new QueryClient({
 })
 
 function App() {
+  // Set up session management for better mobile compatibility
+  useEffect(() => {
+    const cleanup = setupSessionRefresh()
+    return cleanup
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -67,6 +76,9 @@ function App() {
 
               {/* Test route for rating components */}
               <Route path="/test-ratings" element={<TestRatings />} />
+
+              {/* Test route for session management */}
+              <Route path="/test-sessions" element={<SessionTest />} />
 
               {/* Style guide for design system */}
               <Route path="/style-guide" element={<StyleGuide />} />

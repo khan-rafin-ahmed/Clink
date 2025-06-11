@@ -10,6 +10,14 @@ interface Event {
   date_time: string
   created_by: string
   rsvp_count?: number
+  is_public?: boolean
+  vibe?: string
+  drink_type?: string
+  event_code?: string
+  public_slug?: string
+  private_slug?: string
+  cover_image_url?: string
+  user_rsvp_status?: string
 }
 
 interface UseUpcomingSessionsReturn {
@@ -22,7 +30,7 @@ interface UseUpcomingSessionsReturn {
 // Global cache and request tracking for upcoming sessions
 const sessionsCache = new Map<string, { data: Event[]; timestamp: number }>()
 const activeSessionRequests = new Set<string>()
-const SESSIONS_CACHE_TTL = 2 * 60 * 1000 // 2 minutes
+const SESSIONS_CACHE_TTL = 3 * 60 * 1000 // 3 minutes
 
 export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpcomingSessionsReturn {
   const { user } = useAuth()
@@ -73,81 +81,40 @@ export function useUpcomingSessions(refreshTrigger?: number, limit = 3): UseUpco
     try {
       console.log('Fetching fresh upcoming sessions for user:', user.id)
 
-      // First, test basic access to events table
-      console.log('Testing basic events table access...')
-      const { data: testData, error: testError } = await supabase
-        .from('events')
-        .select('id, title, created_by')
-        .eq('created_by', user.id)
-        .limit(1)
-
-      if (testError) {
-        console.error('Basic events table access failed:', testError)
-        throw new Error(`Database access error: ${testError.message || testError.code || 'Cannot access events table'}`)
-      }
-
-      console.log('Basic events access successful, found', testData?.length || 0, 'events')
-
-      // Now get upcoming sessions created by user
-      // Use a more lenient time filter - show events from 1 hour ago to future
-      const oneHourAgo = new Date()
-      oneHourAgo.setHours(oneHourAgo.getHours() - 1)
-
-      const { data: events, error: eventsError } = await supabase
-        .from('events')
-        .select(`
-          id,
-          title,
-          notes,
-          location,
-          date_time,
-          created_by
-        `)
-        .eq('created_by', user.id)
-        .gte('date_time', oneHourAgo.toISOString())
-        .order('date_time', { ascending: true })
-        .limit(limit)
+      // Use the database function to get all accessible upcoming events
+      // This includes events the user created, RSVP'd to, or was invited to
+      const { data: events, error: eventsError } = await supabase.rpc('get_user_accessible_events', {
+        user_id: user.id,
+        include_past: false,
+        event_limit: limit
+      })
 
       if (eventsError) {
         console.error('Error loading upcoming sessions:', eventsError)
-        console.error('Query details:', {
-          userId: user.id,
-          table: 'events',
-          filter: 'created_by',
-          dateFilter: new Date().toISOString()
-        })
         throw new Error(`Database error: ${eventsError.message || eventsError.code || 'Unknown error'}`)
       }
 
       console.log('Found', events?.length || 0, 'upcoming events')
       console.log('Events data:', events)
-      console.log('Filter time (1 hour ago):', oneHourAgo.toISOString())
-      console.log('Current time:', new Date().toISOString())
 
-      // For now, skip RSVP counts to isolate the issue
-      const eventsWithRSVPs = (events || []).map(event => ({
-        ...event,
-        rsvp_count: 0 // Temporarily set to 0 to isolate the main query issue
-      }))
-
-      console.log('Events with placeholder RSVP counts:', eventsWithRSVPs)
+      const upcomingEvents = events || []
 
       // Cache the result
       sessionsCache.set(cacheKey, {
-        data: eventsWithRSVPs,
+        data: upcomingEvents,
         timestamp: Date.now()
       })
 
       // Only update state if component is still mounted
       if (mountedRef.current) {
-        setSessions(eventsWithRSVPs)
-        console.log('Upcoming sessions updated:', eventsWithRSVPs.length, 'sessions')
+        setSessions(upcomingEvents)
+        console.log('Upcoming sessions updated:', upcomingEvents.length, 'sessions')
       }
 
     } catch (err) {
       console.error('Error fetching upcoming sessions:', err)
       if (mountedRef.current) {
-        setError('Failed to load upcoming sessions')
+        setError(err instanceof Error ? err.message : 'Failed to load upcoming sessions')
       }
     } finally {
       // Clean up
