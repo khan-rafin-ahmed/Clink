@@ -74,11 +74,17 @@ npm install -g supabase
    # These remain the same
    VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoicm91Z2hpbiIsImEiOiJjbWJiMWh0a2YwdTVjMmtwcm5ubzI2MnpnIn0.zZ7-Pto8J7YiWZJzxf7kvQ
    VITE_MAPBOX_STYLE_URL=mapbox://styles/roughin/cmbb1ow4o001b01r0aux92662
-   VITE_GOOGLE_MAPS_API_KEY=AIzaSyCVLfUisS_C1pG3OYHg9MeCXYRfnAO00y8
+   VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
    
    # Environment Detection
    VITE_ENVIRONMENT=local
    ```
+
+   **🔐 SECURITY IMPORTANT:**
+   - Replace `YOUR_GOOGLE_MAPS_API_KEY_HERE` with your actual Google Maps API key
+   - **NEVER commit actual API keys to version control**
+   - Your `.env.local` file is already excluded by `.gitignore`
+   - Get your Google Maps API key from [Google Cloud Console](https://console.cloud.google.com/)
 
 ## 🔐 Step 4: Configure Google OAuth (Optional)
 

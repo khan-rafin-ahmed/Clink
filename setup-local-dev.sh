@@ -130,14 +130,19 @@ VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoicm91Z2hpbiIsImEiOiJjbWJiMWh0a2YwdTVjMmtwcm5ubzI2MnpnIn0.zZ7-Pto8J7YiWZJzxf7kvQ
 VITE_MAPBOX_STYLE_URL=mapbox://styles/roughin/cmbb1ow4o001b01r0aux92662
 
-# Google Maps API Key
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyCVLfUisS_C1pG3OYHg9MeCXYRfnAO00y8
+# Google Maps API Key - REPLACE WITH YOUR ACTUAL API KEY
+VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
 
 # Environment Detection
 VITE_ENVIRONMENT=local
 EOF
 
 print_status ".env.local file created"
+
+print_warning "IMPORTANT: Update your API keys in .env.local"
+print_info "  1. Replace YOUR_GOOGLE_MAPS_API_KEY_HERE with your actual Google Maps API key"
+print_info "  2. Get your Google Maps API key from: https://console.cloud.google.com/"
+print_info "  3. NEVER commit actual API keys to version control"
 
 # Install dependencies
 print_info "Installing frontend dependencies..."

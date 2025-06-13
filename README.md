@@ -98,12 +98,17 @@ Clink uses Supabase for its backend. For local development, you can use the Supa
     VITE_SUPABASE_ANON_KEY=YOUR_LOCAL_ANON_KEY
     VITE_ENVIRONMENT=local
 
-    # Mapbox & Google Maps (same as production)
+    # Mapbox & Google Maps - REPLACE WITH YOUR ACTUAL API KEYS
     VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoicm91Z2hpbiIsImEiOiJjbWJiMWh0a2YwdTVjMmtwcm5ubzI2MnpnIn0.zZ7-Pto8J7YiWZJzxf7kvQ
     VITE_MAPBOX_STYLE_URL=mapbox://styles/roughin/cmbb1ow4o001b01r0aux92662
-    VITE_GOOGLE_MAPS_API_KEY=AIzaSyCVLfUisS_C1pG3OYHg9MeCXYRfnAO00y8
+    VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
     ```
-    Replace `YOUR_LOCAL_ANON_KEY` with the anon key from `supabase status`.
+
+    **⚠️ IMPORTANT SECURITY NOTE:**
+    - Replace `YOUR_LOCAL_ANON_KEY` with the anon key from `supabase status`
+    - Replace `YOUR_GOOGLE_MAPS_API_KEY_HERE` with your actual Google Maps API key
+    - **NEVER commit actual API keys to version control**
+    - Keep your `.env.local` file in `.gitignore` (already configured)
 
 ## 🔐 Authentication Configuration
 
