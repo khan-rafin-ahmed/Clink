@@ -36,4 +36,8 @@ pnpm-debug.log*
 *.sw?
 
 # TypeScript
-*.tsbuildinfo 
+*.tsbuildinfo
+
+# Ignore compiled Vite config outputs
+frontend/vite.config.js
+frontend/vite.config.d.ts
