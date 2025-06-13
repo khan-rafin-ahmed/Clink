@@ -99,19 +99,7 @@ export function UserProfile() {
 
     setLoadingEnhanced(true)
     try {
-      // Get creator info once
-      const { data: creatorData } = await supabase
-        .from('user_profiles')
-        .select('display_name, nickname, avatar_url, user_id')
-        .eq('user_id', user.id)
-        .single()
 
-      const creatorInfo = creatorData || {
-        display_name: 'Unknown Host',
-        nickname: null,
-        avatar_url: null,
-        user_id: user.id
-      }
 
       // Get all crews the user is a member of
       const { data: _ } = await supabase
@@ -120,206 +108,76 @@ export function UserProfile() {
         .eq('user_id', user.id)
         .eq('status', 'accepted')
 
-      // Get all events user has access to with proper privacy filtering
-      // This prevents duplicates and ensures proper privacy filtering
-      // Use direct queries instead of RPC function for better reliability
-      const now = new Date().toISOString()
+      // Get events with creator information using the database function
+      const { data: upcomingEvents, error: upcomingError } = await supabase
+        .rpc('get_user_accessible_events', {
+          user_id: user.id,
+          include_past: false,
+          event_limit: 50
+        })
 
-      const [
-        hostedUpcomingResult,
-        hostedPastResult,
-        rsvpUpcomingResult,
-        rsvpPastResult
-      ] = await Promise.all([
-        // Events user created (upcoming)
-        supabase
-          .from('events')
-          .select('*')
-          .eq('created_by', user.id)
-          .gte('date_time', now)
-          .order('date_time', { ascending: true }),
-
-        // Events user created (past)
-        supabase
-          .from('events')
-          .select('*')
-          .eq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false }),
-
-        // Events user RSVP'd to (upcoming)
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps!inner(status)
-          `)
-          .eq('rsvps.user_id', user.id)
-          .eq('rsvps.status', 'going')
-          .neq('created_by', user.id)
-          .gte('date_time', now)
-          .order('date_time', { ascending: true }),
-
-        // Events user RSVP'd to (past)
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps!inner(status)
-          `)
-          .eq('rsvps.user_id', user.id)
-          .eq('rsvps.status', 'going')
-          .neq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false })
-      ])
+      const { data: pastEvents, error: pastError } = await supabase
+        .rpc('get_user_accessible_events', {
+          user_id: user.id,
+          include_past: true,
+          event_limit: 50
+        })
 
 
 
-      // Combine all upcoming events
-      let allUpcomingEvents: any[] = []
-
-      // Add hosted upcoming events
-      if (hostedUpcomingResult.data) {
-        allUpcomingEvents = [...allUpcomingEvents, ...hostedUpcomingResult.data]
+      if (upcomingError) {
+        console.error('Error fetching upcoming events:', upcomingError)
+        throw upcomingError
       }
 
-      // Add RSVP'd upcoming events
-      if (rsvpUpcomingResult.data) {
-        allUpcomingEvents = [...allUpcomingEvents, ...rsvpUpcomingResult.data]
+      if (pastError) {
+        console.error('Error fetching past events:', pastError)
+        throw pastError
       }
 
+      // Transform the data to include creator object for compatibility with EventCard
+      let allUpcomingEvents = (upcomingEvents || []).map((event: any) => {
+        const creator = (event.creator_display_name || event.creator_nickname) ? {
+          display_name: event.creator_display_name,
+          nickname: event.creator_nickname,
+          avatar_url: event.creator_avatar_url,
+          user_id: event.created_by
+        } : undefined
 
+        return {
+          ...event,
+          creator,
+          isHosting: event.created_by === user.id,
+          // Ensure we have the required fields for EventCard
+          rsvps: [], // Will be populated by the RPC function's rsvp_count
+          event_members: []
+        }
+      })
 
-      // Process upcoming events with proper creator info
-      if (allUpcomingEvents.length > 0) {
-        const upcomingEventsWithCreators = await Promise.all(allUpcomingEvents.map(async (event: any) => {
-          const isHosting = event.created_by === user.id
-
-          // Get creator info - use RPC response data or fetch separately if missing
-          let creatorData = creatorInfo
-          if (!isHosting) {
-            if (event.creator_display_name || event.creator_nickname) {
-              // Creator info is included in RPC response
-              creatorData = {
-                display_name: event.creator_display_name,
-                nickname: event.creator_nickname,
-                avatar_url: event.creator_avatar_url,
-                user_id: event.created_by
-              }
-            } else {
-              // Creator info is missing, fetch it separately
-              try {
-                const { data: creatorProfile } = await supabase
-                  .from('user_profiles')
-                  .select('user_id, display_name, nickname, avatar_url')
-                  .eq('user_id', event.created_by)
-                  .single()
-
-                creatorData = creatorProfile || {
-                  display_name: 'Unknown Host',
-                  nickname: null,
-                  avatar_url: null,
-                  user_id: event.created_by
-                }
-              } catch (error) {
-                console.error('Error fetching creator profile:', error)
-                creatorData = {
-                  display_name: 'Unknown Host',
-                  nickname: null,
-                  avatar_url: null,
-                  user_id: event.created_by
-                }
-              }
-            }
-          }
-
-          return {
-            ...event,
-            creator: creatorData,
-            rsvp_count: event.rsvp_count || 0, // Use the count from the function
-            isHosting
-          }
-        }))
-        allUpcomingEvents = upcomingEventsWithCreators
-      }
-
-      // Sort all upcoming events by date
-      allUpcomingEvents.sort((a: any, b: any) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
 
 
       setEnhancedSessions(allUpcomingEvents)
 
-      // Combine all past events
-      let allPastEvents: any[] = []
+      // Transform past events data
+      let allPastEvents = (pastEvents || []).map((event: any) => {
+        const creator = (event.creator_display_name || event.creator_nickname) ? {
+          display_name: event.creator_display_name,
+          nickname: event.creator_nickname,
+          avatar_url: event.creator_avatar_url,
+          user_id: event.created_by
+        } : undefined
 
-      // Add hosted past events
-      if (hostedPastResult.data) {
-        allPastEvents = [...allPastEvents, ...hostedPastResult.data]
-      }
+        return {
+          ...event,
+          creator,
+          isHosting: event.created_by === user.id,
+          // Ensure we have the required fields for EventCard
+          rsvps: [], // Will be populated by the RPC function's rsvp_count
+          event_members: []
+        }
+      })
 
-      // Add RSVP'd past events
-      if (rsvpPastResult.data) {
-        allPastEvents = [...allPastEvents, ...rsvpPastResult.data]
-      }
 
-
-
-      // Process past events with proper creator info
-      if (allPastEvents.length > 0) {
-        const pastEventsWithCreators = await Promise.all(allPastEvents.map(async (event: any) => {
-          const isHosting = event.created_by === user.id
-
-          // Get creator info - use RPC response data or fetch separately if missing
-          let creatorData = creatorInfo
-          if (!isHosting) {
-            if (event.creator_display_name || event.creator_nickname) {
-              // Creator info is included in RPC response
-              creatorData = {
-                display_name: event.creator_display_name,
-                nickname: event.creator_nickname,
-                avatar_url: event.creator_avatar_url,
-                user_id: event.created_by
-              }
-            } else {
-              // Creator info is missing, fetch it separately
-              try {
-                const { data: creatorProfile } = await supabase
-                  .from('user_profiles')
-                  .select('user_id, display_name, nickname, avatar_url')
-                  .eq('user_id', event.created_by)
-                  .single()
-
-                creatorData = creatorProfile || {
-                  display_name: 'Unknown Host',
-                  nickname: null,
-                  avatar_url: null,
-                  user_id: event.created_by
-                }
-              } catch (error) {
-                console.error('Error fetching creator profile:', error)
-                creatorData = {
-                  display_name: 'Unknown Host',
-                  nickname: null,
-                  avatar_url: null,
-                  user_id: event.created_by
-                }
-              }
-            }
-          }
-
-          return {
-            ...event,
-            creator: creatorData,
-            rsvp_count: event.rsvp_count || 0, // Use the count from the function
-            isHosting
-          }
-        }))
-        allPastEvents = pastEventsWithCreators
-      }
-
-      // Sort all past events by date (most recent first)
-      allPastEvents.sort((a: any, b: any) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
 
       setPastSessions(allPastEvents)
 
