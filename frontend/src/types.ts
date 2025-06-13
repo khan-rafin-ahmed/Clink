@@ -13,6 +13,7 @@ export interface UserProfile {
   join_date: string | null
   profile_visibility?: 'public' | 'crew_only' | 'private'
   show_crews_publicly?: boolean
+  age?: number | null
   created_at: string
   updated_at: string
 }

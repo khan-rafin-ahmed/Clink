@@ -14,6 +14,7 @@ import { DeleteProfileDialog } from '@/components/DeleteProfileDialog'
 import { toast } from 'sonner'
 import { ArrowLeft, User, Save, Loader2, Trash2 } from 'lucide-react'
 import type { UserProfile } from '@/types'
+import { validateAge } from '@/lib/ageGate'
 
 const DRINK_OPTIONS = [
   { value: 'beer', label: '🍺 Beer', emoji: '🍺' },
@@ -47,7 +48,8 @@ export function EditProfile() {
     favorite_drink: '',
     avatar_url: '',
     profile_visibility: 'public' as 'public' | 'crew_only' | 'private',
-    show_crews_publicly: true
+    show_crews_publicly: true,
+    age: ''
   })
 
   const loadProfile = useCallback(async () => {
@@ -103,7 +105,8 @@ export function EditProfile() {
         favorite_drink: profileData?.favorite_drink || 'none',
         avatar_url: profileData?.avatar_url || '',
         profile_visibility: profileData?.profile_visibility || 'public',
-        show_crews_publicly: profileData?.show_crews_publicly ?? true
+        show_crews_publicly: profileData?.show_crews_publicly ?? true,
+        age: profileData?.age ? profileData.age.toString() : ''
       })
       setHasLoaded(true)
     } catch (error: any) {
@@ -135,6 +138,15 @@ export function EditProfile() {
     e.preventDefault()
     if (!user || !profile) return
 
+    // Validate age if provided
+    if (formData.age) {
+      const ageValidation = validateAge(formData.age)
+      if (!ageValidation.isValid) {
+        toast.error(ageValidation.error)
+        return
+      }
+    }
+
     const updateData = {
       display_name: formData.display_name.trim() || null,
       nickname: formData.nickname.trim() || null,
@@ -143,7 +155,8 @@ export function EditProfile() {
       favorite_drink: formData.favorite_drink === 'none' ? null : formData.favorite_drink || null,
       avatar_url: formData.avatar_url.trim() || null,
       profile_visibility: formData.profile_visibility,
-      show_crews_publicly: formData.show_crews_publicly
+      show_crews_publicly: formData.show_crews_publicly,
+      age: formData.age ? parseInt(formData.age, 10) : null
     }
 
     console.log('[EditProfile] Saving profile with data:', updateData)
@@ -349,6 +362,29 @@ export function EditProfile() {
                 <p className="text-xs text-muted-foreground">
                   Let others know what you like to drink
                 </p>
+              </div>
+
+              {/* Age */}
+              <div className="space-y-2">
+                <Label htmlFor="age">Your Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="Enter your age"
+                  value={formData.age}
+                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  min={19}
+                  max={120}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Must be 19 or older to use Thirstee. This helps us verify you meet our age requirements.
+                </p>
+                {formData.age && (() => {
+                  const validation = validateAge(formData.age)
+                  return !validation.isValid ? (
+                    <p className="text-xs text-destructive">{validation.error}</p>
+                  ) : null
+                })()}
               </div>
 
               {/* Privacy Settings */}

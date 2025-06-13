@@ -101,7 +101,7 @@
 
 | Feature | Status | Notes |
 |--------|--------|-------|
-| Age Gate (21+) | ❌ | Modal on first access |
+| Age Gate (21+) | ✅ | Modal on first access - Complete with redirect loop fix |
 | Terms & Community Rules | ❌ | Footer/legal required |
 | Block/Report Feature | ❌ | For sessions or users |
 

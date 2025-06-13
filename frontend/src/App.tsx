@@ -23,6 +23,9 @@ import { SessionTest } from './pages/SessionTest'
 import { AuthSecurityTest } from './pages/AuthSecurityTest'
 import { StyleGuide } from './components/StyleGuide'
 import { DeleteProfileTest } from './test/DeleteProfileTest'
+import { NotAllowed } from './pages/NotAllowed'
+import { RequireAge } from './components/RequireAge'
+import { AgeGateTest } from './pages/AgeGateTest'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -52,48 +55,61 @@ function App() {
               <Navbar />
               <main className="flex-1">
                 <Routes>
-              <Route path="/" element={
-                <AuthRedirect>
-                  <HomePage />
-                </AuthRedirect>
+                  {/* Public routes that don't require age verification */}
+                  <Route path="/not-allowed" element={<NotAllowed />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+
+                  {/* All other routes require age verification */}
+                  <Route path="*" element={
+                    <RequireAge>
+                      <Routes>
+                    <Route path="/" element={
+                      <AuthRedirect>
+                        <HomePage />
+                      </AuthRedirect>
+                    } />
+                    <Route path="/login" element={
+                      <AuthRedirect>
+                        <LoginPage />
+                      </AuthRedirect>
+                    } />
+
+                    <Route path="/profile" element={<UserProfile />} />
+                    <Route path="/profile/edit" element={<EditProfile />} />
+
+                    <Route path="/events" element={<Events />} />
+                    <Route path="/discover" element={<Discover />} />
+                    <Route path="/events/:eventId" element={<EventDetails />} />
+
+                    {/* Modern slug-based routing */}
+                    <Route path="/event/:slug" element={<EventDetail />} />
+                    <Route path="/private-event/:slug" element={<EventDetail />} />
+
+                    <Route path="/profile/:userId" element={<PublicProfile />} />
+
+                    <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
+                    <Route path="/crew/:crewId" element={<CrewDetail />} />
+
+                    {/* Test route for rating components */}
+                    <Route path="/test-ratings" element={<TestRatings />} />
+
+                    {/* Test route for session management */}
+                    <Route path="/test-sessions" element={<SessionTest />} />
+
+                    {/* Test route for authentication security */}
+                    <Route path="/test-auth-security" element={<AuthSecurityTest />} />
+
+                    {/* Style guide for design system */}
+                    <Route path="/style-guide" element={<StyleGuide />} />
+
+                    {/* Test route for delete profile functionality */}
+                    <Route path="/test-delete-profile" element={<DeleteProfileTest />} />
+
+                    {/* Test route for age gate functionality */}
+                    <Route path="/test-age-gate" element={<AgeGateTest />} />
+                  </Routes>
+                </RequireAge>
               } />
-              <Route path="/login" element={
-                <AuthRedirect>
-                  <LoginPage />
-                </AuthRedirect>
-              } />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-
-              <Route path="/profile" element={<UserProfile />} />
-              <Route path="/profile/edit" element={<EditProfile />} />
-
-              <Route path="/events" element={<Events />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/events/:eventId" element={<EventDetails />} />
-
-              {/* Modern slug-based routing */}
-              <Route path="/event/:slug" element={<EventDetail />} />
-              <Route path="/private-event/:slug" element={<EventDetail />} />
-
-              <Route path="/profile/:userId" element={<PublicProfile />} />
-
-              <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
-              <Route path="/crew/:crewId" element={<CrewDetail />} />
-
-              {/* Test route for rating components */}
-              <Route path="/test-ratings" element={<TestRatings />} />
-
-              {/* Test route for session management */}
-              <Route path="/test-sessions" element={<SessionTest />} />
-
-              {/* Test route for authentication security */}
-              <Route path="/test-auth-security" element={<AuthSecurityTest />} />
-
-              {/* Style guide for design system */}
-              <Route path="/style-guide" element={<StyleGuide />} />
-
-              {/* Test route for delete profile functionality */}
-              <Route path="/test-delete-profile" element={<DeleteProfileTest />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">
