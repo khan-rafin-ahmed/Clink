@@ -92,13 +92,77 @@ Clink uses Supabase for its backend. For local development, you can use the Supa
 5.  Create a `.env.local` file in the `frontend` directory with your local Supabase credentials:
 
     ```env
-    VITE_SUPABASE_URL=YOUR_LOCAL_SUPABASE_URL
-    VITE_SUPABASE_ANON_KEY=YOUR_LOCAL_SUPABASE_ANON_KEY
-    VITE_GOOGLE_OAUTH_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID # Required for Google OAuth, if configured
+    # Local Development Environment
+    VITE_API_URL=http://localhost:3000
+    VITE_SUPABASE_URL=http://localhost:54321
+    VITE_SUPABASE_ANON_KEY=YOUR_LOCAL_ANON_KEY
+    VITE_ENVIRONMENT=local
+
+    # Mapbox & Google Maps (same as production)
+    VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoicm91Z2hpbiIsImEiOiJjbWJiMWh0a2YwdTVjMmtwcm5ubzI2MnpnIn0.zZ7-Pto8J7YiWZJzxf7kvQ
+    VITE_MAPBOX_STYLE_URL=mapbox://styles/roughin/cmbb1ow4o001b01r0aux92662
+    VITE_GOOGLE_MAPS_API_KEY=AIzaSyCVLfUisS_C1pG3OYHg9MeCXYRfnAO00y8
     ```
-    Replace the placeholder values with the URLs and keys provided by `supabase start`. Google OAuth is optional if you are not using it.
+    Replace `YOUR_LOCAL_ANON_KEY` with the anon key from `supabase status`.
+
+## 🔐 Authentication Configuration
+
+### Local Development Authentication
+
+The app is configured to work seamlessly with localhost authentication:
+
+- **Magic Links**: Automatically redirect to `http://localhost:3000/auth/callback`
+- **Google OAuth**: Requires additional setup (see below)
+- **Environment Detection**: Automatically detects local vs production environment
+
+### Google OAuth Setup (Optional)
+
+To enable Google OAuth in local development:
+
+1. **Google Cloud Console**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to APIs & Services > Credentials
+   - Edit your OAuth 2.0 Client ID
+   - Add `http://localhost:3000/auth/callback` to Authorized redirect URIs
+
+2. **Supabase Configuration**:
+   - Open Supabase Studio: `http://localhost:54323`
+   - Go to Authentication > Settings > Auth Providers
+   - Enable Google provider with your OAuth credentials
+
+3. **Test Authentication**:
+   - Visit `http://localhost:3000/login`
+   - Try both magic link and Google OAuth
+   - Both should redirect properly to localhost
+
+For detailed setup instructions, see `frontend/LOCAL_DEVELOPMENT_SETUP.md`.
 
 ## Running Locally
+
+### 🚀 Quick Setup (Recommended)
+
+Use our automated setup script for consistent local development:
+
+```bash
+./setup-local-dev.sh
+```
+
+This script will:
+- ✅ Check prerequisites (Node.js, Docker, Supabase CLI)
+- ✅ Initialize and start local Supabase
+- ✅ Create `.env.local` with correct credentials
+- ✅ Install dependencies
+- ✅ Configure the app to run on `http://localhost:3000`
+
+After setup completes:
+```bash
+cd frontend
+npm run dev
+```
+
+### 📖 Manual Setup
+
+If you prefer manual setup:
 
 1.  Navigate to the `frontend` directory:
 

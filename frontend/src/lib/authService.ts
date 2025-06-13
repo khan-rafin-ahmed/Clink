@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { ensureUserProfileExists } from './userService'
 import { updateProfileWithGoogleAvatar } from './googleAvatarService'
+import { getAuthCallbackUrl, isLocalEnvironment, logEnvironmentInfo } from './envUtils'
 import { toast } from 'sonner'
 
 /**
@@ -11,19 +12,46 @@ import { toast } from 'sonner'
 // Handle magic link sign-in with profile creation
 export async function signInWithMagicLink(email: string, redirectTo?: string) {
   try {
+    // Log environment info for debugging in local development
+    if (isLocalEnvironment()) {
+      logEnvironmentInfo()
+    }
+
+    // Force localhost callback URL in local development
+    let callbackUrl = redirectTo || getAuthCallbackUrl()
+
+    // CRITICAL: When using production Supabase with local development,
+    // we must explicitly force the localhost callback URL
+    if (isLocalEnvironment()) {
+      callbackUrl = 'http://localhost:3000/auth/callback'
+      console.log('🔗 Magic Link Callback URL (forced localhost):', callbackUrl)
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`
+        // Explicitly set the redirect URL to override any Supabase dashboard settings
+        emailRedirectTo: callbackUrl,
+        // Additional options to ensure localhost redirect works
+        data: {
+          // Custom data to help identify local development requests
+          environment: isLocalEnvironment() ? 'local' : 'production',
+          requestedRedirect: callbackUrl
+        }
       }
     })
 
     if (error) {
+      console.error('❌ Magic Link Error:', error)
       throw error
     }
 
+    console.log('✅ Magic link sent successfully to:', email)
+    console.log('📧 Expected redirect URL:', callbackUrl)
+
     return { success: true }
   } catch (error) {
+    console.error('❌ signInWithMagicLink failed:', error)
     throw error
   }
 }
@@ -31,6 +59,21 @@ export async function signInWithMagicLink(email: string, redirectTo?: string) {
 // Handle Google OAuth sign-in with profile creation
 export async function signInWithGoogle() {
   try {
+    // Log environment info for debugging in local development
+    if (isLocalEnvironment()) {
+      logEnvironmentInfo()
+    }
+
+    // Force localhost callback URL in local development
+    let callbackUrl = getAuthCallbackUrl()
+
+    // CRITICAL: When using production Supabase with local development,
+    // we must explicitly force the localhost callback URL
+    if (isLocalEnvironment()) {
+      callbackUrl = 'http://localhost:3000/auth/callback'
+      console.log('🔗 Google OAuth Callback URL (forced localhost):', callbackUrl)
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -38,7 +81,7 @@ export async function signInWithGoogle() {
           access_type: 'offline',
           prompt: 'consent',
         },
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
         // Skip automatic profile creation to handle it manually
         skipBrowserRedirect: false
       }

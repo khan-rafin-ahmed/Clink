@@ -3,6 +3,7 @@ import { AuthProvider } from './lib/auth-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { setupSessionRefresh } from './lib/sessionUtils'
+import { useEnvironmentValidation } from './lib/envValidator'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
 import { HomePage } from './pages/HomePage'
@@ -36,6 +37,9 @@ function App() {
     const cleanup = setupSessionRefresh()
     return cleanup
   }, [])
+
+  // Validate environment configuration in local development
+  useEnvironmentValidation()
 
   return (
     <QueryClientProvider client={queryClient}>

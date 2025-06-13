@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
+    "dev:local": "vite --port 3000 --mode local",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --port 3000",
+    "start": "npm run dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
