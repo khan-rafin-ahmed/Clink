@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AvatarUpload } from '@/components/AvatarUpload'
+import { DeleteProfileDialog } from '@/components/DeleteProfileDialog'
 import { toast } from 'sonner'
-import { ArrowLeft, User, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, User, Save, Loader2, Eye, EyeOff, Users, Globe, Lock, Trash2 } from 'lucide-react'
 import type { UserProfile } from '@/types'
 
 const DRINK_OPTIONS = [
@@ -37,6 +38,7 @@ export function EditProfile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [formData, setFormData] = useState({
     display_name: '',
     nickname: '',
@@ -163,6 +165,11 @@ export function EditProfile() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleAccountDeleted = () => {
+    // Redirect to home page after account deletion
+    navigate('/')
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -390,6 +397,46 @@ export function EditProfile() {
                 </div>
               </div>
 
+              {/* Danger Zone - Delete Profile */}
+              <div className="border-t border-destructive/20 pt-6 mt-8">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-destructive/10">
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-destructive">Danger Zone</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Permanently delete your account and all associated data
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Once you delete your account, there is no going back. This will permanently delete:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                      <li>• Your profile and all personal information</li>
+                      <li>• All events you've created</li>
+                      <li>• Your crew memberships and RSVPs</li>
+                      <li>• All photos, comments, and ratings</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={saving}
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete My Account
+                  </Button>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="flex justify-end space-x-4 pt-6">
                 <Button type="button" variant="outline" onClick={goBackSmart}>
@@ -413,6 +460,13 @@ export function EditProfile() {
           </CardContent>
         </Card>
         </div>
+
+        {/* Delete Profile Dialog */}
+        <DeleteProfileDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onAccountDeleted={handleAccountDeleted}
+        />
       </div>
     </div>
   )

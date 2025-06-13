@@ -11,6 +11,7 @@ type AuthContextType = {
   isInitialized: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  deleteAccount: () => Promise<void>
   clearError: () => void
 }
 
@@ -223,12 +224,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const deleteAccount = async () => {
+    try {
+      setLoading(true)
+      // Import deleteUserAccount dynamically to avoid circular imports
+      const { deleteUserAccount } = await import('./deleteUserService')
+      if (user) {
+        await deleteUserAccount(user.id)
+      }
+    } catch (error: any) {
+      setError(error.message || 'Account deletion failed')
+      throw error // Re-throw so the component can handle it
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }
+
   const clearError = () => {
     setError(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, isInitialized, signInWithGoogle, signOut, clearError }}>
+    <AuthContext.Provider value={{ user, loading, error, isInitialized, signInWithGoogle, signOut, deleteAccount, clearError }}>
       {children}
     </AuthContext.Provider>
   )

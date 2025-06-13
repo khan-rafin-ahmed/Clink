@@ -69,6 +69,7 @@
 | Public Profile Click from Events | ❌ | With privacy respect |
 | Crew Events Filter | ❌ | Toggle in Discover page |
 | Avatar Hover = Nickname Tooltip | ❌ | Optional mini identity moment |
+| Delete Profile Option | ❌ | Inside Edit Profile; requires confirmation modal & session cleanup |
 
 ---
 

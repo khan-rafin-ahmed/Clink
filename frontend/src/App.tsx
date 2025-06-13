@@ -22,6 +22,7 @@ import { TestRatings } from './pages/TestRatings'
 import { SessionTest } from './pages/SessionTest'
 import { AuthSecurityTest } from './pages/AuthSecurityTest'
 import { StyleGuide } from './components/StyleGuide'
+import { DeleteProfileTest } from './test/DeleteProfileTest'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -90,6 +91,9 @@ function App() {
 
               {/* Style guide for design system */}
               <Route path="/style-guide" element={<StyleGuide />} />
+
+              {/* Test route for delete profile functionality */}
+              <Route path="/test-delete-profile" element={<DeleteProfileTest />} />
             </Routes>
           </main>
           <footer className="bg-card border-t border-border py-6 mt-auto">
