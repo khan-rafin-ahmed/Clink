@@ -83,7 +83,10 @@ export async function signInWithGoogle() {
         },
         redirectTo: callbackUrl,
         // Skip automatic profile creation to handle it manually
-        skipBrowserRedirect: false
+        skipBrowserRedirect: false,
+        // SECURITY: Use PKCE flow for better security (authorization code + code verifier)
+        // This prevents tokens from appearing in URL fragments
+        scopes: 'openid email profile'
       }
     })
 

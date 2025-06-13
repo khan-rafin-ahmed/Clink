@@ -20,6 +20,7 @@ import { CrewJoin } from './pages/CrewJoin'
 import { CrewDetail } from './pages/CrewDetail'
 import { TestRatings } from './pages/TestRatings'
 import { SessionTest } from './pages/SessionTest'
+import { AuthSecurityTest } from './pages/AuthSecurityTest'
 import { StyleGuide } from './components/StyleGuide'
 import { Toaster } from 'sonner'
 
@@ -83,6 +84,9 @@ function App() {
 
               {/* Test route for session management */}
               <Route path="/test-sessions" element={<SessionTest />} />
+
+              {/* Test route for authentication security */}
+              <Route path="/test-auth-security" element={<AuthSecurityTest />} />
 
               {/* Style guide for design system */}
               <Route path="/style-guide" element={<StyleGuide />} />

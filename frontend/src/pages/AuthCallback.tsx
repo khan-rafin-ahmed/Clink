@@ -2,6 +2,13 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { handleAuthCallback } from '@/lib/authService'
+import {
+  hasAuthTokensInUrl,
+  clearAuthTokensFromUrl,
+  validateTokenCleanup,
+  logAuthSecurityInfo,
+  setupAuthSecurityPolicies
+} from '@/lib/authSecurity'
 import { Loader2 } from 'lucide-react'
 
 export function AuthCallback() {
@@ -10,6 +17,22 @@ export function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // SECURITY: Set up security policies and perform security checks
+        setupAuthSecurityPolicies()
+        logAuthSecurityInfo()
+
+        // SECURITY: Immediately detect and clear any authentication tokens from URL
+        const hasTokens = hasAuthTokensInUrl()
+        if (hasTokens) {
+          console.log('🔒 AuthCallback: Detected authentication tokens in URL - clearing for security')
+          clearAuthTokensFromUrl()
+
+          // Validate that tokens were successfully cleared
+          if (!validateTokenCleanup()) {
+            console.error('❌ AuthCallback: Failed to clear tokens from URL - security risk!')
+          }
+        }
+
         // Check URL parameters first
         const urlParams = new URLSearchParams(window.location.search)
         const error_code = urlParams.get('error')
@@ -22,9 +45,45 @@ export function AuthCallback() {
           return
         }
 
-        // If we have a code parameter, this is likely a Google OAuth callback
+        // Handle URL fragments (implicit flow) - this happens when tokens are in URL hash
+        if (hasTokens) {
+          console.log('🔄 AuthCallback: Processing implicit OAuth flow (tokens were in URL)')
+
+          // Let Supabase handle the session from URL fragments
+          // The tokens have already been cleared from the URL above for security
+          try {
+            // Wait a moment for Supabase to process the session from URL
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            const { data: { session }, error } = await supabase.auth.getSession()
+
+            if (error) {
+              console.error('❌ AuthCallback: Session retrieval failed:', error)
+              navigate('/login?error=' + encodeURIComponent(`Authentication failed: ${error.message}`))
+              return
+            }
+
+            if (session) {
+              console.log('✅ AuthCallback: Implicit flow session established')
+              const result = await handleAuthCallback()
+              if (result.success) {
+                navigate('/profile')
+              } else {
+                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
+              }
+              return
+            } else {
+              console.log('⚠️ AuthCallback: No session found after implicit flow, falling back to polling')
+            }
+          } catch (implicitError: any) {
+            console.error('❌ AuthCallback: Implicit flow error:', implicitError)
+            // Fall through to other handling methods
+          }
+        }
+
+        // If we have a code parameter, this is the authorization code flow
         if (code) {
-          console.log('🔄 AuthCallback: Processing Google OAuth code exchange')
+          console.log('🔄 AuthCallback: Processing authorization code flow')
 
           // Try to exchange the code for a session using Supabase's method
           try {
@@ -72,7 +131,7 @@ export function AuthCallback() {
             }
 
             if (data?.session) {
-              console.log('✅ AuthCallback: OAuth exchange successful')
+              console.log('✅ AuthCallback: Authorization code exchange successful')
               // Use our robust auth callback handler
               const result = await handleAuthCallback()
               if (result.success) {
