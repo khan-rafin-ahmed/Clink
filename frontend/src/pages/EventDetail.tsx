@@ -36,7 +36,7 @@ import {
   Crown
 } from 'lucide-react'
 import type { EventWithRsvps } from '@/types'
-import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
 import { getEventDetails, getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
@@ -213,10 +213,16 @@ export function EventDetail() {
         await loadHostInfo(cachedEvent.created_by)
       }
 
-      // Load participant profiles
+      // Load participant profiles - INCLUDE THE HOST!
       const rsvpUserIds = cachedEvent.rsvps.map(r => r.user_id)
       const memberUserIds = cachedEvent.event_members?.map(m => m.user_id) || []
-      const allUserIds = Array.from(new Set([...rsvpUserIds, ...memberUserIds]))
+      const allUserIds = Array.from(new Set([
+        cachedEvent.created_by, // Include the host/creator
+        ...rsvpUserIds,
+        ...memberUserIds
+      ]))
+
+
 
       if (allUserIds.length > 0) {
         try {
@@ -225,21 +231,46 @@ export function EventDetail() {
             .select('user_id, display_name, nickname, avatar_url')
             .in('user_id', allUserIds)
 
+
+
           if (!mountedRef.current) return
+
+          const profileMap: Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null }> = {}
+
           if (!profileError && profiles) {
-            const profileMap = profiles.reduce((acc, profile) => {
-              acc[profile.user_id] = {
+            profiles.forEach(profile => {
+              profileMap[profile.user_id] = {
                 display_name: profile.display_name,
                 nickname: profile.nickname,
                 avatar_url: profile.avatar_url
               }
-              return acc
-            }, {} as Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null }>)
-
-            setParticipantProfiles(profileMap)
+            })
           }
+
+          // For users without profiles, create empty fallback entries
+          allUserIds.forEach(userId => {
+            if (!profileMap[userId]) {
+              profileMap[userId] = {
+                display_name: null,
+                nickname: null,
+                avatar_url: null
+              }
+            }
+          })
+
+
+          setParticipantProfiles(profileMap)
         } catch {
-          // silent
+          // Create fallback entries for all users
+          const fallbackMap: Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null }> = {}
+          allUserIds.forEach(userId => {
+            fallbackMap[userId] = {
+              display_name: null,
+              nickname: null,
+              avatar_url: null
+            }
+          })
+          setParticipantProfiles(fallbackMap)
         }
       }
     }
@@ -323,6 +354,8 @@ export function EventDetail() {
   useEffect(() => {
     setIsJoined(computeIsJoined(event, user || null))
   }, [user, event])
+
+
 
   // If auth state itself has an error, show that
   if (authError) {
@@ -421,14 +454,25 @@ export function EventDetail() {
   const rsvpAttendees = event.rsvps.filter(r => r.status === 'going')
   const eventMembers = event.event_members?.filter(m => m.status === 'accepted') || []
 
-  // Merge RSVPs + crew members into a deduplicated attendees list
+  // Merge RSVPs + crew members + host into a deduplicated attendees list
   const uniqueIds = new Set<string>()
   const allAttendees: Array<{
     id: string
     user_id: string
     status: string
-    source: 'rsvp' | 'crew'
+    source: 'rsvp' | 'crew' | 'host'
   }> = []
+
+  // Always include the host as an attendee
+  if (event.created_by) {
+    uniqueIds.add(event.created_by)
+    allAttendees.push({
+      id: `host-${event.created_by}`,
+      user_id: event.created_by,
+      status: 'going',
+      source: 'host'
+    })
+  }
 
   rsvpAttendees.forEach(r => {
     if (!uniqueIds.has(r.user_id)) {
@@ -671,11 +715,11 @@ export function EventDetail() {
                   <MapPin className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium text-foreground">
-                      {event.place_nickname ?? event.place_name ?? event.location ?? ''}
+                      {event.place_nickname || getLocationDisplayName(event as any)}
                     </p>
                     {(event.place_nickname && (event.place_name || event.location)) && (
                       <p className="text-sm text-muted-foreground">
-                        {event.place_name ?? event.location ?? ''}
+                        {event.place_name || event.location}
                       </p>
                     )}
                   </div>
@@ -787,7 +831,7 @@ export function EventDetail() {
                   location={{
                     latitude: event.latitude,
                     longitude: event.longitude,
-                    place_name: String(event.place_nickname ?? event.place_name ?? event.location ?? ''),
+                    place_name: String(event.place_nickname || getLocationDisplayName(event as any)),
                     place_id: event.place_id ?? '',
                     address: String(event.place_name ?? event.location ?? '')
                   }}
@@ -840,9 +884,39 @@ export function EventDetail() {
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {allAttendees.slice(0, 8).map((rsvp, index) => {
                       const profile = participantProfiles[rsvp.user_id] || {}
-                      const displayName =
-                        profile.display_name || `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
-                      const nicknameDisplay = profile.nickname || displayName
+
+                      // Enhanced display name logic with better fallbacks
+                      const getDisplayName = () => {
+                        // Priority 1: Nickname (if available)
+                        if (profile.nickname && profile.nickname.trim()) {
+                          return profile.nickname.trim()
+                        }
+
+                        // Priority 2: Display name (if available)
+                        if (profile.display_name && profile.display_name.trim()) {
+                          return profile.display_name.trim()
+                        }
+
+                        // Priority 3: Check if this is the host and use host data
+                        if (rsvp.user_id === event.created_by) {
+                          if (event.host?.display_name) return event.host.display_name
+                          if (event.host?.nickname) return event.host.nickname
+                          if (creatorData?.display_name) return creatorData.display_name
+                          if (creatorData?.nickname) return creatorData.nickname
+                        }
+
+                        // Priority 4: Fallback to User ID
+                        return `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
+                      }
+
+                      const displayName = getDisplayName()
+                      const hasNickname = Boolean(profile.nickname && profile.nickname.trim())
+                      const isEventHost = rsvp.user_id === event.created_by
+
+
+
+
+
                       return (
                         <div key={rsvp.user_id || index} className="flex-shrink-0">
                           <UserHoverCard
@@ -850,21 +924,34 @@ export function EventDetail() {
                             displayName={displayName}
                             avatarUrl={profile.avatar_url ?? undefined}
                           >
-                            <div className="flex flex-col items-center gap-2 p-3 bg-muted/20 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px]">
-                              <UserAvatar
-                                userId={rsvp.user_id}
-                                displayName={displayName}
-                                avatarUrl={profile.avatar_url ?? undefined}
-                                size="md"
-                              />
+                            <div className={`flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer min-w-[80px] ${
+                              isEventHost ? 'bg-primary/10 border border-primary/20' : 'bg-muted/20'
+                            }`}>
+                              <div className="relative">
+                                <UserAvatar
+                                  userId={rsvp.user_id}
+                                  displayName={displayName}
+                                  avatarUrl={profile.avatar_url ?? undefined}
+                                  size="md"
+                                />
+                                {isEventHost && (
+                                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                    <Crown className="w-3 h-3 text-primary-foreground" />
+                                  </div>
+                                )}
+                              </div>
                               <div className="text-center">
-                                <p className="text-xs font-medium text-foreground truncate w-full">
-                                  {nicknameDisplay}
-                                </p>
-                                {profile.nickname && (
-                                  <p className="text-xs text-yellow-400 italic truncate w-full">
-                                    {profile.nickname} 🍻
+                                {hasNickname ? (
+                                  <p className="text-xs text-yellow-400 italic font-medium truncate w-full">
+                                    {profile.nickname!.trim()} 🍻
                                   </p>
+                                ) : (
+                                  <p className="text-xs font-medium text-foreground truncate w-full">
+                                    {displayName}
+                                  </p>
+                                )}
+                                {isEventHost && (
+                                  <p className="text-xs text-primary font-medium">Host</p>
                                 )}
                               </div>
                             </div>

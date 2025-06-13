@@ -23,7 +23,7 @@ import {
   Clock
 } from 'lucide-react'
 import type { Event } from '@/types'
-import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { cn } from '@/lib/utils'
 import { getEventCoverImage, getVibeFallbackGradient, getVibeEmoji } from '@/lib/coverImageUtils'
 
@@ -270,7 +270,7 @@ export function EnhancedEventCard({
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
           <MapPin className="w-4 h-4" />
           <span className="truncate">
-            {event.place_nickname || event.place_name || event.location}
+            {event.place_nickname || getLocationDisplayName(event)}
           </span>
         </div>
 

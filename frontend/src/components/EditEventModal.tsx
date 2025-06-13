@@ -208,9 +208,10 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
       // Calculate event time
       let eventDateTime = new Date()
+      const now = new Date()
+
       if (formData.time === 'tonight') {
         // 'Later Tonight' should always be tonight, not tomorrow
-        const now = new Date()
         if (now.getHours() >= 20) {
           // If it's already past 8 PM, set to 1 hour from now (but still tonight)
           eventDateTime = new Date(now)
@@ -221,6 +222,19 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
         }
       } else if (formData.time === 'custom' && formData.custom_time) {
         eventDateTime = new Date(formData.custom_time)
+      } else if (formData.time === 'custom' && !formData.custom_time) {
+        // If custom date is selected but no time is provided, default to 8 PM today
+        const defaultTime = new Date(now)
+        defaultTime.setHours(20, 0, 0, 0)
+        // If 8 PM today is in the past, set to 8 PM tomorrow
+        if (defaultTime <= now) {
+          defaultTime.setDate(defaultTime.getDate() + 1)
+        }
+        eventDateTime = defaultTime
+      } else { // 'now' - Set to end of current day to keep event active
+        const endOfDay = new Date(now)
+        endOfDay.setHours(23, 59, 59, 999)
+        eventDateTime = endOfDay
       }
 
       const updateData = {
@@ -277,7 +291,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.title.trim() && (formData.locationData || formData.location.trim())
+        return formData.title.trim().length > 0
       case 2:
         return formData.time && formData.drink_type
       case 3:
@@ -360,7 +374,6 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                       location: locationData?.place_name || ''
                     }))
                   }}
-                  required
                 />
               </div>
             </div>

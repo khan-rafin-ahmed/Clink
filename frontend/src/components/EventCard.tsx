@@ -23,7 +23,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import type { Event } from '@/types'
-import { calculateAttendeeCount } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 
 interface EventCardProps {
   event: Event & {
@@ -187,9 +187,9 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               <div className="truncate max-w-[200px]">
                 <span
                   className="text-sm text-muted-foreground truncate"
-                  title={event.place_nickname || event.place_name || event.location}
+                  title={event.place_nickname || getLocationDisplayName(event)}
                 >
-                  {event.place_nickname || event.place_name || event.location}
+                  {event.place_nickname || getLocationDisplayName(event)}
                 </span>
                 {event.place_nickname && (event.place_name || event.location) && (
                   <div className="text-xs text-muted-foreground/70 truncate">

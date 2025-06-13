@@ -192,9 +192,10 @@ export function getUserJoinStatus(event: Event, userId: string): 'not_joined' | 
 /**
  * Standardize location display name
  * Prefers place_name over location for consistency
+ * Uses witty placeholder when no location is provided
  */
 export function getLocationDisplayName(event: Event): string {
-  return event.place_name || event.location || 'Location TBD'
+  return event.place_name || event.location || 'Anywhere on Earth 🌍'
 }
 
 /**

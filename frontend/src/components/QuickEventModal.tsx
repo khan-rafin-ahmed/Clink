@@ -165,10 +165,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       return
     }
 
-    if (!formData.locationData && !formData.location.trim()) {
-      toast.error('Event location is required')
-      return
-    }
 
     setIsSubmitting(true)
     try {
@@ -204,6 +200,15 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
           if (formData.time === 'custom' && formData.custom_time) {
             return new Date(formData.custom_time).toISOString();
+          } else if (formData.time === 'custom' && !formData.custom_time) {
+            // If custom date is selected but no time is provided, default to 8 PM today
+            const defaultTime = new Date(now);
+            defaultTime.setHours(20, 0, 0, 0);
+            // If 8 PM today is in the past, set to 8 PM tomorrow
+            if (defaultTime <= now) {
+              defaultTime.setDate(defaultTime.getDate() + 1);
+            }
+            return defaultTime.toISOString();
           } else if (formData.time === 'tonight') {
             // 'Later Tonight' should always be tonight at 8 PM, regardless of current time
             // If it's already past 8 PM, set it to a reasonable time later tonight (current time + 1 hour)
@@ -216,8 +221,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
               // If it's before 8 PM, set to 8 PM tonight
               return tonight.toISOString();
             }
-          } else { // 'now'
-            return now.toISOString();
+          } else { // 'now' - Set to end of current day to keep event active
+            const endOfDay = new Date(now);
+            endOfDay.setHours(23, 59, 59, 999);
+            return endOfDay.toISOString();
           }
         })(),
         drink_type: formData.drink_type,
@@ -283,10 +290,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
   const isStepValid = () => {
     switch (step) {
-      case 1:
+      case 1: {
         const hasTitle = formData.title.trim().length > 0;
-        const hasLocation = formData.locationData !== null || formData.location.trim().length > 0;
-        return hasTitle && hasLocation;
+        return hasTitle;
+      }
       case 2:
         return formData.time && formData.drink_type;
       case 3:
@@ -423,7 +430,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   placeholder="Search for bars, restaurants, venues..."
                   value={formData.locationData}
                   onChange={handleLocationChange}
-                  required
+                 
                 />
               </div>
             </div>

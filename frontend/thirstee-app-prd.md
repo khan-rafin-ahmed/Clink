@@ -134,6 +134,132 @@
 | Debug Logs Removed from Production | ✅ | Clean console & network |
 | Session Timeout Policy | ✅ | Persistent login best practice |
 | OAuth Token Security Implementation | ✅ | Prevents token exposure in URLs |
+| User Profile Events Display | ✅ | Comprehensive 4-category event fetching |
+
+---
+
+## 📋 User Profile Events Display Requirements
+
+### 🚨 CRITICAL IMPLEMENTATION - DO NOT SIMPLIFY
+
+The `UserProfile.tsx` component **MUST** always fetch and display events from **4 mandatory categories**. This functionality has been broken multiple times by oversimplification - never reduce to only showing created events.
+
+### ✅ Required Event Categories
+
+#### 1. **Events User Created**
+```sql
+-- Query: events table where created_by = current_user_id
+SELECT * FROM events WHERE created_by = user.id
+```
+- **Purpose**: Shows events the user is hosting
+- **Display**: "Hosted by You" label, edit/delete actions available
+- **Avatar**: Current user's avatar
+
+#### 2. **Events User Manually Joined (RSVP)**
+```sql
+-- Query: events joined via RSVP system
+SELECT e.* FROM events e
+INNER JOIN rsvps r ON e.id = r.event_id
+WHERE r.user_id = user.id AND r.status = 'going' AND e.created_by != user.id
+```
+- **Purpose**: Shows public events user clicked "Join" on
+- **Display**: "Hosted by [Creator Name]" label, no edit actions
+- **Avatar**: Event creator's avatar (fetched separately)
+
+#### 3. **Events User Was Directly Invited To**
+```sql
+-- Query: events via direct crew invitations
+SELECT e.* FROM events e
+INNER JOIN event_members em ON e.id = em.event_id
+WHERE em.user_id = user.id AND em.status = 'accepted' AND e.created_by != user.id
+```
+- **Purpose**: Shows events user was invited to during event creation
+- **Display**: "Hosted by [Creator Name]" label, no edit actions
+- **Avatar**: Event creator's avatar (fetched separately)
+
+#### 4. **Events from Crews User Belongs To**
+```sql
+-- Query: events associated with user's crews
+SELECT e.* FROM events e
+WHERE e.crew_id IN (
+  SELECT cm.crew_id FROM crew_members cm
+  WHERE cm.user_id = user.id AND cm.status = 'accepted'
+) AND e.created_by != user.id
+```
+- **Purpose**: Shows events from crews user is a member of
+- **Display**: "Hosted by [Creator Name]" label, no edit actions
+- **Avatar**: Event creator's avatar (fetched separately)
+
+### 🔧 Implementation Requirements
+
+#### **Deduplication Logic**
+```javascript
+// REQUIRED: Remove duplicates when user appears in multiple categories
+const uniqueEvents = allEventsRaw.reduce((acc, event) => {
+  if (!acc.find(e => e.id === event.id)) {
+    acc.push(event)
+  }
+  return acc
+}, [])
+```
+
+#### **Creator Profile Fetching**
+```javascript
+// REQUIRED: Fetch creator profiles separately for proper avatar display
+if (!isHosting) {
+  const { data: creatorProfile } = await supabase
+    .from('user_profiles')
+    .select('display_name, nickname, avatar_url, user_id')
+    .eq('user_id', event.created_by)
+    .single()
+}
+```
+
+#### **Error Handling**
+```javascript
+// REQUIRED: Handle errors from all query types
+const errors = [
+  createdResult.error,
+  rsvpResult.error,
+  crewInvitedResult.error,
+  crewAssociatedResult.error
+].filter(Boolean)
+
+if (errors.length > 0) {
+  console.error('Errors fetching events:', errors)
+  throw errors[0]
+}
+```
+
+### 🚫 Common Mistakes to Avoid
+
+1. **❌ NEVER simplify to only created events** - This breaks the user experience
+2. **❌ NEVER skip creator profile fetching** - Results in missing avatars
+3. **❌ NEVER forget deduplication** - Causes duplicate events in UI
+4. **❌ NEVER use complex database functions** - Simple queries are more reliable
+5. **❌ NEVER skip error handling** - One failed query shouldn't break all events
+
+### 📊 Expected Results
+
+#### **Upcoming Events Tab**
+- Events user created with future `date_time`
+- Events user RSVP'd to with future `date_time`
+- Events user was invited to with future `date_time`
+- Events from user's crews with future `date_time`
+- All with proper host avatars and "Hosted by" labels
+
+#### **Past Events Tab**
+- Same 4 categories but with past `date_time`
+- Sorted by most recent first
+- Proper pagination for large lists
+
+### 🔄 Maintenance Notes
+
+- **This functionality has been broken 3+ times** by well-intentioned "simplifications"
+- **Always test all 4 categories** when making changes to UserProfile.tsx
+- **Never remove any of the 4 query types** without explicit user approval
+- **Always verify avatars display correctly** for both hosted and joined events
+- **Maintain comprehensive logging** for debugging future issues
 
 ---
 
