@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { toast } from 'sonner'
 
 /**
  * Comprehensive user account deletion service

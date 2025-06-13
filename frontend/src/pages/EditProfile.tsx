@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AvatarUpload } from '@/components/AvatarUpload'
 import { DeleteProfileDialog } from '@/components/DeleteProfileDialog'
 import { toast } from 'sonner'
-import { ArrowLeft, User, Save, Loader2, Eye, EyeOff, Users, Globe, Lock, Trash2 } from 'lucide-react'
+import { ArrowLeft, User, Save, Loader2, Trash2 } from 'lucide-react'
 import type { UserProfile } from '@/types'
 
 const DRINK_OPTIONS = [
