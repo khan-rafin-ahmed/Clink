@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { EnhancedHero } from '@/components/EnhancedHero'
 import { useAuth } from '@/lib/auth-context'
+import { motion } from 'framer-motion'
 
 export function HomePage() {
   const { user } = useAuth()
@@ -12,212 +13,358 @@ export function HomePage() {
       {/* Enhanced Hero Section */}
       <EnhancedHero />
 
-      {/* Enhanced Features Section */}
-      <section className="relative py-20 lg:py-24 overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-card/20 to-background"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+      {/* Core Features Section (60s Setup, Crew, Fun) - PRD Compliant */}
+      <section className="relative py-8 lg:py-10 overflow-hidden">
+        {/* Glass Background */}
+        <div className="absolute inset-0 bg-bg-base"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-6">
-              <span className="text-primary font-medium">How It Works</span>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30 mb-4">
+              <span className="text-accent-primary font-medium">Core Features</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground mb-6">
-              Three Steps to <span className="bg-gradient-primary bg-clip-text text-transparent">Epic Nights</span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground mb-3">
+              Everything You Need to <span className="text-accent-primary">Raise Hell</span>
             </h2>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              From zero to legendary in under 60 seconds. That's how we roll.
-            </p>
-          </div>
+          </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* 3 Floating Glass Cards with Hover Tilt and Glass Glow */}
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
             {[
               {
-                step: "01",
                 icon: "⚡",
-                title: "Lightning Setup",
-                description: "Create your session faster than you can crack open a cold one. Pick your vibe, location, and poison of choice.",
-                features: ["60-second creation", "Smart location picker", "Vibe selector"]
+                title: "60s Setup",
+                description: "Pick your vibe. Set the spot. Tap go.",
+                delay: 0
               },
               {
-                step: "02",
-                icon: "🚀",
-                title: "Rally Your Crew",
-                description: "Invite your stable with one tap. WhatsApp, SMS, or shareable links - your crew gets notified instantly.",
-                features: ["Instant notifications", "Multiple invite methods", "Crew management"]
+                icon: "👥",
+                title: "Crew System",
+                description: "Build your stable for epic adventures.",
+                delay: 0.1
               },
               {
-                step: "03",
-                icon: "🍻",
-                title: "Raise Hell",
-                description: "Live RSVPs, real-time updates, and legendary nights. That's the bottom line, 'cause Stone Cold said so.",
-                features: ["Live updates", "One-tap RSVPs", "Epic memories"]
+                icon: "🎉",
+                title: "Spontaneous Fun",
+                description: "Discover sessions happening near you.",
+                delay: 0.2
               }
-            ].map((step, index) => (
-              <div key={index} className="group slide-up" style={{ animationDelay: `${index * 0.2}s` }}>
-                <div className="relative">
-                  {/* Step Number */}
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-lg shadow-gold">
-                    {step.step}
-                  </div>
-
-                  {/* Card */}
-                  <div className="bg-gradient-card border border-border hover:border-border-hover rounded-2xl p-8 h-full transition-all duration-300 hover-lift">
-                    <div className="text-center mb-6">
-                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                        <span className="text-4xl">{step.icon}</span>
-                      </div>
-                      <h3 className="text-2xl font-heading font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                        {step.title}
-                      </h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {step.description}
-                      </p>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2">
-                      {step.features.map((feature, featureIndex) => (
-                        <div key={featureIndex} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                          {feature}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                className="group glass-card p-6 rounded-2xl"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: feature.delay }}
+                viewport={{ once: true }}
+              >
+                {/* Amber-outlined icons inside mini-glass circles */}
+                <div className="w-16 h-16 glass-effect rounded-full flex items-center justify-center mx-auto mb-4 border border-accent-primary/30">
+                  <span className="text-2xl">{feature.icon}</span>
                 </div>
-              </div>
+                <h3 className="text-lg font-heading font-semibold text-foreground mb-2 text-center">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                  {feature.description}
+                </p>
+              </motion.div>
             ))}
           </div>
+
+          {/* Social Proof Statistics - Moved from CTA Section */}
+          <motion.div
+            className="pt-6 border-t border-white/10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div className="grid grid-cols-3 gap-4 text-center max-w-2xl mx-auto">
+              {[
+                { number: "10K+", label: "Hell-Raisers" },
+                { number: "50K+", label: "Epic Events" },
+                { number: "100+", label: "Cities" }
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  className="glass-effect p-4 rounded-xl"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.8 + (index * 0.1) }}
+                  viewport={{ once: true }}
+
+                >
+                  <div className="text-2xl font-bold text-accent-primary mb-1">{stat.number}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Enhanced Vibe Selection Section */}
-      <section className="relative py-20 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 backdrop-blur-sm mb-6">
-              <span className="text-accent-foreground font-medium">Choose Your Vibe</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground mb-6">
-              Every Night Has Its <span className="bg-gradient-primary bg-clip-text text-transparent">Flavor</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              From chill hangs to legendary ragers - pick your poison and set the mood
-            </p>
-          </div>
+      {/* Three Steps to Epic Nights (How It Works) - PRD Compliant */}
+      <section id="how-it-works" className="relative py-8 lg:py-10 overflow-hidden">
+        {/* Glass Background */}
+        <div className="absolute inset-0 bg-bg-base"></div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        {/* Static Glass Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 right-1/4 w-64 h-64 glass-panel rounded-2xl opacity-20" />
+          <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-gradient-secondary opacity-10 rounded-xl blur-xl" />
+        </div>
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30 mb-4">
+              <span className="text-accent-primary font-medium">How It Works</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground mb-3">
+              Three Steps to <span className="text-accent-primary">Epic Nights</span>
+            </h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              From zero to legendary in under 60 seconds.
+            </p>
+          </motion.div>
+
+          {/* PRD-Compliant 3-Step Format with Enhanced Glass Step Numbers */}
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
             {[
               {
-                emoji: '🍻',
-                title: 'Chill Vibes',
-                desc: 'Casual drinks with good company',
-                color: 'from-blue-500/20 to-cyan-500/20',
-                borderColor: 'border-blue-500/20 hover:border-blue-500/40'
+                stepNumber: "01",
+                title: "Setup Fast",
+                description: "Pick your vibe. Set the spot. Tap go.",
+                delay: 0
               },
               {
-                emoji: '🥃',
-                title: 'Stone Cold Mode',
-                desc: 'Time to raise some serious hell',
-                color: 'from-amber-500/20 to-orange-500/20',
-                borderColor: 'border-amber-500/20 hover:border-amber-500/40'
+                stepNumber: "02",
+                title: "Rally the Crew",
+                description: "Auto-invites via WhatsApp, SMS, links.",
+                delay: 0.1
               },
               {
-                emoji: '🍷',
-                title: 'Classy Affairs',
-                desc: 'Sophisticated celebrations',
-                color: 'from-purple-500/20 to-pink-500/20',
-                borderColor: 'border-purple-500/20 hover:border-purple-500/40'
-              },
-              {
-                emoji: '🎉',
-                title: 'Party Mode',
-                desc: 'Full celebration chaos',
-                color: 'from-red-500/20 to-pink-500/20',
-                borderColor: 'border-red-500/20 hover:border-red-500/40'
+                stepNumber: "03",
+                title: "Raise Hell",
+                description: "Live RSVPs. Real-time vibes. Legendary nights.",
+                delay: 0.2
               }
-            ].map((vibe, index) => (
-              <div key={index} className="group scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <div className={`relative bg-gradient-to-br ${vibe.color} rounded-2xl p-6 lg:p-8 text-center border ${vibe.borderColor} transition-all duration-300 hover-lift hover:shadow-lg backdrop-blur-sm`}>
-                  {/* Glow Effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            ].map((step, index) => (
+              <motion.div
+                key={index}
+                className="group"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: step.delay }}
+                viewport={{ once: true }}
+              >
+                {/* Floating Glass Card with Enhanced Step Number Design */}
+                <div className="glass-card border border-white/10 hover:border-accent-primary/30 rounded-2xl p-6 h-full relative overflow-hidden">
+                  {/* Glowing Top Border Accent */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-primary opacity-60" />
 
-                  <div className="relative">
-                    <div className="text-5xl lg:text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                      {vibe.emoji}
-                    </div>
-                    <h3 className="text-xl lg:text-2xl font-heading font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                      {vibe.title}
+                  {/* Sophisticated Glass Step Number in Top-Left Corner */}
+                  <div className="absolute -top-3 -left-3 w-12 h-12 glass-effect border border-accent-primary/40 rounded-full flex items-center justify-center shadow-amber z-10">
+                    <span className="text-accent-primary font-bold text-lg font-display">
+                      {step.stepNumber}
+                    </span>
+                  </div>
+
+                  <div className="text-center pt-6">
+                    <h3 className="text-xl font-heading font-semibold text-foreground mb-3">
+                      {step.title}
                     </h3>
-                    <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
-                      {vibe.desc}
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {step.description}
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Enhanced CTA Section */}
-      <section className="relative py-20 lg:py-24 overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-hero"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary)_0%,_transparent_70%)] opacity-10"></div>
+      {/* Vibe Section (Chill, Stone Cold, Classy, Party) - PRD Compliant */}
+      <section className="relative py-8 lg:py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30 mb-4">
+              <span className="text-accent-primary font-medium">Choose Your Vibe</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground mb-3">
+              Every Night Has Its <span className="text-accent-primary">Flavor</span>
+            </h2>
+          </motion.div>
 
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+          {/* 2x2 Grid with More Vertical Spacing on Mobile */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            {[
+              {
+                emoji: '🍻',
+                title: 'Chill',
+                desc: 'Casual hangs',
+                glowColor: 'hover:shadow-blue-500/30',
+                borderColor: 'hover:border-blue-500/40'
+              },
+              {
+                emoji: '🥃',
+                title: 'Stone Cold',
+                desc: 'Raise hell',
+                glowColor: 'hover:shadow-amber-500/30',
+                borderColor: 'hover:border-amber-500/40'
+              },
+              {
+                emoji: '🍷',
+                title: 'Classy',
+                desc: 'Sophisticated',
+                glowColor: 'hover:shadow-purple-500/30',
+                borderColor: 'hover:border-purple-500/40'
+              },
+              {
+                emoji: '🎉',
+                title: 'Party',
+                desc: 'Full chaos',
+                glowColor: 'hover:shadow-pink-500/30',
+                borderColor: 'hover:border-pink-500/40'
+              }
+            ].map((vibe, index) => (
+              <motion.div
+                key={index}
+                className="group"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                {/* Glass Card with Vibe-Specific Glow on Hover */}
+                <div className={`glass-card border border-white/10 ${vibe.borderColor} rounded-2xl p-6 text-center ${vibe.glowColor}`}>
+                  {/* Drink Icons with Glass Ring Effect */}
+                  <div className="w-16 h-16 glass-effect rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
+                    <span className="text-2xl">
+                      {vibe.emoji}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
+                    {vibe.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {vibe.desc}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Liquid Glass CTA Section - Optimized Spacing */}
+      <section className="relative py-8 lg:py-10 overflow-hidden">
+        {/* Glass Background */}
+        <div className="absolute inset-0 bg-bg-base"></div>
+
+        {/* Static Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 right-1/3 text-6xl opacity-8 blur-lg">🍺</div>
+          <div className="absolute bottom-1/4 left-1/3 text-5xl opacity-6 blur-lg">🥃</div>
+          <div className="absolute top-1/2 left-1/4 text-4xl opacity-4 blur-lg">🍻</div>
         </div>
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="space-y-8 fade-in">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
-              <span className="text-primary font-medium">Ready to Join?</span>
-            </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            className="space-y-5"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+            viewport={{ once: true }}
+          >
+            {/* Masculine Glass Badge */}
+            <motion.div
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-accent-primary font-medium">Ready to Join?</span>
+            </motion.div>
 
-            {/* Main Headline */}
-            <div className="space-y-6">
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground leading-tight">
-                Time to <span className="bg-gradient-primary bg-clip-text text-transparent">Raise Hell</span>
+            {/* Compact Glass Main Headline */}
+            <motion.div
+              className="space-y-3"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-semibold text-foreground leading-tight">
+                Time to <span className="text-accent-primary">Raise Hell</span>
               </h2>
 
-              <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Join thousands of hell-raisers creating legendary nights across the globe
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Join thousands creating legendary nights across the globe
               </p>
 
-              <div className="text-lg text-primary font-heading font-semibold italic">
-                "And that's the bottom line, 'cause Stone Cold said so!" 🥃
-              </div>
-            </div>
+              <motion.div
+                className="text-base text-accent-secondary font-heading font-medium italic"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                viewport={{ once: true }}
+                style={{
+                  textShadow: '0 0 20px rgba(255, 211, 126, 0.4)'
+                }}
+              >
+                "And that's the bottom line!" 🥃
+              </motion.div>
+            </motion.div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 lg:gap-6 justify-center items-center pt-8">
+            {/* Glass CTA Buttons with Ripple Effects */}
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1 }}
+              viewport={{ once: true }}
+            >
               {user ? (
                 <QuickEventModal
                   trigger={
                     <Button
-                      size="xl"
-                      className="w-full sm:w-auto group hover-glow"
+                      size="lg"
+                      className="w-full sm:w-auto group glass-button hover-glow"
                     >
                       🍺 Start Raising Hell
-                      <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                      <span className="ml-2">→</span>
                     </Button>
                   }
                 />
               ) : (
                 <Link to="/login" className="w-full sm:w-auto">
                   <Button
-                    size="xl"
-                    className="w-full group hover-glow"
+                    size="lg"
+                    className="w-full group glass-button hover-glow"
                   >
                     🍺 Gimme a Hell Yeah!
-                    <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                    <span className="ml-2">→</span>
                   </Button>
                 </Link>
               )}
@@ -225,33 +372,15 @@ export function HomePage() {
               <Link to="/discover" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  size="xl"
-                  className="w-full group backdrop-blur-sm"
+                  size="lg"
+                  className="w-full group glass-button border-accent-secondary/40 hover:border-accent-secondary/70 text-accent-secondary hover:text-accent-secondary"
                 >
                   Discover Events
-                  <span className="ml-2 group-hover:scale-110 transition-transform">🔍</span>
+                  <span className="ml-2">🔍</span>
                 </Button>
               </Link>
-            </div>
-
-            {/* Social Proof */}
-            <div className="pt-12 border-t border-border/20">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-primary mb-2">10K+</div>
-                  <div className="text-sm text-muted-foreground">Hell-Raisers</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-primary mb-2">50K+</div>
-                  <div className="text-sm text-muted-foreground">Epic Events</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-primary mb-2">100+</div>
-                  <div className="text-sm text-muted-foreground">Cities</div>
-                </div>
-              </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </div>

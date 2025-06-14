@@ -40,7 +40,7 @@ interface EnhancedEventCardProps {
   showHostActions?: boolean
   onEdit?: (event: Event) => void
   onDelete?: (event: Event) => void
-  variant?: 'default' | 'featured' | 'compact'
+  variant?: 'default' | 'featured' | 'compact' | 'timeline'
   className?: string
 }
 
@@ -105,14 +105,14 @@ export function EnhancedEventCard({
     }
   }
 
-  // Get vibe styling
+  // Get vibe styling with masculine colors
   const getVibeColor = (vibe?: string) => {
     switch (vibe) {
-      case 'party': return 'bg-red-500/10 text-red-400 border-red-500/20'
+      case 'party': return 'bg-accent-primary/10 text-accent-primary border-accent-primary/20'
       case 'chill': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
       case 'wild': return 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-      case 'classy': return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-      default: return 'bg-primary/10 text-primary border-primary/20'
+      case 'classy': return 'bg-accent-secondary/10 text-accent-secondary border-accent-secondary/20'
+      default: return 'bg-accent-primary/10 text-accent-primary border-accent-primary/20'
     }
   }
 
@@ -143,7 +143,7 @@ export function EnhancedEventCard({
 
   if (variant === 'compact') {
     return (
-      <Card className={cn("interactive-card group", className)}>
+      <Card className={cn("interactive-card group glass-card border-white/10 hover:border-accent-primary/20", className)}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             {/* Compact Image */}
@@ -165,7 +165,7 @@ export function EnhancedEventCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-heading font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                  <h3 className="font-heading font-semibold text-sm line-clamp-1 group-hover:text-accent-primary transition-colors">
                     {event.title}
                   </h3>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
@@ -196,15 +196,122 @@ export function EnhancedEventCard({
     )
   }
 
+  if (variant === 'timeline') {
+    return (
+      <Card className={cn("interactive-card group glass-card border-white/10 hover:border-accent-primary/30", className)}>
+        <CardContent className="p-4">
+          <div className="flex gap-4">
+            {/* Timeline Event Image */}
+            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-card-hover">
+              {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
+                <img
+                  src={getEventCoverImage(event.cover_image_url, event.vibe)}
+                  alt={event.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                getPlaceholderImage()
+              )}
+            </div>
+
+            {/* Timeline Event Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-heading font-semibold text-lg line-clamp-1 group-hover:text-accent-primary transition-colors">
+                    {event.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Clock className="w-4 h-4" />
+                    {formatEventTime(event.date_time)}
+                  </div>
+                </div>
+                <Badge variant={statusBadge.variant} size="sm">
+                  {statusBadge.text}
+                </Badge>
+              </div>
+
+              {/* Location and Stats */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate max-w-[200px]">
+                    {event.place_nickname || getLocationDisplayName(event)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {displayCount}
+                </div>
+              </div>
+
+              {/* Vibe and Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-accent-primary/30 text-accent-primary">
+                    {getVibeEmoji(event.vibe)} {event.vibe}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Host Actions for Timeline */}
+                  {showHostActions && isHost && (onEdit || onDelete) && (
+                    <div className="flex gap-1">
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(event)}
+                          className="h-8 px-2 text-xs hover:bg-accent-secondary/20"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(event)}
+                          className="h-8 px-2 text-xs hover:bg-destructive/20 text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* View Button */}
+                  <Link to={getEventUrl().replace(window.location.origin, '')}>
+                    <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">
+                      View Details
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const isFeatured = variant === 'featured'
 
   return (
     <Card className={cn(
-      "interactive-card group overflow-hidden",
-      isFeatured && "ring-2 ring-primary/20 shadow-gold",
+      "interactive-card group overflow-hidden glass-card floating-tile border-white/10 hover:border-accent-primary/30 relative",
+      isFeatured && "ring-2 ring-accent-primary/20 shadow-amber",
       className
     )}>
-      {/* Hero Image Section */}
+      {/* Floating Glass Overlay */}
+      <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+      {/* Hero Image Section with Enhanced Blur Overlay */}
       <div className={cn(
         "relative overflow-hidden",
         isFeatured ? "h-48 sm:h-56" : "h-40 sm:h-48"
@@ -214,7 +321,7 @@ export function EnhancedEventCard({
             src={getEventCoverImage(event.cover_image_url, event.vibe)}
             alt={event.title}
             className={cn(
-              "w-full h-full object-cover transition-transform duration-300 group-hover:scale-105",
+              "w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm",
               !imageLoaded && "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
@@ -224,18 +331,26 @@ export function EnhancedEventCard({
           getPlaceholderImage()
         )}
 
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Enhanced Overlay with Glass Effect */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:from-black/80 transition-all duration-500" />
+        <div className="absolute inset-0 backdrop-blur-[1px] group-hover:backdrop-blur-sm transition-all duration-500" />
 
-        {/* Top Badges */}
+        {/* Top Badges - Enhanced Glass Pills */}
         <div className="absolute top-3 left-3 flex gap-2">
-          <Badge variant={statusBadge.variant} size="sm" className="backdrop-blur-sm">
+          <div className={cn(
+            "glass-pill px-2 py-1 text-xs font-medium backdrop-blur-lg",
+            statusBadge.variant === 'default'
+              ? "border-accent-primary/50 text-accent-primary"
+              : statusBadge.variant === 'secondary'
+              ? "border-accent-secondary/50 text-accent-secondary"
+              : "border-white/30 text-white"
+          )}>
             {statusBadge.text}
-          </Badge>
+          </div>
           {isFeatured && (
-            <Badge variant="default" size="sm" className="backdrop-blur-sm">
+            <div className="glass-pill px-2 py-1 text-xs font-medium backdrop-blur-lg border-amber-500/50 text-amber-500 pill-glow">
               ⭐ Featured
-            </Badge>
+            </div>
           )}
         </div>
 
@@ -257,8 +372,8 @@ export function EnhancedEventCard({
           )}>
             {event.title}
           </h3>
-          <div className="flex items-center gap-2 text-white/90 text-sm">
-            <Calendar className="w-4 h-4" />
+          <div className="glass-pill px-2 py-1 flex items-center gap-2 text-white text-sm font-medium backdrop-blur-lg border-white/30">
+            <Calendar className="w-4 h-4 clock-tick" />
             {formatEventTime(event.date_time)}
           </div>
         </div>
@@ -281,18 +396,23 @@ export function EnhancedEventCard({
           </p>
         )}
 
-        {/* Vibe and Stats */}
+        {/* Vibe and Stats - Enhanced Glass Pills */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={getVibeColor(event.vibe)} size="sm">
-              {event.vibe}
-            </Badge>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className={cn(
+              "glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1",
+              getVibeColor(event.vibe).includes('primary')
+                ? "border-accent-primary/30 text-accent-primary"
+                : "border-accent-secondary/30 text-accent-secondary"
+            )}>
+              {getVibeEmoji(event.vibe)} {event.vibe}
+            </div>
+            <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-white/20 text-muted-foreground">
               {getDrinkIcon()}
               <span className="capitalize">{event.drink_type}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-blue-400/30 text-blue-400">
             <Users className="w-4 h-4" />
             {displayCount}
           </div>
@@ -305,7 +425,7 @@ export function EnhancedEventCard({
           avatarUrl={event.creator?.avatar_url}
           isHost={true}
         >
-          <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
+          <div className="flex items-center gap-2 mb-4 p-2 glass-effect rounded-lg hover:bg-glass-hover transition-colors cursor-pointer">
             <UserAvatar
               userId={event.created_by}
               displayName={event.creator?.display_name || `User ${event.created_by.slice(-4)}`}
@@ -320,7 +440,7 @@ export function EnhancedEventCard({
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          {/* Host Actions */}
+          {/* Host Actions - Enhanced Glass Buttons */}
           {showHostActions && isHost && (onEdit || onDelete) && (
             <div className="flex gap-2">
               {onEdit && (
@@ -328,9 +448,9 @@ export function EnhancedEventCard({
                   variant="secondary"
                   size="sm"
                   onClick={() => onEdit(event)}
-                  className="flex-1"
+                  className="flex-1 glass-ripple hover-lift transition-all duration-300 bg-accent-secondary/10 border-accent-secondary/30 hover:bg-accent-secondary/20"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
                   Edit
                 </Button>
               )}
@@ -339,20 +459,20 @@ export function EnhancedEventCard({
                   variant="destructive"
                   size="sm"
                   onClick={() => onDelete(event)}
-                  className="flex-1"
+                  className="flex-1 glass-ripple hover-lift transition-all duration-300"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                   Delete
                 </Button>
               )}
             </div>
           )}
 
-          {/* Main Action */}
+          {/* Main Action - Enhanced Glass Button */}
           <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
-            <Button className="w-full group/btn">
+            <Button className="w-full group/btn glass-ripple hover-lift bg-gradient-primary hover:shadow-amber-lg transition-all duration-300">
               View Event Details
-              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-2 group-hover/btn:scale-110 transition-all duration-300" />
             </Button>
           </Link>
         </div>

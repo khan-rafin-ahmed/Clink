@@ -96,10 +96,13 @@ function App() {
               <Route path="/test-delete-profile" element={<DeleteProfileTest />} />
             </Routes>
           </main>
-          <footer className="bg-card border-t border-border py-6 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                © 2025 Thirstee. Built by Roughin while drinking beers and raising hell 🍺 
+          <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">
+            {/* Glass overlay effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/5 via-transparent to-transparent" />
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+              <p className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">
+                © 2025 Thirstee. Built by Roughin while drinking beers and raising hell 🍺🤘
               </p>
             </div>
           </footer>

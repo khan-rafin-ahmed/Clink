@@ -53,47 +53,47 @@ export function ToastRecap({ event, attendeeCount, photoCount, commentCount }: T
   }
 
   return (
-    <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+    <Card className="bg-gradient-card border border-accent-secondary/20 hover:border-accent-secondary/30 backdrop-blur-md shadow-gold transition-all duration-300">
       <CardContent className="pt-6">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
           {/* Main Recap Message */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-center gap-2 text-2xl">
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-3 text-3xl">
               {getVibeEmoji(event.vibe)}
-              <span className="text-4xl">🍻</span>
+              <span className="text-5xl">🍻</span>
               {getVibeEmoji(event.vibe)}
             </div>
-            
-            <h3 className="text-xl font-display font-bold text-foreground">
-              Toast Recap
+
+            <h3 className="text-2xl font-display font-bold text-foreground">
+              Toast Recap 🎉
             </h3>
-            
-            <p className="text-lg text-muted-foreground font-medium">
+
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed">
               {getRecapMessage()}
             </p>
           </div>
 
           {/* Event Details */}
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-            <Badge variant="secondary" className="flex items-center gap-1">
+            <Badge variant="secondary" className="flex items-center gap-1 bg-bg-glass border-border/30 hover:bg-bg-glass-hover transition-colors">
               <Calendar className="h-3 w-3" />
               {new Date(event.date_time).toLocaleDateString()}
             </Badge>
-            
-            <Badge variant="secondary" className="flex items-center gap-1">
+
+            <Badge variant="secondary" className="flex items-center gap-1 bg-accent-primary/10 text-accent-primary border-accent-primary/20 hover:bg-accent-primary/20 transition-colors">
               <Users className="h-3 w-3" />
-              {attendeeCount} attendee{attendeeCount !== 1 ? 's' : ''}
+              {attendeeCount} legend{attendeeCount !== 1 ? 's' : ''}
             </Badge>
-            
+
             {photoCount > 0 && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-accent-secondary/10 text-accent-secondary border-accent-secondary/20 hover:bg-accent-secondary/20 transition-colors">
                 <Camera className="h-3 w-3" />
                 {photoCount} photo{photoCount !== 1 ? 's' : ''}
               </Badge>
             )}
-            
+
             {commentCount > 0 && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-accent-secondary/10 text-accent-secondary border-accent-secondary/20 hover:bg-accent-secondary/20 transition-colors">
                 <MessageCircle className="h-3 w-3" />
                 {commentCount} comment{commentCount !== 1 ? 's' : ''}
               </Badge>
@@ -101,13 +101,13 @@ export function ToastRecap({ event, attendeeCount, photoCount, commentCount }: T
           </div>
 
           {/* Stats Summary */}
-          <p className="text-sm text-muted-foreground italic">
+          <p className="text-sm text-muted-foreground italic font-medium">
             {getEventStats()}
           </p>
 
           {/* Fun Quote */}
-          <div className="pt-2 border-t border-primary/20">
-            <p className="text-xs text-primary font-medium">
+          <div className="pt-3 border-t border-accent-secondary/20">
+            <p className="text-sm text-accent-primary font-bold">
               "What happens at Thirstee events, gets shared on Thirstee events." 🤘
             </p>
           </div>

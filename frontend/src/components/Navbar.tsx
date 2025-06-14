@@ -42,8 +42,11 @@ export function Navbar() {
   const avatarFallback = displayName.charAt(0).toUpperCase()
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 glass-nav border-b border-white/10 nav-float">
+      {/* Enhanced glass overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
@@ -57,13 +60,13 @@ export function Navbar() {
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-6">
             {/* Command Menu Search */}
-            <div className="w-64">
+            <div className="w-64 slide-in-left">
               <CommandMenuTrigger onOpen={() => commandMenu.setOpen(true)} />
             </div>
 
             <Link
               to="/discover"
-              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+              className="text-muted-foreground hover:text-accent-primary font-medium px-3 py-2 rounded-lg hover:bg-white/5 glass-effect"
             >
               Discover
             </Link>
@@ -71,15 +74,17 @@ export function Navbar() {
             {user ? (
               <>
                 {/* Notifications */}
-                <NotificationBell />
+                <div>
+                  <NotificationBell />
+                </div>
 
                 {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                      <Avatar className="w-8 h-8">
+                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 glass-effect hover:bg-white/10">
+                      <Avatar className="w-8 h-8 ring-2 ring-white/20 hover:ring-primary/40">
                         <AvatarImage src={userProfile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        <AvatarFallback className="bg-primary/20 text-primary text-sm backdrop-blur-sm">
                           {avatarFallback}
                         </AvatarFallback>
                       </Avatar>
@@ -88,40 +93,43 @@ export function Navbar() {
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56 glass-modal border-white/20 backdrop-blur-xl">
+                    <DropdownMenuLabel className="glass-effect rounded-lg p-3 mb-2">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
+                        <p className="text-sm font-medium leading-none text-shadow">
                           {displayName} 🍻
                         </p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
-                        <p className="text-xs leading-none text-primary font-medium">
+                        <p className="text-xs leading-none text-primary font-medium pulse-glow">
                           Ready to raise some hell?
                         </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuItem asChild className="hover:bg-white/10">
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>My Profile</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="hover:bg-white/10">
                       <Link to="/profile/edit" className="flex items-center">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit Profile</span>
                       </Link>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem disabled>
+                    <DropdownMenuItem disabled className="opacity-50">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-destructive">
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
                     </DropdownMenuItem>
@@ -129,10 +137,10 @@ export function Navbar() {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 slide-in-right">
                 <Link to="/login">
                   <Button
-                    variant="ghost"
+                    variant="glass"
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
                   >
@@ -141,8 +149,9 @@ export function Navbar() {
                 </Link>
                 <Link to="/login">
                   <Button
+                    variant="glass-primary"
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className=""
                   >
                     Sign up
                   </Button>
@@ -174,7 +183,7 @@ export function Navbar() {
                   {/* Navigation Links */}
                   <Link
                     to="/discover"
-                    className="text-foreground hover:text-primary transition-colors font-medium py-2 px-3 rounded-lg hover:bg-muted"
+                    className="text-foreground hover:text-accent-primary font-medium py-2 px-3 rounded-lg hover:bg-glass glass-effect"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Discover
@@ -206,7 +215,7 @@ export function Navbar() {
                         <div className="space-y-2">
                           <Link
                             to="/profile"
-                            className="flex items-center space-x-3 text-foreground hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-muted"
+                            className="flex items-center space-x-3 text-foreground hover:text-primary py-2 px-3 rounded-lg hover:bg-muted"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
                             <User className="w-4 h-4" />
@@ -215,7 +224,7 @@ export function Navbar() {
 
                           <Link
                             to="/profile/edit"
-                            className="flex items-center space-x-3 text-foreground hover:text-primary transition-colors py-2 px-3 rounded-lg hover:bg-muted"
+                            className="flex items-center space-x-3 text-foreground hover:text-primary py-2 px-3 rounded-lg hover:bg-muted"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
                             <Edit className="w-4 h-4" />
@@ -235,7 +244,7 @@ export function Navbar() {
                               signOut()
                               setIsMobileMenuOpen(false)
                             }}
-                            className="flex items-center space-x-3 text-destructive hover:text-destructive/80 transition-colors py-2 px-3 rounded-lg hover:bg-destructive/10 w-full text-left"
+                            className="flex items-center space-x-3 text-destructive hover:text-destructive/80 py-2 px-3 rounded-lg hover:bg-destructive/10 w-full text-left"
                           >
                             <LogOut className="w-4 h-4" />
                             <span>Sign out</span>

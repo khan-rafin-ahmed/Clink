@@ -171,7 +171,7 @@ export function JoinEventButton({
         </>
       ) : (
         <>
-          <span className="font-semibold">Join the Party</span>
+          <span className="font-bold">Join the Party</span>
           <span className="ml-2">🎉</span>
         </>
       )}

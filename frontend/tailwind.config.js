@@ -8,13 +8,25 @@ export default {
     extend: {
       colors: {
         border: {
-          DEFAULT: "hsl(var(--border))",
-          hover: "hsl(var(--border-hover))",
+          DEFAULT: "rgba(var(--border))",
+          hover: "rgba(var(--border-hover))",
         },
-        input: "hsl(var(--input))",
+        input: "rgba(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        // Glass-specific backgrounds
+        'bg-base': "hsl(var(--bg-base))",
+        'bg-glass': "rgba(var(--bg-glass))",
+        'bg-glass-hover': "rgba(var(--bg-glass-hover))",
+
+        // Masculine neon accent colors
+        'accent-primary': "hsl(var(--accent-primary))", // Deep Amber #FF7747
+        'accent-primary-hover': "hsl(var(--accent-primary-hover))", // #FF5E3A
+        'accent-secondary': "hsl(var(--accent-secondary))", // Warm Gold #FFD37E
+        'highlight-pink': "hsl(var(--highlight-pink))", // Optional Pink #FF5E78
+
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -45,9 +57,9 @@ export default {
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT: "rgba(var(--card))",
           foreground: "hsl(var(--card-foreground))",
-          hover: "hsl(var(--card-hover))",
+          hover: "rgba(var(--card-hover))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
@@ -95,11 +107,23 @@ export default {
         'md': 'var(--shadow-md)',
         'lg': 'var(--shadow-lg)',
         'xl': 'var(--shadow-xl)',
+        'glass': 'var(--shadow-glass)',
+        'glass-lg': 'var(--shadow-glass-lg)',
+        'amber': 'var(--shadow-amber)',
+        'amber-lg': 'var(--shadow-amber-lg)',
         'gold': 'var(--shadow-gold)',
-        'gold-lg': 'var(--shadow-gold-lg)',
+        'pink': 'var(--shadow-pink)',
+      },
+      backdropBlur: {
+        'sm': 'var(--blur-sm)',
+        'md': 'var(--blur-md)',
+        'lg': 'var(--blur-lg)',
+        'xl': 'var(--blur-xl)',
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
+        'gradient-secondary': 'var(--gradient-secondary)',
+        'gradient-glass': 'var(--gradient-glass)',
         'gradient-card': 'var(--gradient-card)',
         'gradient-hero': 'var(--gradient-hero)',
       },
@@ -107,8 +131,27 @@ export default {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.4s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
-        'shimmer': 'shimmer 2s infinite',
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        // Removed performance-heavy animations
+        // 'slide-in-left': 'slideInLeft 0.5s ease-out',
+        // 'slide-in-right': 'slideInRight 0.5s ease-out',
+        // 'scale-in-bounce': 'scaleInBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+        // 'shimmer': 'shimmer 2s infinite',
+        // 'pulse-slow': 'pulse 3s ease-in-out infinite',
+        // 'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
+        // 'breathe': 'breathe 4s ease-in-out infinite',
+        // 'float': 'float 3s ease-in-out infinite',
+        // 'float-slow': 'floatSlow 6s ease-in-out infinite',
+        // 'tilt': 'tilt 0.6s ease-in-out',
+        // 'tilt-3d': 'tilt3D 1s ease-in-out',
+        // 'ripple': 'ripple 0.6s ease-out',
+        // 'drink-splash': 'drinkSplash 0.8s ease-out',
+        // 'glass-shatter': 'glassShatter 0.5s ease-out',
+        // 'modal-slide-in': 'modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        // 'nav-float': 'navFloat 4s ease-in-out infinite',
+        // 'card-hover-lift': 'cardHoverLift 0.3s ease-out',
+        // 'glow': 'glow 2s ease-in-out infinite',
+        // 'glow-gold': 'glowGold 2s ease-in-out infinite',
+        // 'glow-pink': 'glowPink 2s ease-in-out infinite',
       },
       screens: {
         'xs': '475px',

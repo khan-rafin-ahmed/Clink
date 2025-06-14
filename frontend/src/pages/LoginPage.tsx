@@ -70,9 +70,8 @@ export function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden bg-bg-base">
         <div className="absolute inset-0 bg-gradient-hero"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
 
         <div className="relative flex h-screen items-center justify-center">
           <div className="text-center space-y-6 fade-in">
@@ -80,12 +79,12 @@ export function LoginPage() {
               <img
                 src="/thirstee-logo.svg"
                 alt="Thirstee"
-                className="h-20 w-auto mx-auto hover-scale"
+                className="h-20 w-auto mx-auto"
               />
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="absolute inset-0 bg-accent-primary/20 rounded-full blur-xl"></div>
             </div>
             <div className="space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+              <Loader2 className="h-10 w-10 animate-spin text-accent-primary mx-auto" />
               <p className="text-lg text-muted-foreground font-medium">Loading your session...</p>
             </div>
           </div>
@@ -97,9 +96,8 @@ export function LoginPage() {
   // Don't render login form if user is authenticated (redirect handled in useEffect)
   if (user) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden bg-bg-base">
         <div className="absolute inset-0 bg-gradient-hero"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
 
         <div className="relative flex h-screen items-center justify-center">
           <div className="text-center space-y-6 fade-in">
@@ -107,12 +105,12 @@ export function LoginPage() {
               <img
                 src="/thirstee-logo.svg"
                 alt="Thirstee"
-                className="h-20 w-auto mx-auto hover-scale"
+                className="h-20 w-auto mx-auto"
               />
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="absolute inset-0 bg-accent-primary/20 rounded-full blur-xl"></div>
             </div>
             <div className="space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+              <Loader2 className="h-10 w-10 animate-spin text-accent-primary mx-auto" />
               <p className="text-lg text-muted-foreground font-medium">Welcome back! Redirecting...</p>
             </div>
           </div>
@@ -122,15 +120,15 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Enhanced Background */}
+    <div className="min-h-screen relative overflow-hidden bg-bg-base">
+      {/* Masculine Glass Background */}
       <div className="absolute inset-0 bg-gradient-hero"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
 
-      {/* Animated Background Elements */}
+      {/* Floating Glass Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-primary opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-secondary opacity-8 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-64 h-64 glass-panel rounded-2xl opacity-20"></div>
       </div>
 
       <div className="relative flex items-center justify-center min-h-screen px-4 py-12">
@@ -142,15 +140,15 @@ export function LoginPage() {
                 <img
                   src="/thirstee-logo.svg"
                   alt="Thirstee"
-                  className="h-20 w-auto hover-scale"
+                  className="h-20 w-auto"
                 />
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 hover:opacity-100"></div>
               </div>
             </div>
 
             <div className="space-y-3">
               <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">
-                Welcome Back, <span className="bg-gradient-primary bg-clip-text text-transparent">Hell-Raiser!</span>
+                Welcome Back, <span className="text-accent-primary" style={{ textShadow: '0 0 20px rgba(255, 119, 71, 0.4)' }}>Hell-Raiser!</span>
               </h1>
               <p className="text-lg text-muted-foreground">
                 Ready to raise some hell? Let's get you back in there! 🍻
@@ -158,20 +156,24 @@ export function LoginPage() {
             </div>
           </div>
 
-          {/* Enhanced Login Card */}
-          <div className="bg-gradient-card rounded-2xl p-8 shadow-xl border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm">
-            {error && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-destructive">⚠️</span>
-                  <p className="text-sm text-destructive font-medium">{error}</p>
+          {/* Enhanced Glass Login Card */}
+          <div className="glass-modal rounded-2xl p-8 shadow-glass-lg border border-white/15 hover:border-accent-primary/40 relative overflow-hidden">
+            {/* Glass shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 opacity-0 hover:opacity-100 pointer-events-none rounded-2xl" />
+
+            <div className="relative z-10">
+              {error && (
+                <div className="mb-6 p-4 glass-effect bg-destructive/10 border border-destructive/30 rounded-xl backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <span className="text-destructive text-lg">⚠️</span>
+                    <p className="text-sm text-destructive font-medium">{error}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {magicLinkSent ? (
-              <div className="text-center space-y-6 scale-in">
-                <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold">
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-amber">
                   <span className="text-3xl">📧</span>
                 </div>
                 <div className="space-y-3">
@@ -179,7 +181,7 @@ export function LoginPage() {
                     Check Your Email
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    We sent a magic link to <span className="text-primary font-semibold">{email}</span>
+                    We sent a magic link to <span className="text-accent-primary font-semibold">{email}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Click the link to sign in instantly - no password needed!
@@ -191,66 +193,72 @@ export function LoginPage() {
                   className="w-full group"
                 >
                   <span>Try Different Email</span>
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">←</span>
+                  <span className="ml-2">←</span>
                 </Button>
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Enhanced Google Sign In */}
+                {/* Enhanced Glass Google Sign In */}
                 <Button
                   onClick={handleGoogleSignIn}
-                  className="w-full flex items-center justify-center gap-3 h-12 group hover-glow"
+                  variant="glass"
+                  className="w-full flex items-center justify-center gap-3 h-14 group"
                   size="lg"
                 >
-                  <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center shadow-sm">
-                    <span className="text-primary font-bold">G</span>
+                  <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-glass">
+                    <span className="text-accent-primary font-bold text-lg">G</span>
                   </div>
-                  <span className="font-semibold">Continue with Google</span>
-                  <span className="ml-auto group-hover:translate-x-1 transition-transform">→</span>
+                  <span className="font-semibold text-lg">Continue with Google</span>
+                  <span className="ml-auto">→</span>
                 </Button>
 
-                {/* Enhanced Divider */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/50"></div>
-                  </div>
+                {/* Enhanced Glass Divider */}
+                <div className="relative py-2">
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-card text-muted-foreground font-medium">or continue with email</span>
+                    <span className="px-6 py-2 glass-effect rounded-full text-muted-foreground font-medium border border-white/10 backdrop-blur-md">
+                      or continue with email
+                    </span>
                   </div>
                 </div>
 
-                {/* Enhanced Magic Link Form */}
-                <form onSubmit={handleMagicLink} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                {/* Enhanced Glass Magic Link Form */}
+                <form onSubmit={handleMagicLink} className="space-y-6 slide-up">
+                  <div className="space-y-3">
+                    <Label htmlFor="email" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <span>📧</span>
                       Email address
                     </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12 text-base"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-14 text-base pl-12"
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        ✉️
+                      </div>
+                    </div>
                   </div>
                   <Button
                     type="submit"
-                    variant="outline"
-                    className="w-full h-12 group"
+                    variant="glass"
+                    className="w-full h-14 group"
                     disabled={isLoading || !email}
                     size="lg"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        <span>Sending Magic Link...</span>
+                        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                        <span className="text-lg">Sending Magic Link...</span>
                       </>
                     ) : (
                       <>
-                        <span>✨ Send Magic Link</span>
-                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                        <span className="text-lg">✨ Send Magic Link</span>
+                        <span className="ml-3 text-xl">→</span>
                       </>
                     )}
                   </Button>
@@ -264,17 +272,18 @@ export function LoginPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* Enhanced Footer */}
           <div className="text-center space-y-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
               By signing in, you agree to our{' '}
-              <span className="text-primary hover:text-primary-hover cursor-pointer underline underline-offset-2">
+              <span className="text-accent-primary hover:text-accent-primary-hover cursor-pointer underline underline-offset-2">
                 terms
               </span>{' '}
               and{' '}
-              <span className="text-primary hover:text-primary-hover cursor-pointer underline underline-offset-2">
+              <span className="text-accent-primary hover:text-accent-primary-hover cursor-pointer underline underline-offset-2">
                 privacy policy
               </span>
             </p>

@@ -152,10 +152,12 @@ export function EventComments({ eventId, canComment }: EventCommentsProps) {
   }
 
   return (
-    <Card>
+    <Card className="bg-gradient-card border border-border hover:border-border-hover backdrop-blur-md shadow-amber">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 font-display">
+          <div className="w-8 h-8 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+            <MessageCircle className="h-5 w-5 text-accent-primary" />
+          </div>
           Comments ({comments.length})
         </CardTitle>
       </CardHeader>

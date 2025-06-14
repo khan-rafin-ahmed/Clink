@@ -151,75 +151,88 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
   return (
     <Card className={cn(
-      "bg-gradient-to-r from-background via-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-pointer group",
+      "glass-card glass-halo relative overflow-hidden group cursor-pointer",
       className
     )}>
+      {/* Parallax Background Layers */}
+      <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/10 via-transparent to-accent-secondary/10 opacity-60"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-accent-primary/5 to-transparent opacity-80"></div>
+
       <Link to={eventUrl}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🔥</span>
-              <h3 className="text-lg font-bold text-foreground">
+        <CardContent className="relative z-10 p-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <span className="text-2xl float flex-shrink-0">🔥</span>
+              <h3 className="text-lg font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent truncate">
                 Your Next Clink is Coming Up!
               </h3>
             </div>
-            <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
           </div>
 
           <div className="space-y-3">
             {/* Event Title and Host Badge */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-xl font-bold text-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <h4 className="text-xl font-bold text-foreground truncate max-w-[300px] flex-shrink-0">
                 {nextEvent.title}
               </h4>
-              {isHost && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                  <Crown className="w-3 h-3 mr-1" />
-                  You're Hosting
-                </Badge>
-              )}
-              {joinStatus === 'crew' && (
-                <Badge variant="outline" className="border-primary/30 text-primary">
-                  Crew Member
-                </Badge>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isHost && (
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 min-h-[36px] flex items-center">
+                    <Crown className="w-3 h-3 mr-1" />
+                    You're Hosting
+                  </Badge>
+                )}
+                {joinStatus === 'crew' && (
+                  <Badge variant="outline" className="border-primary/30 text-primary min-h-[36px] flex items-center">
+                    Crew Member
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            {/* Event Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">
+            {/* Event Details - Enhanced Glass Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="glass-pill px-3 py-2 flex items-center gap-2 pill-glow min-h-[36px]">
+                <Calendar className="w-4 h-4 clock-tick text-accent-primary flex-shrink-0" />
+                <span className="text-sm font-medium text-foreground">
                   {formatEventTiming(nextEvent.date_time)}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium truncate">
-                  {nextEvent.place_name || nextEvent.location}
-                </span>
-              </div>
+              {nextEvent.location && (
+                <div className="glass-pill px-3 py-2 flex items-center gap-2 min-h-[36px] max-w-[250px]">
+                  <MapPin className="w-4 h-4 text-accent-secondary flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {nextEvent.place_name || nextEvent.location}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Action Button */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
+            {/* Action Section - Enhanced Glass Design with Responsive Layout */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+              <div className="flex items-center gap-2 flex-wrap">
                 {nextEvent.drink_type && (
-                  <Badge variant="outline" className="text-xs">
-                    {nextEvent.drink_type}
-                  </Badge>
+                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-secondary border border-accent-secondary/30 min-h-[36px] flex items-center">
+                    🍺 {nextEvent.drink_type}
+                  </div>
                 )}
                 {nextEvent.vibe && (
-                  <Badge variant="outline" className="text-xs">
-                    {nextEvent.vibe} vibe
-                  </Badge>
+                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-primary border border-accent-primary/30 min-h-[36px] flex items-center">
+                    ✨ {nextEvent.vibe} vibe
+                  </div>
                 )}
               </div>
 
               <Button
                 variant={isHost ? "default" : "outline"}
                 size="sm"
-                className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                className={cn(
+                  "min-h-[36px] flex-shrink-0",
+                  isHost
+                    ? "bg-gradient-primary hover:shadow-amber-lg"
+                    : "glass-card hover:border-accent-primary/50"
+                )}
                 onClick={(e) => {
                   e.preventDefault()
                   window.location.href = eventUrl

@@ -327,7 +327,7 @@ function DiscoverContent() {
   // Handle empty state
   if (!events || !Array.isArray(events) || events.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg-base">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
@@ -345,7 +345,7 @@ function DiscoverContent() {
               Be the first to create an epic drinking session!
             </p>
             <Link to="/">
-              <Button>Create First Event</Button>
+              <Button className="glass-button">Create First Event</Button>
             </Link>
           </div>
         </div>
@@ -357,46 +357,50 @@ function DiscoverContent() {
 
   // Main content render
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Enhanced Background */}
+    <div className="min-h-screen relative overflow-hidden bg-bg-base">
+      {/* Masculine Glass Background */}
       <div className="absolute inset-0 bg-gradient-hero"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
 
-      {/* Animated Background Elements */}
+      {/* Floating Glass Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-primary opacity-8 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-secondary opacity-6 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 glass-panel rounded-2xl opacity-15"></div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Enhanced Header */}
+        {/* Masculine Glass Header */}
         <div className="text-center mb-12 fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-6">
-            <span className="text-primary font-medium">Discover Events</span>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30 mb-6">
+            <span className="text-accent-primary font-medium">Discover Events</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground mb-6">
-            Discover Epic <span className="bg-gradient-primary bg-clip-text text-transparent">Sessions</span> 🍻
+            Discover Epic <span className="text-accent-primary" style={{ textShadow: '0 0 20px rgba(255, 119, 71, 0.4)' }}>Sessions</span> 🍻
           </h1>
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Find amazing drinking sessions happening near you. Join the party and make some legendary memories!
           </p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Search */}
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search sessions, locations, or hosts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Enhanced Glass Filters and Search */}
+        <div className="glass-modal rounded-2xl p-6 sm:p-8 border border-white/15 hover:border-accent-primary/30 mb-8 relative overflow-hidden">
+          {/* Glass shimmer effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 opacity-0 hover:opacity-100 pointer-events-none rounded-2xl" />
+
+          <div className="relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+              {/* Enhanced Search */}
+              <div className="lg:col-span-2">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                  <Input
+                    placeholder="Search sessions, locations, or hosts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 h-14 text-base"
+                  />
+                </div>
               </div>
-            </div>
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
@@ -458,6 +462,7 @@ function DiscoverContent() {
                 <SelectItem value="whiskey">🥃 Whiskey</SelectItem>
               </SelectContent>
             </Select>
+            </div>
           </div>
         </div>
 
@@ -478,10 +483,10 @@ function DiscoverContent() {
         </div>
 
         {/* Enhanced Events Grid */}
-        <div className="slide-up" style={{ animationDelay: '0.4s' }}>
+        <div>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-24 h-24 glass-effect rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-5xl">🔍</span>
               </div>
               <h3 className="text-2xl font-heading font-bold mb-3">No Sessions Found</h3>
@@ -495,10 +500,10 @@ function DiscoverContent() {
                   setFilterBy('all')
                   setDrinkFilter('all')
                 }}
-                className="group hover-glow"
+                className="group glass-button"
               >
                 🔄 Clear Filters
-                <span className="ml-2 group-hover:rotate-180 transition-transform">↻</span>
+                <span className="ml-2">↻</span>
               </Button>
             </div>
           ) : (
@@ -516,7 +521,7 @@ function DiscoverContent() {
                     } : undefined
                   }}
                   variant="default"
-                  className="hover:shadow-lg transition-shadow duration-200"
+                  className=""
                 />
               )
             })}

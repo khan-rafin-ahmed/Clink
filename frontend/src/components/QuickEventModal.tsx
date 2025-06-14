@@ -373,11 +373,11 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         </Button>
       )}
 
-      {/* Modal */}
+      {/* Enhanced Liquid Glass Modal */}
       <Dialog open={open} onOpenChange={handleCloseModal}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-display font-bold text-foreground">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 glass-modal border-white/20">
+        <DialogHeader className="relative z-10">
+          <DialogTitle className="text-2xl font-display font-bold text-foreground text-shadow">
             Time to Raise Some Hell! 🍺
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -387,8 +387,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`h-2 flex-1 rounded-full ${
-                  i <= step ? 'bg-primary' : 'bg-muted'
+                className={`h-3 flex-1 rounded-full ${
+                  i <= step
+                    ? 'bg-gradient-primary shadow-amber'
+                    : 'bg-white/20 glass-effect'
                 }`}
               />
             ))}
@@ -447,7 +449,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       key={option.value}
                       type="button"
                       onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, time: option.value })) }}
-                      className={`p-3 rounded-lg border text-center transition-colors ${
+                      className={`p-3 rounded-lg border text-center ${
                         formData.time === option.value
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border hover:border-primary/50'
@@ -478,7 +480,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       key={drink.value}
                       type="button"
                       onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, drink_type: drink.value })) }}
-                      className={`p-3 rounded-lg border text-center transition-colors ${
+                      className={`p-3 rounded-lg border text-center ${
                         formData.drink_type === drink.value
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border hover:border-primary/50'
@@ -504,7 +506,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       key={vibe.value}
                       type="button"
                       onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, vibe: vibe.value })) }}
-                      className={`p-3 rounded-lg border text-center transition-colors ${
+                      className={`p-3 rounded-lg border text-center ${
                         formData.vibe === vibe.value
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border hover:border-primary/50'
@@ -533,7 +535,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                         <button
                           type="button"
                           onClick={removeCoverImage}
-                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -561,7 +563,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                         onChange={handleCoverImageChange}
                         className="hidden"
                       />
-                      <div className="w-full p-3 border border-border rounded-lg text-center cursor-pointer hover:border-primary/50 transition-colors">
+                      <div className="w-full p-3 border border-border rounded-lg text-center cursor-pointer hover:border-primary/50">
                         <Upload className="w-4 h-4 mx-auto mb-1" />
                         <div className="text-xs font-medium">Upload Cover</div>
                         <div className="text-xs text-muted-foreground">Max 5MB</div>
@@ -588,7 +590,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, is_public: true })) }}
-                    className={`p-3 rounded-lg border text-center transition-colors ${
+                    className={`p-3 rounded-lg border text-center ${
                       formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:border-primary/50'
@@ -601,7 +603,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, is_public: false })) }}
-                    className={`p-3 rounded-lg border text-center transition-colors ${
+                    className={`p-3 rounded-lg border text-center ${
                       !formData.is_public
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:border-primary/50'
@@ -646,7 +648,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       <button
                         type="button"
                         onClick={(e) => { e.preventDefault(); setSelectedCrew('') }}
-                        className={`p-3 rounded-lg border text-left transition-colors ${
+                        className={`p-3 rounded-lg border text-left ${
                           selectedCrew === ''
                             ? 'border-primary bg-primary/10 text-primary'
                             : 'border-border hover:border-primary/50'
@@ -660,7 +662,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                           key={crew.id}
                           type="button"
                           onClick={(e) => { e.preventDefault(); setSelectedCrew(crew.id) }}
-                          className={`p-3 rounded-lg border text-left transition-colors ${
+                          className={`p-3 rounded-lg border text-left ${
                             selectedCrew === crew.id
                               ? 'border-primary bg-primary/10 text-primary'
                               : 'border-border hover:border-primary/50'

@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarStack } from '@/components/AvatarStack'
 import { leaveCrew, getCrewMembers, createCrewInviteLink } from '@/lib/crewService'
 import type { Crew, CrewMember } from '@/types'
 import { EditCrewModal } from '@/components/EditCrewModal'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import {
   Users,
   Crown,
@@ -46,6 +47,22 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
   const [showMembers, setShowMembers] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [members, setMembers] = useState<CrewMember[]>([])
+
+  // Fetch crew members for avatar stack
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!crew.id) return
+
+      try {
+        const crewMembers = await getCrewMembers(crew.id)
+        setMembers(crewMembers)
+      } catch (error) {
+        console.error('Error fetching crew members:', error)
+      }
+    }
+
+    fetchMembers()
+  }, [crew.id])
 
   const vibeIcons = {
     casual: Coffee,
@@ -106,35 +123,50 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
 
   return (
     <>
-      <Card className="bg-card border-border hover:border-primary/50 transition-all duration-200">
-        <CardHeader className="pb-3">
+      <Card className="glass-card glass-border-ring group h-full flex flex-col">
+        <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <VibeIcon className="w-5 h-5 text-primary" />
+              <div className="p-2 rounded-lg bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 glass-shimmer">
+                <VibeIcon className="w-5 h-5 text-accent-primary" />
               </div>
-              <div>
-                <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-                  {crew.name}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2 truncate">
+                  <span className="truncate">{crew.name}</span>
                   {crew.is_creator && (
-                    <Crown className="w-4 h-4 text-amber-500" />
+                    <div className="relative flex-shrink-0">
+                      <Crown className="w-4 h-4 text-amber-500 float" />
+                      <div className="absolute inset-0 w-4 h-4 text-amber-500 opacity-50 blur-sm">
+                        <Crown className="w-4 h-4" />
+                      </div>
+                    </div>
                   )}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                    <VibeIcon className="w-3 h-3 mr-1" />
+                  <div className="glass-pill px-2 py-1 text-xs flex items-center gap-1 font-medium border-accent-primary/30 text-accent-primary">
+                    <VibeIcon className="w-3 h-3" />
                     {crew.vibe} {vibeEmojis[crew.vibe]}
-                  </Badge>
-                  <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'} className="text-xs whitespace-nowrap">
+                  </div>
+                  <div className={cn(
+                    "glass-pill px-2 py-1 text-xs flex items-center gap-1 font-medium",
+                    crew.visibility === 'public'
+                      ? "border-accent-secondary/30 text-accent-secondary"
+                      : "border-white/30 text-foreground"
+                  )}>
                     {crew.visibility === 'public' ? (
-                      <><Globe className="w-3 h-3 mr-1" />Public</>
+                      <><Globe className="w-3 h-3" />Public</>
                     ) : (
-                      <><Lock className="w-3 h-3 mr-1" />Private</>
+                      <><Lock className="w-3 h-3" />Private</>
                     )}
-                  </Badge>
-                  <Badge variant={crew.is_creator ? 'default' : 'secondary'} className="text-xs whitespace-nowrap">
+                  </div>
+                  <div className={cn(
+                    "glass-pill px-2 py-1 text-xs flex items-center gap-1 font-medium",
+                    crew.is_creator
+                      ? "border-amber-500/30 text-amber-500"
+                      : "border-blue-400/30 text-blue-400"
+                  )}>
                     {crew.is_creator ? '👑 Host' : '🎟️ Member'}
-                  </Badge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -177,26 +209,49 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
-          {crew.description && (
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-              {crew.description}
-            </p>
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          {/* Description with improved typography - removed excess spacing */}
+          {crew.description ? (
+            <div className="mb-4 flex-shrink-0">
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 break-words">
+                {crew.description}
+              </p>
+            </div>
+          ) : (
+            /* Placeholder for empty description to maintain visual balance */
+            <div className="mb-4 flex-shrink-0">
+              <p className="text-sm text-muted-foreground/60 italic leading-relaxed">
+                No description provided yet...
+              </p>
+            </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="w-4 h-4" />
-              <span>{crew.member_count || 0} member{(crew.member_count || 0) !== 1 ? 's' : ''}</span>
+          {/* Spacer to push bottom content down */}
+          <div className="flex-1"></div>
+
+          {/* Consolidated Bottom Section - Avatar Stack, Member Count, and Action Button on Same Line */}
+          <div className="flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              {members.length > 0 ? (
+                <AvatarStack members={members} max={5} size="sm" />
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>Loading...</span>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                {crew.member_count || 0} member{(crew.member_count || 0) !== 1 ? 's' : ''}
+              </p>
             </div>
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate(`/crew/${crew.id}`)}
-              className="text-xs"
+              className="text-xs border-accent-primary/30 hover:border-accent-primary/50 hover:bg-accent-primary/10 px-3 py-1.5 h-auto"
             >
-              View Crew
+              View Crew →
             </Button>
           </div>
         </CardContent>

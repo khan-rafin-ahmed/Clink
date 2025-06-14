@@ -2,12 +2,14 @@ import { format, isToday, isTomorrow, isThisWeek, isPast } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
+import { GyroGlassCard } from './GyroGlassCard'
+
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
   Calendar,
@@ -41,6 +43,7 @@ interface EventCardProps {
 
 export function EventCard({ event, showHostActions = false, onEdit, onDelete }: EventCardProps) {
   const { user } = useAuth()
+
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Generate proper URL based on event privacy and slug
@@ -166,27 +169,40 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
   const statusBadge = getStatusBadge(event.date_time)
 
   return (
-    <Card className="interactive-card group">
-      <CardHeader className="pb-3">
+    <GyroGlassCard
+      className="group glass-card border border-white/10 hover:border-primary/30 rounded-xl"
+      intensity={0.8}
+      glassEffect="normal"
+      enableGyro={true}
+      fallbackToMouse={true}
+    >
+
+      <CardHeader className="pb-3 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-heading font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+              <h3 className="font-heading font-semibold text-lg line-clamp-2 group-hover:text-primary text-shadow">
                 {event.title}
               </h3>
-              <Badge variant={statusBadge.variant} size="sm">
+              <Badge
+                variant={statusBadge.variant}
+                size="sm"
+                className="glass-effect border-white/20 backdrop-blur-sm hover:backdrop-blur-md"
+              >
                 {statusBadge.text}
               </Badge>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <Calendar className="w-4 h-4" />
-              {formatEventTime(event.date_time)}
+              <Calendar className="w-4 h-4 group-hover:text-primary" />
+              <span className="group-hover:text-foreground">
+                {formatEventTime(event.date_time)}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4" />
+              <MapPin className="w-4 h-4 group-hover:text-primary" />
               <div className="truncate max-w-[200px]">
                 <span
-                  className="text-sm text-muted-foreground truncate"
+                  className="text-sm text-muted-foreground truncate group-hover:text-foreground"
                   title={event.place_nickname || getLocationDisplayName(event)}
                 >
                   {event.place_nickname || getLocationDisplayName(event)}
@@ -205,22 +221,25 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 relative z-10">
         {/* Event Description */}
         {event.notes && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 group-hover:text-foreground/80">
             {event.notes}
           </p>
         )}
 
         {/* Vibe Badge and RSVP Count */}
         <div className="flex items-center gap-2 mb-4">
-          <Badge variant="outline" className={getVibeColor(event.vibe)}>
+          <Badge
+            variant="outline"
+            className={`${getVibeColor(event.vibe)} glass-effect backdrop-blur-sm hover:backdrop-blur-md`}
+          >
             {event.vibe}
           </Badge>
           <div className="flex items-center gap-1 text-sm">
-            <Users className="w-4 h-4" />
-            <span className="text-muted-foreground">
+            <Users className="w-4 h-4 group-hover:text-primary" />
+            <span className="text-muted-foreground group-hover:text-foreground">
               {displayCount} {displayCount === 1 ? 'person' : 'people'} going
             </span>
           </div>
@@ -233,16 +252,22 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           avatarUrl={event.creator?.avatar_url}
           isHost={true}
         >
-          <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer">
-            <UserAvatar
-              userId={event.created_by}
-              displayName={event.creator?.display_name || getHostDisplayName()}
-              avatarUrl={event.creator?.avatar_url}
-              size="xs"
-            />
+          <div className="flex items-center gap-2 mb-4 p-3 glass-effect rounded-xl hover:bg-white/10 cursor-pointer border border-white/10 hover:border-primary/30">
+            <div className="relative">
+              <UserAvatar
+                userId={event.created_by}
+                displayName={event.creator?.display_name || getHostDisplayName()}
+                avatarUrl={event.creator?.avatar_url}
+                size="xs"
+                className="ring-2 ring-white/20 hover:ring-primary/40"
+              />
+              {isHost && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {isHost ? 'Hosted by You' : `Hosted by ${getHostDisplayName()}`}
+              <span className="text-sm text-muted-foreground group-hover:text-foreground">
+                {isHost ? 'Hosted by You 🍻' : `Hosted by ${getHostDisplayName()}`}
               </span>
               {/* Crew badge removed - using Crew System now */}
             </div>
@@ -256,10 +281,10 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             <div className="flex gap-2">
               {onEdit && (
                 <Button
-                  variant="secondary"
+                  variant="glass"
                   size="sm"
                   onClick={() => onEdit(event)}
-                  className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30"
+                  className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary border-primary/30 hover:border-primary/50"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
@@ -267,10 +292,10 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               )}
               {onDelete && (
                 <Button
-                  variant="secondary"
+                  variant="glass"
                   size="sm"
                   onClick={() => onDelete(event)}
-                  className="flex-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/20 hover:border-destructive/30"
+                  className="flex-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30 hover:border-destructive/50"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -283,19 +308,22 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
           <div className="flex gap-2">
             {/* View Details Button */}
             <Link to={getEventUrl().replace(window.location.origin, '')} className="flex-1">
-              <Button variant="outline" className="w-full group/btn">
+              <Button
+                variant="glass-primary"
+                className="w-full group/btn backdrop-blur-lg hover:backdrop-blur-xl"
+              >
                 <span className="hidden sm:inline">View Details</span>
                 <span className="sm:hidden">Details</span>
-                <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
 
             {/* Share Button */}
             <Button
               onClick={() => setIsShareModalOpen(true)}
-              variant="ghost"
+              variant="glass"
               size="icon-sm"
-              className="text-muted-foreground hover:text-primary hover:bg-primary/10 hover-scale"
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10 glass-effect"
             >
               <Share2 className="w-4 h-4" />
               <span className="sr-only">Share</span>
@@ -311,6 +339,6 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
         title={event.title}
         url={eventUrl}
       />
-    </Card>
+    </GyroGlassCard>
   )
 }

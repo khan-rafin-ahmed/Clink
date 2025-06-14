@@ -117,11 +117,13 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
   }
 
   return (
-    <Card>
+    <Card className="bg-gradient-card border border-border hover:border-border-hover backdrop-blur-md shadow-amber">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 font-display">
+            <div className="w-8 h-8 rounded-lg bg-accent-primary/10 flex items-center justify-center">
+              <Camera className="h-5 w-5 text-accent-primary" />
+            </div>
             Event Gallery ({photos.length})
           </CardTitle>
 
@@ -139,6 +141,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
+                className="bg-bg-glass hover:bg-bg-glass-hover border-border/30 backdrop-blur-sm hover:scale-105 transition-all duration-200"
               >
                 {uploading ? (
                   <>

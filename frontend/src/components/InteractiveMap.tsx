@@ -105,7 +105,7 @@ export function InteractiveMap({
   return (
     <div
       ref={mapRef}
-      className={cn("rounded-lg overflow-hidden", className)}
+      className={cn("rounded-xl overflow-hidden border border-border/30 backdrop-blur-sm", className)}
       style={{ width, height }}
     />
   )

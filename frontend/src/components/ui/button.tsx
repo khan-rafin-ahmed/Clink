@@ -2,28 +2,33 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
+import { useInteractionFeedback } from "@/lib/interactionFeedback"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-primary text-primary-foreground shadow-md hover:shadow-gold-lg hover:shadow-lg border border-primary/20 hover:border-primary-hover/40",
+          "glass-button bg-gradient-primary text-primary-foreground shadow-amber hover:shadow-amber-lg border border-primary/30 hover:border-primary-hover/50 backdrop-blur-md hover:backdrop-blur-lg",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive-hover hover:shadow-lg border border-destructive/20 hover:border-destructive-hover/40",
+          "glass-button bg-destructive text-destructive-foreground shadow-md hover:bg-destructive-hover hover:shadow-lg border border-destructive/30 hover:border-destructive-hover/50 backdrop-blur-md",
         outline:
-          "border-2 border-primary/60 bg-background text-primary shadow-sm hover:bg-primary hover:text-primary-foreground hover:shadow-gold hover:border-primary-hover backdrop-blur-sm",
+          "glass-effect border-2 border-primary/60 bg-transparent text-primary shadow-glass hover:bg-primary/10 hover:text-primary-foreground hover:shadow-amber hover:border-primary-hover backdrop-blur-md hover:backdrop-blur-lg",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-hover hover:shadow-md border border-secondary/20 hover:border-secondary-hover/40",
+          "glass-button bg-secondary/80 text-secondary-foreground shadow-glass hover:bg-secondary-hover/90 hover:shadow-md border border-secondary/30 hover:border-secondary-hover/50 backdrop-blur-md",
         ghost:
-          "hover:bg-accent/20 hover:text-accent-foreground transition-colors duration-200 hover:backdrop-blur-sm",
+          "hover:bg-accent/20 hover:text-accent-foreground hover:backdrop-blur-sm hover:shadow-glass",
         link:
-          "text-primary underline-offset-4 hover:underline hover:text-primary-hover transition-colors duration-200",
+          "text-primary underline-offset-4 hover:underline hover:text-primary-hover",
         success:
-          "bg-success text-success-foreground shadow-md hover:shadow-lg border border-success/20",
+          "glass-button bg-success text-success-foreground shadow-md hover:shadow-lg border border-success/30 backdrop-blur-md",
         warning:
-          "bg-warning text-warning-foreground shadow-md hover:shadow-lg border border-warning/20",
+          "glass-button bg-warning text-warning-foreground shadow-md hover:shadow-lg border border-warning/30 backdrop-blur-md",
+        glass:
+          "glass-pill bg-transparent text-foreground border border-white/20 hover:border-primary/40 hover:text-primary backdrop-blur-lg hover:backdrop-blur-xl",
+        'glass-primary':
+          "glass-pill bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30 hover:border-primary/60 backdrop-blur-lg hover:backdrop-blur-xl",
       },
       size: {
         default: "h-10 px-6 py-2 text-sm",
@@ -49,12 +54,44 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, onMouseEnter, ...props }, ref) => {
+    const feedback = useInteractionFeedback()
+    const buttonRef = React.useRef<HTMLButtonElement>(null)
+
+    // Combine refs
+    React.useImperativeHandle(ref, () => buttonRef.current!)
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Trigger interaction feedback based on variant
+      if (variant === 'glass-primary' || variant === 'default') {
+        feedback.drinkSplash(buttonRef.current || undefined)
+      } else if (variant === 'glass') {
+        feedback.glassClick(buttonRef.current || undefined)
+      } else if (variant === 'destructive') {
+        feedback.error(buttonRef.current || undefined)
+      } else {
+        feedback.glassClick(buttonRef.current || undefined)
+      }
+
+      onClick?.(e)
+    }
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Subtle hover feedback for glass variants
+      if (variant?.includes('glass')) {
+        feedback.glassHover(buttonRef.current || undefined)
+      }
+
+      onMouseEnter?.(e)
+    }
+
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        ref={buttonRef}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
         {...props}
       />
     )
