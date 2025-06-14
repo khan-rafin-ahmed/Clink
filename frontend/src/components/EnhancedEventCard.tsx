@@ -268,8 +268,8 @@ export function EnhancedEventCard({
       <CardContent className="p-4 sm:p-6">
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-          <MapPin className="w-4 h-4" />
-          <span className="truncate">
+          <MapPin className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate" title={event.place_nickname || getLocationDisplayName(event)}>
             {event.place_nickname || getLocationDisplayName(event)}
           </span>
         </div>

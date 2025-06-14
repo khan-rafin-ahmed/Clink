@@ -10,6 +10,7 @@ import { CreateCrewModal } from '@/components/CreateCrewModal'
 import { CrewCard } from '@/components/CrewCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
 import { EventTabs } from '@/components/EventTabs'
+import { ProgressAnalysisPanel } from '@/components/ProgressAnalysisPanel'
 import { useEffect, useState } from 'react'
 
 import { Calendar, Plus, Users, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -911,6 +912,9 @@ export function UserProfile() {
           onEventDeleted={handleEventDeleted}
         />
       )}
+
+      {/* Progress Analysis Panel - Only show in development */}
+      {process.env.NODE_ENV === 'development' && <ProgressAnalysisPanel />}
     </div>
   )
 }

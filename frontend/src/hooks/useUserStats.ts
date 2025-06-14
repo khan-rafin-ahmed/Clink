@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { progressTracker } from '@/lib/progressTracker'
 
 interface UserStatsData {
   totalEvents: number
@@ -72,33 +73,126 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
     setError(null)
 
     try {
-      // Use count queries for better performance
-      const [totalEventsResult, upcomingEventsResult, totalRSVPsResult] = await Promise.allSettled([
-        // Total events count
+      const now = new Date().toISOString()
+
+      // Get all event IDs the user is associated with
+      const [
+        createdEventsResult,
+        rsvpEventsResult,
+        invitedEventsResult,
+        crewEventsResult
+      ] = await Promise.allSettled([
+        // 1. Events user created
         supabase
           .from('events')
-          .select('*', { count: 'exact', head: true })
+          .select('id, date_time')
           .eq('created_by', targetUserId),
 
-        // Upcoming events count
-        supabase
-          .from('events')
-          .select('*', { count: 'exact', head: true })
-          .eq('created_by', targetUserId)
-          .gte('date_time', new Date().toISOString()),
-
-        // Total RSVPs count
+        // 2. Events user RSVP'd to with 'going' status
         supabase
           .from('rsvps')
-          .select('*', { count: 'exact', head: true })
+          .select('event_id, events!inner(id, date_time)')
           .eq('user_id', targetUserId)
+          .eq('status', 'going'),
+
+        // 3. Events user was directly invited to with 'accepted' status
+        supabase
+          .from('event_members')
+          .select('event_id, events!inner(id, date_time)')
+          .eq('user_id', targetUserId)
+          .eq('status', 'accepted'),
+
+        // 4. Events from crews user belongs to
+        supabase
+          .from('crew_members')
+          .select(`
+            crew_id,
+            crews!inner(
+              events!inner(id, date_time)
+            )
+          `)
+          .eq('user_id', targetUserId)
+          .eq('status', 'accepted')
       ])
 
-      const newStats: UserStatsData = {
-        totalEvents: totalEventsResult.status === 'fulfilled' ? (totalEventsResult.value.count || 0) : 0,
-        upcomingEvents: upcomingEventsResult.status === 'fulfilled' ? (upcomingEventsResult.value.count || 0) : 0,
-        totalRSVPs: totalRSVPsResult.status === 'fulfilled' ? (totalRSVPsResult.value.count || 0) : 0
+      // Collect all unique event IDs and their dates
+      const allEventIds = new Set<string>()
+      const eventDates: Record<string, string> = {}
+
+      // Process created events
+      if (createdEventsResult.status === 'fulfilled' && createdEventsResult.value.data) {
+        createdEventsResult.value.data.forEach((event: any) => {
+          allEventIds.add(event.id)
+          eventDates[event.id] = event.date_time
+        })
       }
+
+      // Process RSVP events
+      if (rsvpEventsResult.status === 'fulfilled' && rsvpEventsResult.value.data) {
+        rsvpEventsResult.value.data.forEach((rsvp: any) => {
+          if (rsvp.events) {
+            allEventIds.add(rsvp.events.id)
+            eventDates[rsvp.events.id] = rsvp.events.date_time
+          }
+        })
+      }
+
+      // Process invited events
+      if (invitedEventsResult.status === 'fulfilled' && invitedEventsResult.value.data) {
+        invitedEventsResult.value.data.forEach((member: any) => {
+          if (member.events) {
+            allEventIds.add(member.events.id)
+            eventDates[member.events.id] = member.events.date_time
+          }
+        })
+      }
+
+      // Process crew events
+      if (crewEventsResult.status === 'fulfilled' && crewEventsResult.value.data) {
+        crewEventsResult.value.data.forEach((crewMember: any) => {
+          if (crewMember.crews?.events) {
+            crewMember.crews.events.forEach((event: any) => {
+              allEventIds.add(event.id)
+              eventDates[event.id] = event.date_time
+            })
+          }
+        })
+      }
+
+      // Calculate stats
+      const totalEvents = allEventIds.size
+      const upcomingEvents = Array.from(allEventIds).filter(eventId =>
+        eventDates[eventId] && new Date(eventDates[eventId]) >= new Date(now)
+      ).length
+
+      // Get total RSVPs count (separate from events)
+      const totalRSVPsResult = await supabase
+        .from('rsvps')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', targetUserId)
+
+      const newStats: UserStatsData = {
+        totalEvents,
+        upcomingEvents,
+        totalRSVPs: totalRSVPsResult.count || 0
+      }
+
+      // Progress tracking - log the improvement
+      const statsBreakdown = {
+        totalEvents: newStats.totalEvents,
+        upcomingEvents: newStats.upcomingEvents,
+        totalRSVPs: newStats.totalRSVPs,
+        breakdown: {
+          createdEvents: createdEventsResult.status === 'fulfilled' ? createdEventsResult.value.data?.length || 0 : 0,
+          rsvpEvents: rsvpEventsResult.status === 'fulfilled' ? rsvpEventsResult.value.data?.length || 0 : 0,
+          invitedEvents: invitedEventsResult.status === 'fulfilled' ? invitedEventsResult.value.data?.length || 0 : 0,
+          crewEvents: crewEventsResult.status === 'fulfilled' ?
+            crewEventsResult.value.data?.reduce((acc: number, crew: any) =>
+              acc + (crew.crews?.events?.length || 0), 0) || 0 : 0
+        }
+      }
+
+      progressTracker.trackStatsCalculation(targetUserId, statsBreakdown)
 
       // Cache the result
       statsCache.set(cacheKey, {

@@ -195,7 +195,24 @@ export function getUserJoinStatus(event: Event, userId: string): 'not_joined' | 
  * Uses witty placeholder when no location is provided
  */
 export function getLocationDisplayName(event: Event): string {
-  return event.place_name || event.location || 'Anywhere on Earth 🌍'
+  const location = event.place_name || event.location
+  const displayText = location || 'Anywhere on Earth'
+
+  // Progress tracking - track location display fix
+  try {
+    // Dynamically import to avoid circular dependencies
+    import('@/lib/progressTracker').then(({ progressTracker }) => {
+      progressTracker.trackLocationFix(event.id, !!location, displayText)
+    }).catch(() => {
+      // Fallback logging if progress tracker fails
+      console.log(`[LOCATION FIX] Event ${event.id}: ${!!location ? 'has location' : 'using placeholder'} - "${displayText}"`)
+    })
+  } catch (error) {
+    // Silent fallback - don't break location display if tracking fails
+    console.log(`[LOCATION FIX] Event ${event.id}: ${!!location ? 'has location' : 'using placeholder'} - "${displayText}"`)
+  }
+
+  return displayText
 }
 
 /**
