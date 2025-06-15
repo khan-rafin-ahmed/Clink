@@ -20,8 +20,16 @@ import {
   Martini,
   Coffee,
   ArrowRight,
-  Clock
+  Clock,
+  MoreVertical
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { Event } from '@/types'
 import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { cn } from '@/lib/utils'
@@ -198,11 +206,11 @@ export function EnhancedEventCard({
 
   if (variant === 'timeline') {
     return (
-      <Card className={cn("interactive-card group glass-card border-white/10 hover:border-accent-primary/30", className)}>
+      <Card className={cn("interactive-card group glass-card border-white/10 hover:border-accent-primary/30 relative", className)}>
         <CardContent className="p-4">
           <div className="flex gap-4">
-            {/* Timeline Event Image */}
-            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-card-hover">
+            {/* Timeline Event Image - Enhanced Size for more prominence */}
+            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden flex-shrink-0 bg-card-hover shadow-lg">
               {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
                 <img
                   src={getEventCoverImage(event.cover_image_url, event.vibe)}
@@ -224,7 +232,7 @@ export function EnhancedEventCard({
                     {event.title}
                   </h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-4 h-4 text-accent-primary" />
                     {formatEventTime(event.date_time)}
                   </div>
                 </div>
@@ -241,9 +249,39 @@ export function EnhancedEventCard({
                     {event.place_nickname || getLocationDisplayName(event)}
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {displayCount}
+                <div className="flex items-center gap-2">
+                  {/* Enhanced Attendee Avatars - Show at least 3 avatars */}
+                  <div className="flex -space-x-1">
+                    {/* Host Avatar */}
+                    <UserAvatar
+                      userId={event.created_by}
+                      displayName={event.creator?.display_name}
+                      avatarUrl={event.creator?.avatar_url}
+                      size="sm"
+                      className="border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative"
+                    />
+                    {/* Second attendee placeholder */}
+                    {displayCount > 1 && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-secondary/20 to-accent-primary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <Users className="w-3 h-3 text-accent-primary" />
+                      </div>
+                    )}
+                    {/* Third attendee placeholder */}
+                    {displayCount > 2 && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <Users className="w-3 h-3 text-primary" />
+                      </div>
+                    )}
+                    {/* Count badge for remaining attendees */}
+                    {displayCount > 3 && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <span className="text-xs font-bold text-accent-primary">
+                          +{displayCount - 3}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">{displayCount} attending</span>
                 </div>
               </div>
 
@@ -254,44 +292,49 @@ export function EnhancedEventCard({
                     {getVibeEmoji(event.vibe)} {event.vibe}
                   </div>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Host Actions for Timeline */}
-                  {showHostActions && isHost && (onEdit || onDelete) && (
-                    <div className="flex gap-1">
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(event)}
-                          className="h-8 px-2 text-xs hover:bg-accent-secondary/20"
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(event)}
-                          className="h-8 px-2 text-xs hover:bg-destructive/20 text-destructive"
-                        >
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* View Button */}
-                  <Link to={getEventUrl().replace(window.location.origin, '')}>
-                    <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">
-                      View Details
-                      <ArrowRight className="w-3 h-3 ml-1" />
+              {/* Actions Dropdown - Top Right */}
+              <div className="absolute top-2 right-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
+                      <MoreVertical className="w-4 h-4" />
                     </Button>
-                  </Link>
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="glass-modal border-border/50">
+                    <DropdownMenuItem asChild>
+                      <Link to={getEventUrl().replace(window.location.origin, '')} className="flex items-center">
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        View Details
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Event
+                    </DropdownMenuItem>
+                    {showHostActions && isHost && (
+                      <>
+                        <DropdownMenuSeparator />
+                        {onEdit && (
+                          <DropdownMenuItem onClick={() => onEdit(event)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Event
+                          </DropdownMenuItem>
+                        )}
+                        {onDelete && (
+                          <DropdownMenuItem
+                            onClick={() => onDelete(event)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Event
+                          </DropdownMenuItem>
+                        )}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>

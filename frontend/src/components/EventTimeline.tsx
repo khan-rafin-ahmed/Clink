@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,12 +16,21 @@ import {
   Edit,
   Trash2,
   ArrowRight,
-  Share2
+  Share2,
+  MoreVertical
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { getEventCoverImage, getVibeEmoji } from '@/lib/coverImageUtils'
 import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
 import type { Event } from '@/types'
 
 interface EventTimelineProps {
@@ -58,6 +67,55 @@ export function EventTimeline({
   const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
   const [shareModalEvent, setShareModalEvent] = useState<TimelineEvent | null>(null)
+  const [attendeeProfiles, setAttendeeProfiles] = useState<Record<string, any>>({})
+
+  // Fetch attendee profiles for better avatar display
+  useEffect(() => {
+    const fetchAttendeeProfiles = async () => {
+      if (!events.length) return
+
+      const allUserIds = new Set<string>()
+
+      events.forEach(event => {
+        // Add host
+        if (event.created_by) allUserIds.add(event.created_by)
+
+        // Add RSVP users
+        if (event.rsvps) {
+          event.rsvps.forEach((rsvp: any) => {
+            if (rsvp.status === 'going') allUserIds.add(rsvp.user_id)
+          })
+        }
+
+        // Add event members
+        if (event.event_members) {
+          event.event_members.forEach((member: any) => {
+            if (member.status === 'accepted') allUserIds.add(member.user_id)
+          })
+        }
+      })
+
+      if (allUserIds.size === 0) return
+
+      try {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, display_name, nickname, avatar_url')
+          .in('user_id', Array.from(allUserIds))
+
+        const profileMap: Record<string, any> = {}
+        profiles?.forEach(profile => {
+          profileMap[profile.user_id] = profile
+        })
+
+        setAttendeeProfiles(profileMap)
+      } catch (error) {
+        console.error('Error fetching attendee profiles:', error)
+      }
+    }
+
+    fetchAttendeeProfiles()
+  }, [events])
 
   // Pagination logic
   const totalPages = Math.ceil(events.length / itemsPerPage)
@@ -92,6 +150,15 @@ export function EventTimeline({
     if (isTomorrow(date)) return 'Tomorrow'
     if (isThisWeek(date)) return format(date, 'EEEE')
     return format(date, 'MMM d')
+  }
+
+  // Format secondary date label (only show when not showing day name)
+  const formatSecondaryDateLabel = (dateString: string) => {
+    const date = parseISO(dateString + 'T00:00:00')
+    if (isToday(date) || isTomorrow(date) || isThisWeek(date)) {
+      return format(date, 'MMM d')
+    }
+    return null // Don't show secondary label for dates that already show "MMM d"
   }
 
   // Format event time
@@ -144,9 +211,11 @@ export function EventTimeline({
                     <h3 className="text-xs lg:text-sm font-semibold text-foreground">
                       {formatDateLabel(dateKey)}
                     </h3>
-                    <p className="text-xs text-muted-foreground hidden lg:block">
-                      {format(parseISO(dateKey + 'T00:00:00'), 'MMM d')}
-                    </p>
+                    {formatSecondaryDateLabel(dateKey) && (
+                      <p className="text-xs text-muted-foreground hidden lg:block">
+                        {formatSecondaryDateLabel(dateKey)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -182,10 +251,11 @@ export function EventTimeline({
 
                             <CardContent className="p-4 relative z-10">
                               <div className="flex items-center gap-4">
-                                {/* Time - Responsive Left Aligned */}
+                                {/* Time - Responsive Left Aligned with Clock Icon */}
                                 <div className="flex-shrink-0 w-12 lg:w-16 text-left">
-                                  <div className="text-xs lg:text-sm font-medium text-foreground">
-                                    {formatEventTime(event.date_time)}
+                                  <div className="flex items-center gap-1 text-xs lg:text-sm font-medium text-foreground">
+                                    <Clock className="w-3 h-3 text-accent-primary" />
+                                    <span>{formatEventTime(event.date_time)}</span>
                                   </div>
                                 </div>
 
@@ -204,11 +274,79 @@ export function EventTimeline({
                                     </span>
                                   </div>
 
-                                  {/* Guest Count & Tags */}
+                                  {/* Guest Count & Tags with Enhanced Attendee Avatars */}
                                   <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                      <Users className="w-3 h-3" />
-                                      <span>{displayCount} attending</span>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      {/* Enhanced Attendee Avatars - Show real attendees */}
+                                      <div className="flex -space-x-1">
+                                        {(() => {
+                                          // Get all unique attendees for this event
+                                          const uniqueAttendeeIds = new Set<string>()
+                                          const attendeeList: Array<{ user_id: string; source: 'host' | 'rsvp' | 'crew' }> = []
+
+                                          // Always include host first
+                                          if (event.created_by) {
+                                            uniqueAttendeeIds.add(event.created_by)
+                                            attendeeList.push({ user_id: event.created_by, source: 'host' })
+                                          }
+
+                                          // Add RSVP attendees
+                                          if (event.rsvps) {
+                                            event.rsvps.forEach((rsvp: any) => {
+                                              if (rsvp.status === 'going' && !uniqueAttendeeIds.has(rsvp.user_id)) {
+                                                uniqueAttendeeIds.add(rsvp.user_id)
+                                                attendeeList.push({ user_id: rsvp.user_id, source: 'rsvp' })
+                                              }
+                                            })
+                                          }
+
+                                          // Add crew members
+                                          if (event.event_members) {
+                                            event.event_members.forEach((member: any) => {
+                                              if (member.status === 'accepted' && !uniqueAttendeeIds.has(member.user_id)) {
+                                                uniqueAttendeeIds.add(member.user_id)
+                                                attendeeList.push({ user_id: member.user_id, source: 'crew' })
+                                              }
+                                            })
+                                          }
+
+                                          // Show up to 3 real avatars + count badge
+                                          const visibleAttendees = attendeeList.slice(0, 3)
+                                          const remainingCount = Math.max(0, displayCount - 3)
+
+                                          return (
+                                            <>
+                                              {visibleAttendees.map((attendee, index) => {
+                                                const profile = attendeeProfiles[attendee.user_id]
+                                                const isHost = attendee.source === 'host'
+
+                                                return (
+                                                  <UserAvatar
+                                                    key={`${attendee.user_id}-${index}`}
+                                                    userId={attendee.user_id}
+                                                    displayName={profile?.display_name || (isHost ? timelineEvent.creator?.display_name : null)}
+                                                    avatarUrl={profile?.avatar_url || (isHost ? timelineEvent.creator?.avatar_url : null)}
+                                                    size="sm"
+                                                    className={`border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative ${
+                                                      isHost ? 'ring-accent-primary/30' : ''
+                                                    }`}
+                                                  />
+                                                )
+                                              })}
+
+                                              {/* Count badge for remaining attendees */}
+                                              {remainingCount > 0 && (
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                                                  <span className="text-xs font-bold text-accent-primary">
+                                                    +{remainingCount}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </>
+                                          )
+                                        })()}
+                                      </div>
+                                      <span className="font-medium">{displayCount} attending</span>
                                     </div>
 
                                     {/* Tag Pills - Glassmorphism */}
@@ -227,9 +365,9 @@ export function EventTimeline({
                                   </div>
                                 </div>
 
-                                {/* Enhanced Cover Image - Right Side */}
+                                {/* Enhanced Cover Image - Right Side - Larger and more prominent */}
                                 <div className="flex-shrink-0">
-                                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-card-hover shadow-lg">
+                                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden bg-card-hover shadow-lg">
                                     {getEventCoverImage(timelineEvent.cover_image_url, event.vibe) ? (
                                       <img
                                         src={getEventCoverImage(timelineEvent.cover_image_url, event.vibe)}
@@ -238,60 +376,53 @@ export function EventTimeline({
                                       />
                                     ) : (
                                       <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 flex items-center justify-center">
-                                        <span className="text-2xl">{getVibeEmoji(event.vibe)}</span>
+                                        <span className="text-3xl lg:text-4xl">{getVibeEmoji(event.vibe)}</span>
                                       </div>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Action Buttons - Right Side */}
-                                <div className="flex-shrink-0 flex items-center gap-1">
-                                  {/* Host Actions */}
-                                  {showEditActions && isHost && (
-                                    <>
-                                      {onEdit && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => onEdit(event)}
-                                          className="h-7 px-2 text-xs hover:bg-accent-secondary/20 text-accent-secondary"
-                                        >
-                                          <Edit className="w-3 h-3" />
-                                        </Button>
+                                {/* Actions Dropdown - Top Right */}
+                                <div className="absolute top-2 right-2">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="glass-modal border-border/50">
+                                      <DropdownMenuItem asChild>
+                                        <Link to={getEventUrl(event).replace(window.location.origin, '')} className="flex items-center">
+                                          <ArrowRight className="w-4 h-4 mr-2" />
+                                          View Details
+                                        </Link>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => setShareModalEvent(timelineEvent)}>
+                                        <Share2 className="w-4 h-4 mr-2" />
+                                        Share Event
+                                      </DropdownMenuItem>
+                                      {showEditActions && isHost && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          {onEdit && (
+                                            <DropdownMenuItem onClick={() => onEdit(event)}>
+                                              <Edit className="w-4 h-4 mr-2" />
+                                              Edit Event
+                                            </DropdownMenuItem>
+                                          )}
+                                          {onDelete && (
+                                            <DropdownMenuItem
+                                              onClick={() => onDelete(event)}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              <Trash2 className="w-4 h-4 mr-2" />
+                                              Delete Event
+                                            </DropdownMenuItem>
+                                          )}
+                                        </>
                                       )}
-                                      {onDelete && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => onDelete(event)}
-                                          className="h-7 px-2 text-xs hover:bg-destructive/20 text-destructive"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
-
-                                  {/* Share Button */}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setShareModalEvent(timelineEvent)}
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    <Share2 className="w-3 h-3" />
-                                  </Button>
-
-                                  {/* View Details Button */}
-                                  <Link to={getEventUrl(event).replace(window.location.origin, '')}>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 px-2 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm"
-                                    >
-                                      View
-                                    </Button>
-                                  </Link>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               </div>
                             </CardContent>

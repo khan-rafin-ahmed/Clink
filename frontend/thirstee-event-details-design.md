@@ -1,143 +1,106 @@
-# 🍻 Thirstee Event Details Page – PRD (Upcoming + Past Views)
+# 🧾 Thirstee Event Details Page Structure (Revamp v2)
+
+## Layout
+- **Page Container:** Max-width 1200px, centered
+- **Grid Layout:** 2-Column (`Left: 65%`, `Right: 35%`)
+- **Mobile:** Stacks vertically, summary box becomes collapsible
 
 ---
 
-## 🎯 Objective
+## 🟥 Left Column: Main Content (65%)
 
-Redesign the Event Details page for both **upcoming** and **past events** by:
-- Improving CTA placement and layout rhythm
-- Enhancing user interaction post-event (comments, ratings, photos)
-- Drawing UI inspiration from Meetup and Luma, while staying consistent with Thirstee’s brand
-
----
-
-## ✅ Shared Structure (Both Views)
-
-| Section             | Notes                                                |
-|---------------------|------------------------------------------------------|
-| Hero Header         | Keep current large image with title overlay          |
-| Navigation Buttons  | `← Back`, `Edit`, `Delete`, `Share` above the image |
-| Metadata Section    | Date, Time, Tags, Location (horizontal block layout) |
-| Host Card           | Name, Avatar, 1-line tagline, “You’re hosting!” badge |
-| Who’s Coming        | Avatar stack + guest names + role (Host/Member)     |
+### 1. Event Header
+- 🔥 `Vibe Tag` (e.g. "Wild Vibe", "Chill Night")
+- 🔒 `Event Type`: Public / Private
+- 🗓️ `Date & Time` (e.g. Sunday, June 15 • 6:00 PM – All Night)
+  - ⏱️ `Countdown`: “Starting in 4h 22m” (if <24hrs)
+- 📍 `Location Summary` (short name)
+- 🎉 `Event Title`: H1 (e.g. “Shot Till You Drop!!!”)
+- 💬 `Subtitle` / Tagline (optional): “Just be present and enjoy!!”
 
 ---
 
-## 🟡 Upcoming Event View
-
-### 🧱 Layout Order
-
-```
-[ Hero Image with Title Overlay ]
-↓
-[ Event Metadata Section ]
-↓
-[ CTA: Join This Party 🎉 + subtext ]
-↓
-[ Host Profile Card ]
-↓
-[ Event Details (Drink Type + Vibe Tags) ]
-↓
-[ Event Location (Map Embed) ]
-↓
-[ Who’s Coming (2-row avatar stack) ]
-```
-
-### 🔧 Key Design Enhancements
-
-| Area              | Action |
-|------------------|--------|
-| RSVP CTA         | Move directly below event metadata<br>Button text: `Join the Party 🎉` |
-| Host Card        | Inline avatar + name with compact host badge |
-| Map              | Use full-width map with `rounded-xl` |
-| Avatars          | 5 visible guests + `+X` badge for overflow |
-| Footer Notes     | “Sign in to join” → should collapse under the Join button |
+### 2. Cover Image
+- 📷 Image card (16:9 ratio)
+  - Position: **Below header info**
+  - Style: Rounded corners, soft shadow
+  - Optional Overlay Tag: `🥃 Wild Vibe`
+  - Max width: 100% of left column
 
 ---
 
-## 🟣 Past Event View
-
-### 🧱 Layout Order
-
-```
-[ Hero Image ]
-↓
-[ Metadata + Host ]
-↓
-[ Toast Recap Block ]
-↓
-[ Gallery Section ]
-↓
-[ Comments + Reactions ]
-↓
-[ Star Rating Summary (if applicable) ]
-```
-
-### 🔧 Past Event Blocks
-
-#### 🍻 Toast Recap
-
-| Element       | Design |
-|---------------|--------|
-| Title         | “Toast Recap” with emoji 🎉🍻 |
-| Summary       | "2 attendees gathered for an epic night..." |
-| Time + Tagline| Show recap date + total attendees |
-| Placement     | Immediately after Host Block, in a soft gold card |
-
-#### 🖼️ Gallery
-
-| Feature          | Design |
-|------------------|--------|
-| Layout           | 3-column image grid (desktop), 2-column (tablet), 1 (mobile) |
-| Upload CTA       | Floating "+ Upload" button top-right |
-| Image Viewer     | Lightbox popup when image clicked |
-
-#### 💬 Comments
-
-| Feature     | Design |
-|-------------|--------|
-| Input Box   | `textarea` + `Post Comment` button |
-| Reactions   | Inline reactions like `🔥`, `😂`, `❤️` |
-| Avatars     | Shown beside commenter's name |
-| Sorting     | “Recent / Most Liked” dropdown (future enhancement) |
-
-#### ⭐ Review Block
-
-| Feature   | Design |
-|-----------|--------|
-| Rating CTA | If user hasn’t rated, sticky `Leave a ⭐ review` at bottom |
-| Review Summary | Star average + comment preview |
+### 3. About the Event
+- 📝 Full event description (Markdown supported)
+- 🗒️ Host Notes (collapsible section)
 
 ---
 
-## 📱 Responsive Design
-
-| Viewport | Layout Behavior |
-|----------|------------------|
-| Mobile   | Stack sections vertically, CTA full-width |
-| Tablet   | Split metadata into two columns |
-| Desktop  | Maintain left/right rhythm, use max-w-[800px] for content center |
+### 4. Vibe Details (Horizontal Cards or Tags)
+- 🍸 Drink of the Night: e.g., “Beer”, “Cocktails”, “Mixed”
+- 🎭 Party Mood: e.g., “Casual”, “Wild Vibe”, “Chill Night”
+- 🧥 Dress Code / Optional Tag (if provided)
 
 ---
 
-## 🔄 Transition Between Views
-
-| Condition     | Trigger |
-|---------------|---------|
-| Event Passed  | Swap RSVP CTA for Review Summary + Gallery |
-| No Gallery    | Show “Be the first to add photos” CTA card |
-| No Comments   | Show placeholder: “No one’s commented yet 👀” |
+### 5. Who’s Coming
+- 👥 Up to 8 attendees (avatars, nickname or name)
+  - Host always first, labeled
+  - Remaining attendees with role tags if any (e.g., “Beer God 🍺”)
+  - `+N more attending` button for overflow
+  - Hover tooltip with quick info
 
 ---
 
-## 🔚 Summary
+### 6. Event Location
+- 🗺️ Google Maps Embed
+  - Location from database
+  - Clickable for directions
 
-This PRD provides a dual-state layout that:
-- Improves RSVP clarity and join flow for upcoming events
-- Encourages engagement through photos, comments, and reviews after an event
-- Ensures consistency with Thirstee’s brand and glassmorphism UI
+---
 
-```
+### 7. Post-Event Additions (if event is in past)
+- ⭐ Star Ratings (1–5) + average shown
+- 💬 Comments (text + emoji reactions)
+- 📸 Gallery (grid/carousel of uploaded attendee photos)
+- CTA Buttons:
+  - “Leave a Review”
+  - “Upload a Photo”
 
+---
 
-Let me know if you'd like this in a downloadable `.md` file or want it saved to your canvas workspace as a separate doc.
+## 🟩 Right Column: Summary Sidebar (35%)
+### Sticky card with:
+- ✅ RSVP Status:
+  - “🎉 You're In” (if joined)
+  - “🎈 Join the Party” (CTA button)
+- 🧑 Host Info:
+  - Avatar
+  - Username + Nickname
+  - Bio line (e.g., “Ready to raise some hell with you!”)
+  - Optional: “Message Host” link
+- 📅 Add to Calendar (button)
+- 🔁 Share Event
+- ❌ Cancel RSVP
+- 🔒 Invite Only Tag (if private)
+- 📍 Recap Location (short string)
+- 🕒 Recap Time + Date
+
+---
+
+## 🟨 Footer
+- 🔍 Suggested Events (carousel or grid)
+- ➕ CTA: “Create your own event on Thirstee”
+- 🧃 Branding Tagline:
+  > _“Built by Roughin while drinking beers and raising hell 🍻”_
+
+---
+
+## ✅ Design Notes
+| Element            | Notes                                           |
+|--------------------|--------------------------------------------------|
+| Cover Image        | Not full-width, contained in left column         |
+| Avatar Styles      | Circular or rounded, custom borders (optional)   |
+| Color Palette      | Use Thirstee's dark mode with accent highlights  |
+| Emojis             | Light use to match vibe (🥃, 🎉, 🔒)              |
+| Responsive Layout  | Collapse right column below on mobile            |
+

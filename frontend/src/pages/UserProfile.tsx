@@ -321,9 +321,7 @@ export function UserProfile() {
         return {
           ...event,
           creator: creatorData,
-          isHosting,
-          rsvps: event.rsvps || [],
-          event_members: event.event_members || []
+          isHosting
         }
       }))
 
@@ -377,9 +375,7 @@ export function UserProfile() {
         return {
           ...event,
           creator: creatorData,
-          isHosting,
-          rsvps: event.rsvps || [],
-          event_members: event.event_members || []
+          isHosting
         }
       }))
 

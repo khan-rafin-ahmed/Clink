@@ -485,3 +485,29 @@ if (errors.length > 0) {
 | `nickname`         | `text`                           |                                                                                   |
 | `created_at`       | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 | `updated_at`       | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
+
+---
+
+## 🎨 Design System Standards
+
+### Typography Consistency
+- **Main Headings**: `text-2xl lg:text-3xl font-display font-bold` (Profile hero, major sections)
+- **Section Headings**: `text-base sm:text-lg font-display font-semibold` (Card titles, subsections)
+- **CTA Headings**: `text-lg sm:text-xl font-display font-bold` (Action buttons, emphasis)
+- **Body Text**: `text-sm sm:text-base` (Descriptions, content)
+- **Small Text**: `text-xs sm:text-sm` (Labels, metadata)
+- **Nicknames**: `text-yellow-400 italic font-medium` (User nicknames throughout app)
+- **Font Families**: `font-display` (Space Grotesk), `font-sans` (Inter)
+
+### Layout Standards
+- **Container Width**: `max-w-4xl mx-auto px-4 sm:px-6 lg:px-8` (Consistent across Profile, Event Details)
+- **Event Details Layout**: Left column 55% (`lg:col-span-7`), Right column 45% (`lg:col-span-5`)
+- **Profile Layout**: 50:50 hero layout (`lg:grid-cols-2`), timeline events with fixed-width cards
+- **Responsive Icons**: Use `w-4 h-4 sm:w-5 sm:h-5` pattern for scalable icons in headings
+
+### Color Palette
+- **Primary**: Deep Amber (#FF7747) - Main accent color
+- **Secondary**: Warm Gold (#FFD37E) - Secondary accent
+- **Background**: Deep Black (#0E0E10) - Main dark background
+- **Glass Effects**: Frosted panels with backdrop-blur
+- **Text**: White (#FFFFFF) for primary text, muted variants for secondary
