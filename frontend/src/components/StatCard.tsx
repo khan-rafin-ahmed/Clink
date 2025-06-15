@@ -19,9 +19,12 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div className={cn(
-      "glass-card relative overflow-hidden group text-center p-4 sm:p-6",
+      "glass-card relative overflow-hidden group text-center p-4 sm:p-6 bg-white/5 backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-lg cursor-pointer",
       className
-    )}>
+    )} style={{
+      border: '1px solid hsla(0,0%,100%,.06)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.1)'
+    }}>
       <div className="glass-shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
       <div className="relative z-10">
         {icon ? (

@@ -5,30 +5,30 @@ import { cn } from "@/lib/utils"
 import { useInteractionFeedback } from "@/lib/interactionFeedback"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden transition-all duration-200",
   {
     variants: {
       variant: {
         default:
-          "glass-button bg-gradient-primary text-primary-foreground shadow-amber hover:shadow-amber-lg border border-primary/30 hover:border-primary-hover/50 backdrop-blur-md hover:backdrop-blur-lg",
+          "bg-white text-[#08090A] font-medium hover:bg-white/95 active:scale-[0.98] shadow-sm hover:shadow-md",
         destructive:
-          "glass-button bg-destructive text-destructive-foreground shadow-md hover:bg-destructive-hover hover:shadow-lg border border-destructive/30 hover:border-destructive-hover/50 backdrop-blur-md",
+          "bg-[#FF4D4F] text-white font-medium hover:bg-[#FF4D4F]/90 active:scale-[0.98] shadow-sm hover:shadow-md",
         outline:
-          "glass-effect border-2 border-primary/60 bg-transparent text-primary shadow-glass hover:bg-primary/10 hover:text-primary-foreground hover:shadow-amber hover:border-primary-hover backdrop-blur-md hover:backdrop-blur-lg",
+          "border-2 border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white backdrop-blur-md hover:backdrop-blur-lg",
         secondary:
-          "glass-button bg-secondary/80 text-secondary-foreground shadow-glass hover:bg-secondary-hover/90 hover:shadow-md border border-secondary/30 hover:border-secondary-hover/50 backdrop-blur-md",
+          "bg-[#07080A] text-white border border-white/10 hover:bg-white/5 active:scale-[0.98] shadow-sm hover:shadow-md",
         ghost:
-          "hover:bg-accent/20 hover:text-accent-foreground hover:backdrop-blur-sm hover:shadow-glass",
+          "bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white backdrop-blur-md hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)]",
         link:
-          "text-primary underline-offset-4 hover:underline hover:text-primary-hover",
+          "text-white underline-offset-4 hover:underline hover:text-white/80",
         success:
-          "glass-button bg-success text-success-foreground shadow-md hover:shadow-lg border border-success/30 backdrop-blur-md",
+          "bg-green-600 text-white font-medium hover:bg-green-700 active:scale-[0.98] shadow-sm hover:shadow-md",
         warning:
-          "glass-button bg-warning text-warning-foreground shadow-md hover:shadow-lg border border-warning/30 backdrop-blur-md",
+          "bg-yellow-600 text-white font-medium hover:bg-yellow-700 active:scale-[0.98] shadow-sm hover:shadow-md",
         glass:
-          "glass-pill bg-transparent text-foreground border border-white/20 hover:border-primary/40 hover:text-primary backdrop-blur-lg hover:backdrop-blur-xl",
+          "bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white backdrop-blur-md hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)]",
         'glass-primary':
-          "glass-pill bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30 hover:border-primary/60 backdrop-blur-lg hover:backdrop-blur-xl",
+          "bg-white/10 text-white hover:bg-white/15 hover:text-white backdrop-blur-lg hover:backdrop-blur-xl",
       },
       size: {
         default: "h-10 px-6 py-2 text-sm",

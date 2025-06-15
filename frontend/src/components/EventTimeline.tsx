@@ -180,7 +180,7 @@ export function EventTimeline({
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-16 bg-gradient-card rounded-2xl border border-border">
+      <div className="text-center py-16 bg-gradient-card rounded-2xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
         <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
           <Calendar className="h-10 w-10 text-muted-foreground" />
         </div>
@@ -245,7 +245,7 @@ export function EventTimeline({
                           style={{ animationDelay: `${(dateIndex * 2 + eventIndex) * 0.1}s` }}
                         >
                           {/* Luma-Style Event Card - Fixed Width */}
-                          <Card className="event-card w-full max-w-2xl interactive-card group glass-card border-white/10 hover:border-primary/30 transition-all duration-300 hover:scale-105 hover:shadow-amber-lg relative overflow-hidden backdrop-blur-sm rounded-xl">
+                          <Card className="event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:scale-105 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                             {/* Glass shimmer overlay */}
                             <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
@@ -262,7 +262,7 @@ export function EventTimeline({
                                 {/* Event Content - Main Section */}
                                 <div className="flex-1 min-w-0">
                                   {/* Title - Bold, Styled */}
-                                  <h4 className="font-heading font-bold text-base line-clamp-1 group-hover:text-primary transition-colors mb-1">
+                                  <h4 className="font-heading text-white text-base line-clamp-1 group-hover:text-white transition-colors mb-1" style={{ fontWeight: 600 }}>
                                     {event.title}
                                   </h4>
 
@@ -351,8 +351,9 @@ export function EventTimeline({
 
                                     {/* Tag Pills - Glassmorphism */}
                                     <div className="flex items-center gap-2">
-                                      <div className="glass-pill px-2 py-0.5 text-xs font-medium border-primary/30 text-primary backdrop-blur-sm">
-                                        {getVibeEmoji(event.vibe)} {event.vibe}
+                                      <div className="glass-pill px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                                        <span className="text-[#CFCFCF]">{getVibeEmoji(event.vibe)}</span>
+                                        <span className="text-white font-medium">{event.vibe}</span>
                                       </div>
                                       <Badge
                                         variant={event.is_public ? "default" : "secondary"}
@@ -444,10 +445,11 @@ export function EventTimeline({
           {/* Previous Button */}
           {currentPage > 1 && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setCurrentPage(prev => prev - 1)}
-              className="glass-card hover:border-primary/50 transition-all duration-200 h-8 px-3 text-xs"
+              className="bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white backdrop-blur-md hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)] transition-all duration-200 h-8 px-3 text-xs"
+              style={{ border: '1px solid hsla(0,0%,100%,.06)' }}
             >
               <ChevronLeft className="w-3 h-3 mr-1" />
               Previous
@@ -481,9 +483,10 @@ export function EventTimeline({
                   onClick={() => setCurrentPage(page)}
                   className={`min-w-[32px] h-8 text-xs transition-all duration-200 ${
                     page === currentPage
-                      ? 'bg-gradient-primary text-primary-foreground shadow-lg'
-                      : 'glass-card hover:bg-primary/10 hover:border-primary/30'
+                      ? 'bg-white text-[#08090A] font-medium shadow-md'
+                      : 'bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white backdrop-blur-md hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)]'
                   }`}
+                  style={{ border: '1px solid hsla(0,0%,100%,.06)' }}
                 >
                   {page}
                 </Button>
@@ -494,10 +497,11 @@ export function EventTimeline({
           {/* Next Button */}
           {currentPage < totalPages && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setCurrentPage(prev => prev + 1)}
-              className="glass-card hover:border-primary/50 transition-all duration-200 h-8 px-3 text-xs"
+              className="bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white backdrop-blur-md hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)] transition-all duration-200 h-8 px-3 text-xs"
+              style={{ border: '1px solid hsla(0,0%,100%,.06)' }}
             >
               Next
               <ChevronRight className="w-3 h-3 ml-1" />

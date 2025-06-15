@@ -53,7 +53,7 @@ export function ToastRecap({ event, attendeeCount, photoCount, commentCount }: T
   }
 
   return (
-    <Card className="bg-gradient-card border border-accent-secondary/20 hover:border-accent-secondary/30 backdrop-blur-md shadow-gold transition-all duration-300">
+    <Card className="bg-gradient-card border border-accent/20 hover:border-accent/30 backdrop-blur-md shadow-gray transition-all duration-300">
       <CardContent className="pt-6">
         <div className="text-center space-y-6">
           {/* Main Recap Message */}

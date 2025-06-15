@@ -173,7 +173,7 @@ export function LoginPage() {
 
             {magicLinkSent ? (
               <div className="text-center space-y-6">
-                <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-amber">
+                <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-white">
                   <span className="text-3xl">📧</span>
                 </div>
                 <div className="space-y-3">

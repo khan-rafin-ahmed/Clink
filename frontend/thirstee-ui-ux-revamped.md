@@ -30,15 +30,20 @@ Revamp the entire Thirstee user interface to align with a clean, minimalistic ae
 
 ### 🖍️ Color Palette (Draft)
 
-| Token                | Color                  | Notes                                   |
-| -------------------- | ---------------------- | --------------------------------------- |
-| `--bg-base`          | #0E0E10                | Primary background (dark slate)         |
-| `--bg-glass`         | rgba(255,255,255,0.05) | Glass surface with blur                 |
-| `--accent-primary`   | #00FFD1                | Aqua/neon highlight for active elements |
-| `--accent-secondary` | #FF71CE                | For animated states, glow/hover         |
-| `--text-primary`     | #FFFFFF                | Main text color                         |
-| `--text-secondary`   | #CFCFCF                | Descriptive/label text                  |
-| `--error`            | #FF4D4F                | Error alerts                            |
+| Token                | Color                    | Notes                                              |
+| -------------------- | ------------------------ | -------------------------------------------------- |
+| `--bg-base`          | `#08090A`                | Ultra-dark charcoal, main app background           |
+| `--bg-glass`         | `rgba(255,255,255,0.05)` | Frosted glass layer with backdrop blur             |
+| `--accent-primary`   | `#FFFFFF`                | White(cool highlight for active elements)    |
+| `--accent-secondary` | `#888888`                | Gray (used for hover, animated state glow) |
+| `--text-primary`     | `#FFFFFF`                | Main text, headings, icons                         |
+| `--text-secondary`   | `#B3B3B3`                | Subtext, metadata, supporting copy                 |
+| `--border-subtle`    | `rgba(255,255,255,0.1)`  | For outlines, dividers, and subtle button borders  |
+| `--btn-primary-bg`   | `#FFFFFF`           | Grey text on white background 
+| `--btn-primary-text` | `#888888`                | White text on primary buttons                      |
+| `--btn-secondary-bg` | `#07080A`                | For secondary buttons
+| `--btn-secondary-text` | `#FFFFFF`                | For secondary buttons text    
+| `--error`            | `#FF4D4F`                | Warnings, validation errors                        |
 
 ---
 

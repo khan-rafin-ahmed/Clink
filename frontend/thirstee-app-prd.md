@@ -506,8 +506,8 @@ if (errors.length > 0) {
 - **Responsive Icons**: Use `w-4 h-4 sm:w-5 sm:h-5` pattern for scalable icons in headings
 
 ### Color Palette
-- **Primary**: Deep Amber (#FF7747) - Main accent color
-- **Secondary**: Warm Gold (#FFD37E) - Secondary accent
-- **Background**: Deep Black (#0E0E10) - Main dark background
+- **Primary**: #FFFFFF - Main accent color
+- **Secondary**: #07080A - Secondary accent
+- **Background**: #08090A - Main dark background
 - **Glass Effects**: Frosted panels with backdrop-blur
 - **Text**: White (#FFFFFF) for primary text, muted variants for secondary

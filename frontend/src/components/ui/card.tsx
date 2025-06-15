@@ -9,17 +9,18 @@ const Card = React.forwardRef<
   }
 >(({ className, variant = 'default', ...props }, ref) => {
   const variants = {
-    default: "glass-card rounded-lg border bg-gradient-card text-card-foreground shadow-glass transition-all duration-300 hover:shadow-glass-lg hover:border-border-hover/50 backdrop-blur-md hover:backdrop-blur-lg",
-    glass: "glass-effect rounded-xl border border-white/10 bg-transparent text-foreground shadow-glass backdrop-blur-lg hover:backdrop-blur-xl transition-all duration-400 hover:border-primary/30",
-    interactive: "interactive-card glass-card rounded-xl border bg-gradient-card text-card-foreground shadow-glass hover:shadow-glass-lg cursor-pointer",
-    floating: "glass-panel rounded-2xl border border-white/15 bg-gradient-glass text-foreground shadow-glass-lg backdrop-blur-xl float-slow hover:shadow-amber transition-all duration-500",
-    modal: "glass-modal rounded-2xl border border-white/20 bg-gradient-glass text-foreground shadow-glass-lg modal-slide-in"
+    default: "glass-card rounded-lg bg-white/5 text-white shadow-sm backdrop-blur-md hover:backdrop-blur-lg hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)] transition-all duration-300",
+    glass: "glass-effect rounded-xl bg-white/5 text-white shadow-sm backdrop-blur-lg hover:backdrop-blur-xl hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)] transition-all duration-300",
+    interactive: "interactive-card glass-card rounded-xl bg-white/5 text-white shadow-sm hover:shadow-[0_2px_10px_rgba(255,255,255,0.08)] cursor-pointer transition-all duration-300 hover:scale-[0.98]",
+    floating: "glass-panel rounded-2xl bg-white/5 text-white shadow-md backdrop-blur-xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] transition-all duration-300",
+    modal: "glass-modal rounded-2xl bg-white/5 text-white shadow-lg backdrop-blur-xl"
   }
 
   return (
     <div
       ref={ref}
       className={cn(variants[variant], className)}
+      style={{ border: '1px solid hsla(0,0%,100%,.06)', ...props.style }}
       {...props}
     />
   )

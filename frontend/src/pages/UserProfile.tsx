@@ -497,11 +497,11 @@ export function UserProfile() {
 
   const renderCrewsContent = () => {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {userCrews.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {userCrews.map((crew) => (
-              <div key={crew.id}>
+              <div key={crew.id} style={{ marginBottom: '24px' }}>
                 <CrewCard
                   crew={crew}
                   onCrewUpdated={handleCrewUpdated}
@@ -626,7 +626,7 @@ export function UserProfile() {
           <div>
             <NextEventBanner
               userId={user?.id || ''}
-              className="glass-modal rounded-3xl border border-white/15 hover:border-primary/30"
+              className="glass-modal rounded-3xl"
             />
           </div>
 
@@ -673,7 +673,10 @@ export function UserProfile() {
           {/* Compact Glass App Features */}
           <div>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-              <div className="glass-card rounded-xl p-4 sm:p-6 text-center border border-white/10 hover:border-primary/30 group">
+              <div className="glass-card rounded-xl p-4 sm:p-6 text-center group bg-white/5 backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-lg cursor-pointer" style={{
+                border: '1px solid hsla(0,0%,100%,.06)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.1)'
+              }}>
                 <div className="text-3xl sm:text-4xl mb-3">⚡</div>
                 <h3 className="text-base sm:text-lg font-semibold mb-2 text-shadow">60-Second Setup</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground">
@@ -681,7 +684,10 @@ export function UserProfile() {
                 </p>
               </div>
 
-              <div className="glass-card rounded-xl p-4 sm:p-6 text-center border border-white/10 hover:border-primary/30 group">
+              <div className="glass-card rounded-xl p-4 sm:p-6 text-center group bg-white/5 backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-lg cursor-pointer" style={{
+                border: '1px solid hsla(0,0%,100%,.06)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.1)'
+              }}>
                 <div className="text-3xl sm:text-4xl mb-3">📱</div>
                 <h3 className="text-base sm:text-lg font-semibold mb-2 text-shadow">Rally the Stable</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground">
@@ -689,7 +695,10 @@ export function UserProfile() {
                 </p>
               </div>
 
-              <div className="glass-card rounded-xl p-4 sm:p-6 text-center border border-white/10 hover:border-primary/30 group sm:col-span-2 md:col-span-1">
+              <div className="glass-card rounded-xl p-4 sm:p-6 text-center group sm:col-span-2 md:col-span-1 bg-white/5 backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-lg cursor-pointer" style={{
+                border: '1px solid hsla(0,0%,100%,.06)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.1)'
+              }}>
                 <div className="text-3xl sm:text-4xl mb-3">🍻</div>
                 <h3 className="text-base sm:text-lg font-semibold mb-2 text-shadow">One-Tap Hell</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground">
@@ -701,7 +710,7 @@ export function UserProfile() {
 
           {/* Compact Stone Cold Quote */}
           <div className="text-center pt-6">
-            <div className="glass-pill inline-block px-6 py-3 border border-white/20 hover:border-primary/40">
+            <div className="glass-pill inline-block px-6 py-3" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
               <p className="text-base sm:text-lg text-muted-foreground hover:text-primary italic font-medium">
                 "And that's the bottom line, 'cause Stone Cold said so!" 🥃
               </p>
@@ -737,7 +746,7 @@ export function UserProfile() {
             trigger={
               <Button
                 size="sm"
-                className="bg-gradient-primary hover:shadow-amber-lg flex-1"
+                className="bg-gradient-primary hover:shadow-white-lg flex-1"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 🍺 Session
@@ -750,7 +759,7 @@ export function UserProfile() {
               <Button
                 variant="outline"
                 size="sm"
-                className="glass-card hover:border-accent-primary/50 flex-1"
+                className="glass-card hover:border-primary/50 flex-1"
               >
                 <UsersIcon className="w-4 h-4 mr-2" />
                 Crew

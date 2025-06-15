@@ -130,7 +130,7 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
   if (isLoading) {
     return (
-      <Card className={cn("bg-gradient-to-r from-background to-muted/20 border-primary/20", className)}>
+      <Card className={cn("bg-gradient-to-r from-background to-muted/20", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
         <CardContent className="p-6">
           <div className="animate-pulse">
             <div className="h-6 bg-muted rounded w-3/4 mb-3"></div>
@@ -151,9 +151,9 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
   return (
     <Card className={cn(
-      "glass-card glass-halo relative overflow-hidden group cursor-pointer",
+      "glass-card glass-halo relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl",
       className
-    )}>
+    )} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
       {/* Parallax Background Layers */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/10 via-transparent to-accent-secondary/10 opacity-60"></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-accent-primary/5 to-transparent opacity-80"></div>
@@ -193,14 +193,14 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
             {/* Event Details - Enhanced Glass Pills */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="glass-pill px-3 py-2 flex items-center gap-2 pill-glow min-h-[36px]">
+              <div className="glass-pill px-3 py-2 flex items-center gap-2 pill-glow min-h-[36px]" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                 <Calendar className="w-4 h-4 clock-tick text-accent-primary flex-shrink-0" />
                 <span className="text-sm font-medium text-foreground">
                   {formatEventTiming(nextEvent.date_time)}
                 </span>
               </div>
               {nextEvent.location && (
-                <div className="glass-pill px-3 py-2 flex items-center gap-2 min-h-[36px] max-w-[250px]">
+                <div className="glass-pill px-3 py-2 flex items-center gap-2 min-h-[36px] max-w-[250px]" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                   <MapPin className="w-4 h-4 text-accent-secondary flex-shrink-0" />
                   <span className="text-sm font-medium text-foreground truncate">
                     {nextEvent.place_name || nextEvent.location}
@@ -213,12 +213,12 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
               <div className="flex items-center gap-2 flex-wrap">
                 {nextEvent.drink_type && (
-                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-secondary border border-accent-secondary/30 min-h-[36px] flex items-center">
+                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-secondary min-h-[36px] flex items-center" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                     🍺 {nextEvent.drink_type}
                   </div>
                 )}
                 {nextEvent.vibe && (
-                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-primary border border-accent-primary/30 min-h-[36px] flex items-center">
+                  <div className="glass-pill px-2 py-1 text-xs font-medium text-accent-primary min-h-[36px] flex items-center" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                     ✨ {nextEvent.vibe} vibe
                   </div>
                 )}
@@ -230,7 +230,7 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
                 className={cn(
                   "min-h-[36px] flex-shrink-0",
                   isHost
-                    ? "bg-gradient-primary hover:shadow-amber-lg"
+                    ? "bg-gradient-primary hover:shadow-white-lg"
                     : "glass-card hover:border-accent-primary/50"
                 )}
                 onClick={(e) => {

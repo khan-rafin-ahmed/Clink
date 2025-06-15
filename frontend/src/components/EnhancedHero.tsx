@@ -179,7 +179,7 @@ export function EnhancedHero({ className = '' }: EnhancedHeroProps) {
                 trigger={
                   <Button
                     size="xl"
-                    className="w-full sm:w-auto group glass-button hover-glow ripple-effect hover-lift shadow-amber"
+                    className="w-full sm:w-auto group glass-button hover-glow ripple-effect hover-lift shadow-white"
                   >
                     Start a Night
                     <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -202,7 +202,7 @@ export function EnhancedHero({ className = '' }: EnhancedHeroProps) {
             <Button
               variant="outline"
               size="xl"
-              className="w-full sm:w-auto group glass-button border-accent-secondary/50 hover:border-accent-secondary/80 text-accent-secondary hover:text-accent-secondary hover-lift shadow-gold"
+              className="w-full sm:w-auto group glass-button border-accent/50 hover:border-accent/80 text-accent hover:text-accent hover-lift shadow-gray"
               onClick={() => {
                 const howItWorksSection = document.getElementById('how-it-works');
                 howItWorksSection?.scrollIntoView({ behavior: 'smooth' });

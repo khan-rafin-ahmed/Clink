@@ -17,11 +17,12 @@ export function ProfileInfoCard({
 }: ProfileInfoCardProps) {
   return (
     <div className={cn(
-      "glass-modal rounded-3xl p-6 lg:p-8 border border-white/15 hover:border-primary/30 relative overflow-hidden",
+      "glass-modal rounded-3xl p-6 lg:p-8 relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl",
       className
-    )}>
+    )}
+    style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
       {/* Glass shimmer overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 opacity-0 hover:opacity-100 pointer-events-none rounded-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-0 hover:opacity-100 pointer-events-none rounded-3xl" />
 
       <div className="relative z-10 space-y-6">
         {/* Avatar Section */}
@@ -29,7 +30,7 @@ export function ProfileInfoCard({
           <div className="relative group inline-block">
             <Avatar className="w-24 h-24 lg:w-32 lg:h-32 avatar-ring-glow border-4 border-transparent shadow-glass-lg hover-scale-bounce transition-all duration-500 mx-auto">
               <AvatarImage src={userProfile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-3xl lg:text-4xl font-bold backdrop-blur-sm">
+              <AvatarFallback className="bg-gradient-primary text-white text-3xl lg:text-4xl font-bold backdrop-blur-sm">
                 {avatarFallback}
               </AvatarFallback>
             </Avatar>
@@ -61,7 +62,7 @@ export function ProfileInfoCard({
           )}
 
           {userProfile?.bio && (
-            <div className="glass-panel rounded-xl p-4 border border-white/15 hover-lift">
+            <div className="glass-panel rounded-xl p-4 hover-lift" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
               <p className="text-base text-muted-foreground leading-relaxed max-w-[320px]">
                 {userProfile.bio}
               </p>

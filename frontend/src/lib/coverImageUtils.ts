@@ -50,12 +50,12 @@ export function getEventCoverImage(customCoverUrl?: string | null, vibe?: string
  */
 export function getVibeFallbackGradient(vibe?: string | null): string {
   const gradients: Record<EventVibe, string> = {
-    casual: 'from-green-500/20 to-blue-500/20',
-    party: 'from-red-500/20 to-pink-500/20',
-    shots: 'from-amber-600/20 to-orange-500/20',
-    chill: 'from-blue-500/20 to-purple-500/20',
-    wild: 'from-purple-600/20 to-red-500/20',
-    classy: 'from-amber-500/20 to-yellow-500/20',
+    casual: 'from-white/20 to-gray-500/20',
+    party: 'from-white/30 to-gray-400/20',
+    shots: 'from-white/25 to-gray-600/20',
+    chill: 'from-white/15 to-gray-700/20',
+    wild: 'from-white/35 to-gray-300/20',
+    classy: 'from-white/20 to-gray-500/20',
     other: 'from-gray-500/20 to-slate-500/20'
   }
 

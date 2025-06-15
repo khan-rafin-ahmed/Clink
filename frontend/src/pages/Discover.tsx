@@ -14,11 +14,8 @@ import {
 } from '@/components/SkeletonLoaders'
 import {
   Search,
-  Filter,
-  Calendar,
-  Users,
-  TrendingUp,
-  Clock
+  Grid3X3,
+  List
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -29,6 +26,7 @@ import { calculateAttendeeCount } from '@/lib/eventUtils'
 
 type SortOption = 'newest' | 'trending' | 'date' | 'popular'
 type FilterOption = 'all' | 'tonight' | 'tomorrow' | 'weekend' | 'next-week'
+type ViewMode = 'list' | 'grid'
 
 interface EventWithCreator extends Event {
   creator?: {
@@ -180,6 +178,7 @@ function DiscoverContent() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [drinkFilter, setDrinkFilter] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('list') // Default to list view as per design system
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
 
@@ -328,24 +327,24 @@ function DiscoverContent() {
   if (!events || !Array.isArray(events) || events.length === 0) {
     return (
       <div className="min-h-screen bg-bg-base">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               Discover Epic Sessions 🍻
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-[#B3B3B3] max-w-2xl mx-auto">
               Find amazing drinking sessions happening near you. Join the party and make some memories!
             </p>
           </div>
 
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🍻</div>
-            <h3 className="text-xl font-semibold mb-2">No events yet</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-xl font-semibold text-white mb-2">No events yet</h3>
+            <p className="text-[#B3B3B3] mb-4">
               Be the first to create an epic drinking session!
             </p>
             <Link to="/">
-              <Button className="glass-button">Create First Event</Button>
+              <Button className="bg-white text-[#08090A] hover:bg-white/90">Create First Event</Button>
             </Link>
           </div>
         </div>
@@ -368,129 +367,127 @@ function DiscoverContent() {
         <div className="absolute top-1/3 right-1/4 w-64 h-64 glass-panel rounded-2xl opacity-15"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Masculine Glass Header */}
-        <div className="text-center mb-12 fade-in">
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/30 mb-6">
-            <span className="text-accent-primary font-medium">Discover Events</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground mb-6">
-            Discover Epic <span className="text-accent-primary" style={{ textShadow: '0 0 20px rgba(255, 119, 71, 0.4)' }}>Sessions</span> 🍻
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Clean Header - Design System Compliant */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+            Discover Epic Sessions 🍻
           </h1>
-          <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl sm:text-2xl text-[#B3B3B3] max-w-3xl mx-auto leading-relaxed">
             Find amazing drinking sessions happening near you. Join the party and make some legendary memories!
           </p>
         </div>
 
-        {/* Enhanced Glass Filters and Search */}
-        <div className="glass-modal rounded-2xl p-6 sm:p-8 border border-white/15 hover:border-accent-primary/30 mb-8 relative overflow-hidden">
-          {/* Glass shimmer effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 opacity-0 hover:opacity-100 pointer-events-none rounded-2xl" />
+        {/* Enhanced Search System - Full Width Container */}
+        <div className="space-y-6 mb-8">
+          {/* Search Input - Glass Background */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B3B3B3] w-5 h-5" />
+            <Input
+              placeholder="Search sessions, locations, or hosts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-14 text-base bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder:text-[#B3B3B3] placeholder:text-sm focus:border-white/20 focus:bg-white/8"
+            />
+          </div>
 
-          <div className="relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-              {/* Enhanced Search */}
-              <div className="lg:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                  <Input
-                    placeholder="Search sessions, locations, or hosts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-14 text-base"
-                  />
-                </div>
-              </div>
-
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Newest
-                  </div>
-                </SelectItem>
-                <SelectItem value="trending">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Trending
-                  </div>
-                </SelectItem>
-                <SelectItem value="date">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    By Date
-                  </div>
-                </SelectItem>
-                <SelectItem value="popular">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Most Popular
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Filters as Segmented Glass Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Sort Filter */}
+            <div>
+              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#08090A] border border-white/10">
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="trending">Trending</SelectItem>
+                  <SelectItem value="date">By Date</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Time Filter */}
-            <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="When" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sessions</SelectItem>
-                <SelectItem value="tonight">Tonight</SelectItem>
-                <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                <SelectItem value="weekend">This Weekend</SelectItem>
-                <SelectItem value="next-week">Next Week</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
+                  <SelectValue placeholder="When" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#08090A] border border-white/10">
+                  <SelectItem value="all">All Sessions</SelectItem>
+                  <SelectItem value="tonight">Tonight</SelectItem>
+                  <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                  <SelectItem value="weekend">This Weekend</SelectItem>
+                  <SelectItem value="next-week">Next Week</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Drink Filter */}
-            <Select value={drinkFilter} onValueChange={setDrinkFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Drink Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Drinks</SelectItem>
-                <SelectItem value="beer">🍺 Beer</SelectItem>
-                <SelectItem value="wine">🍷 Wine</SelectItem>
-                <SelectItem value="cocktails">🍸 Cocktails</SelectItem>
-                <SelectItem value="whiskey">🥃 Whiskey</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Select value={drinkFilter} onValueChange={setDrinkFilter}>
+                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
+                  <SelectValue placeholder="Drink Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#08090A] border border-white/10">
+                  <SelectItem value="all">All Drinks</SelectItem>
+                  <SelectItem value="beer">🍺 Beer</SelectItem>
+                  <SelectItem value="wine">🍷 Wine</SelectItem>
+                  <SelectItem value="cocktails">🍸 Cocktails</SelectItem>
+                  <SelectItem value="whiskey">🥃 Whiskey</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-          <p className="text-muted-foreground">
+        {/* Results Count and View Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <p className="text-[#B3B3B3]">
             Found {filteredEvents.length} session{filteredEvents.length !== 1 ? 's' : ''}
           </p>
+
+          {/* Grid/List View Toggle - Top Right Above Filters */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {sortBy === 'newest' && 'Newest first'}
-              {sortBy === 'trending' && 'Trending'}
-              {sortBy === 'date' && 'By date'}
-              {sortBy === 'popular' && 'Most popular'}
-            </span>
+            <div className="flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-lg p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white text-[#08090A]'
+                    : 'text-[#B3B3B3] hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-[#08090A]'
+                    : 'text-[#B3B3B3] hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Enhanced Events Grid */}
+        {/* Events Display - Grid or List View */}
         <div>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-24 h-24 glass-effect rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-5xl">🔍</span>
               </div>
-              <h3 className="text-2xl font-heading font-bold mb-3">No Sessions Found</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
+              <h3 className="text-2xl font-bold text-white mb-3">No Sessions Found</h3>
+              <p className="text-[#B3B3B3] mb-6 max-w-md mx-auto leading-relaxed">
                 Try adjusting your filters or search terms to find the perfect party
               </p>
               <Button
@@ -500,16 +497,35 @@ function DiscoverContent() {
                   setFilterBy('all')
                   setDrinkFilter('all')
                 }}
-                className="group glass-button"
+                className="bg-white text-[#08090A] hover:bg-white/90"
               >
                 🔄 Clear Filters
                 <span className="ml-2">↻</span>
               </Button>
             </div>
+          ) : viewMode === 'list' ? (
+            // List View - Timeline Layout (Default)
+            <div className="space-y-6">
+              {filteredEvents.map((event) => (
+                <EnhancedEventCard
+                  key={event.id}
+                  event={{
+                    ...event,
+                    creator: event.creator ? {
+                      display_name: event.creator.display_name,
+                      avatar_url: event.creator.avatar_url,
+                      user_id: event.creator.user_id
+                    } : undefined
+                  }}
+                  variant="timeline"
+                  className=""
+                />
+              ))}
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {filteredEvents.map((event) => {
-              return (
+            // Grid View - Fixed Height Cards with 16:9 Images
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+              {filteredEvents.map((event) => (
                 <EnhancedEventCard
                   key={event.id}
                   event={{
@@ -521,12 +537,11 @@ function DiscoverContent() {
                     } : undefined
                   }}
                   variant="default"
-                  className=""
+                  className="discover-grid-card"
                 />
-              )
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

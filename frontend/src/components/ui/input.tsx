@@ -18,7 +18,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "placeholder:text-muted-foreground/70",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50",
             "hover:border-white/30 hover:bg-white/8",
-            "focus:border-primary/40 focus:bg-white/10 focus:shadow-amber/20",
+            "focus:border-primary/40 focus:bg-white/10 focus:shadow-white/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "glass-effect",
             className

@@ -21,11 +21,17 @@ export default {
         'bg-glass': "rgba(var(--bg-glass))",
         'bg-glass-hover': "rgba(var(--bg-glass-hover))",
 
-        // Masculine neon accent colors
-        'accent-primary': "hsl(var(--accent-primary))", // Deep Amber #FF7747
-        'accent-primary-hover': "hsl(var(--accent-primary-hover))", // #FF5E3A
-        'accent-secondary': "hsl(var(--accent-secondary))", // Warm Gold #FFD37E
+        // Updated monochromatic accent colors
+        'accent-primary': "hsl(var(--accent-primary))", // White #FFFFFF
+        'accent-primary-hover': "hsl(var(--accent-primary-hover))", // Light Gray
+        'accent-secondary': "hsl(var(--accent-secondary))", // Gray #888888
         'highlight-pink': "hsl(var(--highlight-pink))", // Optional Pink #FF5E78
+
+        // Button-specific colors
+        'btn-primary-bg': "hsl(var(--btn-primary-bg))", // White button background
+        'btn-primary-text': "hsl(var(--btn-primary-text))", // Gray button text
+        'btn-secondary-bg': "hsl(var(--btn-secondary-bg))", // Dark button background
+        'btn-secondary-text': "hsl(var(--btn-secondary-text))", // White button text
 
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -109,9 +115,9 @@ export default {
         'xl': 'var(--shadow-xl)',
         'glass': 'var(--shadow-glass)',
         'glass-lg': 'var(--shadow-glass-lg)',
-        'amber': 'var(--shadow-amber)',
-        'amber-lg': 'var(--shadow-amber-lg)',
-        'gold': 'var(--shadow-gold)',
+        'white': 'var(--shadow-white)',
+        'white-lg': 'var(--shadow-white-lg)',
+        'gray': 'var(--shadow-gray)',
         'pink': 'var(--shadow-pink)',
       },
       backdropBlur: {

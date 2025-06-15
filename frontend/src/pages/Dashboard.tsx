@@ -220,29 +220,41 @@ export function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-hero"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-10"></div>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      {/* Consistent Width Container - Matching Profile Page Layout */}
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">My Sessions 🍻</h1>
-          <p className="text-muted-foreground mt-1">Time to raise some hell with your crew!</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-white">My Sessions 🍻</h1>
+          <p className="text-[#B3B3B3] mt-1">Time to raise some hell with your crew!</p>
         </div>
         <QuickEventModal onEventCreated={loadEvents} />
       </div>
 
       {events.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="glass-card rounded-2xl p-8 sm:p-16 text-center">
           <div className="mb-8">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">🍺</span>
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl sm:text-4xl">🍺</span>
             </div>
-            <h2 className="text-2xl font-display font-bold text-foreground mb-2">No sessions yet</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <h2 className="text-xl sm:text-2xl font-display font-bold text-white mb-2">No sessions yet</h2>
+            <p className="text-[#B3B3B3] max-w-md mx-auto leading-relaxed">
               Ready to get this party started? Create your first drinking session and invite your crew!
             </p>
           </div>
           <QuickEventModal
             trigger={
-              <Button size="lg" className="font-semibold">
+              <Button size="lg" className="font-semibold bg-white text-black hover:bg-white/90">
                 🍻 Create Your First Session
               </Button>
             }
@@ -279,6 +291,7 @@ export function Dashboard() {
           onEventDeleted={handleEventDeleted}
         />
       )}
+      </div>
     </div>
   )
 }

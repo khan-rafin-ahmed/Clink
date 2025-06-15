@@ -271,7 +271,7 @@ export function CrewDetail() {
 
         <div className="relative flex h-screen items-center justify-center">
           <div className="text-center space-y-6 fade-in">
-            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold animate-pulse">
+            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-white animate-pulse">
               <Users className="h-10 w-10 text-primary-foreground" />
             </div>
             <div className="space-y-3">
@@ -316,14 +316,7 @@ export function CrewDetail() {
     return <Icon className="w-4 h-4" />
   }
 
-  const vibeColors: Record<Crew['vibe'], 'default' | 'secondary'> = {
-    casual: 'secondary',
-    party: 'secondary',
-    chill: 'secondary',
-    wild: 'secondary',
-    classy: 'secondary',
-    other: 'secondary'
-  }
+
 
   const isCreator = crew.is_creator
 
@@ -339,7 +332,8 @@ export function CrewDetail() {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      <div className="relative max-w-4xl mx-auto p-4 space-y-8">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
         {/* Enhanced Header */}
         <div className="flex items-center gap-4 fade-in">
           <Button
@@ -355,55 +349,57 @@ export function CrewDetail() {
 
         {/* Enhanced Top Section - Crew Info */}
         <div className="slide-up" style={{ animationDelay: '0.2s' }}>
-          <Card className="bg-gradient-card border border-border hover:border-border-hover transition-all duration-300 backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
+          <Card className="glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="space-y-3 sm:space-y-4 flex-1">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
                     <VibeIcon vibe={crew.vibe} />
                   </div>
-                  <div>
-                    <CardTitle className="text-2xl font-display">{crew.name}</CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={vibeColors[crew.vibe]} className="capitalize">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-xl sm:text-2xl font-display text-white">{crew.name}</CardTitle>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <Badge variant="secondary" className="capitalize bg-white/10 text-white border-white/20">
                         <VibeIcon vibe={crew.vibe} />
+                        <span className="ml-1">{crew.vibe}</span>
                       </Badge>
-                      <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'}>
+                      <Badge variant={crew.visibility === 'public' ? 'default' : 'outline'} className="bg-white/8 text-white border-white/15">
                         {crew.visibility === 'public' ? (
-                          <><Globe className="w-3 h-3 mr-1" />Public</>
+                          <><Globe className="w-3 h-3 mr-1 text-[#CFCFCF]" />Public</>
                         ) : (
-                          <><Lock className="w-3 h-3 mr-1" />Private</>
+                          <><Lock className="w-3 h-3 mr-1 text-[#CFCFCF]" />Private</>
                         )}
                       </Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-[#B3B3B3] flex-wrap">
                   <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
+                    <Users className="w-4 h-4 text-[#CFCFCF]" />
                     <span>{crew.member_count || 0} members</span>
                   </div>
                   {pendingRequests.length > 0 && (
                     <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
+                      <Clock className="w-4 h-4 text-[#CFCFCF]" />
                       <span>{pendingRequests.length} pending</span>
                     </div>
                   )}
                 </div>
 
                 {crew.description && (
-                  <p className="text-muted-foreground mt-2">{crew.description}</p>
+                  <p className="text-[#B3B3B3] mt-2 leading-relaxed">{crew.description}</p>
                 )}
               </div>
 
               {isCreator && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleCreateInviteLink}
+                    className="bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white border-white/20"
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Link
@@ -422,7 +418,7 @@ export function CrewDetail() {
                     }
                   }}>
                     <DialogTrigger asChild>
-                      <Button size="sm" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold">
+                      <Button size="sm" className="bg-white text-black hover:bg-white/90 font-bold">
                         <UserPlus className="w-4 h-4 mr-2" />
                         Invite Members
                       </Button>
@@ -476,26 +472,26 @@ export function CrewDetail() {
                                     key={result.user_id}
                                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
                                       isSelected
-                                        ? 'bg-amber-500/20 border-amber-400 shadow-sm'
+                                        ? 'bg-white/20 border-white/40 shadow-sm'
                                         : 'hover:bg-muted/50'
                                     }`}
                                     onClick={() => handleToggleUserSelection(result.user_id)}
                                   >
                                     <Avatar className="w-10 h-10">
                                       <AvatarImage src={result.avatar_url || undefined} />
-                                      <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-black font-bold">
+                                      <AvatarFallback className="bg-white/10 text-white font-bold">
                                         {result.display_name?.[0]?.toUpperCase() || '?'}
                                       </AvatarFallback>
                                     </Avatar>
 
                                     <div className="flex-1">
-                                      <p className={`font-medium text-sm ${isSelected ? 'text-amber-900 dark:text-amber-100' : ''}`}>{result.display_name}</p>
-                                      <p className={`text-xs ${isSelected ? 'text-amber-700 dark:text-amber-200' : 'text-muted-foreground'}`}>Click to select</p>
+                                      <p className={`font-medium text-sm ${isSelected ? 'text-white' : ''}`}>{result.display_name}</p>
+                                      <p className={`text-xs ${isSelected ? 'text-[#B3B3B3]' : 'text-muted-foreground'}`}>Click to select</p>
                                     </div>
 
                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                       isSelected
-                                        ? 'bg-amber-500 border-amber-500 text-black'
+                                        ? 'bg-white border-white text-black'
                                         : 'border-muted-foreground/30'
                                     }`}>
                                       {isSelected && <Check className="w-4 h-4" />}
@@ -523,7 +519,7 @@ export function CrewDetail() {
                               <Button
                                 onClick={handleInviteSelectedUsers}
                                 disabled={isInviting}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold h-11"
+                                className="flex-1 bg-white text-black hover:bg-white/90 font-bold h-11"
                               >
                                 {isInviting ? (
                                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -560,15 +556,15 @@ export function CrewDetail() {
 
                         {/* User Not Found - Share Options */}
                         {inviteResult && !inviteResult.success && (
-                          <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                          <div className="space-y-4 p-4 bg-white/5 rounded-lg border border-white/20">
                             <div className="text-center space-y-2">
-                              <p className="text-sm font-medium text-amber-800">
+                              <p className="text-sm font-medium text-white">
                                 ❌ We didn't find anyone with that username.
                               </p>
-                              <p className="text-sm font-bold text-amber-900">
+                              <p className="text-sm font-bold text-white">
                                 Wanna bring them to the party?
                               </p>
-                              <p className="text-xs text-amber-700">
+                              <p className="text-xs text-[#B3B3B3]">
                                 Share this invite link to Thirstee 👉
                               </p>
                             </div>
@@ -577,14 +573,14 @@ export function CrewDetail() {
                               <Button
                                 onClick={handleCopyShareLink}
                                 variant="outline"
-                                className="flex-1 border-amber-300 text-amber-800 hover:bg-amber-100"
+                                className="flex-1 border-white/30 text-white hover:bg-white/10"
                               >
                                 <Copy className="w-4 h-4 mr-2" />
                                 Copy Link
                               </Button>
                               <Button
                                 onClick={handleNativeShare}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
+                                className="flex-1 bg-white text-black hover:bg-white/90 font-bold"
                               >
                                 <ExternalLink className="w-4 h-4 mr-2" />
                                 Share
@@ -603,7 +599,7 @@ export function CrewDetail() {
                                   setSearchResults([])
                                   setLastSearchQuery('')
                                 }}
-                                className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                                className="text-[#B3B3B3] hover:text-white hover:bg-white/10"
                               >
                                 Try Another Username
                               </Button>
@@ -617,39 +613,40 @@ export function CrewDetail() {
               )}
             </div>
           </CardHeader>
-        </Card>
+          </Card>
+        </div>
 
         {/* Pending Requests Section */}
         {pendingRequests.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
+          <Card className="glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Clock className="w-5 h-5 text-[#CFCFCF]" />
                 Pending Invites ({pendingRequests.length})
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               <div className="grid gap-3">
                 {pendingRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={request.user?.avatar_url || undefined} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-white/10 text-white">
                           {request.user?.display_name?.[0]?.toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">
+                          <span className="font-medium text-white">
                             {request.user?.display_name || 'Anonymous'}
                           </span>
-                          <Badge variant="secondary" className="text-xs">
-                            <Clock className="w-3 h-3 mr-1" />
+                          <Badge variant="secondary" className="text-xs bg-white/10 text-[#B3B3B3] border-white/20">
+                            <Clock className="w-3 h-3 mr-1 text-[#CFCFCF]" />
                             Pending
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-[#B3B3B3]">
                           Invited {new Date(request.joined_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -662,35 +659,35 @@ export function CrewDetail() {
         )}
 
         {/* Members Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
+        <Card className="glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Users className="w-5 h-5 text-[#CFCFCF]" />
               Members ({members.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6 pt-0">
             {members.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No members yet</p>
+              <p className="text-center text-[#B3B3B3] py-8">No members yet</p>
             ) : (
               <div className="grid gap-3">
                 {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={member.user?.avatar_url || undefined} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-white/10 text-white">
                           {member.user?.display_name?.[0]?.toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-white">
                             {member.user?.display_name || 'Anonymous'}
                           </span>
                           {member.user_id === crew.created_by && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Crown className="w-3 h-3 mr-1" />
+                            <Badge variant="secondary" className="text-xs bg-white/10 text-white border-white/20">
+                              <Crown className="w-3 h-3 mr-1 text-[#CFCFCF]" />
                               Host
                             </Badge>
                           )}
@@ -700,7 +697,7 @@ export function CrewDetail() {
                             aka {member.user.nickname} 🍻
                           </p>
                         )}
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-[#B3B3B3]">
                           Joined {new Date(member.joined_at).toLocaleDateString()}
                         </p>
                       </div>

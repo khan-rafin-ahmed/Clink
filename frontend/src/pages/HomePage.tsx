@@ -222,28 +222,28 @@ export function HomePage() {
                 emoji: '🍻',
                 title: 'Chill',
                 desc: 'Casual hangs',
-                glowColor: 'hover:shadow-blue-500/30',
-                borderColor: 'hover:border-blue-500/40'
+                glowColor: 'hover:shadow-white',
+                borderColor: 'hover:border-white/40'
               },
               {
                 emoji: '🥃',
                 title: 'Stone Cold',
                 desc: 'Raise hell',
-                glowColor: 'hover:shadow-amber-500/30',
-                borderColor: 'hover:border-amber-500/40'
+                glowColor: 'hover:shadow-white',
+                borderColor: 'hover:border-white/40'
               },
               {
                 emoji: '🍷',
                 title: 'Classy',
                 desc: 'Sophisticated',
-                glowColor: 'hover:shadow-purple-500/30',
-                borderColor: 'hover:border-purple-500/40'
+                glowColor: 'hover:shadow-gray',
+                borderColor: 'hover:border-gray-500/40'
               },
               {
                 emoji: '🎉',
                 title: 'Party',
                 desc: 'Full chaos',
-                glowColor: 'hover:shadow-pink-500/30',
+                glowColor: 'hover:shadow-pink',
                 borderColor: 'hover:border-pink-500/40'
               }
             ].map((vibe, index) => (

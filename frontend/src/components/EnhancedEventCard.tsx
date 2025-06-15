@@ -348,7 +348,7 @@ export function EnhancedEventCard({
   return (
     <Card className={cn(
       "interactive-card group overflow-hidden glass-card floating-tile border-white/10 hover:border-accent-primary/30 relative",
-      isFeatured && "ring-2 ring-accent-primary/20 shadow-amber",
+      isFeatured && "ring-2 ring-primary/20 shadow-white",
       className
     )}>
       {/* Floating Glass Overlay */}
@@ -513,7 +513,7 @@ export function EnhancedEventCard({
 
           {/* Main Action - Enhanced Glass Button */}
           <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
-            <Button className="w-full group/btn glass-ripple hover-lift bg-gradient-primary hover:shadow-amber-lg transition-all duration-300">
+            <Button className="w-full group/btn glass-ripple hover-lift bg-gradient-primary hover:shadow-white-lg transition-all duration-300">
               View Event Details
               <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-2 group-hover/btn:scale-110 transition-all duration-300" />
             </Button>

@@ -8,7 +8,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "glass-pill bg-gradient-primary text-primary-foreground hover:shadow-amber shadow-glass border-primary/30",
+          "glass-pill bg-gradient-primary text-btn-primary-text hover:shadow-white shadow-glass border-primary/30",
         secondary:
           "glass-effect bg-secondary/80 text-secondary-foreground hover:bg-secondary/90 shadow-glass border-white/20 hover:border-white/30",
         destructive:
@@ -20,7 +20,7 @@ const badgeVariants = cva(
         warning:
           "glass-effect bg-warning/80 text-warning-foreground hover:bg-warning/90 shadow-glass border-warning/30",
         accent:
-          "glass-pill bg-accent/80 text-accent-foreground hover:bg-accent/90 shadow-gold border-accent/30",
+          "glass-pill bg-accent/80 text-accent-foreground hover:bg-accent/90 shadow-gray border-accent/30",
         glass:
           "glass-effect bg-white/5 text-foreground border-white/20 hover:border-primary/30 hover:bg-white/10 hover:text-primary",
         glow:

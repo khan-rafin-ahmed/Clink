@@ -6,64 +6,71 @@
 
 @layer base {
   :root {
-    /* Liquid Glass Design System - Phase 4: Masculine Neon */
-    --bg-base: 14 14 16; /* #0E0E10 - Main dark background */
-    --bg-glass: 255 255 255 / 0.04; /* Frosted glass effect */
+    /* Liquid Glass Design System - Phase 4: Updated Color Palette */
+    --bg-base: 8 9 10; /* #08090A - Ultra-dark charcoal background */
+    --bg-glass: 255 255 255 / 0.05; /* Frosted glass layer with backdrop blur */
     --bg-glass-hover: 255 255 255 / 0.08; /* Glass surface hover state */
 
-    --background: 14 14 16; /* Deep Black Base */
-    --foreground: 0 0% 100%; /* #FFFFFF - Main readable text */
+    --background: 8 9 10; /* Ultra-dark charcoal base */
+    --foreground: 0 0% 100%; /* #FFFFFF - Main text, headings, icons */
 
-    --card: 255 255 255 / 0.03; /* Glass card background */
+    --card: 255 255 255 / 0.05; /* Glass card background */
     --card-foreground: 0 0% 100%;
-    --card-hover: 255 255 255 / 0.06; /* Glass card hover state */
+    --card-hover: 255 255 255 / 0.08; /* Glass card hover state */
 
     --popover: 255 255 255 / 0.05;
     --popover-foreground: 0 0% 100%;
 
-    /* Masculine Neon Accent Colors */
-    --accent-primary: 15 100% 64%; /* #FF7747 - Deep Amber (main CTA, buttons, icons, glow) */
-    --accent-primary-hover: 15 100% 59%; /* #FF5E3A - Slightly darker for hover states */
-    --accent-secondary: 45 100% 74%; /* #FFD37E - Warm gold pop for secondary buttons, vibes */
+    /* Updated Monochromatic Color Palette - White & Gray */
+    --accent-primary: 0 0% 100%; /* #FFFFFF - White (cool highlight for active elements) */
+    --accent-primary-hover: 0 0% 90%; /* Slightly darker white for hover states */
+    --accent-secondary: 0 0% 53%; /* #888888 - Gray (used for hover, animated state glow) */
     --highlight-pink: 350 100% 68%; /* #FF5E78 - Optional flair for chips or animated RSVP pulse */
 
-    --primary: 15 100% 64%; /* Deep Amber primary */
-    --primary-foreground: 0 0% 10%; /* Dark text on amber */
-    --primary-hover: 15 100% 59%; /* Darker amber for hover */
-    --primary-muted: 15 100% 20%; /* Muted amber for backgrounds */
+    --primary: 0 0% 100%; /* White primary */
+    --primary-foreground: 0 0% 53%; /* Gray text on white */
+    --primary-hover: 0 0% 90%; /* Light gray for hover */
+    --primary-muted: 0 0% 95%; /* Very light gray for backgrounds */
 
     --secondary: 0 0% 14.9%; /* Dark gray for secondary elements */
     --secondary-foreground: 0 0% 100%;
     --secondary-hover: 0 0% 18%; /* Secondary hover state */
 
     --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 70%; /* #B3B3B3 - Subtext, labels, meta info */
+    --muted-foreground: 0 0% 70%; /* #B3B3B3 - Subtext, metadata, supporting copy */
 
-    --accent: 45 100% 74%; /* Warm gold accent color */
-    --accent-foreground: 0 0% 10%;
-    --accent-hover: 45 100% 80%;
+    --accent: 0 0% 53%; /* Gray accent color */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 0 0% 40%;
 
-    --destructive: 0 84.2% 60.2%; /* #FF4D4F - Errors, destructive actions */
+    --destructive: 0 84.2% 60.2%; /* #FF4D4F - Warnings, validation errors */
     --destructive-foreground: 0 0% 100%;
     --destructive-hover: 0 84.2% 65%;
 
     /* Glass-specific borders and effects */
-    --border: 255 255 255 / 0.1; /* Glass border */
-    --border-hover: 15 100% 64% / 0.3; /* Amber border on hover */
+    --border: 255 255 255 / 0.1; /* For outlines, dividers, and subtle button borders */
+    --border-hover: 255 255 255 / 0.3; /* White border on hover */
     --input: 255 255 255 / 0.05;
-    --ring: 15 100% 64%; /* Amber ring on focus */
+    --ring: 0 0% 100%; /* White ring on focus */
 
     --success: 162 68% 50%; /* #34C9AE - Used sparingly (confirmation toasts) */
     --success-foreground: 0 0% 100%;
     --warning: 45 100% 63%; /* #FFC542 - Optional alerts (low priority) */
     --warning-foreground: 0 0% 10%;
 
-    /* Masculine Glass-specific gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(15 100% 64%) 0%, hsl(15 100% 54%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(45 100% 74%) 0%, hsl(45 100% 64%) 100%);
+    /* Button-specific color tokens - Updated per Design System */
+    --btn-primary-bg: 0 0% 100%; /* #FFFFFF - White background for primary buttons */
+    --btn-primary-text: 8 9 10; /* #08090A - Dark text on primary buttons */
+    --btn-secondary-bg: 7 8 10; /* #07080A - Dark background for secondary buttons */
+    --btn-secondary-text: 0 0% 100%; /* #FFFFFF - White text on secondary buttons */
+    --btn-border-subtle: 255 255 255 / 0.1; /* rgba(255,255,255,0.1) - Subtle border for secondary buttons */
+
+    /* Updated Monochromatic Glass-specific gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 90%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 53%) 0%, hsl(0 0% 40%) 100%);
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
-    --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--bg-base)) 0%, rgba(255,119,71,0.08) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--bg-base)) 0%, rgba(255,255,255,0.08) 100%);
 
     /* Enhanced shadows for masculine glass effects */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -73,9 +80,9 @@
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     --shadow-glass-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --shadow-amber: 0 0 20px rgb(255 119 71 / 0.3); /* Deep Amber glow */
-    --shadow-amber-lg: 0 0 30px rgb(255 119 71 / 0.4); /* Stronger amber glow */
-    --shadow-gold: 0 0 20px rgb(255 211 126 / 0.3); /* Warm gold glow */
+    --shadow-white: 0 0 20px rgb(255 255 255 / 0.3); /* White glow */
+    --shadow-white-lg: 0 0 30px rgb(255 255 255 / 0.4); /* Stronger white glow */
+    --shadow-gray: 0 0 20px rgb(136 136 136 / 0.3); /* Gray glow */
     --shadow-pink: 0 0 20px rgb(255 94 120 / 0.3); /* Optional pink highlight */
 
     /* Glass blur effects */
@@ -110,13 +117,13 @@
 
   /* Enhanced animations and micro-interactions for Liquid Glass Phase 4 */
   @keyframes glow {
-    0%, 100% { box-shadow: var(--shadow-amber); }
-    50% { box-shadow: var(--shadow-amber-lg); }
+    0%, 100% { box-shadow: var(--shadow-white); }
+    50% { box-shadow: var(--shadow-white-lg); }
   }
 
-  @keyframes glowGold {
-    0%, 100% { box-shadow: var(--shadow-gold); }
-    50% { box-shadow: 0 0 40px rgb(255 211 126 / 0.5); }
+  @keyframes glowGray {
+    0%, 100% { box-shadow: var(--shadow-gray); }
+    50% { box-shadow: 0 0 40px rgb(136 136 136 / 0.5); }
   }
 
   @keyframes glowPink {
@@ -168,11 +175,11 @@
 
   @keyframes pulseGlow {
     0%, 100% {
-      box-shadow: 0 0 20px rgb(255 119 71 / 0.3);
+      box-shadow: 0 0 20px rgb(255 255 255 / 0.3);
       transform: scale(1);
     }
     50% {
-      box-shadow: 0 0 40px rgb(255 119 71 / 0.6);
+      box-shadow: 0 0 40px rgb(255 255 255 / 0.6);
       transform: scale(1.02);
     }
   }
@@ -215,12 +222,12 @@
     0% {
       transform: scale(0) rotate(0deg);
       opacity: 1;
-      background: radial-gradient(circle, rgb(255 119 71 / 0.8) 0%, rgb(255 119 71 / 0.2) 70%, transparent 100%);
+      background: radial-gradient(circle, rgb(255 255 255 / 0.8) 0%, rgb(255 255 255 / 0.2) 70%, transparent 100%);
     }
     50% {
       transform: scale(2) rotate(180deg);
       opacity: 0.6;
-      background: radial-gradient(circle, rgb(255 211 126 / 0.6) 0%, rgb(255 119 71 / 0.3) 70%, transparent 100%);
+      background: radial-gradient(circle, rgb(255 255 255 / 0.6) 0%, rgb(255 255 255 / 0.3) 70%, transparent 100%);
     }
     100% {
       transform: scale(4) rotate(360deg);
@@ -300,12 +307,12 @@
 
   @keyframes pillGlow {
     0%, 100% {
-      box-shadow: 0 0 10px rgba(255, 119, 71, 0.3);
-      border-color: rgba(255, 119, 71, 0.3);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.3);
     }
     50% {
-      box-shadow: 0 0 20px rgba(255, 119, 71, 0.6);
-      border-color: rgba(255, 119, 71, 0.6);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+      border-color: rgba(255, 255, 255, 0.6);
     }
   }
 
@@ -325,13 +332,31 @@
     }
   }
 
-  /* Enhanced Micro-interaction classes for Liquid Glass Phase 4 */
-  .glow-on-hover:hover {
-    box-shadow: var(--shadow-amber);
+  /* Text System Classes - Per Design System */
+  .text-primary {
+    color: #FFFFFF;
   }
 
-  .glow-gold-hover:hover {
-    box-shadow: var(--shadow-gold);
+  .text-secondary {
+    color: #B3B3B3;
+  }
+
+  .text-tag {
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+
+  .text-tag-icon {
+    color: #CFCFCF;
+  }
+
+  /* Enhanced Micro-interaction classes for Liquid Glass Phase 4 */
+  .glow-on-hover:hover {
+    box-shadow: var(--shadow-white);
+  }
+
+  .glow-gray-hover:hover {
+    box-shadow: var(--shadow-gray);
   }
 
   .glow-pink-hover:hover {
@@ -343,7 +368,7 @@
   }
 
   .shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,119,71,0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     background-size: 200px 100%;
   }
 
@@ -418,7 +443,7 @@
   }
 
   .floating-glass-cta:hover {
-    box-shadow: var(--shadow-amber-lg);
+    box-shadow: var(--shadow-white-lg);
   }
 
   .glass-ripple {
@@ -471,7 +496,7 @@
   }
 
   .event-card:hover {
-    @apply shadow-amber-lg;
+    @apply shadow-white-lg;
   }
 
   /* Timeline anchor hover effects */
@@ -493,16 +518,54 @@
 
   .glass-border-ring {
     position: relative;
-    border: 2px solid transparent;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)) padding-box,
-                linear-gradient(135deg, rgba(255,119,71,0.6), rgba(255,211,126,0.6)) border-box;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    will-change: transform, backdrop-filter, box-shadow;
+  }
+
+  .glass-border-ring::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
   }
 
   .glass-border-ring:hover {
-    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08)) padding-box,
-                linear-gradient(135deg, rgba(255,119,71,0.8), rgba(255,211,126,0.8)) border-box;
-    box-shadow: 0 0 30px rgba(255, 119, 71, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      0 4px 20px rgba(255, 255, 255, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: scale(1.01);
+  }
+
+  .glass-border-ring:hover::before {
+    left: 100%;
+  }
+
+  .glass-border-ring:focus-visible {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      0 4px 20px rgba(255, 255, 255, 0.15),
+      0 0 0 2px rgba(255, 255, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: scale(1.01);
   }
 
   .fade-in {
@@ -602,8 +665,8 @@
   }
 
   .hover-glow:hover {
-    box-shadow: var(--shadow-amber);
-    border-color: rgba(255, 119, 71, 0.4);
+    box-shadow: var(--shadow-white);
+    border-color: rgba(255, 255, 255, 0.4);
   }
 
   .hover-glow-intense {
@@ -611,8 +674,8 @@
   }
 
   .hover-glow-intense:hover {
-    box-shadow: var(--shadow-amber-lg);
-    border-color: rgba(255, 119, 71, 0.6);
+    box-shadow: var(--shadow-white-lg);
+    border-color: rgba(255, 255, 255, 0.6);
   }
 
   .interactive-card {
@@ -623,7 +686,7 @@
 
   .interactive-card:hover {
     box-shadow: var(--shadow-glass-lg);
-    border-color: rgba(255, 119, 71, 0.4);
+    border-color: rgba(255, 255, 255, 0.4);
     backdrop-filter: var(--blur-lg);
     -webkit-backdrop-filter: var(--blur-lg);
   }
@@ -744,15 +807,15 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 119, 71, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     opacity: 0;
     transition: opacity 0.3s ease;
   }
 
   .glass-button:hover {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 119, 71, 0.4);
-    box-shadow: var(--shadow-amber);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-white);
   }
 
   .glass-button:hover::before {
@@ -818,9 +881,9 @@
     right: 0;
     height: 2px;
     background: linear-gradient(90deg,
-      rgba(255, 119, 71, 0.4) 0%,
-      rgba(255, 211, 126, 0.4) 50%,
-      rgba(255, 119, 71, 0.4) 100%);
+      rgba(136, 136, 136, 0.4) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(136, 136, 136, 0.4) 100%);
   }
 
   .glass-pill {
@@ -834,8 +897,8 @@
 
   .glass-pill:hover {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 119, 71, 0.3);
-    box-shadow: var(--shadow-amber);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-white);
   }
 
   /* Remove default link underlines */
@@ -891,5 +954,30 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Discover Page Grid View - Fixed Height Cards with 16:9 Images */
+  .discover-grid-card {
+    height: 400px; /* Fixed card height for visual harmony */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .discover-grid-card .card-image {
+    aspect-ratio: 16/9; /* 16:9 aspect ratio for images */
+    height: 200px; /* Fixed image height */
+    overflow: hidden;
+  }
+
+  .discover-grid-card .card-content {
+    flex: 1; /* Fill remaining space */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .discover-grid-card .card-title {
+    margin-bottom: 0.5rem; /* Title placement below image */
+    font-weight: 600;
+    color: #FFFFFF;
   }
 }
