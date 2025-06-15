@@ -16,6 +16,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetPortal,
 } from '@/components/ui/sheet'
 import { User, LogOut, Settings, Edit, Menu, Search, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -179,32 +180,33 @@ export function Navbar() {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="w-full bg-black/80 border-none p-0 z-40"
-              >
-                {/* Fixed Header with Logo and Close */}
-                <div className="fixed top-0 left-0 right-0 z-50 bg-[rgba(8,9,10,0.95)] border-b border-white/8">
-                  <div className="flex items-center justify-between px-4 h-16">
-                    <Link to="/" className="flex items-center">
-                      <img
-                        src="/thirstee-logo.svg"
-                        alt="Thirstee"
-                        className="h-8 w-auto"
-                      />
-                    </Link>
-                    <button
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      <X className="w-5 h-5 text-white" />
-                    </button>
+              <SheetPortal>
+                <SheetContent
+                  side="right"
+                  className="w-full bg-transparent border-none p-0 z-40 pointer-events-none"
+                >
+                  {/* Fixed Header with Logo and Close */}
+                  <div className="fixed top-0 left-0 right-0 z-50 bg-[rgba(8,9,10,0.95)] border-b border-white/8 pointer-events-auto">
+                    <div className="flex items-center justify-between px-4 h-16">
+                      <Link to="/" className="flex items-center">
+                        <img
+                          src="/thirstee-logo.svg"
+                          alt="Thirstee"
+                          className="h-8 w-auto"
+                        />
+                      </Link>
+                      <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Solid Dark Sidebar Panel */}
-                <div className="pt-20 px-4">
-                  <div className="max-w-[340px] mx-auto bg-[#0E0E10] border border-white/8 rounded-2xl px-6 py-6">
+                  {/* Solid Dark Sidebar Panel with Shadow */}
+                  <div className="pt-20 px-4 pointer-events-auto">
+                    <div className="max-w-[340px] mx-auto bg-[#0E0E10] border border-white/8 rounded-2xl px-6 py-6 shadow-2xl">
                     {/* Profile Block - Avatar + Name Only */}
                     {user && (
                       <div className="bg-white/5 rounded-xl p-4 mb-6">
@@ -310,9 +312,10 @@ export function Navbar() {
                       )}
                     </div>
 
+                    </div>
                   </div>
-                </div>
-              </SheetContent>
+                </SheetContent>
+              </SheetPortal>
             </Sheet>
           </div>
         </div>

@@ -212,23 +212,23 @@ export function NotificationBell() {
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 h-3 w-3 p-0 flex items-center justify-center text-xs min-w-0"
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs font-semibold min-w-[20px]"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="border-b border-border p-4">
+      <PopoverContent className="w-80 p-0 bg-[#0E0E10] border-white/8 shadow-2xl" align="end">
+        <div className="border-b border-white/10 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Notifications</h3>
+            <h3 className="font-semibold text-white">Notifications</h3>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-xs"
+                className="text-xs text-gray-300 hover:text-white hover:bg-white/10"
               >
                 Mark all read
               </Button>
@@ -239,47 +239,47 @@ export function NotificationBell() {
         <ScrollArea className="h-80">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
+            <div className="text-center p-8 text-gray-400">
               <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No notifications yet</p>
               <p className="text-xs">We'll let you know when something happens!</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-white/10">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
                     "p-4 transition-colors",
-                    !notification.read && "bg-primary/5 border-l-2 border-l-primary",
-                    notification.type !== 'crew_invitation' && "hover:bg-muted/50 cursor-pointer"
+                    !notification.read && "bg-white/5 border-l-2 border-l-white",
+                    notification.type !== 'crew_invitation' && "hover:bg-white/10 cursor-pointer"
                   )}
                   onClick={notification.type !== 'crew_invitation' ? () => handleNotificationClick(notification) : undefined}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-lg flex-shrink-0">
                       {notification.type === 'crew_invitation' ? (
-                        <Users className="w-4 h-4 text-primary mt-0.5" />
+                        <Users className="w-4 h-4 text-white mt-0.5" />
                       ) : (
                         getNotificationIcon(notification.type)
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm text-foreground line-clamp-1">
+                        <p className="font-medium text-sm text-white line-clamp-1">
                           {notification.title}
                         </p>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
+                          <div className="w-2 h-2 bg-white rounded-full flex-shrink-0 mt-1" />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      <p className="text-sm text-gray-300 line-clamp-2 mt-1">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-gray-400 mt-2">
                         {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </p>
 
@@ -297,7 +297,7 @@ export function NotificationBell() {
                                 'accepted'
                               )
                             }}
-                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
+                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none bg-white text-black hover:bg-gray-100"
                           >
                             <Check className="w-3 h-3 mr-1" />
                             Join Crew
@@ -314,7 +314,7 @@ export function NotificationBell() {
                                 'declined'
                               )
                             }}
-                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
+                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none border-white/20 text-white hover:bg-white/10"
                           >
                             <X className="w-3 h-3 mr-1" />
                             Decline
@@ -330,11 +330,11 @@ export function NotificationBell() {
         </ScrollArea>
 
         {notifications.length > 0 && (
-          <div className="border-t border-border p-2 space-y-2">
+          <div className="border-t border-white/10 p-2 space-y-2">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-xs"
+              className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/10"
               onClick={() => {
                 loadNotifications()
                 toast.success('Notifications refreshed')
