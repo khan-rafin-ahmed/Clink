@@ -120,16 +120,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-bg-base">
-      {/* Masculine Glass Background */}
-      <div className="absolute inset-0 bg-gradient-hero"></div>
-
-      {/* Floating Glass Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-primary opacity-10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-secondary opacity-8 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 glass-panel rounded-2xl opacity-20"></div>
-      </div>
+    <div className="min-h-screen bg-bg-base">
 
       <div className="relative flex items-center justify-center min-h-screen px-4 py-12">
         <div className="w-full max-w-md space-y-8 fade-in">

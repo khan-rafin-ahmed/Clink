@@ -57,12 +57,7 @@ export function DashboardHero({
   return (
     <div className={cn("space-y-6", className)}>
       {/* Main Hero Card */}
-      <Card className="relative overflow-hidden bg-gradient-hero border-primary/20">
-        {/* Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
-        </div>
+      <Card className="relative overflow-hidden border-primary/20">
 
         <CardContent className="relative p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

@@ -246,6 +246,7 @@ All Profile page components now follow the unified design system with:
 ✅ **EventDetail Page** - Full design system compliance, mobile-responsive
 ✅ **CrewDetail Page** - Monochromatic colors, glassmorphism effects
 ✅ **Container Width** - Standardized across all pages (max-w-4xl)
+✅ **Discover Page Filters** - Modern modal-based filter UX with single icon trigger
 
 The Thirstee app now represents a **comprehensive implementation** of the Apple Liquid Glass design system with complete visual consistency, proper mobile responsiveness, and unified interaction feedback across all major pages!
 
@@ -454,12 +455,26 @@ Let me know when you want a visual system audit or additional enhancements!
 * **Behavior:** List View = default, Grid View = toggle
 * **State:** Active view icon should be highlighted (white bg or border)
 
-### Search System
+### Search System - UPDATED ✅
 * **Container:** Full-width bar within container layout (not edge-to-edge)
 * **Input:** Rounded input, glass background, text --text-primary
 * **Icon:** Search icon inside input on left
 * **Placeholder Text:** Use --text-secondary, size 14px
-* **Filters:** Style filters as segmented buttons using Glass Button styling
+* **Filter Icon:** Single SlidersHorizontal icon (20px, muted color) next to search bar
+* **Filter Modal:** Glass/solid dark modal style with Apply/Clear buttons
+
+### Filter Modal System - NEW ✅
+* **Trigger:** Single filter icon (SlidersHorizontal) next to search bar
+* **Modal Style:** `bg-[#08090A] border border-white/10 rounded-xl p-6`
+* **Content Sections:**
+  - **Sort:** Newest First, Trending, By Date, Most Popular
+  - **Session Type:** All Sessions, Tonight, Tomorrow, This Weekend, Next Week
+  - **Drink Type:** All Drinks, Beer, Wine, Cocktails, Whiskey
+* **Action Buttons:**
+  - **Apply Filters:** Primary white button, full-width
+  - **Clear All:** Secondary outline button
+  - **Cancel:** Secondary outline button
+* **UX Pattern:** Modal opens with current filter state, applies on "Apply Filters" click
 
 ### Event Grid View - UPDATED ✅
 * **Responsive Grid:** `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` (3 columns max on desktop)
@@ -1226,7 +1241,222 @@ The refactored Discover Events Grid View now provides a modern, clean, and highl
 
 ---
 
-## 📱 Mobile Menu Layout & Container Consistency - UPDATED ✅
+## 🎯 List View Design Consistency - COMPLETED ✅
+
+### 📋 **Implementation Summary:**
+Successfully unified the list view design between Discover page and Profile page while maintaining their functional differences.
+
+### 🔧 **Key Changes Made:**
+
+#### **1. EnhancedEventCard Timeline Variant Update:**
+- **Lu.ma-Style Layout**: Updated timeline variant to match EventTimeline component design
+- **Fixed Image Dimensions**: Consistent w-[96px] h-[96px] rounded-xl images
+- **Proper Spacing**: gap-x-4 spacing, px-4 py-4 padding throughout
+- **Consistent Typography**: Matching font sizes, weights, and colors
+- **Glass Effects**: Unified glassmorphism styling with proper shimmer overlays
+
+#### **2. Profile Page Timeline Improvements:**
+- **Dotted Timeline Line**: Changed from solid to dotted style using CSS repeating-linear-gradient
+- **Enhanced Date Display**: Every date now shows the particular day name
+- **Improved Date Formatting**:
+  - Today/Tomorrow: Shows "Today" + "Day, MMM d"
+  - This Week: Shows "Day Name" + "MMM d"
+  - Other Dates: Shows "Day Name, MMM d" + "yyyy"
+- **Fixed Text Positioning**: Eliminated overlapping issues in timeline sections
+
+#### **3. "Ready to Raise Hell" Card Consistency:**
+- **Matching Glass Effects**: Updated to match ProfileInfoCard styling
+- **Consistent Hover States**: Same scale, shadow, and backdrop-blur effects
+- **Unified Border Styling**: Matching hsla(0,0%,100%,.06) border treatment
+- **Glass Shimmer Overlay**: Consistent gradient overlay effects
+
+### 🎨 **Visual Consistency Achieved:**
+- **Unified Card Styling**: Both pages now use identical card designs and spacing
+- **Consistent Image Treatment**: Fixed dimensions and hover effects across all list views
+- **Matching Typography**: Unified font hierarchy and color schemes
+- **Glass Effect Harmony**: Consistent glassmorphism treatment throughout
+
+### 🔄 **Functional Differences Preserved:**
+- **Profile Page**: Maintains timeline layout with date groupings and dotted connector line
+- **Discover Page**: Shows individual dates for each event without timeline grouping
+- **Navigation**: Profile timeline preserves edit/delete actions for user's events
+
+### 🎯 **User Experience Improvements:**
+- **Better Scanning**: Consistent card layouts improve visual scanning
+- **Clear Hierarchy**: Unified information architecture across pages
+- **Enhanced Readability**: Improved date display with day names always visible
+- **Reduced Cognitive Load**: Consistent patterns reduce learning curve
+
+The List View Design Consistency update ensures a cohesive user experience while preserving the unique functional requirements of each page! 🤘
+
+---
+
+## 🎯 Timeline & UI Enhancement Package - COMPLETED ✅
+
+### 📋 **Implementation Summary:**
+Successfully implemented comprehensive timeline design improvements, header cleanup, notification consistency, and background optimization across the entire Thirstee app.
+
+### 🔧 **Key Changes Made:**
+
+#### **1. Enhanced Timeline Design:**
+- **Left-Side Date Labels**: Moved date and day labels to the LEFT side of the vertical dotted line
+- **Visible Timeline Dots**: Added animated dots/circles on the timeline that align horizontally with each date group
+- **Improved Positioning**: Updated timeline line position to `left-[120px] lg:left-[140px]` for proper alignment
+- **Enhanced Date Display**:
+  - Desktop: `w-[100px] lg:w-[120px]` date label area with right-aligned text
+  - Enhanced dots with gradient colors and hover effects including pulse animations
+- **Perfect Alignment**: Events container positioned at `sm:pl-[146px] lg:pl-[166px]` for seamless alignment
+
+#### **2. Discover Page List View Optimization:**
+- **Wider Cards**: Increased card width with `max-w-5xl mx-auto` container for better space utilization
+- **Full-Width Layout**: Added `.discover-list-card` CSS class for maximum width usage
+- **Responsive Design**: Maintained mobile compatibility while maximizing desktop space
+- **No Timeline Spacing**: Removed unnecessary timeline spacing constraints for cleaner layout
+
+#### **3. Header Search Bar Removal:**
+- **Clean Navigation**: Completely removed CommandMenuTrigger from main header
+- **Simplified Layout**: Cleaned up imports and state management related to search functionality
+- **Balanced Header**: Maintained proper spacing and alignment after search removal
+- **Performance**: Reduced component complexity and bundle size
+
+#### **4. Notification Menu Design Consistency:**
+- **Unified Styling**: Updated NotificationCenter to match mobile menu design patterns
+- **Consistent Spacing**: Applied gap-y-6 spacing and proper padding throughout
+- **Glass Effects**: Enhanced glassmorphism with solid `#0E0E10` background
+- **Hover States**: Added glass-effect transitions and improved interaction feedback
+- **Better Typography**: Increased header font size and improved visual hierarchy
+
+#### **5. Background Gradient Cleanup:**
+- **Complete Removal**: Eliminated all floating glass elements and light background gradients
+- **Pages Updated**: Discover, Profile, Dashboard, Login, EventDetail, HomePage
+- **Components Cleaned**: DashboardHero, Navbar glass overlay, HomePage sections
+- **Pure Dark Theme**: Maintained consistent `bg-bg-base` across all pages
+- **Performance Boost**: Removed complex gradient calculations and blur effects
+
+### 🎨 **Visual Improvements Achieved:**
+- **Enhanced Timeline UX**: Left-aligned dates with visible connection dots create intuitive flow
+- **Cleaner Interface**: Removed distracting background elements for better content focus
+- **Consistent Design**: Unified notification and mobile menu styling patterns
+- **Optimized Space Usage**: Discover page cards now utilize full available width
+- **Simplified Navigation**: Streamlined header without redundant search functionality
+
+### 🔄 **Technical Benefits:**
+- **Better Performance**: Removed complex background animations and blur effects
+- **Improved Accessibility**: Enhanced contrast and readability with clean dark backgrounds
+- **Responsive Excellence**: Timeline and cards work seamlessly across all screen sizes
+- **Maintainable Code**: Simplified component structure with consistent patterns
+
+### 🎯 **User Experience Enhancements:**
+- **Intuitive Timeline**: Left-side dates with connecting dots improve chronological understanding
+- **Better Scanning**: Wider Discover cards allow for easier event browsing
+- **Reduced Distraction**: Clean backgrounds keep focus on content
+- **Consistent Interactions**: Unified menu and notification styling reduces cognitive load
+
+The Timeline & UI Enhancement Package delivers a significantly improved user experience with better visual hierarchy, cleaner aesthetics, and enhanced functionality! 🤘
+
+---
+
+## 🔧 Discover Page Filter UX Refactor - COMPLETED ✅
+
+### 🎯 **Implementation Summary:**
+
+#### **1. Replaced Inline Dropdowns with Single Filter Icon** ✅
+- **Removed**: 3 inline dropdown filters (Sort, Time/When, Drink Type)
+- **Added**: Single `SlidersHorizontal` icon (20px, muted color) next to search bar
+- **Layout**: Search bar and filter icon in flex container with gap-4 spacing
+- **Styling**: Filter icon uses glass button styling with hover states
+
+#### **2. Created FilterModal Component** ✅
+- **Component**: `frontend/src/components/FilterModal.tsx`
+- **Modal Style**: Dark glass modal (`bg-[#08090A]`) with proper border and padding
+- **Content Sections**:
+  - **Sort**: Newest First, Trending, By Date, Most Popular
+  - **Session Type**: All Sessions, Tonight, Tomorrow, This Weekend, Next Week
+  - **Drink Type**: All Drinks, Beer, Wine, Cocktails, Whiskey
+- **Action Buttons**: Apply Filters (primary), Clear All + Cancel (secondary)
+
+#### **3. Enhanced UX Pattern** ✅
+- **State Management**: Modal opens with current filter values
+- **Apply Logic**: Filters applied only when "Apply Filters" is clicked
+- **Clear Functionality**: "Clear All" resets modal state, "Apply Filters" commits changes
+- **Cancel Behavior**: Closes modal without applying changes
+- **Responsive**: Works seamlessly on mobile and desktop
+
+#### **4. Maintained Existing Functionality** ✅
+- **Filter Logic**: All existing filter and sort logic preserved
+- **Search Integration**: Search functionality works alongside modal filters
+- **View Toggle**: Grid/List view toggle remains unchanged
+- **Performance**: No impact on existing caching or data loading
+
+### 🎨 **Design System Compliance:**
+- **Glass Modal**: Uses standard dark modal styling with rounded-xl and proper padding
+- **Button Hierarchy**: Primary white button for Apply, secondary outline for Clear/Cancel
+- **Icon Sizing**: 20px filter icon with muted color (`text-[#B3B3B3]`)
+- **Container Width**: Filter modal respects container constraints
+- **Touch Targets**: All interactive elements meet 44px minimum for mobile
+
+### 🎯 **User Experience Improvements:**
+- **Cleaner Interface**: Reduced visual clutter with single filter icon
+- **Better Mobile UX**: Modal approach works better on small screens than dropdowns
+- **Clear Actions**: Explicit Apply/Clear buttons provide better control
+- **Consistent Behavior**: Modal pattern matches other app modals (Share, Rating, etc.)
+- **Improved Discoverability**: Single filter icon is more intuitive than multiple dropdowns
+
+The Discover page filter UX refactor successfully modernizes the filtering experience while maintaining all existing functionality and adhering to the Thirstee design system! 🤘
+
+---
+
+## � Discover Page Filter UX Refactor - COMPLETED ✅
+
+### 🎯 **Implementation Summary:**
+
+#### **1. Replaced Inline Dropdowns with Single Filter Icon** ✅
+- **Removed**: 3 inline dropdown filters (Sort, Time/When, Drink Type)
+- **Added**: Single `SlidersHorizontal` icon (20px, muted color) next to search bar
+- **Layout**: Search bar and filter icon in flex container with gap-4 spacing
+- **Styling**: Filter icon uses glass button styling with hover states
+
+#### **2. Created FilterModal Component** ✅
+- **Component**: `frontend/src/components/FilterModal.tsx`
+- **Modal Style**: Dark glass modal (`bg-[#08090A]`) with proper border and padding
+- **Content Sections**:
+  - **Sort**: Newest First, Trending, By Date, Most Popular
+  - **Session Type**: All Sessions, Tonight, Tomorrow, This Weekend, Next Week
+  - **Drink Type**: All Drinks, Beer, Wine, Cocktails, Whiskey
+- **Action Buttons**: Apply Filters (primary), Clear All + Cancel (secondary)
+
+#### **3. Enhanced UX Pattern** ✅
+- **State Management**: Modal opens with current filter values
+- **Apply Logic**: Filters applied only when "Apply Filters" is clicked
+- **Clear Functionality**: "Clear All" resets modal state, "Apply Filters" commits changes
+- **Cancel Behavior**: Closes modal without applying changes
+- **Responsive**: Works seamlessly on mobile and desktop
+
+#### **4. Maintained Existing Functionality** ✅
+- **Filter Logic**: All existing filter and sort logic preserved
+- **Search Integration**: Search functionality works alongside modal filters
+- **View Toggle**: Grid/List view toggle remains unchanged
+- **Performance**: No impact on existing caching or data loading
+
+### 🎨 **Design System Compliance:**
+- **Glass Modal**: Uses standard `--bg-modal` styling with rounded-xl and proper padding
+- **Button Hierarchy**: Primary white button for Apply, secondary outline for Clear/Cancel
+- **Icon Sizing**: 20px filter icon with muted color (`text-[#B3B3B3]`)
+- **Container Width**: Filter modal respects max-w-[container] constraint
+- **Touch Targets**: All interactive elements meet 44px minimum for mobile
+
+### 🎯 **User Experience Improvements:**
+- **Cleaner Interface**: Reduced visual clutter with single filter icon
+- **Better Mobile UX**: Modal approach works better on small screens than dropdowns
+- **Clear Actions**: Explicit Apply/Clear buttons provide better control
+- **Consistent Behavior**: Modal pattern matches other app modals (Share, Rating, etc.)
+- **Improved Discoverability**: Single filter icon is more intuitive than multiple dropdowns
+
+The Discover page filter UX refactor successfully modernizes the filtering experience while maintaining all existing functionality and adhering to the Thirstee design system! 🤘
+
+---
+
+## �📱 Mobile Menu Layout & Container Consistency - UPDATED ✅
 
 ### 🎯 **Layout & Container Rules:**
 

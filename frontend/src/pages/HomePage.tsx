@@ -111,15 +111,7 @@ export function HomePage() {
       </section>
 
       {/* Three Steps to Epic Nights (How It Works) - PRD Compliant */}
-      <section id="how-it-works" className="relative py-8 lg:py-10 overflow-hidden">
-        {/* Glass Background */}
-        <div className="absolute inset-0 bg-bg-base"></div>
-
-        {/* Static Glass Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 right-1/4 w-64 h-64 glass-panel rounded-2xl opacity-20" />
-          <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-gradient-secondary opacity-10 rounded-xl blur-xl" />
-        </div>
+      <section id="how-it-works" className="py-8 lg:py-10 bg-bg-base">
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div

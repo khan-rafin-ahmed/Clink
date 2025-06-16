@@ -143,22 +143,25 @@ export function EventTimeline({
   const eventGroups = groupEventsByDate(paginatedEvents)
   const sortedDateKeys = Object.keys(eventGroups).sort()
 
-  // Format date labels for timeline
+  // Format date labels for timeline - Always show day name
   const formatDateLabel = (dateString: string) => {
     const date = parseISO(dateString + 'T00:00:00')
     if (isToday(date)) return 'Today'
     if (isTomorrow(date)) return 'Tomorrow'
-    if (isThisWeek(date)) return format(date, 'EEEE')
-    return format(date, 'MMM d')
+    if (isThisWeek(date)) return format(date, 'EEEE') // Day name for this week
+    return format(date, 'EEEE, MMM d') // Day name + date for other dates
   }
 
-  // Format secondary date label (only show when not showing day name)
+  // Format secondary date label - Always show the actual date
   const formatSecondaryDateLabel = (dateString: string) => {
     const date = parseISO(dateString + 'T00:00:00')
-    if (isToday(date) || isTomorrow(date) || isThisWeek(date)) {
-      return format(date, 'MMM d')
+    if (isToday(date) || isTomorrow(date)) {
+      return format(date, 'EEEE, MMM d') // Show day name + date
     }
-    return null // Don't show secondary label for dates that already show "MMM d"
+    if (isThisWeek(date)) {
+      return format(date, 'MMM d') // Show just date for this week
+    }
+    return format(date, 'yyyy') // Show year for older dates
   }
 
   // Format event time
@@ -194,13 +197,15 @@ export function EventTimeline({
 
   return (
     <div className={cn('max-w-4xl mx-auto', className)}>
-      {/* Luma-Style Timeline Container */}
+      {/* Enhanced Timeline Container with Left-Side Date Labels */}
       <div className="relative">
-        {/* Main Timeline Line - Lighter and thinner */}
-        <div className="absolute left-4 lg:left-6 top-0 bottom-0 w-[1px] bg-white/10 hidden sm:block"></div>
+        {/* Main Timeline Line - Dotted style positioned for left-side dates */}
+        <div className="absolute left-[120px] lg:left-[140px] top-0 bottom-0 w-[1px] hidden sm:block" style={{
+          background: 'repeating-linear-gradient(to bottom, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 4px, transparent 4px, transparent 8px)'
+        }}></div>
 
-        {/* Timeline Content - Luma Style */}
-        <div className="space-y-6">
+        {/* Timeline Content - Enhanced Layout */}
+        <div className="space-y-8">
           {sortedDateKeys.map((dateKey, dateIndex) => (
             <div key={dateKey} className="relative">
               {/* Mobile Date Header - Full width on mobile */}
@@ -208,40 +213,39 @@ export function EventTimeline({
                 <h3 className="text-lg font-semibold text-foreground">
                   {formatDateLabel(dateKey)}
                 </h3>
-                {formatSecondaryDateLabel(dateKey) && (
-                  <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
+                  {formatSecondaryDateLabel(dateKey)}
+                </p>
+              </div>
+
+              {/* Desktop Date Block Header - Left Side Layout */}
+              <div className="hidden sm:flex items-center mb-6">
+                {/* Timeline Date Labels - Left Side */}
+                <div className="w-[100px] lg:w-[120px] flex-shrink-0 text-right pr-4">
+                  <h3 className="text-sm font-semibold text-foreground leading-tight">
+                    {formatDateLabel(dateKey)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {formatSecondaryDateLabel(dateKey)}
                   </p>
-                )}
-              </div>
+                </div>
 
-              {/* Desktop Date Block Header */}
-              <div className="hidden sm:flex items-start gap-4 mb-6">
-                {/* Timeline Label - Desktop Left Side */}
-                <div className="w-12 lg:w-16 flex-shrink-0 pt-1">
-                  <div className="text-right">
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {formatDateLabel(dateKey)}
-                    </h3>
-                    {formatSecondaryDateLabel(dateKey) && (
-                      <p className="text-xs text-muted-foreground">
-                        {formatSecondaryDateLabel(dateKey)}
-                      </p>
-                    )}
+                {/* Timeline Dot - Positioned on the line */}
+                <div className="relative z-10 flex-shrink-0">
+                  <div className="w-3 h-3 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-full border-2 border-background shadow-lg hover:scale-125 transition-all duration-300 cursor-pointer group">
+                    {/* Enhanced glowing effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-full blur-sm opacity-0 group-hover:opacity-60 scale-150 transition-all duration-300"></div>
+                    {/* Pulse ring effect */}
+                    <div className="absolute inset-0 bg-accent-primary rounded-full animate-ping opacity-20 scale-150"></div>
                   </div>
                 </div>
 
-                {/* Timeline Anchor - Aligned to title row */}
-                <div className="relative z-10 flex-shrink-0 pt-2">
-                  <div className="w-3 h-3 bg-gradient-primary rounded-full border-2 border-background shadow-lg hover:scale-110 transition-transform duration-200 cursor-pointer group">
-                    {/* Glowing effect on hover */}
-                    <div className="absolute inset-0 bg-gradient-primary rounded-full blur-sm opacity-0 group-hover:opacity-50 scale-150 transition-opacity duration-200"></div>
-                  </div>
-                </div>
+                {/* Spacer for alignment */}
+                <div className="w-6 flex-shrink-0"></div>
               </div>
 
-              {/* Events Container - Mobile and Desktop */}
-              <div className="sm:pl-[80px] lg:pl-[88px]">
+              {/* Events Container - Aligned with new timeline layout */}
+              <div className="sm:pl-[146px] lg:pl-[166px]">
                 {/* Event Cards - Luma Style */}
                 <div className="space-y-4">
                     {eventGroups[dateKey].map((event, eventIndex) => {

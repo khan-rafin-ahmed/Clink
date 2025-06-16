@@ -467,11 +467,8 @@ export function UserProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
-
-        <div className="relative flex h-screen items-center justify-center">
+      <div className="min-h-screen bg-bg-base">
+        <div className="flex h-screen items-center justify-center">
           <div className="text-center space-y-6 fade-in">
             <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold animate-pulse">
               <span className="text-3xl">👤</span>
@@ -535,21 +532,9 @@ export function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-bg-base">
-      {/* Enhanced Liquid Glass Background */}
-      <div className="absolute inset-0 bg-gradient-hero"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_70%)] opacity-15"></div>
-
-      {/* Immersive Glass Environment */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-primary opacity-8 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-secondary opacity-6 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/4 left-1/3 w-64 h-64 glass-panel rounded-3xl opacity-10"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 glass-effect rounded-2xl opacity-15"></div>
-      </div>
-
+    <div className="min-h-screen bg-bg-base">
       {/* Consistent Width Container - Matching Timeline Layout */}
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Two-Column Hero Section - 50:50 Layout */}
           <div>

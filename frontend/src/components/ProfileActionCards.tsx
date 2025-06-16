@@ -20,10 +20,10 @@ export function ProfileActionCards({
 }: ProfileActionCardsProps) {
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Primary CTA Card */}
-      <div className="glass-modal rounded-3xl p-6 lg:p-8 transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl relative overflow-hidden" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
-        {/* Glass shimmer overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/6 via-transparent to-white/3 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-3xl" />
+      {/* Primary CTA Card - Matching ProfileInfoCard styling */}
+      <div className="glass-modal rounded-3xl p-6 lg:p-8 relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+        {/* Glass shimmer overlay - Matching ProfileInfoCard */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-0 hover:opacity-100 pointer-events-none rounded-3xl" />
 
         <div className="text-center space-y-6 relative z-10">
           <div className="space-y-2">

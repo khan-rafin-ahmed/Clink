@@ -895,6 +895,12 @@
     scroll-behavior: smooth;
   }
 
+  /* Discover Page List View - Wider Cards */
+  .discover-list-card {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
   /* Enhanced gradient backgrounds for Liquid Glass */
   .bg-gradient-hero {
     background: linear-gradient(135deg,

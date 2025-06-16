@@ -20,14 +20,12 @@ import { User, LogOut, Settings, Edit, Menu, Search, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
 import { NotificationBell } from './NotificationBell'
-import { CommandMenu, CommandMenuTrigger, useCommandMenu } from './CommandMenu'
 import type { UserProfile } from '@/types'
 
 export function Navbar() {
   const { user, signOut } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const commandMenu = useCommandMenu()
 
   useEffect(() => {
     if (user) {
@@ -42,10 +40,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 glass-nav border-b border-white/10 nav-float">
-      {/* Enhanced glass overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
@@ -58,11 +53,6 @@ export function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-6">
-            {/* Command Menu Search */}
-            <div className="w-64 slide-in-left">
-              <CommandMenuTrigger onOpen={() => commandMenu.setOpen(true)} />
-            </div>
-
             <Link
               to="/discover"
               className="text-muted-foreground hover:text-accent-primary font-medium px-3 py-2 rounded-lg hover:bg-white/5 glass-effect"
@@ -285,11 +275,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Command Menu */}
-      <CommandMenu
-        open={commandMenu.open}
-        onOpenChange={commandMenu.setOpen}
-      />
     </nav>
   )
 }

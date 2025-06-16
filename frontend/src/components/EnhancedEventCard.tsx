@@ -206,49 +206,58 @@ export function EnhancedEventCard({
 
   if (variant === 'timeline') {
     return (
-      <Card className={cn("interactive-card group glass-card border-white/10 hover:border-accent-primary/30 relative", className)}>
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            {/* Timeline Event Image - Enhanced Size for more prominence */}
-            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden flex-shrink-0 bg-card-hover shadow-lg">
-              {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
-                <img
-                  src={getEventCoverImage(event.cover_image_url, event.vibe)}
-                  alt={event.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                getPlaceholderImage()
-              )}
+      <Card className={cn("event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+        {/* Glass shimmer overlay */}
+        <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+        <CardContent className="px-4 py-4 relative z-10">
+          {/* Lu.ma-style layout - Always side-by-side */}
+          <div className="flex items-start gap-x-4">
+            {/* Lu.ma-style Fixed Width Image */}
+            <div className="flex-shrink-0">
+              <div className="w-[96px] h-[96px] rounded-xl overflow-hidden bg-card-hover">
+                {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
+                  <img
+                    src={getEventCoverImage(event.cover_image_url, event.vibe)}
+                    alt={event.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 flex items-center justify-center">
+                    <span className="text-2xl">{getVibeEmoji(event.vibe)}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Timeline Event Content */}
+            {/* Event Content - Main Section */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-heading font-semibold text-lg line-clamp-1 group-hover:text-accent-primary transition-colors">
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Clock className="w-4 h-4 text-accent-primary" />
-                    {formatEventTime(event.date_time)}
-                  </div>
+              {/* Time and Title Row */}
+              <div className="flex items-start gap-2 mb-2">
+                <div className="flex items-center gap-1 text-xs font-medium text-accent-primary flex-shrink-0">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatEventTime(event.date_time)}</span>
                 </div>
-                <Badge variant={statusBadge.variant} size="sm">
-                  {statusBadge.text}
-                </Badge>
               </div>
 
-              {/* Location and Stats */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate max-w-[200px]">
-                    {event.place_nickname || getLocationDisplayName(event)}
-                  </span>
-                </div>
+              {/* Title - Always fully visible, no truncation */}
+              <h4 className="font-heading text-white text-base font-semibold mb-2 leading-tight">
+                {event.title}
+              </h4>
+
+              {/* Location */}
+              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                <MapPin className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">
+                  {event.place_nickname || getLocationDisplayName(event)}
+                </span>
+              </div>
+
+              {/* Bottom Row - Attendees and Actions */}
+              <div className="flex items-center justify-between">
+                {/* Attendee Count and Avatars */}
                 <div className="flex items-center gap-2">
                   {/* Enhanced Attendee Avatars - Show at least 3 avatars */}
                   <div className="flex -space-x-1">
@@ -258,87 +267,100 @@ export function EnhancedEventCard({
                       displayName={event.creator?.display_name}
                       avatarUrl={event.creator?.avatar_url}
                       size="sm"
-                      className="border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative"
+                      className="border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative w-6 h-6"
                     />
                     {/* Second attendee placeholder */}
                     {displayCount > 1 && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-secondary/20 to-accent-primary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
-                        <Users className="w-3 h-3 text-accent-primary" />
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-secondary/20 to-accent-primary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <Users className="w-2 h-2 text-accent-primary" />
                       </div>
                     )}
                     {/* Third attendee placeholder */}
                     {displayCount > 2 && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
-                        <Users className="w-3 h-3 text-primary" />
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <Users className="w-2 h-2 text-primary" />
                       </div>
                     )}
                     {/* Count badge for remaining attendees */}
                     {displayCount > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
-                        <span className="text-xs font-bold text-accent-primary">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">
+                        <span className="text-[10px] font-bold text-accent-primary">
                           +{displayCount - 3}
                         </span>
                       </div>
                     )}
                   </div>
-                  <span className="text-sm font-medium">{displayCount} attending</span>
+                  <span className="text-xs text-muted-foreground font-medium">{displayCount} attending</span>
                 </div>
-              </div>
 
-              {/* Vibe and Actions */}
-              <div className="flex items-center justify-between">
+                {/* Actions and Tags */}
                 <div className="flex items-center gap-2">
-                  <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-accent-primary/30 text-accent-primary">
-                    {getVibeEmoji(event.vibe)} {event.vibe}
+                  {/* Tag Pills - Glassmorphism */}
+                  <div className="glass-pill px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                    <span className="text-[#CFCFCF]">{getVibeEmoji(event.vibe)}</span>
+                    <span className="text-white font-medium">{event.vibe}</span>
                   </div>
-                </div>
-              </div>
+                  <Badge
+                    variant={event.is_public ? "default" : "secondary"}
+                    size="sm"
+                    className="text-xs backdrop-blur-sm"
+                  >
+                    {event.is_public ? "Public" : "Private"}
+                  </Badge>
 
-              {/* Actions Dropdown - Top Right */}
-              <div className="absolute top-2 right-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="glass-modal border-border/50">
-                    <DropdownMenuItem asChild>
-                      <Link to={getEventUrl().replace(window.location.origin, '')} className="flex items-center">
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                        View Details
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share Event
-                    </DropdownMenuItem>
-                    {showHostActions && isHost && (
-                      <>
-                        <DropdownMenuSeparator />
-                        {onEdit && (
-                          <DropdownMenuItem onClick={() => onEdit(event)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Event
-                          </DropdownMenuItem>
-                        )}
-                        {onDelete && (
-                          <DropdownMenuItem
-                            onClick={() => onDelete(event)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Event
-                          </DropdownMenuItem>
-                        )}
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  {/* Actions Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
+                        <MoreVertical className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="glass-modal border-border/50">
+                      <DropdownMenuItem asChild>
+                        <Link to={getEventUrl().replace(window.location.origin, '')} className="flex items-center">
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share Event
+                      </DropdownMenuItem>
+                      {showHostActions && isHost && (
+                        <>
+                          <DropdownMenuSeparator />
+                          {onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(event)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Event
+                            </DropdownMenuItem>
+                          )}
+                          {onDelete && (
+                            <DropdownMenuItem
+                              onClick={() => onDelete(event)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Event
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={event.title}
+          url={eventUrl}
+        />
       </Card>
     )
   }

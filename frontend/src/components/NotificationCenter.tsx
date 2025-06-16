@@ -266,17 +266,17 @@ export function NotificationCenter() {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
-        <div className="border-b border-white/10 px-4 py-4">
+      <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10] border border-white/8 rounded-2xl shadow-xl" align="end">
+        <div className="border-b border-white/10 px-6 py-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white">Notifications</h3>
+            <h3 className="font-semibold text-white text-lg">Notifications</h3>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleMarkAllAsRead}
                 disabled={isLoading}
-                className="text-xs text-gray-300 hover:text-white hover:bg-white/8"
+                className="text-xs text-gray-300 hover:text-white hover:bg-white/8 glass-effect transition-all duration-200"
               >
                 Mark all read
               </Button>
@@ -286,17 +286,17 @@ export function NotificationCenter() {
 
         <ScrollArea className="h-80">
           {notifications.length === 0 ? (
-            <div className="text-center px-4 py-4 text-gray-400 space-y-4">
-              <Bell className="w-8 h-8 mx-auto opacity-50" />
-              <div>
-                <p className="text-sm">No notifications yet</p>
-                <p className="text-xs">We'll let you know when something happens!</p>
+            <div className="text-center px-6 py-8 text-gray-400 space-y-6">
+              <Bell className="w-12 h-12 mx-auto opacity-50" />
+              <div className="space-y-2">
+                <p className="text-base font-medium">No notifications yet</p>
+                <p className="text-sm opacity-75">We'll let you know when something happens!</p>
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-white/10">
+            <div className="space-y-1 p-2">
               {notifications.map(notification => (
-                <div key={notification.id} className="px-4 py-4">
+                <div key={notification.id} className="px-4 py-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
                   {renderNotificationContent(notification)}
                 </div>
               ))}

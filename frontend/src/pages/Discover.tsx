@@ -4,9 +4,9 @@ import { RobustPageWrapper } from '@/components/PageWrapper'
 import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ShareModal } from '@/components/ShareModal'
 import { EnhancedEventCard } from '@/components/EnhancedEventCard'
+import { FilterModal } from '@/components/FilterModal'
 // import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
   FullPageSkeleton,
@@ -15,7 +15,8 @@ import {
 import {
   Search,
   Grid3X3,
-  List
+  List,
+  SlidersHorizontal
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -23,9 +24,8 @@ import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
 
 import { calculateAttendeeCount } from '@/lib/eventUtils'
+import type { SortOption, FilterOption } from '@/components/FilterModal'
 
-type SortOption = 'newest' | 'trending' | 'date' | 'popular'
-type FilterOption = 'all' | 'tonight' | 'tomorrow' | 'weekend' | 'next-week'
 type ViewMode = 'list' | 'grid'
 
 interface EventWithCreator extends Event {
@@ -181,6 +181,7 @@ function DiscoverContent() {
   const [viewMode, setViewMode] = useState<ViewMode>('list') // Default to list view as per design system
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEventForShare, setSelectedEventForShare] = useState<EventWithCreator | null>(null)
+  const [filterModalOpen, setFilterModalOpen] = useState(false)
 
   // Create a stable fetch function that will receive the user from the hook
   const fetchEventsData = useCallback(async (currentUser: any): Promise<EventWithCreator[]> => {
@@ -205,6 +206,17 @@ function DiscoverContent() {
       retryDelay: 1000
     }
   )
+
+  // Handle filter modal apply
+  const handleApplyFilters = useCallback((filters: {
+    sortBy: SortOption
+    filterBy: FilterOption
+    drinkFilter: string
+  }) => {
+    setSortBy(filters.sortBy)
+    setFilterBy(filters.filterBy)
+    setDrinkFilter(filters.drinkFilter)
+  }, [])
 
   // All hooks must be called before any early returns
   const applyFiltersAndSort = useCallback((eventsData: EventWithCreator[]) => {
@@ -356,18 +368,8 @@ function DiscoverContent() {
 
   // Main content render
   return (
-    <div className="min-h-screen relative overflow-hidden bg-bg-base">
-      {/* Masculine Glass Background */}
-      <div className="absolute inset-0 bg-gradient-hero"></div>
-
-      {/* Floating Glass Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-primary opacity-8 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-secondary opacity-6 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-64 h-64 glass-panel rounded-2xl opacity-15"></div>
-      </div>
-
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="min-h-screen bg-bg-base">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Clean Header - Design System Compliant */}
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
@@ -380,65 +382,27 @@ function DiscoverContent() {
 
         {/* Enhanced Search System - Full Width Container */}
         <div className="space-y-6 mb-8">
-          {/* Search Input - Glass Background */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B3B3B3] w-5 h-5" />
-            <Input
-              placeholder="Search sessions, locations, or hosts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 text-base bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder:text-[#B3B3B3] placeholder:text-sm focus:border-white/20 focus:bg-white/8"
-            />
-          </div>
-
-          {/* Filters as Segmented Glass Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Sort Filter */}
-            <div>
-              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#08090A] border border-white/10">
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="trending">Trending</SelectItem>
-                  <SelectItem value="date">By Date</SelectItem>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Search Input with Filter Icon */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B3B3B3] w-5 h-5" />
+              <Input
+                placeholder="Search sessions, locations, or hosts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-14 text-base bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder:text-[#B3B3B3] placeholder:text-sm focus:border-white/20 focus:bg-white/8"
+              />
             </div>
 
-            {/* Time Filter */}
-            <div>
-              <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
-                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
-                  <SelectValue placeholder="When" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#08090A] border border-white/10">
-                  <SelectItem value="all">All Sessions</SelectItem>
-                  <SelectItem value="tonight">Tonight</SelectItem>
-                  <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                  <SelectItem value="weekend">This Weekend</SelectItem>
-                  <SelectItem value="next-week">Next Week</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Drink Filter */}
-            <div>
-              <Select value={drinkFilter} onValueChange={setDrinkFilter}>
-                <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
-                  <SelectValue placeholder="Drink Type" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#08090A] border border-white/10">
-                  <SelectItem value="all">All Drinks</SelectItem>
-                  <SelectItem value="beer">🍺 Beer</SelectItem>
-                  <SelectItem value="wine">🍷 Wine</SelectItem>
-                  <SelectItem value="cocktails">🍸 Cocktails</SelectItem>
-                  <SelectItem value="whiskey">🥃 Whiskey</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Filter Icon Button */}
+            <Button
+              onClick={() => setFilterModalOpen(true)}
+              variant="outline"
+              size="lg"
+              className="h-14 px-4 bg-white/5 backdrop-blur-md border border-white/10 text-[#B3B3B3] hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
@@ -504,8 +468,8 @@ function DiscoverContent() {
               </Button>
             </div>
           ) : viewMode === 'list' ? (
-            // List View - Timeline Layout (Default)
-            <div className="space-y-6">
+            // List View - Wide Cards Layout (No Timeline Spacing)
+            <div className="space-y-6 max-w-5xl mx-auto">
               {filteredEvents.map((event) => (
                 <EnhancedEventCard
                   key={event.id}
@@ -518,7 +482,7 @@ function DiscoverContent() {
                     } : undefined
                   }}
                   variant="timeline"
-                  className=""
+                  className="discover-list-card"
                 />
               ))}
             </div>
@@ -558,11 +522,17 @@ function DiscoverContent() {
         />
       )}
 
-      {/* Command Menu - Temporarily disabled */}
-      {/* <CommandMenu
-        open={commandMenu.open}
-        onOpenChange={commandMenu.setOpen}
-      /> */}
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        onApplyFilters={handleApplyFilters}
+        currentFilters={{
+          sortBy,
+          filterBy,
+          drinkFilter
+        }}
+      />
     </div>
   )
 }
