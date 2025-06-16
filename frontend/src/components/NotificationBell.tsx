@@ -219,8 +219,8 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 bg-[#0E0E10] border-white/8 shadow-2xl" align="end">
-        <div className="border-b border-white/10 p-4">
+      <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
+        <div className="border-b border-white/10 px-4 py-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-white">Notifications</h3>
             {unreadCount > 0 && (
@@ -228,7 +228,7 @@ export function NotificationBell() {
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-xs text-gray-300 hover:text-white hover:bg-white/10"
+                className="text-xs text-gray-300 hover:text-white hover:bg-white/8"
               >
                 Mark all read
               </Button>
@@ -238,14 +238,16 @@ export function NotificationBell() {
 
         <ScrollArea className="h-80">
           {isLoading ? (
-            <div className="flex items-center justify-center p-8">
+            <div className="flex items-center justify-center px-4 py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center p-8 text-gray-400">
-              <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No notifications yet</p>
-              <p className="text-xs">We'll let you know when something happens!</p>
+            <div className="text-center px-4 py-4 text-gray-400 space-y-4">
+              <Bell className="w-8 h-8 mx-auto opacity-50" />
+              <div>
+                <p className="text-sm">No notifications yet</p>
+                <p className="text-xs">We'll let you know when something happens!</p>
+              </div>
             </div>
           ) : (
             <div className="divide-y divide-white/10">
@@ -253,9 +255,9 @@ export function NotificationBell() {
                 <div
                   key={notification.id}
                   className={cn(
-                    "p-4 transition-colors",
+                    "px-4 py-4 transition-colors",
                     !notification.read && "bg-white/5 border-l-2 border-l-white",
-                    notification.type !== 'crew_invitation' && "hover:bg-white/10 cursor-pointer"
+                    notification.type !== 'crew_invitation' && "hover:bg-white/8 cursor-pointer"
                   )}
                   onClick={notification.type !== 'crew_invitation' ? () => handleNotificationClick(notification) : undefined}
                 >
@@ -330,11 +332,11 @@ export function NotificationBell() {
         </ScrollArea>
 
         {notifications.length > 0 && (
-          <div className="border-t border-white/10 p-2 space-y-2">
+          <div className="border-t border-white/10 px-4 py-4">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/10"
+              className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/8"
               onClick={() => {
                 loadNotifications()
                 toast.success('Notifications refreshed')

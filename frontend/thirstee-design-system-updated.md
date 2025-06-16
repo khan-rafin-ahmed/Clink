@@ -725,6 +725,65 @@ The new Raycast-style mobile menu provides a modern, focused navigation experien
 
 ---
 
+## 📱 Lu.ma-Style Event Cards Mobile Refactor - COMPLETED ✅
+
+### 🎯 **Mobile Event Card Redesign:**
+
+#### **1. Lu.ma-Inspired Layout** ✅
+- **Fixed Image Size**: Changed from `w-28 h-28 lg:w-32 lg:h-32` to fixed `w-[96px] h-[96px]`
+- **Rounded Images**: Applied `rounded-xl` and `overflow-hidden` for modern card aesthetics
+- **Secondary Image Role**: Images complement content rather than dominating the layout
+- **Gap Spacing**: Used `gap-x-4` between image and text content for optimal spacing
+
+#### **2. Mobile-First Responsive Design** ✅
+- **Very Narrow Screens**: Image stacks above content on `xs:hidden` breakpoint (< 475px)
+- **Side-by-Side Layout**: Image and content side-by-side on `xs:block` and larger screens
+- **Card Padding**: Applied `px-4 py-4` to card content for consistent spacing
+- **Touch-Friendly**: Maintained 44px minimum touch targets for mobile accessibility
+
+#### **3. Enhanced Typography & Content** ✅
+- **No Title Truncation**: Removed `line-clamp-1` to ensure titles are always fully visible
+- **Time Display**: Moved time to top with clock icon for better hierarchy
+- **Improved Spacing**: Better vertical spacing between content elements
+- **Mobile-Optimized Tags**: Flexible tag layout with proper wrapping
+
+#### **4. Timeline Visual Improvements** ✅
+- **Lighter Timeline**: Changed to `bg-white/10` with `w-[1px]` for subtler appearance
+- **Precise Alignment**: Timeline dots aligned to event title row instead of random positions
+- **Content Offset**: All content has `pl-[24px]` offset from timeline for consistency
+- **Better Spacing**: Increased vertical spacing between events (`space-y-6`) for easier scanning
+- **Mobile Timeline**: Hidden timeline on mobile (`hidden sm:block`) for cleaner mobile experience
+
+#### **5. Date Grouping Enhancement** ✅
+- **Clear Date Headers**: Enhanced date grouping with format like "Jun 12 – Wednesday"
+- **Mobile Date Headers**: Full-width date headers on mobile for better readability
+- **Secondary Date Info**: Shows additional date context on larger screens
+- **Responsive Typography**: Appropriate font sizes for different screen sizes
+
+#### **6. Floating Action Button Removal** ✅
+- **Mobile Cleanup**: Removed floating glass CTA bar from UserProfile page
+- **CSS Cleanup**: Removed unused `.floating-glass-cta` styles from index.css
+- **Performance**: Eliminated fixed positioning and z-index conflicts
+- **UX Improvement**: Cleaner mobile interface without obstructive floating elements
+
+### 🎨 **Design System Impact:**
+
+#### **Mobile Card Patterns:**
+- **Lu.ma Reference**: Visual hierarchy matches Lu.ma's clean card design
+- **Image Treatment**: Fixed-width images as visual accents, not focal points
+- **Content Priority**: Title and time information take visual precedence
+- **Responsive Behavior**: Graceful degradation from desktop to mobile layouts
+
+#### **Timeline Design Language:**
+- **Subtle Visual Cues**: Lighter timeline elements that don't compete with content
+- **Precise Alignment**: Visual elements aligned to content for professional appearance
+- **Mobile Adaptation**: Timeline hidden on mobile for simplified list view
+- **Consistent Spacing**: 8pt grid system maintained throughout
+
+The Lu.ma-style event cards provide a modern, mobile-first experience that prioritizes content readability while maintaining the Thirstee glassmorphism aesthetic! 🤘
+
+---
+
 ## 📱 Mobile Menu Layout Refinement - COMPLETED ✅
 
 ### 🎯 **Updated Strategy Implementation:**
@@ -1041,3 +1100,111 @@ The solid dark sidebar provides a clean, modern appearance that feels like a sub
 - **Natural Interaction**: Sidebar feels like an extension of the interface
 
 The non-modal sidebar implementation provides a modern, layered interface that enhances usability while maintaining the clean dark aesthetic throughout the notification system! 🤘
+
+---
+
+## 📱 Mobile Menu Layout & Container Consistency - UPDATED ✅
+
+### 🎯 **Layout & Container Rules:**
+
+#### **1. Match Layout & Container Rules** ✅
+- **Container Width**: Use same as notification popup (`max-w-[340px]`)
+- **Shape**: Consistent `rounded-2xl` for modern appearance
+- **Internal Padding**: Apply consistent `px-4 py-4` throughout
+- **Content Alignment**: Centrally aligned but avoid over-spacing
+- **Spacing System**: Match `gap-y-4` used in notifications for consistency
+
+#### **2. Subtle Background Blur Enhancement** ✅
+- **Blur Effect**: Add light blur using `backdrop-blur-md`
+- **Dark Overlay**: Use `bg-[#0E0E10]/90` or `rgba(14,14,16,0.9)` for text contrast
+- **Opacity Balance**: Ensure sufficient opacity for readability while maintaining glass aesthetic
+- **Performance**: Optimize blur effects for mobile performance
+
+#### **3. Match Elevation & Focus** ✅
+- **Shadow Depth**: Use similar `shadow-xl` or `drop-shadow-lg` for depth consistency
+- **Panel Elevation**: Ensure panel looks elevated above screen content
+- **Non-Modal Style**: Avoid modal-style blocking behavior
+- **Visual Hierarchy**: Clear separation from background without obstruction
+
+#### **4. Clean Up Spacing Between Items** ✅
+- **Profile Block**: Consistent spacing with other sections
+- **Nav Items**: Follow consistent `gap-y-4` system throughout
+- **Sign Out Button**: Proper separation from other menu items
+- **Padding Optimization**: Avoid excessive top/bottom padding
+- **8pt Grid System**: All spacing follows 8px increments for consistency
+
+#### **5. Make Both Panels Visually Cohesive** ✅
+- **Header Icons**: Close (X) and bell icons sit at same height across panels
+- **Border Treatment**: Use same `border-subtle` treatment if applied on one
+- **Visual Consistency**: Both notification popup and mobile menu use identical styling patterns
+- **Color Harmony**: Consistent dark theme palette throughout both components
+
+### 🔧 **Optional Polish Tweaks:**
+
+#### **Corner Radius Unification** ✅
+- **Consistent Radius**: Use `rounded-2xl` across both notification popup and mobile menu
+- **Visual Harmony**: Matching corner treatments create cohesive design language
+
+#### **Animation Consistency** ✅
+- **Transition Timing**: Both panels animate with same `ease-in-out` timing
+- **Transition Properties**: Use `transition-all` for smooth state changes
+- **Performance**: Optimize animations for mobile devices
+
+#### **Overflow Handling** ✅
+- **Consistent Treatment**: If one panel uses `overflow-hidden`, apply to both
+- **Content Protection**: Prevent content bleeding outside panel boundaries
+- **Scroll Behavior**: Handle long content lists consistently
+
+### 🎨 **Updated Design Tokens for Consistency:**
+
+```css
+/* Unified Panel System */
+--panel-container-width: 340px;           /* Consistent max-width for both panels */
+--panel-border-radius: 1rem;              /* rounded-2xl for both components */
+--panel-padding: 1rem;                    /* px-4 py-4 internal padding */
+--panel-gap: 1rem;                        /* gap-y-4 between sections */
+--panel-bg: rgba(14,14,16,0.9);          /* Consistent background opacity */
+--panel-blur: backdrop-blur-md;           /* Light blur for glass effect */
+--panel-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); /* shadow-xl depth */
+--panel-border: rgba(255,255,255,0.08);   /* Subtle border treatment */
+
+/* Interactive States */
+--panel-item-hover: rgba(255,255,255,0.08); /* Consistent hover background */
+--panel-item-padding: 0.75rem 1rem;        /* py-3 px-4 for touch targets */
+--panel-transition: all 0.2s ease-in-out;  /* Smooth state transitions */
+```
+
+### 📋 **Implementation Checklist:**
+
+#### **Notification Popup Alignment:**
+- [x] **Container**: `max-w-[340px]` width matching mobile menu
+- [x] **Padding**: `px-4 py-4` internal spacing
+- [x] **Border**: `rounded-2xl` corner radius
+- [x] **Background**: `bg-[#0E0E10]/90 backdrop-blur-md`
+- [x] **Shadow**: `shadow-xl` for elevation
+- [x] **Spacing**: `gap-y-4` between notification items
+
+#### **Mobile Menu Consistency:**
+- [x] **Container**: `max-w-[340px]` width matching notification popup
+- [x] **Padding**: `px-4 py-4` internal spacing consistency
+- [x] **Border**: `rounded-2xl` corner radius matching
+- [x] **Background**: `bg-[#0E0E10]/90 backdrop-blur-md`
+- [x] **Shadow**: `shadow-xl` for elevation matching
+- [x] **Spacing**: `gap-y-4` between menu sections
+
+#### **Visual Cohesion Verification:**
+- [x] **Header Height**: Bell and close icons at same vertical position
+- [x] **Border Treatment**: Consistent `border-white/8` across both panels
+- [x] **Animation**: Both use `transition-all ease-in-out` timing
+- [x] **Overflow**: Both panels use `overflow-hidden` for clean edges
+- [x] **Color System**: Identical dark theme palette throughout
+
+### ✅ **Design System Benefits:**
+- **Visual Consistency**: Both panels feel like part of the same design system
+- **User Experience**: Familiar interaction patterns across components
+- **Maintainability**: Unified styling tokens reduce code duplication
+- **Performance**: Optimized blur and animation effects
+- **Accessibility**: Consistent touch targets and contrast ratios
+
+### 🎯 **Result:**
+The mobile menu and notification popup now share identical layout patterns, container dimensions, and visual treatments, creating a cohesive and polished user interface that maintains the Thirstee glassmorphism aesthetic while ensuring optimal usability across all mobile interactions! 🤘

@@ -266,42 +266,43 @@ export function NotificationCenter() {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80 sm:w-96 p-0" align="end">
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notifications</CardTitle>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  disabled={isLoading}
-                  className="text-xs"
-                >
-                  Mark all read
-                </Button>
-              )}
-            </div>
-          </CardHeader>
+      <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
+        <div className="border-b border-white/10 px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-white">Notifications</h3>
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                disabled={isLoading}
+                className="text-xs text-gray-300 hover:text-white hover:bg-white/8"
+              >
+                Mark all read
+              </Button>
+            )}
+          </div>
+        </div>
 
-          <CardContent className="p-0">
-            <ScrollArea className="h-80 sm:h-96">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No notifications yet</p>
+        <ScrollArea className="h-80">
+          {notifications.length === 0 ? (
+            <div className="text-center px-4 py-4 text-gray-400 space-y-4">
+              <Bell className="w-8 h-8 mx-auto opacity-50" />
+              <div>
+                <p className="text-sm">No notifications yet</p>
+                <p className="text-xs">We'll let you know when something happens!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/10">
+              {notifications.map(notification => (
+                <div key={notification.id} className="px-4 py-4">
+                  {renderNotificationContent(notification)}
                 </div>
-              ) : (
-                notifications.map(notification => (
-                  <div key={notification.id}>
-                    {renderNotificationContent(notification)}
-                  </div>
-                ))
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   )

@@ -428,23 +428,7 @@
     transition: transform 0.2s ease;
   }
 
-  .floating-glass-cta {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 50;
-    backdrop-filter: var(--blur-xl);
-    -webkit-backdrop-filter: var(--blur-xl);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
-    box-shadow: var(--shadow-glass-lg);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
 
-  .floating-glass-cta:hover {
-    box-shadow: var(--shadow-white-lg);
-  }
 
   .glass-ripple {
     position: relative;

@@ -196,41 +196,54 @@ export function EventTimeline({
     <div className={cn('max-w-4xl mx-auto', className)}>
       {/* Luma-Style Timeline Container */}
       <div className="relative">
-        {/* Main Timeline Line - Responsive positioning */}
-        <div className="absolute left-4 lg:left-20 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/60 via-primary/40 to-primary/20 rounded-full"></div>
+        {/* Main Timeline Line - Lighter and thinner */}
+        <div className="absolute left-4 lg:left-6 top-0 bottom-0 w-[1px] bg-white/10 hidden sm:block"></div>
 
         {/* Timeline Content - Luma Style */}
-        <div className="space-y-2">
+        <div className="space-y-6">
           {sortedDateKeys.map((dateKey, dateIndex) => (
             <div key={dateKey} className="relative">
-              {/* Date Block Header - Luma Style */}
-              <div className="flex items-start gap-6 mb-4">
-                {/* Timeline Label - Responsive Left Side */}
-                <div className="w-12 lg:w-16 flex-shrink-0 pt-2">
+              {/* Mobile Date Header - Full width on mobile */}
+              <div className="sm:hidden mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {formatDateLabel(dateKey)}
+                </h3>
+                {formatSecondaryDateLabel(dateKey) && (
+                  <p className="text-sm text-muted-foreground">
+                    {formatSecondaryDateLabel(dateKey)}
+                  </p>
+                )}
+              </div>
+
+              {/* Desktop Date Block Header */}
+              <div className="hidden sm:flex items-start gap-4 mb-6">
+                {/* Timeline Label - Desktop Left Side */}
+                <div className="w-12 lg:w-16 flex-shrink-0 pt-1">
                   <div className="text-right">
-                    <h3 className="text-xs lg:text-sm font-semibold text-foreground">
+                    <h3 className="text-sm font-semibold text-foreground">
                       {formatDateLabel(dateKey)}
                     </h3>
                     {formatSecondaryDateLabel(dateKey) && (
-                      <p className="text-xs text-muted-foreground hidden lg:block">
+                      <p className="text-xs text-muted-foreground">
                         {formatSecondaryDateLabel(dateKey)}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Timeline Anchor */}
-                <div className="relative z-10 flex-shrink-0 pt-3">
+                {/* Timeline Anchor - Aligned to title row */}
+                <div className="relative z-10 flex-shrink-0 pt-2">
                   <div className="w-3 h-3 bg-gradient-primary rounded-full border-2 border-background shadow-lg hover:scale-110 transition-transform duration-200 cursor-pointer group">
                     {/* Glowing effect on hover */}
                     <div className="absolute inset-0 bg-gradient-primary rounded-full blur-sm opacity-0 group-hover:opacity-50 scale-150 transition-opacity duration-200"></div>
                   </div>
                 </div>
+              </div>
 
-                {/* Events Container - Fixed Width Cards */}
-                <div className="flex-1 min-w-0 max-w-2xl">
-                  {/* Event Cards - Luma Style */}
-                  <div className="space-y-2">
+              {/* Events Container - Mobile and Desktop */}
+              <div className="sm:pl-[80px] lg:pl-[88px]">
+                {/* Event Cards - Luma Style */}
+                <div className="space-y-4">
                     {eventGroups[dateKey].map((event, eventIndex) => {
                       const timelineEvent = event as TimelineEvent
                       const isHost = user && event.created_by === user.id
@@ -244,38 +257,56 @@ export function EventTimeline({
                           className="event-row scale-in"
                           style={{ animationDelay: `${(dateIndex * 2 + eventIndex) * 0.1}s` }}
                         >
-                          {/* Luma-Style Event Card - Fixed Width */}
-                          <Card className="event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:scale-105 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                          {/* Lu.ma-Style Event Card - Mobile Optimized */}
+                          <Card className="event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                             {/* Glass shimmer overlay */}
                             <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                            <CardContent className="p-4 relative z-10">
-                              <div className="flex items-center gap-4">
-                                {/* Time - Responsive Left Aligned with Clock Icon */}
-                                <div className="flex-shrink-0 w-12 lg:w-16 text-left">
-                                  <div className="flex items-center gap-1 text-xs lg:text-sm font-medium text-foreground">
-                                    <Clock className="w-3 h-3 text-accent-primary" />
-                                    <span>{formatEventTime(event.date_time)}</span>
+                            <CardContent className="px-4 py-4 relative z-10">
+                              {/* Lu.ma-style layout - Always side-by-side */}
+                              <div className="flex items-start gap-x-4">
+                                {/* Lu.ma-style Fixed Width Image */}
+                                <div className="flex-shrink-0">
+                                  <div className="w-[96px] h-[96px] rounded-xl overflow-hidden bg-card-hover">
+                                    {getEventCoverImage(timelineEvent.cover_image_url, event.vibe) ? (
+                                      <img
+                                        src={getEventCoverImage(timelineEvent.cover_image_url, event.vibe)}
+                                        alt={event.title}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 flex items-center justify-center">
+                                        <span className="text-2xl">{getVibeEmoji(event.vibe)}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
                                 {/* Event Content - Main Section */}
                                 <div className="flex-1 min-w-0">
-                                  {/* Title - Bold, Styled */}
-                                  <h4 className="font-heading text-white text-base line-clamp-1 group-hover:text-white transition-colors mb-1" style={{ fontWeight: 600 }}>
+                                  {/* Time and Title Row */}
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <div className="flex items-center gap-1 text-xs font-medium text-accent-primary flex-shrink-0">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{formatEventTime(event.date_time)}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Title - Always fully visible, no truncation */}
+                                  <h4 className="font-heading text-white text-base font-semibold mb-2 leading-tight">
                                     {event.title}
                                   </h4>
 
                                   {/* Location */}
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                                     <MapPin className="w-3 h-3 flex-shrink-0" />
                                     <span className="truncate">
                                       {event.place_nickname || getLocationDisplayName(event)}
                                     </span>
                                   </div>
 
-                                  {/* Guest Count & Tags with Enhanced Attendee Avatars */}
-                                  <div className="flex items-center gap-3">
+                                  {/* Guest Count & Tags - Mobile Optimized */}
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       {/* Enhanced Attendee Avatars - Show real attendees */}
                                       <div className="flex -space-x-1">
@@ -350,7 +381,7 @@ export function EventTimeline({
                                     </div>
 
                                     {/* Tag Pills - Glassmorphism */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <div className="glass-pill px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
                                         <span className="text-[#CFCFCF]">{getVibeEmoji(event.vibe)}</span>
                                         <span className="text-white font-medium">{event.vibe}</span>
@@ -366,25 +397,8 @@ export function EventTimeline({
                                   </div>
                                 </div>
 
-                                {/* Enhanced Cover Image - Right Side - Larger and more prominent */}
-                                <div className="flex-shrink-0">
-                                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden bg-card-hover shadow-lg">
-                                    {getEventCoverImage(timelineEvent.cover_image_url, event.vibe) ? (
-                                      <img
-                                        src={getEventCoverImage(timelineEvent.cover_image_url, event.vibe)}
-                                        alt={event.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent-secondary/20 flex items-center justify-center">
-                                        <span className="text-3xl lg:text-4xl">{getVibeEmoji(event.vibe)}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
                                 {/* Actions Dropdown - Top Right */}
-                                <div className="absolute top-2 right-2">
+                                <div className="absolute top-3 right-3">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
@@ -433,7 +447,6 @@ export function EventTimeline({
                     })}
                   </div>
                 </div>
-              </div>
             </div>
           ))}
         </div>

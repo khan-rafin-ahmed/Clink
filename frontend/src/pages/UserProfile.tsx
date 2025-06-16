@@ -739,36 +739,7 @@ export function UserProfile() {
         />
       )}
 
-      {/* Floating Glass CTA Bar - Mobile Only */}
-      <div className="floating-glass-cta sm:hidden p-4">
-        <div className="flex items-center gap-3">
-          <QuickEventModal
-            trigger={
-              <Button
-                size="sm"
-                className="bg-gradient-primary hover:shadow-white-lg flex-1"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                🍺 Session
-              </Button>
-            }
-            onEventCreated={handleEventCreated}
-          />
-          <CreateCrewModal
-            trigger={
-              <Button
-                variant="outline"
-                size="sm"
-                className="glass-card hover:border-primary/50 flex-1"
-              >
-                <UsersIcon className="w-4 h-4 mr-2" />
-                Crew
-              </Button>
-            }
-            onCrewCreated={handleCrewCreated}
-          />
-        </div>
-      </div>
+
 
       {/* Progress Analysis Panel - Only show in development */}
       {process.env.NODE_ENV === 'development' && <ProgressAnalysisPanel />}
