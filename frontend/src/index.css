@@ -940,28 +940,67 @@
     background-clip: text;
   }
 
-  /* Discover Page Grid View - Fixed Height Cards with 16:9 Images */
+  /* Discover Page Grid View - Modern Fixed Height Cards */
   .discover-grid-card {
-    height: 400px; /* Fixed card height for visual harmony */
+    height: 420px; /* Fixed card height for visual harmony */
     display: flex;
     flex-direction: column;
+    border-radius: 0.75rem; /* rounded-xl */
+    background: rgba(255, 255, 255, 0.05); /* bg-glass */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    transition: all 0.3s ease;
+  }
+
+  .discover-grid-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+    transform: scale(1.01); /* hover:scale-[1.01] */
   }
 
   .discover-grid-card .card-image {
-    aspect-ratio: 16/9; /* 16:9 aspect ratio for images */
-    height: 200px; /* Fixed image height */
+    height: 180px; /* Fixed image height */
     overflow: hidden;
+    border-radius: 0.75rem 0.75rem 0 0; /* rounded-t-xl */
+  }
+
+  .discover-grid-card .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .discover-grid-card:hover .card-image img {
+    transform: scale(1.05); /* Subtle zoom on hover */
   }
 
   .discover-grid-card .card-content {
     flex: 1; /* Fill remaining space */
     display: flex;
     flex-direction: column;
+    padding: 1.25rem; /* p-5 */
   }
 
   .discover-grid-card .card-title {
-    margin-bottom: 0.5rem; /* Title placement below image */
+    margin-bottom: 0.75rem; /* mb-3 */
     font-weight: 600;
     color: #FFFFFF;
+    font-size: 1rem; /* text-base */
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .discover-grid-card .card-metadata {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* space-y-2 */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+
+  .discover-grid-card .card-cta {
+    margin-top: auto; /* Push to bottom */
   }
 }

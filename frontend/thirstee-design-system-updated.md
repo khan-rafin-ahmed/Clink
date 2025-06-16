@@ -461,13 +461,18 @@ Let me know when you want a visual system audit or additional enhancements!
 * **Placeholder Text:** Use --text-secondary, size 14px
 * **Filters:** Style filters as segmented buttons using Glass Button styling
 
-### Event Grid View
-* **Card Size:** Fixed height for visual harmony
-* **Spacing:** Use consistent gap-x-6 gap-y-8
-* **Max Columns:** 3 on desktop, 2 on tablet, 1 on mobile
-* **Hover:** Same hover effect as all cards
-* **Image Ratio:** Maintain 16:9 aspect ratio
-* **Title Placement:** Below image, use h2/card title styling
+### Event Grid View - UPDATED ✅
+* **Responsive Grid:** `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` (3 columns max on desktop)
+* **Card Height:** Fixed `h-[420px]` for visual harmony
+* **Spacing:** Consistent `gap-x-6 gap-y-8` between cards
+* **Card Styling:** `rounded-xl`, `bg-glass`, `shadow-md` by default
+* **Hover Effects:** `hover:shadow-lg hover:scale-[1.01]` with smooth transitions
+* **Image Section:** Fixed `h-[180px]` with `object-cover` and `rounded-t-xl`
+* **Content Padding:** `p-5` internal padding for comfortable spacing
+* **Title:** `text-base font-semibold` with 2-line clamp
+* **Metadata:** Vertical layout with `space-y-2`, showing time, location, and max 2 tags
+* **CTA Button:** Full-width "View Event Details" with glass button styling
+* **Performance:** Reduced icon clutter, simplified metadata display
 
 ---
 
@@ -1100,6 +1105,124 @@ The solid dark sidebar provides a clean, modern appearance that feels like a sub
 - **Natural Interaction**: Sidebar feels like an extension of the interface
 
 The non-modal sidebar implementation provides a modern, layered interface that enhances usability while maintaining the clean dark aesthetic throughout the notification system! 🤘
+
+---
+
+## 🧱 Discover Events Grid View Refactor - COMPLETED ✅
+
+### 🎯 **Modern Grid Layout Implementation:**
+
+#### **1. Enhanced Responsive Grid** ✅
+- **Updated Breakpoints**: Changed to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` (3 columns maximum on desktop)
+- **Improved Spacing**: Applied `gap-x-6 gap-y-8` for better visual separation
+- **Mobile-First**: Optimized for mobile viewing with proper scaling up to desktop
+- **Visual Harmony**: Consistent card heights across all breakpoints
+
+#### **2. Fixed Height Card Design** ✅
+- **Card Height**: Set to `h-[420px]` for visual consistency
+- **Flex Layout**: `flex flex-col` structure for proper content distribution
+- **Glass Styling**: Applied `rounded-xl`, `bg-glass`, `shadow-md` base styling
+- **Hover Effects**: Enhanced with `hover:shadow-lg hover:scale-[1.01]` transitions
+
+#### **3. Optimized Image Section** ✅
+- **Fixed Height**: Image section locked to `h-[180px]` for consistency
+- **Aspect Ratio**: Maintains proper proportions with `object-cover`
+- **Border Radius**: Applied `rounded-t-xl` for modern card aesthetics
+- **Hover Animation**: Subtle `scale(1.05)` zoom effect on card hover
+- **Light Overlay**: Minimal gradient for text clarity without killing image quality
+
+#### **4. Streamlined Content Section** ✅
+- **Padding**: Consistent `p-5` internal padding throughout
+- **Title Styling**: `text-base font-semibold` with 2-line clamp for readability
+- **Metadata Layout**: Vertical grouping with `space-y-2` for clean organization
+- **Reduced Clutter**: Shows only essential info (time, location, max 2 tags)
+- **Flexible Content**: Uses `flex-1` to fill available space properly
+
+#### **5. Essential Metadata Display** ✅
+- **Time Display**: Clock icon + formatted time
+- **Location**: MapPin icon + location name with truncation
+- **Tag System**: Maximum 2 tags (vibe + attendee count)
+- **Icon Consistency**: Standardized icon sizes and colors
+- **Text Hierarchy**: Proper color contrast with `text-secondary`
+
+#### **6. Full-Width CTA Button** ✅
+- **Button Style**: Glass button with `btn-secondary` styling
+- **Full Width**: Spans entire card width for better touch targets
+- **Positioning**: `mt-auto` pushes to bottom of card
+- **Hover Effects**: Consistent with design system glass effects
+- **Action Text**: Clear "View Event Details" with arrow icon
+
+### 🎨 **Updated CSS Classes:**
+
+#### **Grid Card Base:**
+```css
+.discover-grid-card {
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+```
+
+#### **Hover States:**
+```css
+.discover-grid-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: scale(1.01);
+}
+```
+
+#### **Image Treatment:**
+```css
+.discover-grid-card .card-image {
+  height: 180px;
+  overflow: hidden;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.discover-grid-card:hover .card-image img {
+  transform: scale(1.05);
+}
+```
+
+### 🔧 **Component Structure:**
+
+#### **Grid Variant Implementation:**
+```jsx
+// New 'grid' variant added to EnhancedEventCard
+<EnhancedEventCard
+  variant="grid"
+  className="discover-grid-card"
+  event={event}
+/>
+```
+
+#### **Responsive Grid Container:**
+```jsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+  {/* Grid cards */}
+</div>
+```
+
+### ✅ **Design System Benefits:**
+- **Visual Consistency**: All cards maintain identical heights and proportions
+- **Improved Readability**: Streamlined metadata reduces cognitive load
+- **Better Touch Targets**: Full-width CTA buttons improve mobile usability
+- **Performance**: Reduced icon clutter and simplified hover effects
+- **Scalability**: Responsive grid adapts beautifully across all screen sizes
+- **Modern Aesthetics**: Clean glass design with subtle animations
+
+### 🎯 **User Experience Improvements:**
+- **Faster Scanning**: Fixed heights allow users to quickly scan event options
+- **Clear Hierarchy**: Title, time, and location prioritized over secondary info
+- **Reduced Clutter**: Maximum 2 tags prevent information overload
+- **Better Mobile**: Responsive grid provides optimal viewing on all devices
+- **Consistent Actions**: Full-width CTA buttons provide clear next steps
+
+The refactored Discover Events Grid View now provides a modern, clean, and highly usable interface that prioritizes essential information while maintaining the Thirstee glassmorphism aesthetic! 🤘
 
 ---
 

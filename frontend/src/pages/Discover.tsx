@@ -523,7 +523,7 @@ function DiscoverContent() {
               ))}
             </div>
           ) : (
-            // Grid View - Fixed Height Cards with 16:9 Images
+            // Grid View - Modern Fixed Height Cards with 3-Column Desktop Layout
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
               {filteredEvents.map((event) => (
                 <EnhancedEventCard
@@ -536,7 +536,7 @@ function DiscoverContent() {
                       user_id: event.creator.user_id
                     } : undefined
                   }}
-                  variant="default"
+                  variant="grid"
                   className="discover-grid-card"
                 />
               ))}

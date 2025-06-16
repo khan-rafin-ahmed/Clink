@@ -48,7 +48,7 @@ interface EnhancedEventCardProps {
   showHostActions?: boolean
   onEdit?: (event: Event) => void
   onDelete?: (event: Event) => void
-  variant?: 'default' | 'featured' | 'compact' | 'timeline'
+  variant?: 'default' | 'featured' | 'compact' | 'timeline' | 'grid'
   className?: string
 }
 
@@ -339,6 +339,103 @@ export function EnhancedEventCard({
             </div>
           </div>
         </CardContent>
+      </Card>
+    )
+  }
+
+  // Grid View - Modern Fixed Height Cards for Discover Page
+  if (variant === 'grid') {
+    return (
+      <Card className={cn(
+        "interactive-card group overflow-hidden glass-card border-white/10 hover:border-accent-primary/30 relative h-[420px] flex flex-col rounded-xl bg-glass shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-300",
+        className
+      )}>
+        {/* Image Section - Fixed Height */}
+        <div className="relative overflow-hidden h-[180px] rounded-t-xl">
+          {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
+            <img
+              src={getEventCoverImage(event.cover_image_url, event.vibe)}
+              alt={event.title}
+              className={cn(
+                "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",
+                !imageLoaded && "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            getPlaceholderImage()
+          )}
+
+          {/* Light gradient overlay for text clarity */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+          {/* Status badge - top-left outside image */}
+          <div className="absolute top-3 left-3">
+            <div className={cn(
+              "glass-pill px-2 py-1 text-xs font-medium backdrop-blur-lg",
+              statusBadge.variant === 'default'
+                ? "border-accent-primary/50 text-accent-primary"
+                : statusBadge.variant === 'secondary'
+                ? "border-accent-secondary/50 text-accent-secondary"
+                : "border-white/30 text-white"
+            )}>
+              {statusBadge.text}
+            </div>
+          </div>
+        </div>
+
+        {/* Content Section - Flexible height */}
+        <CardContent className="p-5 flex-1 flex flex-col">
+          {/* Title */}
+          <h3 className="text-base font-semibold text-white mb-3 line-clamp-2">
+            {event.title}
+          </h3>
+
+          {/* Metadata - Grouped vertically with spacing */}
+          <div className="space-y-2 mb-4 flex-1">
+            {/* Time */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>{formatEventTime(event.date_time)}</span>
+            </div>
+
+            {/* Location */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4" />
+              <span className="truncate" title={event.place_nickname || getLocationDisplayName(event)}>
+                {event.place_nickname || getLocationDisplayName(event)}
+              </span>
+            </div>
+
+            {/* Tags - Max 2 tags */}
+            <div className="flex items-center gap-2">
+              <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-accent-primary/30 text-accent-primary">
+                {getVibeEmoji(event.vibe)} {event.vibe}
+              </div>
+              <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-white/20 text-muted-foreground">
+                <Users className="w-3 h-3" />
+                {displayCount}
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Button - Full width */}
+          <Link to={getEventUrl().replace(window.location.origin, '')} className="block mt-auto">
+            <Button className="w-full btn-secondary glass-effect hover:bg-white/10 transition-all duration-300">
+              View Event Details
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </CardContent>
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={event.title}
+          url={eventUrl}
+        />
       </Card>
     )
   }
