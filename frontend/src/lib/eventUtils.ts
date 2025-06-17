@@ -1,4 +1,5 @@
 import type { Event } from '@/types'
+import { isToday, isTomorrow, isPast } from 'date-fns'
 
 /**
  * Utility functions for event-related operations
@@ -232,12 +233,15 @@ export function hasValidCoordinates(event: Event): boolean {
 export function getEventTimingStatus(dateTime: string): 'past' | 'now' | 'today' | 'tomorrow' | 'future' {
   const eventDate = new Date(dateTime)
   const now = new Date()
-  const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-  if (diffHours < 0) return 'past'
-  if (diffHours <= 1) return 'now'
-  if (diffHours <= 24) return 'today'
-  if (diffHours <= 48) return 'tomorrow'
+  if (isPast(eventDate)) return 'past'
+
+  // Check if it's happening now (within 1 hour)
+  const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+  if (isToday(eventDate) && diffHours <= 1) return 'now'
+
+  if (isToday(eventDate)) return 'today'
+  if (isTomorrow(eventDate)) return 'tomorrow'
   return 'future'
 }
 

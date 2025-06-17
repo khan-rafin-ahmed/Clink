@@ -32,7 +32,7 @@ class InteractionFeedbackManager {
         this.config = { ...this.config, ...JSON.parse(saved) }
       }
     } catch (error) {
-      console.warn('Failed to load interaction preferences:', error)
+      // Handle error silently in production
     }
   }
 
@@ -40,7 +40,7 @@ class InteractionFeedbackManager {
     try {
       localStorage.setItem('thirstee_interaction_config', JSON.stringify(this.config))
     } catch (error) {
-      console.warn('Failed to save interaction preferences:', error)
+      // Handle error silently in production
     }
   }
 

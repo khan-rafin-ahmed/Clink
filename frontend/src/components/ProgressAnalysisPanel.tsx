@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { progressTracker, logApprovalAnalysis } from '@/lib/progressTracker'
+import { progressTracker, getApprovalAnalysis } from '@/lib/progressTracker'
 import { 
   BarChart3, 
   CheckCircle, 
@@ -43,7 +43,6 @@ export function ProgressAnalysisPanel() {
     const data = progressTracker.getApprovalAnalysis()
     setAnalysis(data)
     setLastRefresh(new Date())
-    logApprovalAnalysis()
   }
 
   useEffect(() => {

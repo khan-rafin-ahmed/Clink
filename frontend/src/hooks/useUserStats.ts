@@ -206,7 +206,6 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
       }
 
     } catch (err) {
-      console.error('Error fetching user stats:', err)
       if (mountedRef.current) {
         setError('Failed to load stats')
       }

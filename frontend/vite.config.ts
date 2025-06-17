@@ -28,4 +28,23 @@ export default defineConfig({
     host: true,
     strictPort: true,
   },
+
+  // Build optimization for production
+  build: {
+    // Increase chunk size warning limit to 1MB (from default 500KB)
+    chunkSizeWarningLimit: 1000,
+
+    // Enable code splitting for better performance
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate vendor libraries into their own chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['lucide-react', 'framer-motion', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge'],
+        },
+      },
+    },
+  },
 })

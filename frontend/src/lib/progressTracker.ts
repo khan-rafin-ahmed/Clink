@@ -196,13 +196,7 @@ class ProgressTracker {
 // Singleton instance
 export const progressTracker = new ProgressTracker()
 
-// Helper function to log approval analysis
-export function logApprovalAnalysis() {
-  const analysis = progressTracker.getApprovalAnalysis()
-  console.log('=== PROFILE FIXES APPROVAL ANALYSIS ===')
-  console.log('Location Fixes:', analysis.locationFixes)
-  console.log('Stats Fixes:', analysis.statsFixes)
-  console.log('Overall:', analysis.overall)
-  console.log('=====================================')
-  return analysis
+// Helper function to get approval analysis
+export function getApprovalAnalysis() {
+  return progressTracker.getApprovalAnalysis()
 }

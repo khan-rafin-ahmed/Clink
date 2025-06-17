@@ -14,11 +14,10 @@ class ThirsteeSessionStorage {
       // Try localStorage first
       localStorage.setItem(this.prefix + key, value)
     } catch (error) {
-      console.warn('localStorage failed, falling back to sessionStorage:', error)
       try {
         window.sessionStorage.setItem(this.prefix + key, value)
       } catch (sessionError) {
-        console.warn('sessionStorage also failed:', sessionError)
+        // Handle storage errors silently
       }
     }
   }
@@ -32,7 +31,6 @@ class ThirsteeSessionStorage {
       // Fallback to sessionStorage
       return window.sessionStorage.getItem(this.prefix + key)
     } catch (error) {
-      console.warn('Storage access failed:', error)
       return null
     }
   }
@@ -42,7 +40,7 @@ class ThirsteeSessionStorage {
       localStorage.removeItem(this.prefix + key)
       window.sessionStorage.removeItem(this.prefix + key)
     } catch (error) {
-      console.warn('Storage removal failed:', error)
+      // Handle storage errors silently
     }
   }
 
@@ -217,14 +215,11 @@ export function setupSessionRefresh(): () => void {
  * Handle session errors gracefully
  */
 export function handleSessionError(error: any): void {
-  console.warn('Session error:', error)
-
   // Clear potentially corrupted session data
   thirsteeSessionStorage.clear()
 
   // If it's an auth error, redirect to login
   if (error?.message?.includes('JWT') || error?.message?.includes('session')) {
-    console.log('Session appears corrupted, redirecting to login...')
     window.location.href = '/login?error=session_expired'
   }
 }

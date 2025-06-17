@@ -21,6 +21,32 @@ import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
+// Helper function to get drink emoji and label
+const getDrinkInfo = (drink: string | null | undefined) => {
+  if (!drink) {
+    return {
+      emoji: '🍹',
+      label: 'No favorite yet'
+    }
+  }
+
+  const drinkMap: Record<string, { emoji: string; label: string }> = {
+    beer: { emoji: '🍺', label: 'Beer' },
+    wine: { emoji: '🍷', label: 'Wine' },
+    cocktails: { emoji: '🍸', label: 'Cocktails' },
+    whiskey: { emoji: '🥃', label: 'Whiskey' },
+    vodka: { emoji: '🍸', label: 'Vodka' },
+    rum: { emoji: '🍹', label: 'Rum' },
+    gin: { emoji: '🍸', label: 'Gin' },
+    tequila: { emoji: '🥃', label: 'Tequila' },
+    champagne: { emoji: '🥂', label: 'Champagne' },
+    sake: { emoji: '🍶', label: 'Sake' },
+    other: { emoji: '🍻', label: 'Other' }
+  }
+
+  return drinkMap[drink.toLowerCase()] || { emoji: '🍻', label: drink }
+}
+
 interface EnhancedEvent extends Event {
   creator?: {
     display_name: string | null
@@ -327,7 +353,7 @@ export function UserProfile() {
 
 
 
-      // Sort upcoming events by date
+      // Sort upcoming events by date (ascending - earliest first)
       allUpcomingEvents.sort((a: any, b: any) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
 
       setEnhancedSessions(allUpcomingEvents)
@@ -379,7 +405,13 @@ export function UserProfile() {
         }
       }))
 
+      // Sort past events by date (descending - most recent first)
+      allPastEvents.sort((a: any, b: any) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
 
+      console.log('Past events after sorting (should be most recent first):')
+      allPastEvents.forEach((event: any, index: number) => {
+        console.log(`${index + 1}. ${event.title} - ${new Date(event.date_time).toLocaleDateString()}`)
+      })
 
       setPastSessions(allPastEvents)
 
@@ -632,12 +664,16 @@ export function UserProfile() {
                 count={userCrews.length}
                 label="Crews"
               />
-              {userProfile?.favorite_drink && (
-                <StatCard
-                  icon="🍺"
-                  label={userProfile.favorite_drink}
-                />
-              )}
+              {(() => {
+                const drinkInfo = getDrinkInfo(userProfile?.favorite_drink)
+                return (
+                  <StatCard
+                    icon={drinkInfo.emoji}
+                    label={drinkInfo.label}
+                    className={!userProfile?.favorite_drink ? 'text-[#999999]' : ''}
+                  />
+                )
+              })()}
             </div>
           </div>
 

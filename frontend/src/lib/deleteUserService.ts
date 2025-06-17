@@ -16,7 +16,6 @@ export async function deleteUserAccount(userId: string): Promise<void> {
     })
 
     if (deleteError) {
-      console.error('Database deletion error:', deleteError)
       throw new Error(`Failed to delete account data: ${deleteError.message}`)
     }
 
@@ -37,7 +36,6 @@ export async function deleteUserAccount(userId: string): Promise<void> {
     // For now, the user data is deleted and they are signed out
 
   } catch (error: any) {
-    console.error('Account deletion failed:', error)
     throw new Error(error.message || 'Failed to delete account. Please try again or contact support.')
   }
 }
@@ -115,13 +113,11 @@ export async function notifyEventAttendeesOfDeletion(userId: string): Promise<vo
         .insert(notifications)
 
       if (notificationError) {
-        console.error('Error creating deletion notifications:', notificationError)
         // Don't throw here - notifications are nice to have but not critical
       }
     }
 
   } catch (error) {
-    console.error('Error notifying event attendees:', error)
     // Don't throw - this is a best-effort notification
   }
 }

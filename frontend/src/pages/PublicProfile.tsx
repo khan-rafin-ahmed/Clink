@@ -66,7 +66,6 @@ export function PublicProfile() {
         }
       }
     } catch (error: any) {
-      console.error('Error loading profile:', error)
       if (error.message?.includes('not found') || error.message?.includes('PGRST116')) {
         setError('User not found')
       } else if (error.message?.includes('permission') || error.message?.includes('access')) {

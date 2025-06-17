@@ -117,13 +117,7 @@ export function EventTimeline({
     fetchAttendeeProfiles()
   }, [events])
 
-  // Pagination logic
-  const totalPages = Math.ceil(events.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedEvents = events.slice(startIndex, endIndex)
-
-  // Group events by date for timeline organization
+  // Group events by date for timeline organization FIRST
   const groupEventsByDate = (events: Event[]) => {
     const groups: { [key: string]: Event[] } = {}
 
@@ -140,8 +134,74 @@ export function EventTimeline({
     return groups
   }
 
+  // Group all events first (before pagination)
+  const allEventGroups = groupEventsByDate(events)
+
+  // Sort date keys chronologically, not alphabetically
+  const allSortedDateKeys = Object.keys(allEventGroups).sort((a, b) => {
+    // For past events, we want most recent first (descending)
+    // For upcoming events, we want earliest first (ascending)
+    const dateA = new Date(a + 'T00:00:00')
+    const dateB = new Date(b + 'T00:00:00')
+    const now = new Date()
+
+    // Check if these are past events (before today)
+    const isPastEvents = dateA < now && dateB < now
+
+    if (isPastEvents) {
+      // Past events: most recent first (descending)
+      return dateB.getTime() - dateA.getTime()
+    } else {
+      // Upcoming events: earliest first (ascending)
+      return dateA.getTime() - dateB.getTime()
+    }
+  })
+
+  // Create a flat array of events in the correct chronological order
+  const chronologicallyOrderedEvents: Event[] = []
+  allSortedDateKeys.forEach(dateKey => {
+    // Sort events within each date group by time
+    const eventsForDate = allEventGroups[dateKey].sort((a, b) => {
+      const timeA = new Date(a.date_time).getTime()
+      const timeB = new Date(b.date_time).getTime()
+      const now = new Date().getTime()
+
+      // Check if these are past events
+      const isPastEvents = timeA < now && timeB < now
+
+      if (isPastEvents) {
+        // Past events: most recent first
+        return timeB - timeA
+      } else {
+        // Upcoming events: earliest first
+        return timeA - timeB
+      }
+    })
+    chronologicallyOrderedEvents.push(...eventsForDate)
+  })
+
+
+
+  // NOW apply pagination to the chronologically ordered events
+  const totalPages = Math.ceil(chronologicallyOrderedEvents.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedEvents = chronologicallyOrderedEvents.slice(startIndex, endIndex)
+
+  // Group the paginated events by date for display
   const eventGroups = groupEventsByDate(paginatedEvents)
-  const sortedDateKeys = Object.keys(eventGroups).sort()
+  const sortedDateKeys = Object.keys(eventGroups).sort((a, b) => {
+    const dateA = new Date(a + 'T00:00:00')
+    const dateB = new Date(b + 'T00:00:00')
+    const now = new Date()
+    const isPastEvents = dateA < now && dateB < now
+
+    if (isPastEvents) {
+      return dateB.getTime() - dateA.getTime()
+    } else {
+      return dateA.getTime() - dateB.getTime()
+    }
+  })
 
   // Format date labels for timeline - Always show day name
   const formatDateLabel = (dateString: string) => {
@@ -262,9 +322,10 @@ export function EventTimeline({
                           style={{ animationDelay: `${(dateIndex * 2 + eventIndex) * 0.1}s` }}
                         >
                           {/* Lu.ma-Style Event Card - Mobile Optimized */}
-                          <Card className="event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
-                            {/* Glass shimmer overlay */}
-                            <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                          <Link to={getEventUrl(event).replace(window.location.origin, '')} className="block">
+                            <Card className="event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl cursor-pointer" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                              {/* Glass shimmer overlay */}
+                              <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
                             <CardContent className="px-4 py-4 relative z-10">
                               {/* Lu.ma-style layout - Always side-by-side */}
@@ -384,16 +445,15 @@ export function EventTimeline({
                                       <span className="font-medium">{displayCount} attending</span>
                                     </div>
 
-                                    {/* Tag Pills - Glassmorphism */}
+                                    {/* Tag Pills - Mobile Responsive */}
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      <div className="glass-pill px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                                      <div className="glass-pill text-white font-medium flex items-center">
                                         <span className="text-[#CFCFCF]">{getVibeEmoji(event.vibe)}</span>
                                         <span className="text-white font-medium">{event.vibe}</span>
                                       </div>
                                       <Badge
                                         variant={event.is_public ? "default" : "secondary"}
                                         size="sm"
-                                        className="text-xs backdrop-blur-sm"
                                       >
                                         {event.is_public ? "Public" : "Private"}
                                       </Badge>
@@ -405,16 +465,29 @@ export function EventTimeline({
                                 <div className="absolute top-3 right-3">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm"
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                        }}
+                                      >
                                         <MoreVertical className="w-4 h-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="glass-modal border-border/50">
-                                      <DropdownMenuItem asChild>
-                                        <Link to={getEventUrl(event).replace(window.location.origin, '')} className="flex items-center">
-                                          <ArrowRight className="w-4 h-4 mr-2" />
-                                          View Details
-                                        </Link>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          window.location.href = getEventUrl(event).replace(window.location.origin, '')
+                                        }}
+                                        className="flex items-center"
+                                      >
+                                        <ArrowRight className="w-4 h-4 mr-2" />
+                                        View Details
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => setShareModalEvent(timelineEvent)}>
                                         <Share2 className="w-4 h-4 mr-2" />
@@ -446,6 +519,7 @@ export function EventTimeline({
                               </div>
                             </CardContent>
                           </Card>
+                          </Link>
                         </div>
                       )
                     })}
@@ -527,7 +601,7 @@ export function EventTimeline({
 
           {/* Compact Page Info */}
           <div className="ml-4 text-xs text-muted-foreground">
-            {startIndex + 1}–{Math.min(endIndex, events.length)} of {events.length}
+            {startIndex + 1}–{Math.min(endIndex, chronologicallyOrderedEvents.length)} of {chronologicallyOrderedEvents.length}
           </div>
         </div>
       )}

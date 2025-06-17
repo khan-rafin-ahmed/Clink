@@ -115,7 +115,7 @@ class PerformanceOptimizer {
         this.config = { ...this.config, ...JSON.parse(saved) }
       }
     } catch (error) {
-      console.warn('Failed to load performance preferences:', error)
+      // Handle error silently in production
     }
   }
 
@@ -123,7 +123,7 @@ class PerformanceOptimizer {
     try {
       localStorage.setItem('thirstee_performance_config', JSON.stringify(this.config))
     } catch (error) {
-      console.warn('Failed to save performance preferences:', error)
+      // Handle error silently in production
     }
   }
 

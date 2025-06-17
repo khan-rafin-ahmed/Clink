@@ -29,6 +29,7 @@ export function JoinEventButton({
   const { user } = useAuth()
   const [isJoined, setIsJoined] = useState(initialJoined)
   const [isLoading, setIsLoading] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   const checkJoinStatus = useCallback(async () => {
     if (!user) return
@@ -151,13 +152,16 @@ export function JoinEventButton({
     <Button
       onClick={handleJoinToggle}
       disabled={isLoading}
-      variant={isJoined ? 'secondary' : variant}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       size={size}
       className={`${className} ${
         isJoined
-          ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hover:text-green-700'
-          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-      } transition-all duration-200`}
+          ? `bg-[#0E0E10] border border-[#00FFA3]/30 text-[#00FFA3] rounded-full px-5 py-2
+             hover:text-[#FF5E78] transition-all ease-in-out duration-150 cursor-pointer`
+          : `bg-transparent border border-[#00FFA3] text-[#00FFA3] rounded-full px-5 py-2
+             hover:shadow-[0_0_8px_#00FFA3] transition-all ease-in-out duration-150`
+      }`}
     >
       {isLoading ? (
         <>
@@ -167,7 +171,9 @@ export function JoinEventButton({
       ) : isJoined ? (
         <>
           <Check className="w-4 h-4 mr-2" />
-          <span className="font-semibold">Joined! 🍻</span>
+          <span className="font-semibold">
+            {isHovered ? 'Leave Event' : 'Joined! 🍻'}
+          </span>
         </>
       ) : (
         <>

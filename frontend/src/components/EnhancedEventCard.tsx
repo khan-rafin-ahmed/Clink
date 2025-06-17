@@ -206,9 +206,10 @@ export function EnhancedEventCard({
 
   if (variant === 'timeline') {
     return (
-      <Card className={cn("event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
-        {/* Glass shimmer overlay */}
-        <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+      <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
+        <Card className={cn("event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl cursor-pointer", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+          {/* Glass shimmer overlay */}
+          <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
         <CardContent className="px-4 py-4 relative z-10">
           {/* Lu.ma-style layout - Always side-by-side */}
@@ -294,16 +295,15 @@ export function EnhancedEventCard({
                 </div>
 
                 {/* Actions and Tags */}
-                <div className="flex items-center gap-2">
-                  {/* Tag Pills - Glassmorphism */}
-                  <div className="glass-pill px-2 py-1 text-xs font-medium text-white backdrop-blur-sm flex items-center gap-1" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Tag Pills - Mobile Responsive */}
+                  <div className="glass-pill text-white font-medium flex items-center">
                     <span className="text-[#CFCFCF]">{getVibeEmoji(event.vibe)}</span>
                     <span className="text-white font-medium">{event.vibe}</span>
                   </div>
                   <Badge
                     variant={event.is_public ? "default" : "secondary"}
                     size="sm"
-                    className="text-xs backdrop-blur-sm"
                   >
                     {event.is_public ? "Public" : "Private"}
                   </Badge>
@@ -362,16 +362,18 @@ export function EnhancedEventCard({
           url={eventUrl}
         />
       </Card>
+      </Link>
     )
   }
 
   // Grid View - Modern Fixed Height Cards for Discover Page
   if (variant === 'grid') {
     return (
-      <Card className={cn(
-        "interactive-card group overflow-hidden glass-card border-white/10 hover:border-accent-primary/30 relative h-[420px] flex flex-col rounded-xl bg-glass shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-300",
-        className
-      )}>
+      <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
+        <Card className={cn(
+          "interactive-card group overflow-hidden glass-card border-white/10 hover:border-accent-primary/30 relative h-[420px] flex flex-col rounded-xl bg-glass shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer",
+          className
+        )}>
         {/* Image Section - Fixed Height */}
         <div className="relative overflow-hidden h-[180px] rounded-t-xl">
           {getEventCoverImage(event.cover_image_url, event.vibe) && !imageError ? (
@@ -431,24 +433,24 @@ export function EnhancedEventCard({
             </div>
 
             {/* Tags - Max 2 tags */}
-            <div className="flex items-center gap-2">
-              <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-accent-primary/30 text-accent-primary">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="glass-pill font-medium flex items-center text-accent-primary">
                 {getVibeEmoji(event.vibe)} {event.vibe}
               </div>
-              <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-white/20 text-muted-foreground">
-                <Users className="w-3 h-3" />
+              <div className="glass-pill font-medium flex items-center text-muted-foreground">
+                <Users className="w-4 h-4" />
                 {displayCount}
               </div>
             </div>
           </div>
 
           {/* CTA Button - Full width */}
-          <Link to={getEventUrl().replace(window.location.origin, '')} className="block mt-auto">
+          <div className="mt-auto">
             <Button className="w-full btn-secondary glass-effect hover:bg-white/10 transition-all duration-300">
               View Event Details
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-          </Link>
+          </div>
         </CardContent>
 
         {/* Share Modal */}
@@ -459,17 +461,19 @@ export function EnhancedEventCard({
           url={eventUrl}
         />
       </Card>
+      </Link>
     )
   }
 
   const isFeatured = variant === 'featured'
 
   return (
-    <Card className={cn(
-      "interactive-card group overflow-hidden glass-card floating-tile border-white/10 hover:border-accent-primary/30 relative",
-      isFeatured && "ring-2 ring-primary/20 shadow-white",
-      className
-    )}>
+    <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
+      <Card className={cn(
+        "interactive-card group overflow-hidden glass-card floating-tile border-white/10 hover:border-accent-primary/30 relative cursor-pointer",
+        isFeatured && "ring-2 ring-primary/20 shadow-white",
+        className
+      )}>
       {/* Floating Glass Overlay */}
       <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
@@ -518,7 +522,11 @@ export function EnhancedEventCard({
 
         {/* Share Button */}
         <Button
-          onClick={() => setIsShareModalOpen(true)}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsShareModalOpen(true)
+          }}
           variant="ghost"
           size="icon-sm"
           className="absolute top-3 right-3 backdrop-blur-sm bg-black/20 hover:bg-black/40 text-white border-white/20"
@@ -560,21 +568,21 @@ export function EnhancedEventCard({
 
         {/* Vibe and Stats - Enhanced Glass Pills */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className={cn(
-              "glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1",
+              "glass-pill font-medium flex items-center",
               getVibeColor(event.vibe).includes('primary')
-                ? "border-accent-primary/30 text-accent-primary"
-                : "border-accent-secondary/30 text-accent-secondary"
+                ? "text-accent-primary"
+                : "text-accent-secondary"
             )}>
               {getVibeEmoji(event.vibe)} {event.vibe}
             </div>
-            <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-white/20 text-muted-foreground">
+            <div className="glass-pill font-medium flex items-center text-muted-foreground">
               {getDrinkIcon()}
               <span className="capitalize">{event.drink_type}</span>
             </div>
           </div>
-          <div className="glass-pill px-2 py-1 text-xs font-medium flex items-center gap-1 border-blue-400/30 text-blue-400">
+          <div className="glass-pill font-medium flex items-center text-blue-400">
             <Users className="w-4 h-4" />
             {displayCount}
           </div>
@@ -609,7 +617,11 @@ export function EnhancedEventCard({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => onEdit(event)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onEdit(event)
+                  }}
                   className="flex-1 glass-ripple hover-lift transition-all duration-300 bg-accent-secondary/10 border-accent-secondary/30 hover:bg-accent-secondary/20"
                 >
                   <Edit className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
@@ -620,7 +632,11 @@ export function EnhancedEventCard({
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onDelete(event)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onDelete(event)
+                  }}
                   className="flex-1 glass-ripple hover-lift transition-all duration-300"
                 >
                   <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
@@ -631,12 +647,12 @@ export function EnhancedEventCard({
           )}
 
           {/* Main Action - Enhanced Glass Button */}
-          <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
+          <div className="block">
             <Button className="w-full group/btn glass-ripple hover-lift bg-gradient-primary hover:shadow-white-lg transition-all duration-300">
               View Event Details
               <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-2 group-hover/btn:scale-110 transition-all duration-300" />
             </Button>
-          </Link>
+          </div>
         </div>
       </CardContent>
 
@@ -648,5 +664,6 @@ export function EnhancedEventCard({
         url={eventUrl}
       />
     </Card>
+    </Link>
   )
 }

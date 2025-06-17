@@ -83,35 +83,26 @@ export function AuthCallback() {
 
         // If we have a code parameter, this is the authorization code flow
         if (code) {
-          console.log('🔄 AuthCallback: Processing authorization code flow')
-
           // Try to exchange the code for a session using Supabase's method
           try {
             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
             if (error) {
-              console.error('❌ AuthCallback: OAuth exchange failed:', error)
-
               // Handle specific Google OAuth errors
               if (error.message?.includes('Database error saving new user')) {
-                console.log('🔧 AuthCallback: Database error detected, attempting recovery')
-
                 // Wait a moment for any background processes to complete
                 await new Promise(resolve => setTimeout(resolve, 2000))
 
                 // Try to get session - user might have been created despite the error
                 const { data: sessionData } = await supabase.auth.getSession()
                 if (sessionData?.session?.user) {
-                  console.log('✅ AuthCallback: User session found despite error, proceeding with manual setup')
-
                   // Force profile creation using our manual function
                   try {
-                    const { data: profileCreated } = await supabase.rpc('create_profile_for_user', {
+                    await supabase.rpc('create_profile_for_user', {
                       target_user_id: sessionData.session.user.id
                     })
-                    console.log('🔧 AuthCallback: Manual profile creation result:', profileCreated)
                   } catch (profileError) {
-                    console.log('⚠️ AuthCallback: Manual profile creation failed, continuing anyway:', profileError)
+                    // Continue anyway if profile creation fails
                   }
 
                   const result = await handleAuthCallback()
@@ -120,7 +111,6 @@ export function AuthCallback() {
                     return
                   }
                 } else {
-                  console.log('❌ AuthCallback: No session found, redirecting to login with retry option')
                   navigate('/login?error=' + encodeURIComponent('Google signup had an issue. Please try again or use magic link.'))
                   return
                 }
@@ -131,7 +121,6 @@ export function AuthCallback() {
             }
 
             if (data?.session) {
-              console.log('✅ AuthCallback: Authorization code exchange successful')
               // Use our robust auth callback handler
               const result = await handleAuthCallback()
               if (result.success) {
@@ -142,7 +131,6 @@ export function AuthCallback() {
               return
             }
           } catch (exchangeError: any) {
-            console.error('❌ AuthCallback: Exchange error:', exchangeError)
             // Exchange failed, falling back to polling
           }
 

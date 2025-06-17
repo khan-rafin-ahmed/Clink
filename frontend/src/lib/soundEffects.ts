@@ -95,7 +95,6 @@ class SoundEffectsManager {
 
     const sound = this.sounds.get(soundName)
     if (!sound) {
-      console.warn(`Sound '${soundName}' not found`)
       return
     }
 
@@ -105,14 +104,11 @@ class SoundEffectsManager {
         if (options?.volume !== undefined) {
           sound.volume = options.volume * this.config.volume
         }
-        sound.play().catch(error => {
-          // Ignore autoplay policy errors
-          if (!error.message.includes('autoplay')) {
-            console.warn('Failed to play sound:', error)
-          }
+        sound.play().catch(() => {
+          // Handle sound play errors silently
         })
       } catch (error) {
-        console.warn('Error playing sound:', error)
+        // Handle sound errors silently
       }
     }
 

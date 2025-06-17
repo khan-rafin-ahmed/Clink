@@ -23,6 +23,7 @@ import { SessionTest } from './pages/SessionTest'
 import { AuthSecurityTest } from './pages/AuthSecurityTest'
 import { StyleGuide } from './components/StyleGuide'
 import { DeleteProfileTest } from './test/DeleteProfileTest'
+import { NotificationTest } from './test/NotificationTest'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -46,7 +47,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-          <Toaster richColors position="top-right" />
+          <Toaster
+            theme="dark"
+            position="top-right"
+            expand={true}
+            richColors={false}
+            closeButton={true}
+            duration={5000}
+          />
           <Router>
             <div className="min-h-screen bg-background text-foreground flex flex-col">
               <Navbar />
@@ -94,6 +102,9 @@ function App() {
 
               {/* Test route for delete profile functionality */}
               <Route path="/test-delete-profile" element={<DeleteProfileTest />} />
+
+              {/* Test route for notification system */}
+              <Route path="/test-notifications" element={<NotificationTest />} />
             </Routes>
           </main>
           <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">

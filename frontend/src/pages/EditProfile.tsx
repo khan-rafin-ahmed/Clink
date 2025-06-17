@@ -335,13 +335,34 @@ export function EditProfile() {
                   onValueChange={(value) => handleInputChange('favorite_drink', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select your favorite drink" />
+                    <SelectValue placeholder="Select your favorite drink">
+                      {formData.favorite_drink && formData.favorite_drink !== 'none' && (
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                            {DRINK_OPTIONS.find(d => d.value === formData.favorite_drink)?.emoji || '🍻'}
+                          </span>
+                          <span className="truncate">
+                            {DRINK_OPTIONS.find(d => d.value === formData.favorite_drink)?.label.replace(/^[^\s]+ /, '') || formData.favorite_drink}
+                          </span>
+                        </div>
+                      )}
+                      {formData.favorite_drink === 'none' && (
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">🚫</span>
+                          <span className="truncate">No preference</span>
+                        </div>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No preference</SelectItem>
+                    <SelectItem value="none">
+                      <span className="w-5 h-5 flex items-center justify-center">🚫</span>
+                      No preference
+                    </SelectItem>
                     {DRINK_OPTIONS.map((drink) => (
                       <SelectItem key={drink.value} value={drink.value}>
-                        {drink.label}
+                        <span className="w-5 h-5 flex items-center justify-center">{drink.emoji}</span>
+                        {drink.label.replace(drink.emoji + ' ', '')}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -364,12 +385,40 @@ export function EditProfile() {
                       handleInputChange('profile_visibility', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>
+                        {formData.profile_visibility === 'public' && (
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">🌍</span>
+                            <span className="truncate">Public - Anyone can view</span>
+                          </div>
+                        )}
+                        {formData.profile_visibility === 'crew_only' && (
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">👥</span>
+                            <span className="truncate">Crew Only - Only crew members can view</span>
+                          </div>
+                        )}
+                        {formData.profile_visibility === 'private' && (
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">🔒</span>
+                            <span className="truncate">Private - Only you can view</span>
+                          </div>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">🌍 Public - Anyone can view</SelectItem>
-                      <SelectItem value="crew_only">👥 Crew Only - Only crew members can view</SelectItem>
-                      <SelectItem value="private">🔒 Private - Only you can view</SelectItem>
+                      <SelectItem value="public">
+                        <span className="w-5 h-5 flex items-center justify-center">🌍</span>
+                        Public - Anyone can view
+                      </SelectItem>
+                      <SelectItem value="crew_only">
+                        <span className="w-5 h-5 flex items-center justify-center">👥</span>
+                        Crew Only - Only crew members can view
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <span className="w-5 h-5 flex items-center justify-center">🔒</span>
+                        Private - Only you can view
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

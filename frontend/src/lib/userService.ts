@@ -241,40 +241,28 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
 
         // Handle permission/RLS errors specifically
         if (error.message?.includes('permission') || error.message?.includes('RLS') || error.message?.includes('policy')) {
-          console.error('❌ ensureUserProfileExists: Permission/RLS error detected')
           throw new Error('Profile creation failed due to permissions. This may be a database configuration issue.')
         }
 
         if (attempt === maxRetries) {
-          console.error('💥 ensureUserProfileExists: All insert attempts failed')
           throw error
         }
 
         // Wait before retrying (exponential backoff)
         const delay = Math.pow(2, attempt) * 1000
-        console.log(`⏳ ensureUserProfileExists: Waiting ${delay}ms before retry`)
         await new Promise(resolve => setTimeout(resolve, delay))
         continue
       }
 
-      console.log('✅ ensureUserProfileExists: Profile created successfully:', data.id)
       return data
 
     } catch (error: any) {
-      console.error(`❌ ensureUserProfileExists: Attempt ${attempt} failed:`, {
-        error: error.message,
-        code: error.code,
-        details: error.details
-      })
-
       if (attempt === maxRetries) {
-        console.error('💥 ensureUserProfileExists: All attempts failed, throwing error')
         throw error
       }
 
       // Wait before retrying (exponential backoff)
       const delay = Math.pow(2, attempt) * 1000
-      console.log(`⏳ ensureUserProfileExists: Waiting ${delay}ms before retry`)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
   }

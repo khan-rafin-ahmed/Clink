@@ -96,6 +96,11 @@
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     --radius-xl: 1rem;
+
+    /* Toast notification colors */
+    --toast-bg: #1A1A1A;
+    --toast-text: #00FFA3;
+    --toast-border: rgba(0, 255, 163, 0.2);
   }
 
   body {
@@ -875,14 +880,40 @@
     -webkit-backdrop-filter: var(--blur-lg);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50px;
+    border-radius: 0.5rem; /* rounded-lg */
     box-shadow: var(--shadow-glass);
+    /* Mobile-first responsive sizing */
+    padding: 0.25rem 0.75rem; /* px-3 py-1 */
+    font-size: 0.875rem; /* text-sm */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
   }
 
-  .glass-pill:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: var(--shadow-white);
+  /* Desktop sizing */
+  @media (min-width: 768px) {
+    .glass-pill {
+      font-size: 1rem; /* text-base */
+    }
+  }
+
+  /* Remove hover effects on mobile for performance */
+  @media (hover: hover) {
+    .glass-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: var(--shadow-white);
+    }
+  }
+
+  /* Icon sizing within pills */
+  .glass-pill svg,
+  .glass-pill .icon {
+    width: 1rem; /* w-4 */
+    height: 1rem; /* h-4 */
+    max-width: 1rem;
+    max-height: 1rem;
   }
 
   /* Remove default link underlines */
@@ -1022,5 +1053,93 @@
 
   .discover-grid-card .card-cta {
     margin-top: auto; /* Push to bottom */
+  }
+}
+
+/* Custom Sonner Toast Styling - Thirstee Design System */
+[data-sonner-toaster] {
+  /* Desktop positioning - top-right */
+  --width: 356px;
+  --font-family: inherit;
+}
+
+[data-sonner-toaster][data-theme='dark'] {
+  --normal-bg: var(--toast-bg);
+  --normal-border: var(--toast-border);
+  --normal-text: var(--toast-text);
+  --success-bg: var(--toast-bg);
+  --success-border: var(--toast-border);
+  --success-text: var(--toast-text);
+  --error-bg: var(--toast-bg);
+  --error-border: 1px solid rgba(255, 94, 120, 0.2);
+  --error-text: #FF5E78;
+  --warning-bg: var(--toast-bg);
+  --warning-border: 1px solid rgba(255, 196, 66, 0.2);
+  --warning-text: #FFC442;
+}
+
+[data-sonner-toast] {
+  background: var(--toast-bg) !important;
+  border: 1px solid var(--toast-border) !important;
+  color: var(--toast-text) !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  padding: 0.75rem 1.25rem !important; /* px-5 py-3 */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; /* shadow-lg */
+  font-weight: 500 !important;
+  backdrop-filter: none !important; /* No blur backdrop needed */
+}
+
+[data-sonner-toast][data-type='success'] {
+  background: var(--toast-bg) !important;
+  border: 1px solid var(--toast-border) !important;
+  color: var(--toast-text) !important;
+}
+
+[data-sonner-toast][data-type='error'] {
+  background: var(--toast-bg) !important;
+  border: 1px solid rgba(255, 94, 120, 0.2) !important;
+  color: #FF5E78 !important;
+}
+
+[data-sonner-toast][data-type='warning'] {
+  background: var(--toast-bg) !important;
+  border: 1px solid rgba(255, 196, 66, 0.2) !important;
+  color: #FFC442 !important;
+}
+
+/* Toast content styling */
+[data-sonner-toast] [data-content] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important; /* gap-3 */
+}
+
+[data-sonner-toast] [data-icon] {
+  flex-shrink: 0 !important;
+  font-size: 1.125rem !important; /* text-lg for emojis */
+}
+
+[data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important; /* text-sm */
+  line-height: 1.25rem !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 0.875rem !important; /* text-sm */
+  opacity: 0.9 !important;
+  margin-top: 0.25rem !important;
+}
+
+/* Mobile responsive positioning */
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: 1rem !important; /* bottom-4 */
+    transform: translateX(-50%) !important;
+    --width: calc(100vw - 2rem);
+    max-width: 356px;
   }
 }

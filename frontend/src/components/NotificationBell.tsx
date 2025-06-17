@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Bell, Check, X, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   Popover,
   PopoverContent,
@@ -46,26 +45,9 @@ export function NotificationBell() {
     setIsLoading(true)
     try {
       const data = await notificationService.getUserNotifications(user.id)
-      console.log('Loaded notifications:', data)
-
-      // Debug crew invitation notifications specifically
-      const crewInvitations = data.filter(n => n.type === 'crew_invitation')
-      console.log('Crew invitation notifications:', crewInvitations)
-
-      crewInvitations.forEach(notification => {
-        console.log(`Notification ${notification.id}:`, {
-          type: notification.type,
-          read: notification.read,
-          data: notification.data,
-          hasCrewMemberId: !!notification.data?.crew_member_id,
-          hasCrewId: !!notification.data?.crew_id,
-          willShowButtons: notification.type === 'crew_invitation' && !notification.read && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id
-        })
-      })
-
       setNotifications(data)
     } catch (error) {
-      console.error('Failed to load notifications:', error)
+      // Handle error silently in production
     } finally {
       setIsLoading(false)
     }
@@ -78,7 +60,7 @@ export function NotificationBell() {
       const count = await notificationService.getUnreadCount(user.id)
       setUnreadCount(count)
     } catch (error) {
-      console.error('Failed to load unread count:', error)
+      // Handle error silently in production
     }
   }
 
@@ -90,7 +72,7 @@ export function NotificationBell() {
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (error) {
-      console.error('Failed to mark notification as read:', error)
+      // Handle error silently in production
     }
   }
 
@@ -102,7 +84,7 @@ export function NotificationBell() {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       setUnreadCount(0)
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error)
+      // Handle error silently in production
     }
   }
 
@@ -112,7 +94,6 @@ export function NotificationBell() {
 
       // If crew_member_id is missing, try to find it using crew_id
       if (!memberIdToUse && crewId && user?.id) {
-        console.log('Looking up crew_member_id for crew:', crewId, 'user:', user.id)
         const { data: member, error } = await supabase
           .from('crew_members')
           .select('id')
@@ -121,18 +102,13 @@ export function NotificationBell() {
           .eq('status', 'pending')
           .single()
 
-        if (error) {
-          console.error('Error finding crew member:', error)
-        } else {
-          console.log('Found crew member:', member)
+        if (!error && member) {
+          memberIdToUse = member.id
         }
-
-        memberIdToUse = member?.id || null
       }
 
       // If still no crew_member_id, try to find any pending invitation for this user
       if (!memberIdToUse && user?.id) {
-        console.log('Trying to find any pending crew invitation for user:', user.id)
         const { data: member, error } = await supabase
           .from('crew_members')
           .select('id, crew_id')
@@ -142,13 +118,9 @@ export function NotificationBell() {
           .limit(1)
           .single()
 
-        if (error) {
-          console.error('Error finding any pending crew member:', error)
-        } else {
-          console.log('Found pending crew member:', member)
+        if (!error && member) {
+          memberIdToUse = member.id
         }
-
-        memberIdToUse = member?.id || null
       }
 
       if (!memberIdToUse) {
@@ -156,7 +128,6 @@ export function NotificationBell() {
         return
       }
 
-      console.log('Processing crew invitation response with member ID:', memberIdToUse)
       await respondToCrewInvitation(memberIdToUse, response)
       await markAsRead(notificationId)
 
@@ -170,7 +141,6 @@ export function NotificationBell() {
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
       setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (error) {
-      console.error('Error responding to crew invitation:', error)
       toast.error('Failed to respond to invitation')
     }
   }
@@ -207,17 +177,16 @@ export function NotificationBell() {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative p-2">
-          <Bell className="w-5 h-5" />
+        <div className="relative">
+          <Button variant="ghost" size="sm" className="p-2">
+            <Bell className="w-5 h-5" />
+          </Button>
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs font-semibold min-w-[20px]"
-            >
+            <div className="absolute -top-1 -right-1 bg-[#FF5E78] text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow min-w-[20px] flex items-center justify-center">
               {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            </div>
           )}
-        </Button>
+        </div>
       </PopoverTrigger>
       <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
         <div className="border-b border-white/10 px-4 py-4">
@@ -287,7 +256,7 @@ export function NotificationBell() {
 
                       {/* Crew invitation actions */}
                       {notification.type === 'crew_invitation' && !notification.read && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
-                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                        <div className="flex flex-row gap-2 mt-3">
                           <Button
                             size="sm"
                             onClick={(e) => {
@@ -299,9 +268,9 @@ export function NotificationBell() {
                                 'accepted'
                               )
                             }}
-                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none bg-white text-black hover:bg-gray-100"
+                            className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-white text-black hover:bg-gray-100 flex-1"
                           >
-                            <Check className="w-3 h-3 mr-1" />
+                            <Check className="w-3 h-3" />
                             Join Crew
                           </Button>
                           <Button
@@ -316,9 +285,9 @@ export function NotificationBell() {
                                 'declined'
                               )
                             }}
-                            className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none border-white/20 text-white hover:bg-white/10"
+                            className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10 flex-1"
                           >
-                            <X className="w-3 h-3 mr-1" />
+                            <X className="w-3 h-3" />
                             Decline
                           </Button>
                         </div>

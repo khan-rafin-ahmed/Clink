@@ -33,8 +33,17 @@ import {
   StickyNote,
   Edit,
   Trash2,
-  Crown
+  Crown,
+  MoreVertical,
+  Link as LinkIcon
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { getEventRatingStats, getUserEventRating, canUserRateEvent, hasEventConcluded } from '@/lib/eventRatingService'
@@ -595,8 +604,8 @@ export function EventDetail() {
 
       {/* Consistent Container Width - Matching Profile Page Layout */}
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Navigation Header */}
-        <div className="flex items-center justify-between fade-in mb-8">
+        {/* Desktop Navigation Header */}
+        <div className="hidden lg:flex items-center justify-between fade-in mb-8">
           <Button variant="outline" onClick={goBackSmart} size="lg" className="group backdrop-blur-sm">
             <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back
@@ -625,14 +634,93 @@ export function EventDetail() {
           </div>
         </div>
 
+        {/* Mobile Header */}
+        <div className="lg:hidden fade-in mb-4">
+          {/* Top Row - Back + Options */}
+          <div className="flex items-center justify-between px-4 py-3">
+            <Button variant="outline" onClick={goBackSmart} size="sm" className="group backdrop-blur-sm">
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {/* Share Icon Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsShareModalOpen(true)}
+                className="p-2 backdrop-blur-sm"
+              >
+                <LinkIcon className="w-4 h-4" />
+              </Button>
+
+              {/* Options Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="p-2 backdrop-blur-sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="glass-modal border-white/20 backdrop-blur-xl">
+                  <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Event
+                  </DropdownMenuItem>
+                  {isHost && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Event
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Event
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Title and Date/Time */}
+          <div className="px-4 py-1 space-y-1">
+            <h1 className="text-lg font-bold text-white leading-tight">
+              {event.title}
+            </h1>
+            <p className="text-sm text-[#B3B3B3]">
+              {date} • {formatEventTiming(event.date_time, event.end_time)}
+            </p>
+            {getCountdownText(event.date_time) && (
+              <p className="text-white font-medium text-sm">
+                ⏱️ {getCountdownText(event.date_time)}
+              </p>
+            )}
+          </div>
+
+          {/* Hosting Status Banner */}
+          {isHost && (
+            <div className="mx-4 mt-3 mb-1">
+              <div className="bg-white/10 rounded-lg px-3 py-2 flex items-center gap-2">
+                <Crown className="w-4 h-4 text-white" />
+                <span className="text-sm font-medium text-white">You're hosting this session!</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Balanced 2-Column Layout: Left Column (Primary Content) + Right Column (Actions & Meta) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8">
 
           {/* Mobile Layout - Stack vertically with CTA at top */}
-          <div className="lg:hidden space-y-6">
-            {/* Mobile CTA Section - Pinned at top */}
-            <div className="sticky top-4 z-10 space-y-4 bg-background/80 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              {!isPastEvent && !isHost && (
+          <div className="lg:hidden space-y-4">
+            {/* Mobile CTA Section - Simplified */}
+            {!isPastEvent && !isHost && (
+              <div className="sticky top-4 z-10 bg-background/80 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                 <JoinEventButton
                   eventId={event.id}
                   initialJoined={isJoined}
@@ -640,53 +728,14 @@ export function EventDetail() {
                     setIsJoined(joined)
                     refetchEvent()
                   }}
-                  className="w-full px-6 py-3 text-lg font-bold bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_20px_rgba(0,255,163,0.3)] hover:scale-105 transition-all duration-200"
+                  className="w-full text-lg font-bold"
                   size="lg"
                 />
-              )}
-
-              {isHost && (
-                <div className="text-center p-4 glass-card rounded-xl">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Crown className="w-5 h-5 text-white" />
-                    <span className="font-bold text-white">You're hosting this session!</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="glass-card backdrop-blur-sm rounded-xl px-4 py-2"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
               </div>
-            </div>
+            )}
 
             {/* Mobile Content */}
-            <div className="space-y-6">
-              {/* Event Title & Date */}
-              <div>
-                <h1 className="text-2xl font-bold text-white mb-4 leading-tight">
-                  {event.title}
-                </h1>
-                <div className="flex items-center gap-3 mb-4">
-                  <Clock className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="font-semibold text-white">
-                      {date} • {formatEventTiming(event.date_time, event.end_time)}
-                    </p>
-                    {getCountdownText(event.date_time) && (
-                      <p className="text-white font-medium text-sm">
-                        ⏱️ {getCountdownText(event.date_time)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-4">
 
               {/* Mobile Cover Image */}
               <div className="rounded-xl overflow-hidden shadow-xl">
@@ -850,7 +899,7 @@ export function EventDetail() {
           </div>
 
           {/* LEFT COLUMN - Primary Content */}
-          <div className="hidden lg:block lg:col-span-8 space-y-6">
+          <div className="hidden lg:block lg:col-span-7 space-y-6">
 
             {/* 1. Title & Date */}
             <div>
@@ -1152,74 +1201,64 @@ export function EventDetail() {
           </div>
 
           {/* RIGHT COLUMN - Actions & Meta */}
-          <div className="hidden lg:block lg:col-span-4">
-              <div className="sticky top-6 z-40 space-y-4 max-h-screen overflow-y-auto">
+          <div className="hidden lg:block lg:col-span-5">
+              <div className="sticky top-6 z-40 space-y-4 max-h-screen overflow-y-auto pr-2">
 
                 {/* 1. Share Button - Standalone Glass Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="w-full glass-button backdrop-blur-lg hover:backdrop-blur-xl hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 group rounded-xl overflow-hidden"
-                >
-                  <Share2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                  Share Event
-                </Button>
+                <div className="glass-card rounded-xl p-4 shadow-sm">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="w-full glass-button backdrop-blur-lg hover:backdrop-blur-xl transition-all duration-300"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Event
+                  </Button>
+                </div>
 
                 {/* 2. Join CTA or Status Message */}
                 {!isPastEvent && !isHost && (
-                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
-                    {/* Glass shimmer effect with proper border radius */}
-                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <div className="relative z-10">
-                      <JoinEventButton
-                        eventId={event.id}
-                        initialJoined={isJoined}
-                        onJoinChange={joined => {
-                          setIsJoined(joined)
-                          refetchEvent()
-                        }}
-                        className="w-full px-6 py-3 text-lg font-bold bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_20px_rgba(0,255,163,0.3)] hover:scale-105 transition-all duration-200"
-                        size="lg"
-                      />
-                      {!user && (
-                        <p className="text-sm text-[#B3B3B3] text-center mt-3">
-                          Sign in to join this legendary session! 🤘
-                        </p>
-                      )}
-                    </div>
+                  <div className="glass-card rounded-xl p-4 shadow-sm">
+                    <JoinEventButton
+                      eventId={event.id}
+                      initialJoined={isJoined}
+                      onJoinChange={joined => {
+                        setIsJoined(joined)
+                        refetchEvent()
+                      }}
+                      className="w-full text-lg font-bold"
+                      size="lg"
+                    />
+                    {!user && (
+                      <p className="text-sm text-[#B3B3B3] text-center mt-3">
+                        Sign in to join this legendary session! 🤘
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {/* Host Status Message */}
                 {isHost && (
-                  <div className="bg-glass rounded-xl p-4 shadow-sm text-center group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
-                    {/* Glass shimmer effect with proper border radius */}
-                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <span className="text-lg group-hover:scale-110 transition-transform">👑</span>
-                        <span className="font-bold text-white">You're hosting this session!</span>
-                      </div>
-                      <p className="text-[#B3B3B3] text-sm">
-                        Share the event link to invite more legends 🎉
-                      </p>
+                  <div className="glass-card rounded-xl p-4 shadow-sm text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-lg">👑</span>
+                      <span className="font-bold text-white">You're hosting this session!</span>
                     </div>
+                    <p className="text-[#B3B3B3] text-sm">
+                      Share the event link to invite more legends 🎉
+                    </p>
                   </div>
                 )}
 
                 {/* Past Event Status */}
                 {isPastEvent && !userAttended && (
-                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
-                    {/* Glass shimmer effect with proper border radius */}
-                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <div className="relative z-10">
-                      <div className="text-center">
-                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">😢</div>
-                        <h3 className="font-semibold text-white mb-1">You missed this one!</h3>
-                        <p className="text-[#B3B3B3] text-sm">
-                          Join future events to be part of the action! 🍻
-                        </p>
-                      </div>
+                  <div className="glass-card rounded-xl p-4 shadow-sm">
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">😢</div>
+                      <h3 className="font-semibold text-white mb-1">You missed this one!</h3>
+                      <p className="text-[#B3B3B3] text-sm">
+                        Join future events to be part of the action! 🍻
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1227,70 +1266,60 @@ export function EventDetail() {
 
 
                 {/* 3. Event Info */}
-                <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
-                  {/* Glass shimmer effect with proper border radius */}
-                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                  <div className="relative z-10">
-                    <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                      <span className="group-hover:scale-110 transition-transform">🕒</span>
-                      Event Info
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                        <div>
-                          <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
-                          <p className="text-[#B3B3B3] text-xs">{date}</p>
-                        </div>
+                <div className="glass-card rounded-xl p-4 shadow-sm">
+                  <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                    🕒 Event Info
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 text-white" />
+                      <div>
+                        <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
+                        <p className="text-[#B3B3B3] text-xs">{date}</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                        <div>
-                          <p className="text-white text-sm">
-                            {event.place_nickname || getLocationDisplayName(event as any)}
-                          </p>
-                        </div>
-                      </div>
-                      {!event.is_public && (
-                        <Badge variant="secondary" className="bg-white/10 text-white border-white/20 text-xs">
-                          🔒 Invite Only
-                        </Badge>
-                      )}
                     </div>
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-white" />
+                      <div>
+                        <p className="text-white text-sm">
+                          {event.place_nickname || getLocationDisplayName(event as any)}
+                        </p>
+                      </div>
+                    </div>
+                    {!event.is_public && (
+                      <Badge variant="secondary" className="bg-white/10 text-white border-white/20 text-xs">
+                        🔒 Invite Only
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
                 {/* 4. Hosted By */}
                 {event.host && (
-                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
-                    {/* Glass shimmer effect with proper border radius */}
-                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                    <div className="relative z-10">
-                      <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                        <span className="group-hover:scale-110 transition-transform">👑</span>
-                        Hosted By
-                      </h3>
-                      <div className="flex items-center gap-3">
-                        <UserAvatar
-                          userId={event.host.id}
-                          displayName={event.host.display_name || `User ${event.host.id.slice(-4)}`}
-                          avatarUrl={event.host.avatar_url ?? undefined}
-                          size="md"
-                          className="ring-2 ring-white/20 group-hover:ring-white/40 group-hover:scale-105 transition-all duration-300"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-white font-medium text-sm">
-                              {event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                  <div className="glass-card rounded-xl p-4 shadow-sm">
+                    <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                      👑 Hosted By
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <UserAvatar
+                        userId={event.host.id}
+                        displayName={event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                        avatarUrl={event.host.avatar_url ?? undefined}
+                        size="md"
+                        className="ring-2 ring-white/20"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium text-sm">
+                            {event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                          </p>
+                          {event.host.nickname && (
+                            <p className="text-yellow-400 italic text-sm">
+                              "{event.host.nickname}"
                             </p>
-                            {event.host.nickname && (
-                              <p className="text-yellow-400 italic text-sm">
-                                "{event.host.nickname}"
-                              </p>
-                            )}
-                          </div>
-                          <p className="text-[#B3B3B3] text-xs">Event Host</p>
+                          )}
                         </div>
+                        <p className="text-[#B3B3B3] text-xs">Event Host</p>
                       </div>
                     </div>
                   </div>

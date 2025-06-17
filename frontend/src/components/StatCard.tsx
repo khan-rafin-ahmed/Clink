@@ -30,7 +30,10 @@ export function StatCard({
         {icon ? (
           <>
             <div className="text-2xl sm:text-3xl mb-2">{icon}</div>
-            <div className="text-sm text-foreground font-medium truncate">{label}</div>
+            <div className={cn(
+              "text-sm font-medium truncate",
+              className?.includes('text-[#999999]') ? 'text-[#999999]' : 'text-foreground'
+            )}>{label}</div>
           </>
         ) : (
           <>

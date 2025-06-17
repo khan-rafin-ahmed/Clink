@@ -55,7 +55,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             <Link
               to="/discover"
-              className="text-muted-foreground hover:text-accent-primary font-medium px-3 py-2 rounded-lg hover:bg-white/5 glass-effect"
+              className="text-muted-foreground hover:text-accent-primary font-medium px-4 py-1.5 rounded-full hover:bg-white/5 glass-effect flex items-center gap-2"
             >
               Discover
             </Link>
@@ -70,10 +70,14 @@ export function Navbar() {
                 {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 glass-effect hover:bg-white/10">
-                      <Avatar className="w-8 h-8 ring-2 ring-white/20 hover:ring-primary/40">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-accent-primary font-medium px-4 py-1.5 rounded-full hover:bg-white/5 glass-effect flex items-center gap-2"
+                    >
+                      <Avatar className="w-6 h-6 rounded-full object-cover">
                         <AvatarImage src={userProfile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/20 text-primary text-sm backdrop-blur-sm">
+                        <AvatarFallback className="bg-primary/20 text-primary text-sm font-medium">
                           {avatarFallback}
                         </AvatarFallback>
                       </Avatar>

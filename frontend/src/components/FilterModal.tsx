@@ -116,12 +116,27 @@ export function FilterModal({ isOpen, onClose, onApplyFilters, currentFilters }:
               <SelectTrigger className="h-12 bg-white/5 backdrop-blur-md border border-white/10 text-white">
                 <SelectValue placeholder="Drink Type" />
               </SelectTrigger>
-              <SelectContent className="bg-[#08090A] border border-white/10">
-                <SelectItem value="all">All Drinks</SelectItem>
-                <SelectItem value="beer">🍺 Beer</SelectItem>
-                <SelectItem value="wine">🍷 Wine</SelectItem>
-                <SelectItem value="cocktails">🍸 Cocktails</SelectItem>
-                <SelectItem value="whiskey">🥃 Whiskey</SelectItem>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="w-5 h-5 flex items-center justify-center">🍻</span>
+                  All Drinks
+                </SelectItem>
+                <SelectItem value="beer">
+                  <span className="w-5 h-5 flex items-center justify-center">🍺</span>
+                  Beer
+                </SelectItem>
+                <SelectItem value="wine">
+                  <span className="w-5 h-5 flex items-center justify-center">🍷</span>
+                  Wine
+                </SelectItem>
+                <SelectItem value="cocktails">
+                  <span className="w-5 h-5 flex items-center justify-center">🍸</span>
+                  Cocktails
+                </SelectItem>
+                <SelectItem value="whiskey">
+                  <span className="w-5 h-5 flex items-center justify-center">🥃</span>
+                  Whiskey
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

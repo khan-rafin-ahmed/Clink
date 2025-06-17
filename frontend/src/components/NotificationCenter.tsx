@@ -162,7 +162,7 @@ export function NotificationCenter() {
 
             {/* Crew invitation actions */}
             {notification.type === 'crew_invitation' && !notification.read && notification.data?.crew_member_id && (
-              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+              <div className="flex flex-row gap-2 mt-3">
                 <Button
                   size="sm"
                   onClick={() => handleCrewInvitationResponse(
@@ -170,9 +170,9 @@ export function NotificationCenter() {
                     notification.data.crew_member_id,
                     'accepted'
                   )}
-                  className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
+                  className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-white text-black hover:bg-gray-100 flex-1"
                 >
-                  <Check className="w-3 h-3 mr-1" />
+                  <Check className="w-3 h-3" />
                   Join Crew
                 </Button>
                 <Button
@@ -183,9 +183,9 @@ export function NotificationCenter() {
                     notification.data.crew_member_id,
                     'declined'
                   )}
-                  className="h-8 px-3 text-xs sm:text-sm flex-1 sm:flex-none"
+                  className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10 flex-1"
                 >
-                  <X className="w-3 h-3 mr-1" />
+                  <X className="w-3 h-3" />
                   Decline
                 </Button>
               </div>
@@ -253,17 +253,16 @@ export function NotificationCenter() {
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="w-5 h-5" />
+        <div className="relative">
+          <Button variant="ghost" size="sm">
+            <Bell className="w-5 h-5" />
+          </Button>
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-            >
+            <div className="absolute -top-1 -right-1 bg-[#FF5E78] text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow min-w-[20px] flex items-center justify-center">
               {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
+            </div>
           )}
-        </Button>
+        </div>
       </PopoverTrigger>
 
       <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10] border border-white/8 rounded-2xl shadow-xl" align="end">
