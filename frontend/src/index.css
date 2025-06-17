@@ -1131,13 +1131,13 @@
   margin-top: 0.25rem !important;
 }
 
-/* Mobile responsive positioning */
+/* Mobile responsive positioning - Show at top like desktop for better visibility */
 @media (max-width: 640px) {
   [data-sonner-toaster] {
     left: 50% !important;
     right: auto !important;
-    top: auto !important;
-    bottom: 1rem !important; /* bottom-4 */
+    top: 1rem !important; /* top-4 - Show at top instead of bottom */
+    bottom: auto !important;
     transform: translateX(-50%) !important;
     --width: calc(100vw - 2rem);
     max-width: 356px;

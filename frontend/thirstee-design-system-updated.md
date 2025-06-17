@@ -3635,6 +3635,54 @@ The mobile menu and notification popup now share identical layout patterns, cont
 
 ---
 
+## 🔧 **Mobile Authentication Button Fixes - Thirstee Design System**
+
+### 📋 **Overview:**
+Fixed Google authentication button icon display issues on narrow mobile devices (353px width) and improved toast notification visibility by positioning them at the top of the screen on mobile devices.
+
+### 🎨 **Google Icon Container Specifications:**
+
+#### **Container Styling:**
+- **Size**: `w-7 h-7` (28px × 28px)
+- **Min Size**: `min-w-[28px] min-h-[28px]` (prevents compression)
+- **Background**: `bg-white` with `rounded-lg`
+- **Flex**: `flex-shrink-0` (prevents icon from shrinking)
+- **Shadow**: `shadow-glass` for depth
+
+#### **SVG Icon Styling:**
+- **Size**: `w-5 h-5` (20px × 20px)
+- **Min Size**: `min-w-[20px] min-h-[20px]` (maintains aspect ratio)
+- **ViewBox**: `0 0 24 24` (standard Google icon proportions)
+
+#### **Button Layout Improvements:**
+- **Text**: `flex-1 text-center sm:text-left sm:flex-none` (responsive text alignment)
+- **Arrow**: `hidden sm:inline` (hide arrow on mobile for space)
+- **Gap**: `gap-3` (consistent spacing between elements)
+
+### 🔧 **Technical Implementation:**
+
+```jsx
+<Button
+  onClick={handleGoogleSignIn}
+  variant="glass"
+  className="w-full flex items-center justify-center gap-3 h-14 group"
+  size="lg"
+>
+  <div className="w-7 h-7 min-w-[28px] min-h-[28px] bg-white rounded-lg flex items-center justify-center shadow-glass flex-shrink-0">
+    <svg className="w-5 h-5 min-w-[20px] min-h-[20px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      {/* Google icon paths */}
+    </svg>
+  </div>
+  <span className="font-semibold text-lg flex-1 text-center sm:text-left sm:flex-none">Continue with Google</span>
+  <span className="ml-auto hidden sm:inline">→</span>
+</Button>
+```
+
+### 🎯 **Result:**
+Google authentication button now maintains proper icon aspect ratio and visual clarity across all responsive breakpoints, particularly on narrow mobile devices (353px width), while toast notifications are now clearly visible at the top of mobile screens! 🤘
+
+---
+
 ## 🍻 **Toast Notification System - Thirstee Design System**
 
 ### 📋 **Overview:**
@@ -3671,10 +3719,10 @@ Custom toast notification system using Sonner with Thirstee's dark glass aesthet
 - **Margin**: Standard Sonner positioning
 
 #### **Mobile (<640px):**
-- **Position**: `bottom-center`
+- **Position**: `top-center`
 - **Width**: `calc(100vw - 2rem)` with `max-width: 356px`
 - **Transform**: `translateX(-50%)` for perfect centering
-- **Bottom Margin**: `1rem` (16px from bottom)
+- **Top Margin**: `1rem` (16px from top)
 
 ### 🔧 **Technical Implementation:**
 
