@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
@@ -9,7 +9,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 3000",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "changelog": "node ../scripts/update-changelog.js",
+    "changelog:validate": "node ../scripts/update-changelog.js validate",
+    "changelog:template": "node ../scripts/update-changelog.js template"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -36,7 +39,6 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.4",
     "react-router-dom": "^7.6.1",
-    "react-spring": "^9.7.4",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.28"

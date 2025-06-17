@@ -188,6 +188,23 @@ If you prefer manual setup:
 
 If you'd like to contribute, please fork the repository and create a pull request. Follow the commit message guidelines and ensure your code adheres to the project's coding standards.
 
+### Changelog Management
+
+We maintain a detailed changelog following [Keep a Changelog](https://keepachangelog.com/) format. Use our helper script for managing changelog entries:
+
+```bash
+# Validate changelog format
+node scripts/update-changelog.js validate
+
+# Get template for new entries
+node scripts/update-changelog.js template
+
+# Check current version
+node scripts/update-changelog.js version
+```
+
+Please update the `[Unreleased]` section in `CHANGELOG.md` when making changes.
+
 ## License
 
 [Specify your project's license here, e.g., MIT, Apache 2.0, etc.]
