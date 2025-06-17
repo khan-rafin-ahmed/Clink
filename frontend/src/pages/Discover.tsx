@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ShareModal } from '@/components/ShareModal'
 import { EnhancedEventCard } from '@/components/EnhancedEventCard'
+import { EventTimeline } from '@/components/EventTimeline'
 import { FilterModal } from '@/components/FilterModal'
 // import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
@@ -79,7 +80,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
     // Get event IDs for batch queries
     const eventIds = publicEvents.map((event: any) => event.id)
 
-    // Batch fetch RSVPs for all events
+    // Batch fetch RSVPs for all events - EXACT same as Profile page
     const { data: allRsvps, error: rsvpError } = await supabase
       .from('rsvps')
       .select('event_id, status, user_id')
@@ -89,7 +90,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
       console.error('❌ Error loading RSVPs:', rsvpError)
     }
 
-    // Batch fetch event members for all events
+    // Batch fetch event members for all events - EXACT same as Profile page
     const { data: allEventMembers, error: memberError } = await supabase
       .from('event_members')
       .select('event_id, status, user_id')
@@ -138,7 +139,7 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
         updated_at: ''
       } : undefined
 
-      // Add RSVPs and event members to the event object
+      // Add RSVPs and event members to the event object - EXACT same as Profile page
       const eventRsvps = allRsvps?.filter(rsvp => rsvp.event_id === event.id) || []
       const eventMembers = allEventMembers?.filter(member => member.event_id === event.id) || []
 
@@ -468,23 +469,14 @@ function DiscoverContent() {
               </Button>
             </div>
           ) : viewMode === 'list' ? (
-            // List View - Wide Cards Layout (No Timeline Spacing)
-            <div className="space-y-6 max-w-5xl mx-auto">
-              {filteredEvents.map((event) => (
-                <EnhancedEventCard
-                  key={event.id}
-                  event={{
-                    ...event,
-                    creator: event.creator ? {
-                      display_name: event.creator.display_name,
-                      avatar_url: event.creator.avatar_url,
-                      user_id: event.creator.user_id
-                    } : undefined
-                  }}
-                  variant="timeline"
-                  className="discover-list-card"
-                />
-              ))}
+            // List View - EXACT same as Profile page using EventTimeline
+            <div className="max-w-4xl mx-auto">
+              <EventTimeline
+                events={filteredEvents}
+                showEditActions={false}
+                emptyStateTitle="No Sessions Found"
+                emptyStateDescription="Try adjusting your filters or search terms to find the perfect party"
+              />
             </div>
           ) : (
             // Grid View - Modern Fixed Height Cards with 3-Column Desktop Layout

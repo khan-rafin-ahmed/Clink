@@ -115,15 +115,34 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
       // Don't throw - avatar update is not critical
     }
 
-    // Step 3: Show welcome message
-    const username = user.user_metadata?.full_name?.split(' ')[0] ||
-                    user.user_metadata?.name?.split(' ')[0] ||
-                    user.email?.split('@')[0] || 'Champion'
+    // Step 3: Show welcome message - use display_name from profile
+    let displayName = 'Champion'
+
+    try {
+      // Try to get display_name from user profile
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single()
+
+      displayName = userProfile?.display_name ||
+                   user.user_metadata?.full_name ||
+                   user.user_metadata?.name ||
+                   user.email?.split('@')[0] ||
+                   'Champion'
+    } catch (error) {
+      // Fallback to metadata if profile fetch fails
+      displayName = user.user_metadata?.full_name ||
+                   user.user_metadata?.name ||
+                   user.email?.split('@')[0] ||
+                   'Champion'
+    }
 
     if (isNewUser) {
-      toast.success(`Welcome to Thirstee, ${username}! 🍻 Let's raise some hell!`)
+      toast.success(`Welcome to Thirstee, ${displayName}! 🍻`)
     } else {
-      toast.success(`Welcome back, ${username}! 🍻 Ready to raise some hell?`)
+      toast.success(`Welcome back, ${displayName}! 🍺`)
     }
 
     return { success: true, profile }
@@ -205,8 +224,7 @@ export async function signOut() {
       throw error
     }
 
-    toast.success('See you later! 👋')
-
+    // Toast message is handled in auth-context.tsx to avoid duplicates
     return { success: true }
   } catch (error) {
     toast.error('Failed to sign out. Please try again.')

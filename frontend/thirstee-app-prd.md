@@ -148,47 +148,68 @@ The `UserProfile.tsx` component **MUST** always fetch and display events from **
 
 #### 1. **Events User Created**
 ```sql
--- Query: events table where created_by = current_user_id
-SELECT * FROM events WHERE created_by = user.id
+-- Query: events table where created_by = current_user_id with attendee data
+SELECT e.*,
+       rsvps.user_id as rsvp_user_id, rsvps.status as rsvp_status,
+       event_members.user_id as member_user_id, event_members.status as member_status
+FROM events e
+LEFT JOIN rsvps ON e.id = rsvps.event_id AND rsvps.status = 'going'
+LEFT JOIN event_members ON e.id = event_members.event_id AND event_members.status = 'accepted'
+WHERE e.created_by = user.id
 ```
 - **Purpose**: Shows events the user is hosting
-- **Display**: "Hosted by You" label, edit/delete actions available
-- **Avatar**: Current user's avatar
+- **Display**: "Hosted by You" label, edit/delete actions available, attendee avatars
+- **Avatar**: Current user's avatar + attendee avatars from RSVP/members data
 
 #### 2. **Events User Manually Joined (RSVP)**
 ```sql
--- Query: events joined via RSVP system
-SELECT e.* FROM events e
+-- Query: events joined via RSVP system with attendee data
+SELECT e.*,
+       rsvps.user_id as rsvp_user_id, rsvps.status as rsvp_status,
+       event_members.user_id as member_user_id, event_members.status as member_status
+FROM events e
 INNER JOIN rsvps r ON e.id = r.event_id
+LEFT JOIN rsvps ON e.id = rsvps.event_id AND rsvps.status = 'going'
+LEFT JOIN event_members ON e.id = event_members.event_id AND event_members.status = 'accepted'
 WHERE r.user_id = user.id AND r.status = 'going' AND e.created_by != user.id
 ```
 - **Purpose**: Shows public events user clicked "Join" on
-- **Display**: "Hosted by [Creator Name]" label, no edit actions
-- **Avatar**: Event creator's avatar (fetched separately)
+- **Display**: "Hosted by [Creator Name]" label, no edit actions, attendee avatars
+- **Avatar**: Event creator's avatar + attendee avatars from RSVP/members data
 
 #### 3. **Events User Was Directly Invited To**
 ```sql
--- Query: events via direct crew invitations
-SELECT e.* FROM events e
+-- Query: events via direct crew invitations with attendee data
+SELECT e.*,
+       rsvps.user_id as rsvp_user_id, rsvps.status as rsvp_status,
+       event_members.user_id as member_user_id, event_members.status as member_status
+FROM events e
 INNER JOIN event_members em ON e.id = em.event_id
+LEFT JOIN rsvps ON e.id = rsvps.event_id AND rsvps.status = 'going'
+LEFT JOIN event_members ON e.id = event_members.event_id AND event_members.status = 'accepted'
 WHERE em.user_id = user.id AND em.status = 'accepted' AND e.created_by != user.id
 ```
 - **Purpose**: Shows events user was invited to during event creation
-- **Display**: "Hosted by [Creator Name]" label, no edit actions
-- **Avatar**: Event creator's avatar (fetched separately)
+- **Display**: "Hosted by [Creator Name]" label, no edit actions, attendee avatars
+- **Avatar**: Event creator's avatar + attendee avatars from RSVP/members data
 
 #### 4. **Events from Crews User Belongs To**
 ```sql
--- Query: events associated with user's crews
-SELECT e.* FROM events e
+-- Query: events associated with user's crews with attendee data
+SELECT e.*,
+       rsvps.user_id as rsvp_user_id, rsvps.status as rsvp_status,
+       event_members.user_id as member_user_id, event_members.status as member_status
+FROM events e
+LEFT JOIN rsvps ON e.id = rsvps.event_id AND rsvps.status = 'going'
+LEFT JOIN event_members ON e.id = event_members.event_id AND event_members.status = 'accepted'
 WHERE e.crew_id IN (
   SELECT cm.crew_id FROM crew_members cm
   WHERE cm.user_id = user.id AND cm.status = 'accepted'
 ) AND e.created_by != user.id
 ```
 - **Purpose**: Shows events from crews user is a member of
-- **Display**: "Hosted by [Creator Name]" label, no edit actions
-- **Avatar**: Event creator's avatar (fetched separately)
+- **Display**: "Hosted by [Creator Name]" label, no edit actions, attendee avatars
+- **Avatar**: Event creator's avatar + attendee avatars from RSVP/members data
 
 ### 🔧 Implementation Requirements
 
@@ -260,6 +281,38 @@ if (errors.length > 0) {
 - **Never remove any of the 4 query types** without explicit user approval
 - **Always verify avatars display correctly** for both hosted and joined events
 - **Maintain comprehensive logging** for debugging future issues
+
+### ✅ Recent Fixes Applied
+
+#### **Attendee Avatar Display Fix (2025-06-17)**
+- **Issue**: Profile page events were showing placeholder badges instead of real attendee avatars
+- **Root Cause**: Database queries were not fetching RSVP and event_members data needed for avatar display
+- **Solution**: Updated all 4 event category queries to include:
+  ```sql
+  rsvps(user_id, status),
+  event_members(user_id, status)
+  ```
+- **Result**: EventTimeline component now receives proper attendee data to display real user avatars
+- **Files Modified**: `UserProfile.tsx`, `thirstee-app-prd.md`
+
+#### **Google OAuth Icon Fix (2025-06-17)**
+- **Issue**: Login page was displaying text "G" instead of proper Google icon
+- **Solution**: Replaced text with official Google logo SVG with proper colors
+- **Result**: Professional Google sign-in button with authentic branding
+- **Files Modified**: `LoginPage.tsx`
+
+#### **Critical Bug Fixes (2025-06-17)**
+- **Issue 1**: Attendee avatar display inconsistency - counts didn't match displayed avatars
+- **Root Cause**: Mismatch between `calculateAttendeeCount()` and actual avatar display logic
+- **Solution**: Unified attendee counting to use only available RSVP/event_members data
+- **Result**: Avatar counts now perfectly match displayed avatars
+- **Files Modified**: `EventTimeline.tsx`
+
+- **Issue 2**: Duplicate sign out toast messages appearing twice
+- **Root Cause**: Toast messages in both `authService.ts` and `auth-context.tsx`
+- **Solution**: Centralized toast message in auth-context, removed duplicate
+- **Result**: Single clean toast message on sign out
+- **Files Modified**: `authService.ts`
 
 ---
 

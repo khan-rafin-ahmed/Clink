@@ -164,7 +164,7 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <span className="text-2xl float flex-shrink-0">🔥</span>
               <h3 className="text-lg font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent truncate">
-                Your Next Clink is Coming Up!
+                Your Upcoming Session
               </h3>
             </div>
             <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />

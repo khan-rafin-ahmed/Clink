@@ -240,16 +240,6 @@ export function Navbar() {
                       </>
                     ) : (
                       <>
-                        {/* Welcome Message for Non-Authenticated Users */}
-                        <div className="text-center mb-4 bg-white/5 px-4 py-4 rounded-xl">
-                          <h3 className="text-lg font-bold text-white mb-2">
-                            Ready to raise some hell? 🍻
-                          </h3>
-                          <p className="text-sm text-gray-300 font-medium">
-                            Join Thirstee and discover epic drinking events near you
-                          </p>
-                        </div>
-
                         {/* Auth Actions */}
                         <div className="space-y-4">
                           <Link
@@ -265,7 +255,7 @@ export function Navbar() {
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors text-center block"
                           >
-                            Sign up free
+                            Sign Up
                           </Link>
                         </div>
                       </>

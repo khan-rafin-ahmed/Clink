@@ -155,18 +155,26 @@ export function UserProfile() {
         crewAssociatedUpcomingResult,
         crewAssociatedPastResult
       ] = await Promise.all([
-        // 1. Get upcoming events created by user
+        // 1. Get upcoming events created by user with attendee data
         supabase
           .from('events')
-          .select('*')
+          .select(`
+            *,
+            rsvps(user_id, status),
+            event_members(user_id, status)
+          `)
           .eq('created_by', user.id)
           .gte('date_time', now)
           .order('date_time', { ascending: true }),
 
-        // 2. Get past events created by user
+        // 2. Get past events created by user with attendee data
         supabase
           .from('events')
-          .select('*')
+          .select(`
+            *,
+            rsvps(user_id, status),
+            event_members(user_id, status)
+          `)
           .eq('created_by', user.id)
           .lt('date_time', now)
           .order('date_time', { ascending: false }),
@@ -176,7 +184,8 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            rsvps!inner(status)
+            rsvps!inner(user_id, status),
+            event_members(user_id, status)
           `)
           .eq('rsvps.user_id', user.id)
           .eq('rsvps.status', 'going')
@@ -189,7 +198,8 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            rsvps!inner(status)
+            rsvps!inner(user_id, status),
+            event_members(user_id, status)
           `)
           .eq('rsvps.user_id', user.id)
           .eq('rsvps.status', 'going')
@@ -202,7 +212,8 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            event_members!inner(status)
+            event_members!inner(user_id, status),
+            rsvps(user_id, status)
           `)
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
@@ -215,7 +226,8 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            event_members!inner(status)
+            event_members!inner(user_id, status),
+            rsvps(user_id, status)
           `)
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
@@ -226,7 +238,11 @@ export function UserProfile() {
         // 7. Get upcoming events associated with crews user is a member of
         userCrewIds.length > 0 ? supabase
           .from('events')
-          .select('*')
+          .select(`
+            *,
+            rsvps(user_id, status),
+            event_members(user_id, status)
+          `)
           .in('crew_id', userCrewIds)
           .neq('created_by', user.id)
           .gte('date_time', now)
@@ -235,7 +251,11 @@ export function UserProfile() {
         // 8. Get past events associated with crews user is a member of
         userCrewIds.length > 0 ? supabase
           .from('events')
-          .select('*')
+          .select(`
+            *,
+            rsvps(user_id, status),
+            event_members(user_id, status)
+          `)
           .in('crew_id', userCrewIds)
           .neq('created_by', user.id)
           .lt('date_time', now)

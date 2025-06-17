@@ -311,9 +311,38 @@ export function EventTimeline({
                     {eventGroups[dateKey].map((event, eventIndex) => {
                       const timelineEvent = event as TimelineEvent
                       const isHost = user && event.created_by === user.id
-                      const displayCount = timelineEvent.rsvp_count !== undefined
-                        ? timelineEvent.rsvp_count
-                        : calculateAttendeeCount(event)
+
+                      // Calculate actual attendee count from available data
+                      const getActualAttendeeCount = () => {
+                        const uniqueAttendeeIds = new Set<string>()
+
+                        // Always include host first
+                        if (event.created_by) {
+                          uniqueAttendeeIds.add(event.created_by)
+                        }
+
+                        // Add RSVP attendees
+                        if (event.rsvps) {
+                          event.rsvps.forEach((rsvp: any) => {
+                            if (rsvp.status === 'going') {
+                              uniqueAttendeeIds.add(rsvp.user_id)
+                            }
+                          })
+                        }
+
+                        // Add crew members
+                        if (event.event_members) {
+                          event.event_members.forEach((member: any) => {
+                            if (member.status === 'accepted') {
+                              uniqueAttendeeIds.add(member.user_id)
+                            }
+                          })
+                        }
+
+                        return uniqueAttendeeIds.size
+                      }
+
+                      const displayCount = getActualAttendeeCount()
 
                       return (
                         <div
@@ -408,7 +437,7 @@ export function EventTimeline({
 
                                           // Show up to 3 real avatars + count badge
                                           const visibleAttendees = attendeeList.slice(0, 3)
-                                          const remainingCount = Math.max(0, displayCount - 3)
+                                          const remainingCount = Math.max(0, attendeeList.length - 3)
 
                                           return (
                                             <>

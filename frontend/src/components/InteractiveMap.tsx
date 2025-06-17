@@ -5,7 +5,6 @@ import type { LocationData } from '@/types'
 
 interface InteractiveMapProps {
   location: LocationData
-  width?: number
   height?: number
   zoom?: number
   className?: string
@@ -14,7 +13,6 @@ interface InteractiveMapProps {
 
 export function InteractiveMap({
   location,
-  width = 300,
   height = 200,
   zoom = 14,
   className,
@@ -105,8 +103,8 @@ export function InteractiveMap({
   return (
     <div
       ref={mapRef}
-      className={cn("rounded-xl overflow-hidden border border-border/30 backdrop-blur-sm", className)}
-      style={{ width, height }}
+      className={cn("w-full rounded-xl overflow-hidden border border-border/30 backdrop-blur-sm", className)}
+      style={{ height }}
     />
   )
 }
