@@ -720,7 +720,7 @@ export function EventDetail() {
           <div className="lg:hidden space-y-4">
             {/* Mobile CTA Section - Simplified */}
             {!isPastEvent && !isHost && (
-              <div className="sticky top-4 z-10 bg-background/80 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="glass-card rounded-xl p-4 shadow-sm">
                 <JoinEventButton
                   eventId={event.id}
                   initialJoined={isJoined}
@@ -877,6 +877,89 @@ export function EventDetail() {
                   </div>
                 )}
               </div>
+
+              {/* Mobile Event Info Card */}
+              <div className="glass-card rounded-xl p-4 shadow-sm">
+                <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                  🕒 Event Info
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-white" />
+                    <div>
+                      <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
+                      <p className="text-[#B3B3B3] text-xs">{date}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-white" />
+                    <div>
+                      <p className="text-white text-sm">
+                        {event.place_nickname || getLocationDisplayName(event as any)}
+                      </p>
+                    </div>
+                  </div>
+                  {!event.is_public && (
+                    <Badge variant="secondary" className="bg-white/10 text-white border-white/20 text-xs">
+                      🔒 Invite Only
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Event Location Map */}
+              {event.latitude != null && event.longitude != null && (
+                <div className="glass-card rounded-xl p-4 shadow-sm">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-white" />
+                    Event Location
+                  </h3>
+                  <div className="rounded-xl overflow-hidden border border-white/10 backdrop-blur-sm">
+                    <InteractiveMap
+                      location={{
+                        latitude: event.latitude,
+                        longitude: event.longitude,
+                        place_name: String(event.place_nickname || getLocationDisplayName(event as any)),
+                        place_id: event.place_id ?? '',
+                        address: String(event.place_name ?? event.location ?? '')
+                      }}
+                      height={250}
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Hosted By */}
+              {event.host && (
+                <div className="glass-card rounded-xl p-4 shadow-sm">
+                  <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                    👑 Hosted By
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      userId={event.host.id}
+                      displayName={event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                      avatarUrl={event.host.avatar_url ?? undefined}
+                      size="md"
+                      className="ring-2 ring-white/20"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium text-sm">
+                          {event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                        </p>
+                        {event.host.nickname && (
+                          <p className="text-yellow-400 italic text-sm">
+                            "{event.host.nickname}"
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-[#B3B3B3] text-xs">Event Host</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Mobile Post-Event Gallery */}
               {isPastEvent && userAttended && (
