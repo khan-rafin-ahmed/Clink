@@ -243,12 +243,39 @@ All Profile page components now follow the unified design system with:
 ✅ **Crew Cards** - Complete redesign following all design system rules
 ✅ **Event Timeline** - Typography, tags, pagination styling
 ✅ **Pagination Controls** - Glass button styling throughout
-✅ **EventDetail Page** - Full design system compliance, mobile-responsive
+✅ **EventDetail Page** - 2-column layout revamp with post-event state management, inline ratings, and proper card styling
 ✅ **CrewDetail Page** - Monochromatic colors, glassmorphism effects
 ✅ **Container Width** - Standardized across all pages (max-w-4xl)
 ✅ **Discover Page Filters** - Modern modal-based filter UX with single icon trigger
 
 The Thirstee app now represents a **comprehensive implementation** of the Apple Liquid Glass design system with complete visual consistency, proper mobile responsiveness, and unified interaction feedback across all major pages!
+
+## 🎯 **Event Details Page Improvements - COMPLETED**
+
+### ✅ **Right Column Card Styling Fixed**
+- **"Hosted By" Section**: Added new card-wrapped section showing host avatar, name, nickname, and role
+- **"Event Info" Section**: Already properly wrapped in `bg-glass rounded-xl p-4` card styling
+- **Visual Consistency**: All right column blocks now follow unified card format with proper spacing
+
+### ✅ **Legacy Reviews Section Removed**
+- **Bottom ReviewsPanel**: Removed full-width blue review block from bottom of page
+- **Cleaner Layout**: Eliminated disconnected legacy UI that didn't match design system
+- **Performance**: Reduced component complexity by removing unused ReviewsPanel import
+
+### ✅ **Inline Rating System Enhanced**
+- **Placement**: Ratings display directly under event title for past events
+- **Format**: ⭐ 5.0 (1 review) or ⭐ No reviews yet in muted gray
+- **Interactive**: Hover states and click handlers for rating/review functionality
+- **UX Pattern**: Follows modern app patterns (Airbnb, Spotify) for lightweight rating display
+
+### 🎨 **Design System Compliance**
+- **Card Styling**: All sidebar blocks use `bg-glass rounded-xl p-4 shadow-sm`
+- **Typography**: Proper color hierarchy with white headers and gray secondary text
+- **Spacing**: Consistent `gap-y-4` between right column cards
+- **Avatar Integration**: Host avatar with ring styling and proper size (md)
+- **Nickname Display**: Gold italic text for user nicknames following app convention
+- **Z-Index Hierarchy**: Sticky right column uses `z-30` to stay above headers during scroll
+- **Visual Consistency**: Complete glassmorphism styling across all right column sections
 
 ## 🔧 **Mobile Menu UX Issues - IDENTIFIED & SOLUTIONS**
 
@@ -1120,6 +1147,431 @@ The solid dark sidebar provides a clean, modern appearance that feels like a sub
 - **Natural Interaction**: Sidebar feels like an extension of the interface
 
 The non-modal sidebar implementation provides a modern, layered interface that enhances usability while maintaining the clean dark aesthetic throughout the notification system! 🤘
+
+---
+
+## 🧱 Event Details Page 2-Column Layout Revamp - COMPLETED ✅
+
+### 🎯 **Modern Event Platform Layout Implementation:**
+
+#### **1. Enhanced Container & Grid System** ✅
+- **Container Width**: Upgraded from `max-w-4xl` to `max-w-7xl` for better 2-column layout
+- **Grid Structure**: Changed from `lg:grid-cols-12` to `lg:grid-cols-3` for cleaner 2/3 + 1/3 split
+- **Left Column**: `lg:col-span-2` (Primary Content - w-2/3)
+- **Right Column**: `lg:col-span-1` (Meta + Action Panel - w-1/3)
+- **Mobile Layout**: Maintains `flex-col-reverse` with pinned CTA at top
+
+#### **2. Left Column Content Structure** ✅
+- **Event Title**: Large heading with proper typography hierarchy
+- **Cover Image**: 16:9 aspect ratio with rounded-xl styling
+- **Vibe Tags**: Pills with icons showing event type and drink preferences
+- **About Section**: Longform event description with proper prose styling
+- **Who's Coming**: Avatar list with role tags and overflow handling
+- **Post-Event Gallery**: Photo grid with justified layout (past events only)
+- **Post-Event Comments**: Comment section with emoji reactions (past events only)
+
+#### **3. Right Column Action Panel** ✅
+- **Share Button**: Top-right aligned with glass styling
+- **Join CTA**: "Join the Party 🎉" button for upcoming events
+- **Toast Recap**: Replaces CTA for past events with attendee summary
+- **Hosted By Card**: Avatar, name, and host message
+- **Event Meta Block**: Date, time, location, and privacy settings
+- **Rating & Reviews**: Enhanced ReviewsPanel for post-event feedback
+
+#### **4. State-Based Content Display** ✅
+
+##### **Upcoming Event State:**
+- **Join CTA**: Primary white button with "Join the Party 🎉" text
+- **Who's Coming**: Shows current attendees and host
+- **About Section**: Event description and details
+- **Reviews**: "Reviews will be available after the event" message
+
+##### **Past Event State:**
+- **Toast Recap**: Emoji banner with attendee summary and event stats
+- **Gallery**: Justified photo grid with lightbox functionality
+- **Comments**: Full comment section with reactions and replies
+- **Reviews**: Complete ReviewsPanel with rating input and review display
+
+#### **5. Mobile Responsive Enhancements** ✅
+- **Stacked Layout**: `flex-col-reverse` ensures CTA appears above content
+- **Pinned CTA**: Sticky positioning with backdrop blur for easy access
+- **Content Flow**: Gallery and Comments stack properly in mobile view
+- **Touch Targets**: All interactive elements meet 44px minimum requirements
+
+### 🎨 **Design System Compliance:**
+
+#### **Layout Standards:**
+- **Container**: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
+- **Spacing**: `gap-y-6` between sections, `py-6 sm:py-8` vertical padding
+- **Cards**: `rounded-xl shadow-sm bg-glass` styling throughout
+- **Typography**: Proper hierarchy with `text-2xl font-bold` titles
+
+#### **Interactive Elements:**
+- **CTA Buttons**: Primary white background with hover scale effects
+- **Glass Cards**: Consistent backdrop-blur and translucent backgrounds
+- **Avatar Stacks**: `-space-x-2` with `+X more` overflow badges
+- **Hover States**: Scale and shadow transitions for better feedback
+
+#### **Post-Event Components:**
+- **ToastRecap**: Emoji-driven summary with event statistics
+- **EventGallery**: Grid layout with upload functionality for attendees
+- **EventComments**: Full comment system with moderation capabilities
+- **ReviewsPanel**: Google Reviews-style rating and review system
+
+### 🔧 **Technical Implementation:**
+
+#### **Grid Structure:**
+```jsx
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  {/* Left Column - Primary Content (w-2/3) */}
+  <div className="lg:col-span-2 space-y-6">
+    {/* Event content */}
+  </div>
+
+  {/* Right Column - Meta + Action Panel (w-1/3) */}
+  <div className="lg:col-span-1">
+    <div className="sticky top-6 space-y-6">
+      {/* Action panel content */}
+    </div>
+  </div>
+</div>
+```
+
+#### **State-Based Rendering:**
+```jsx
+{/* Upcoming Event CTA */}
+{!isPastEvent && !isHost && (
+  <JoinEventButton className="w-full" size="lg" />
+)}
+
+{/* Past Event Recap */}
+{isPastEvent && userAttended && (
+  <ToastRecap event={event} attendeeCount={goingCount} />
+)}
+```
+
+### ✅ **User Experience Improvements:**
+- **Clear Visual Hierarchy**: 2-column layout separates content from actions
+- **State-Aware Interface**: Different layouts for upcoming vs past events
+- **Enhanced Mobile Experience**: Optimized stacking with pinned CTAs
+- **Consistent Interactions**: Glass effects and hover states throughout
+- **Better Content Organization**: Logical flow from event details to social features
+
+### 🎯 **Platform Comparison Achieved:**
+- **Lu.ma-Style Layout**: Clean 2-column structure with proper content hierarchy
+- **Meetup-Inspired Actions**: Right sidebar with clear CTAs and event metadata
+- **Modern Event Platform UX**: State-based content display and social features
+- **Thirstee Brand Integration**: Dark glass aesthetic with bold typography
+
+The Event Details page now provides a modern, platform-quality experience that rivals leading event platforms while maintaining the unique Thirstee dark glass aesthetic and social drinking focus! 🤘
+
+---
+
+## 🔧 Event Details Page Layout Refinement - COMPLETED ✅
+
+### 🎯 **Improved Balance, Structure & Hierarchy:**
+
+#### **1. Container Width Consistency** ✅
+- **Reverted**: From `max-w-7xl` back to `max-w-4xl` for consistency with all other pages
+- **Grid System**: Optimized to `lg:grid-cols-12` with `lg:col-span-8` (left) + `lg:col-span-4` (right)
+- **Better Balance**: 2/3 + 1/3 ratio provides optimal content-to-sidebar balance
+
+#### **2. Right Column Restructure** ✅
+- **Share Button**: Moved to top of right column with full-width styling
+- **Join CTA**: Positioned directly below share button with proper hierarchy
+- **Conditional Display**: Right column only shows when there's useful content
+- **Consistent Styling**: All blocks use `bg-glass rounded-xl p-4` with `gap-y-4` spacing
+
+#### **3. Right Column Content Order** ✅
+1. **Share Button** - Full-width glass button at top
+2. **Join CTA / Status** - "Join the Party 🎉" or host/past event messages
+3. **👤 Host Info** - Compact host card with avatar and name
+4. **🕒 Event Info** - Time, date, location with icons
+5. **📝 Reviews** - Only shown after event ends or with placeholder
+
+#### **4. Enhanced "Who's Coming" Section** ✅
+- **Avatar Stack**: Displays attendees as overlapping avatars with ring borders
+- **Total Count**: Shows "X people are going" with clear messaging
+- **Role Tags**: Host crown badge and "You" identification
+- **Compact Display**: Shows first 3-5 avatars with "+X more" overflow
+- **Name List**: Brief list showing "You, Host, and X more" format
+
+#### **5. Smart Reviews Display** ✅
+- **Hidden State**: Reviews block hidden if no reviews and event hasn't ended
+- **Placeholder**: Shows "⭐ You'll be able to review this event once it ends" for upcoming events
+- **Post-Event**: Full ReviewsPanel for attendees, basic display for non-attendees
+- **Conditional Logic**: Only shows when relevant content exists
+
+#### **6. Mobile Layout Improvements** ✅
+- **Avatar Stack**: Mobile version uses smaller avatars (4 max) with compact layout
+- **Responsive Text**: Adjusted font sizes and spacing for mobile viewing
+- **Touch Targets**: Maintained 44px minimum for all interactive elements
+- **Consistent Styling**: Same glass effects and spacing as desktop
+
+### 🎨 **Design System Compliance:**
+
+#### **Layout Standards:**
+- **Container**: `max-w-4xl mx-auto px-4 sm:px-6 lg:px-8` (consistent with all pages)
+- **Grid**: `lg:grid-cols-12` with `lg:col-span-8` + `lg:col-span-4` split
+- **Spacing**: `gap-y-4` between right column blocks, `gap-8` between columns
+- **Cards**: `bg-glass rounded-xl p-4` styling throughout right column
+
+#### **Right Column Blocks:**
+- **Share Button**: Full-width glass button with icon and label
+- **CTA/Status**: Conditional rendering based on event state and user role
+- **Host Info**: Compact card with 👤 emoji, avatar, and name
+- **Event Info**: Structured list with 🕒 emoji and icon-text pairs
+- **Reviews**: Smart conditional display with ⭐ emoji and placeholder text
+
+#### **Avatar Stack Design:**
+- **Overlap**: `-space-x-2` for desktop, adjusted for mobile
+- **Ring Borders**: `ring-2 ring-background` for clear separation
+- **Crown Badges**: Host identification with proper positioning
+- **Overflow Handling**: "+X more" badges for large attendee lists
+
+### 🔧 **Technical Improvements:**
+
+#### **Conditional Rendering:**
+```jsx
+{/* Smart right column display */}
+<div className="hidden lg:block lg:col-span-4">
+  {/* Share button always shown */}
+  {/* CTA/Status based on event state */}
+  {/* Host info always shown */}
+  {/* Event info always shown */}
+  {/* Reviews only when relevant */}
+</div>
+```
+
+#### **Avatar Stack Implementation:**
+```jsx
+<div className="flex -space-x-2">
+  {attendees.slice(0, 5).map((attendee) => (
+    <UserAvatar className="ring-2 ring-background" />
+  ))}
+  {attendees.length > 5 && (
+    <div className="overflow-badge">+{attendees.length - 5}</div>
+  )}
+</div>
+```
+
+### ✅ **User Experience Improvements:**
+- **Cleaner Hierarchy**: Right column content flows logically from actions to info
+- **Better Balance**: Consistent container width maintains visual harmony with other pages
+- **Smart Content**: Only shows relevant information, reducing cognitive load
+- **Improved Readability**: Avatar stack format is more scannable than grid layout
+- **Consistent Styling**: All right column blocks follow same design pattern
+
+### 🎯 **Layout Rules Implemented:**
+- ✅ **Right column collapses** when no useful content (conditional rendering)
+- ✅ **All blocks use** `bg-glass rounded-xl p-4 gap-y-4` styling
+- ✅ **Avatar stack** with name + role tags (Host, You)
+- ✅ **Total count display** with "X people are going" format
+- ✅ **Smart reviews** with placeholder for upcoming events
+- ✅ **Container width** matches all other pages (`max-w-4xl`)
+
+The Event Details page now provides **optimal balance and hierarchy** while maintaining consistency with the overall Thirstee design system and page layout patterns! 🤘
+
+---
+
+## 🎨 Event Details Page Polish & Refinements - COMPLETED ✅
+
+### 🎯 **Final Polish Implementation:**
+
+#### **1. Host Status Card Enhancement** ✅
+- **Wrapped in Card**: "You're hosting this session" now uses proper `bg-glass rounded-xl p-4` styling
+- **Crown Icon**: Added 👑 emoji instead of Crown component for better visual consistency
+- **Proper Hierarchy**: Integrated seamlessly with other right column blocks
+
+#### **2. Duplicate Host Info Removal** ✅
+- **Eliminated Redundancy**: Removed separate Host section from right column
+- **Single Source of Truth**: Host information now only appears in "Who's Coming" section with crown badge
+- **Cleaner Layout**: Right column focuses on actions and essential metadata only
+
+#### **3. Toast Recap Repositioning** ✅
+- **Moved to Left Column**: Toast Recap now appears above Gallery section in left column
+- **Better Context**: Positioned as event summary before photos/comments/reviews
+- **Enhanced Styling**: Wrapped in glass card with 🎉 emoji and proper title
+- **Logical Flow**: Follows Meetup-style recap placement for better UX
+
+#### **4. Inline Ratings Implementation** ✅
+- **Title Integration**: Ratings now appear directly below event title for past events
+- **Star Display**: 5-star rating with average score and review count
+- **Empty State**: Shows "⭐ No reviews yet" when no ratings exist
+- **Removed Separate Block**: Eliminated redundant ratings section from right column
+
+#### **5. Neon Green CTA Styling** ✅
+- **Brand-Aligned Color**: Updated from generic green to neon `#00FFA3`
+- **Glass Effect**: `bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3]`
+- **Glow Animation**: Added `hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]` for party vibe
+- **Consistent Application**: Applied to both desktop and mobile Join buttons
+
+### 🎨 **Design System Enhancements:**
+
+#### **Right Column Structure (Final):**
+1. **Share Button** - Full-width glass button at top
+2. **Join CTA / Status** - Neon green "Join the Party 🎉" or host status card
+3. **Past Event Status** - Non-attendee message for missed events
+4. **Event Info** - Time, date, location with 🕒 emoji
+
+#### **Left Column Flow (Final):**
+1. **Title + Inline Ratings** - Event name with star ratings for past events
+2. **Cover Image** - 16:9 aspect ratio with rounded-xl styling
+3. **Vibe Tags** - Event type and drink preference pills
+4. **About Section** - Event description and details
+5. **Who's Coming** - Avatar stack with host crown and attendee count
+6. **Event Location** - Interactive map when coordinates available
+7. **Toast Recap** - Post-event summary with emoji and stats
+8. **Gallery** - Photo upload/viewing for past events
+9. **Comments** - Discussion section for past events
+10. **Reviews** - Full ReviewsPanel for rating and feedback
+
+#### **Color Palette Updates:**
+- **Neon Green**: `#00FFA3` for primary CTAs and success states
+- **Glow Effects**: `rgba(0,255,163,0.3)` for hover animations
+- **Glass Backgrounds**: `bg-[#00FFA3]/10` for subtle neon tinting
+
+### 🔧 **Technical Improvements:**
+
+#### **Component Optimization:**
+- **Removed Unused Imports**: Cleaned up ReviewsPanel and ToastRecap imports
+- **Eliminated Redundant Functions**: Removed unused getCreatorData helper
+- **Streamlined Conditionals**: Simplified right column rendering logic
+
+#### **State Management:**
+- **Smart Content Display**: Only shows relevant sections based on event state
+- **Efficient Rendering**: Conditional components reduce DOM complexity
+- **Clean Separation**: Clear distinction between upcoming and past event layouts
+
+#### **Responsive Design:**
+- **Consistent Styling**: Neon green CTAs work across all screen sizes
+- **Mobile Optimization**: Toast Recap and ratings display properly on mobile
+- **Touch Targets**: All interactive elements maintain accessibility standards
+
+### ✅ **User Experience Improvements:**
+- **Cleaner Hierarchy**: Ratings integrated with title create better information flow
+- **Reduced Redundancy**: Single host display eliminates confusion
+- **Better Context**: Toast Recap positioned logically before social content
+- **Brand Consistency**: Neon green CTAs align with Thirstee's party aesthetic
+- **Improved Scannability**: Right column focuses on essential actions only
+
+### 🎯 **Final Layout Achievements:**
+- ✅ **Host status properly carded** with glass styling and crown emoji
+- ✅ **Duplicate host info removed** for cleaner right column
+- ✅ **Toast Recap moved to left column** above Gallery for better context
+- ✅ **Ratings inline with title** for immediate event quality indication
+- ✅ **Neon green CTAs** matching Thirstee's party brand aesthetic
+- ✅ **Streamlined right column** focusing on actions and essential metadata
+
+The Event Details page now provides a **polished, professional experience** that matches modern event platforms while maintaining Thirstee's unique neon party aesthetic and dark glass design language! 🎉
+
+---
+
+## 🎨 Event Details Right Column Interactive Enhancements - COMPLETED ✅
+
+### 🎯 **Interactive Effects Implementation:**
+
+#### **1. Share Button Styling Fix** ✅
+- **Removed Card Wrapper**: Share button is now a standalone glass button without `bg-glass rounded-xl p-4` container
+- **Enhanced Glass Effects**: Uses `glass-button` class with `backdrop-blur-lg hover:backdrop-blur-xl`
+- **Interactive Animations**: Added `hover:scale-[1.02]` and `hover:shadow-white` effects
+- **Icon Animation**: Share icon scales on hover with `group-hover:scale-110 transition-transform`
+
+#### **2. Z-Index Stacking Fix** ✅
+- **Updated Z-Index**: Changed from `z-30` to `z-40` for proper stacking above header (`z-50`)
+- **Proper Hierarchy**: Right column sticky elements now appear above navigation during scroll
+- **Visual Consistency**: Maintains proper layering with mobile menu (`z-40`) and notifications
+
+#### **3. Interactive Glassmorphism Effects** ✅
+- **Hover States**: All right column cards use `hover:bg-glass-hover hover:scale-[1.02] hover:shadow-white`
+- **Glass Shimmer**: Added `glass-shimmer` overlay with `opacity-0 group-hover:opacity-100` transitions
+- **Icon Animations**: Emojis and icons scale on hover with `group-hover:scale-110 transition-transform`
+- **Avatar Enhancement**: Host avatar includes `group-hover:ring-white/40 group-hover:scale-105` effects
+
+### 🔧 **Technical Implementation:**
+
+#### **Enhanced CSS Classes:**
+```css
+.bg-glass-hover {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: var(--blur-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+```
+
+#### **Interactive Card Pattern:**
+```jsx
+<div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-white transition-all duration-300 relative overflow-hidden">
+  {/* Glass shimmer effect */}
+  <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+  <div className="relative z-10">
+    {/* Card content with animated elements */}
+  </div>
+</div>
+```
+
+#### **Z-Index Hierarchy:**
+- **Header/Navigation**: `z-50` (highest priority)
+- **Right Column Sticky**: `z-40` (above content, below header)
+- **Mobile Menu**: `z-40` (same level as sticky elements)
+- **Content**: Default stacking context
+
+### 🎨 **Design System Compliance:**
+- ✅ **Consistent Animations**: All cards use same hover pattern and timing (`duration-300`)
+- ✅ **Glass Effects**: Proper glassmorphism with shimmer overlays and backdrop blur
+- ✅ **Interactive Feedback**: Scale transforms and shadow effects provide clear hover states
+- ✅ **Performance Optimized**: Uses CSS transforms and opacity for smooth animations
+- ✅ **Accessibility**: Maintains proper contrast and focus states throughout interactions
+
+The Event Details right column now provides **premium interactive experiences** with consistent glassmorphism effects, proper z-index stacking, and smooth animations that match the Thirstee design system! 🤘
+
+---
+
+## 🔧 Event Details Visual Clipping Fixes - COMPLETED ✅
+
+### 🎯 **Border Radius & Overflow Issues Fixed:**
+
+#### **1. Consistent Border Radius** ✅
+- **All Cards**: Ensured `rounded-xl` is applied consistently to all interactive cards
+- **Pseudo-elements**: Glass shimmer effects now use `rounded-xl` to match parent containers
+- **Share Button**: Added `rounded-xl overflow-hidden` for proper edge containment
+
+#### **2. Shadow & Ring Clipping Prevention** ✅
+- **Replaced**: `hover:shadow-white` with `hover:shadow-lg hover:ring-1 hover:ring-white/10`
+- **Applied to Parent**: Shadows and rings applied to the same element with border-radius
+- **No Nested Conflicts**: Removed shadow applications on nested children without matching radius
+
+#### **3. Glass Shimmer Effect Improvements** ✅
+- **Replaced**: Problematic `glass-shimmer` class with inline gradient backgrounds
+- **Proper Inheritance**: Shimmer effects now use `rounded-xl` to match parent containers
+- **Clean Implementation**: `bg-gradient-to-r from-transparent via-white/5 to-transparent`
+
+### 🔧 **Technical Implementation:**
+
+#### **Fixed Card Pattern:**
+```jsx
+<div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+  {/* Glass shimmer with matching border radius */}
+  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+  <div className="relative z-10">
+    {/* Card content */}
+  </div>
+</div>
+```
+
+#### **Share Button Fix:**
+```jsx
+<Button className="w-full glass-button backdrop-blur-lg hover:backdrop-blur-xl hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 group rounded-xl overflow-hidden">
+```
+
+### 🎨 **Visual Improvements:**
+- ✅ **No Border Clipping**: All cards maintain clean rounded edges during hover states
+- ✅ **Proper Shadow Containment**: Shadows and rings don't exceed container boundaries
+- ✅ **Consistent Radius**: All interactive elements use `rounded-xl` consistently
+- ✅ **Clean Hover Effects**: Smooth transitions without visual artifacts or clipping
+- ✅ **Performance Optimized**: Replaced complex CSS classes with efficient inline gradients
+
+The Event Details page now provides **visually perfect interactive cards** with no clipping, proper border radius inheritance, and clean hover effects that maintain the premium glassmorphism aesthetic! 🤘
 
 ---
 

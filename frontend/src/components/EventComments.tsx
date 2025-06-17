@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
 import { MessageCircle, Send } from 'lucide-react'
@@ -135,34 +135,26 @@ export function EventComments({ eventId, canComment }: EventCommentsProps) {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            Comments
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="glass-card rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <MessageCircle className="w-5 h-5 text-white" />
+          Comments
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="bg-gradient-card border border-border hover:border-border-hover backdrop-blur-md shadow-amber">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-display">
-          <div className="w-8 h-8 rounded-lg bg-accent-primary/10 flex items-center justify-center">
-            <MessageCircle className="h-5 w-5 text-accent-primary" />
-          </div>
-          Comments ({comments.length})
-        </CardTitle>
-      </CardHeader>
+    <div className="glass-card rounded-xl p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <MessageCircle className="w-5 h-5 text-white" />
+        Comments ({comments.length})
+      </h2>
 
-      <CardContent className="space-y-6">
+      <div className="space-y-6">
         {/* Add Comment Form */}
         {canComment && (
           <form onSubmit={handleSubmitComment} className="space-y-4">
@@ -197,9 +189,14 @@ export function EventComments({ eventId, canComment }: EventCommentsProps) {
         {/* Comments List */}
         {comments.length === 0 ? (
           <div className="text-center py-8">
-            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">
-              No comments yet. {canComment ? 'Be the first to share your thoughts!' : 'Check back later for comments.'}
+            <div className="text-4xl mb-3">💬</div>
+            <h3 className="text-lg font-display font-semibold text-white mb-2">
+              {canComment ? 'Start the conversation!' : 'No comments yet'}
+            </h3>
+            <p className="text-[#B3B3B3]">
+              {canComment
+                ? 'Share your thoughts about this legendary session! 🍻'
+                : 'Check back later for comments from attendees.'}
             </p>
           </div>
         ) : (
@@ -259,7 +256,7 @@ export function EventComments({ eventId, canComment }: EventCommentsProps) {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

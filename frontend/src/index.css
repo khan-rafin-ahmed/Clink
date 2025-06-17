@@ -929,6 +929,20 @@
     background: var(--gradient-card);
   }
 
+  .bg-glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .bg-glass-hover {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
   .bg-glass-base {
     background: rgba(14, 14, 16, 0.95);
     backdrop-filter: var(--blur-xl);

@@ -12,13 +12,14 @@ import { Badge } from '@/components/ui/badge'
 import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
-import { UserHoverCard } from '@/components/UserHoverCard'
+
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import { InteractiveMap } from '@/components/InteractiveMap'
 import { EventGallery } from '@/components/EventGallery'
 import { EventComments } from '@/components/EventComments'
-import { ReviewsPanel } from '@/components/ReviewsPanel'
+import { EventRatingModal } from '@/components/EventRatingModal'
+
 
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
@@ -29,7 +30,6 @@ import {
   Share2,
   ArrowLeft,
   Clock,
-  Wine,
   StickyNote,
   Edit,
   Trash2,
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react'
 import type { EventWithRsvps } from '@/types'
 import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
-import { getEventRatingStats } from '@/lib/eventRatingService'
+import { getEventRatingStats, getUserEventRating, canUserRateEvent, hasEventConcluded } from '@/lib/eventRatingService'
 import { getEventDetails, getEventBySlug } from '@/lib/eventService'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
@@ -68,6 +68,9 @@ export function EventDetail() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
+  const [userRating, setUserRating] = useState<any>(null)
+  const [canRate, setCanRate] = useState(false)
 
   // 1️⃣ Wait for authentication to finish (useAuthState)
   useEffect(() => {
@@ -355,6 +358,44 @@ export function EventDetail() {
     setIsJoined(computeIsJoined(event, user || null))
   }, [user, event])
 
+  // Load user rating data for past events
+  useEffect(() => {
+    const loadUserRatingData = async () => {
+      if (!event || !user) return
+
+      // Calculate if event is past and user attended
+      const now = new Date()
+      const eventDate = new Date(event.date_time)
+      const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+      const isPastEvent = diffHours < 0
+
+      const isHost = user && event.created_by === user.id
+      const userAttended = user && (
+        isHost ||
+        event.rsvps.some(r => r.user_id === user.id && r.status === 'going') ||
+        event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted')
+      )
+
+      if (!isPastEvent || !userAttended) return
+
+      try {
+        const [rating, canRateResult, eventConcluded] = await Promise.all([
+          getUserEventRating(event.id),
+          canUserRateEvent(event.id, user.id),
+          hasEventConcluded(event.id)
+        ])
+
+        setUserRating(rating)
+        setCanRate(canRateResult && eventConcluded)
+      } catch (error) {
+        console.error('Error loading rating data:', error)
+      }
+    }
+
+    loadUserRatingData()
+  }, [event, user])
+
+
 
 
   // If auth state itself has an error, show that
@@ -425,20 +466,6 @@ export function EventDetail() {
     )
   }
 
-  // Helper function to safely get creator data
-  const getCreatorData = () => {
-    if (!event.creator) return null
-    if (Array.isArray(event.creator) && event.creator.length > 0) {
-      return event.creator[0]
-    }
-    if (!Array.isArray(event.creator)) {
-      return event.creator as any
-    }
-    return null
-  }
-
-  const creatorData = getCreatorData()
-
   // Prepare data for rendering
   const date = new Date(event.date_time).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -497,6 +524,8 @@ export function EventDetail() {
     (isHost ||
       event.rsvps.some(r => r.user_id === user.id && r.status === 'going') ||
       event.event_members?.some(m => m.user_id === user.id && m.status === 'accepted'))
+
+
 
   // Emoji helpers
   const getDrinkEmoji = (drinkType?: string | null) => {
@@ -564,7 +593,7 @@ export function EventDetail() {
   return (
     <div className="min-h-screen bg-bg-base">
 
-      {/* Consistent Width Container - Matching Profile Page Layout */}
+      {/* Consistent Container Width - Matching Profile Page Layout */}
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Navigation Header */}
         <div className="flex items-center justify-between fade-in mb-8">
@@ -593,91 +622,311 @@ export function EventDetail() {
                 </Button>
               </>
             )}
-            <Button
-              variant="outline"
-              onClick={() => setIsShareModalOpen(true)}
-              className="group backdrop-blur-sm"
-            >
-              <Share2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-              Share
-            </Button>
           </div>
         </div>
 
-        {/* 2-Column Grid Layout: Left 55%, Right 45% */}
+        {/* Balanced 2-Column Layout: Left Column (Primary Content) + Right Column (Actions & Meta) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT COLUMN - Main Content (55%) */}
-          <div className="lg:col-span-7 space-y-8">
 
-            {/* 1. Event Header - NEW SECTION */}
-            <div className="slide-up glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300" style={{ animationDelay: '0.1s' }}>
-              <div className="p-4 sm:p-6 space-y-4">
-                {/* Vibe Tag & Event Type */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Badge
-                    variant="secondary"
-                    className="bg-white/10 text-white border-white/20 hover:bg-white/15 transition-colors text-sm sm:text-base px-3 py-1.5"
-                  >
-                    <span className="text-lg sm:text-xl mr-2">{getVibeEmoji(event.vibe || undefined)}</span>
-                    {event.vibe || 'Event'} Vibe
-                  </Badge>
-                  <Badge
-                    variant={event.is_public ? 'default' : 'secondary'}
-                    className={event.is_public ? 'bg-white/8 text-white border-white/15' : 'bg-white/5 text-[#B3B3B3] border-white/10'}
-                  >
-                    {event.is_public ? 'Public Session' : 'Private Session'}
-                  </Badge>
+          {/* Mobile Layout - Stack vertically with CTA at top */}
+          <div className="lg:hidden space-y-6">
+            {/* Mobile CTA Section - Pinned at top */}
+            <div className="sticky top-4 z-10 space-y-4 bg-background/80 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              {!isPastEvent && !isHost && (
+                <JoinEventButton
+                  eventId={event.id}
+                  initialJoined={isJoined}
+                  onJoinChange={joined => {
+                    setIsJoined(joined)
+                    refetchEvent()
+                  }}
+                  className="w-full px-6 py-3 text-lg font-bold bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_20px_rgba(0,255,163,0.3)] hover:scale-105 transition-all duration-200"
+                  size="lg"
+                />
+              )}
+
+              {isHost && (
+                <div className="text-center p-4 glass-card rounded-xl">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Crown className="w-5 h-5 text-white" />
+                    <span className="font-bold text-white">You're hosting this session!</span>
+                  </div>
                 </div>
+              )}
 
-                {/* Date & Time with Countdown */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-white text-base sm:text-lg">
-                        {date} • {formatEventTiming(event.date_time, event.end_time)}
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="glass-card backdrop-blur-sm rounded-xl px-4 py-2"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
+
+            {/* Mobile Content */}
+            <div className="space-y-6">
+              {/* Event Title & Date */}
+              <div>
+                <h1 className="text-2xl font-bold text-white mb-4 leading-tight">
+                  {event.title}
+                </h1>
+                <div className="flex items-center gap-3 mb-4">
+                  <Clock className="w-5 h-5 text-white" />
+                  <div>
+                    <p className="font-semibold text-white">
+                      {date} • {formatEventTiming(event.date_time, event.end_time)}
+                    </p>
+                    {getCountdownText(event.date_time) && (
+                      <p className="text-white font-medium text-sm">
+                        ⏱️ {getCountdownText(event.date_time)}
                       </p>
-                      {getCountdownText(event.date_time) && (
-                        <p className="text-white font-medium text-sm sm:text-base">
-                          ⏱️ {getCountdownText(event.date_time)}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                {/* Location Summary */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-white" />
+              {/* Mobile Cover Image */}
+              <div className="rounded-xl overflow-hidden shadow-xl">
+                <div className="relative aspect-[16/9]">
+                  {getEventCoverImage(event.cover_image_url, event.vibe) ? (
+                    <img
+                      src={getEventCoverImage(event.cover_image_url, event.vibe)}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${getVibeFallbackGradient(event.vibe)} flex items-center justify-center relative`}>
+                      <div className="text-center space-y-4">
+                        <div className="text-6xl opacity-80">
+                          {getVibeEmoji(event.vibe || undefined)}
+                        </div>
+                        <div className="text-xl text-white font-medium uppercase tracking-wide">
+                          {event.vibe || 'Event'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Vibe Tags */}
+              <div className="flex flex-wrap gap-3">
+                {event.vibe && (
+                  <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                    <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
+                    <span className="text-white font-medium capitalize">{event.vibe} Vibe</span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white text-base sm:text-lg truncate">
-                      {event.place_nickname || getLocationDisplayName(event as any)}
+                )}
+                {event.drink_type && (
+                  <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                    <span className="text-xl">{getDrinkEmoji(event.drink_type)}</span>
+                    <span className="text-white font-medium capitalize">{event.drink_type}</span>
+                  </div>
+                )}
+                <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                  <span className="text-lg">{event.is_public ? '🌍' : '🔒'}</span>
+                  <span className="text-white font-medium">
+                    {event.is_public ? 'Public Session' : 'Private Session'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mobile Description */}
+              {event.notes && (
+                <div className="glass-card rounded-xl p-6 shadow-sm">
+                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <StickyNote className="w-5 h-5 text-white" />
+                    About the Event
+                  </h2>
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-[#B3B3B3] leading-relaxed text-base">{event.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Who's Coming - Avatar Stack */}
+              <div className="glass-card rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-white" />
+                    Who's Coming
+                  </h2>
+                </div>
+                {allAttendees.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">🎉</div>
+                    <h3 className="text-lg font-display font-semibold text-white mb-2">
+                      Be the first to raise hell!
+                    </h3>
+                    <p className="text-[#B3B3B3]">
+                      This party is waiting for someone legendary to get it started 🤘
                     </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Mobile Avatar Stack */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex -space-x-2">
+                        {allAttendees.slice(0, 4).map((rsvp, index) => {
+                          const profile = participantProfiles[rsvp.user_id] || {}
+                          const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
+                          const isEventHost = rsvp.user_id === event.created_by
 
-                {/* Event Title H1 */}
-                <div className="pt-4 border-t border-white/10">
-                  <h1 className="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-white mb-2 leading-tight">
-                    {event.title}
-                  </h1>
-                  {/* Subtitle/Tagline if available */}
-                  {event.notes && (
-                    <p className="text-lg sm:text-xl text-[#B3B3B3] italic leading-relaxed">
-                      "Just be present and enjoy!!"
+                          return (
+                            <div key={rsvp.user_id || index} className="relative">
+                              <UserAvatar
+                                userId={rsvp.user_id}
+                                displayName={displayName}
+                                avatarUrl={profile.avatar_url ?? undefined}
+                                size="sm"
+                                className="ring-2 ring-background"
+                              />
+                              {isEventHost && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center border border-background">
+                                  <Crown className="w-1.5 h-1.5 text-black" />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {allAttendees.length > 4 && (
+                          <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center border-2 border-background text-xs font-bold text-white">
+                            +{allAttendees.length - 4}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">
+                          {goingCount} {goingCount === 1 ? 'person is' : 'people are'} going
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {allAttendees.slice(0, 2).map((rsvp, index) => {
+                            const profile = participantProfiles[rsvp.user_id] || {}
+                            const isEventHost = rsvp.user_id === event.created_by
+                            const isCurrentUser = user && rsvp.user_id === user.id
+                            const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
+
+                            return (
+                              <span key={rsvp.user_id || index} className="text-xs text-[#B3B3B3]">
+                                {isCurrentUser ? 'You' : displayName}
+                                {isEventHost && ' (Host)'}
+                                {index < Math.min(allAttendees.length, 2) - 1 && ', '}
+                              </span>
+                            )
+                          })}
+                          {allAttendees.length > 2 && (
+                            <span className="text-xs text-[#B3B3B3]">
+                              and {allAttendees.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Post-Event Gallery */}
+              {isPastEvent && userAttended && (
+                <EventGallery
+                  eventId={event.id}
+                  canUpload={Boolean(userAttended)}
+                  canModerate={Boolean(isHost)}
+                />
+              )}
+
+              {/* Mobile Post-Event Comments */}
+              {isPastEvent && userAttended && (
+                <EventComments
+                  eventId={event.id}
+                  canComment={Boolean(userAttended)}
+                  canModerate={Boolean(isHost)}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* LEFT COLUMN - Primary Content */}
+          <div className="hidden lg:block lg:col-span-8 space-y-6">
+
+            {/* 1. Title & Date */}
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2 leading-tight">
+                {event.title}
+              </h1>
+              {/* Inline Ratings for Past Events */}
+              {isPastEvent && (
+                <div className="mb-4">
+                  {event.average_rating && event.total_ratings && event.total_ratings > 0 ? (
+                    <div
+                      className="flex items-center gap-2 cursor-pointer group"
+                      onClick={() => canRate && setIsRatingModalOpen(true)}
+                      title={userRating ? "Edit your review" : canRate ? "Leave a review" : ""}
+                    >
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`text-lg transition-colors ${
+                              star <= (event.average_rating || 0)
+                                ? 'text-yellow-400'
+                                : 'text-gray-600'
+                            } ${canRate ? 'group-hover:text-yellow-300' : ''}`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-white font-medium group-hover:text-yellow-300 transition-colors">
+                        {event.average_rating?.toFixed(1)} ({event.total_ratings} reviews)
+                      </span>
+                    </div>
+                  ) : (
+                    <div
+                      className={`flex items-center gap-2 ${canRate ? 'cursor-pointer group' : ''}`}
+                      onClick={() => canRate && setIsRatingModalOpen(true)}
+                      title={canRate ? "Leave a review" : ""}
+                    >
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`text-lg transition-colors text-gray-600 ${
+                              canRate ? 'group-hover:text-yellow-400' : ''
+                            }`}
+                          >
+                            ☆
+                          </span>
+                        ))}
+                      </div>
+                      <span className={`text-[#B3B3B3] text-sm ${canRate ? 'group-hover:text-yellow-300' : ''} transition-colors`}>
+                        No reviews yet{canRate ? ' - Click to rate!' : ''}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-white" />
+                <div>
+                  <p className="font-semibold text-white text-lg">
+                    {date} • {formatEventTiming(event.date_time, event.end_time)}
+                  </p>
+                  {getCountdownText(event.date_time) && (
+                    <p className="text-white font-medium">
+                      ⏱️ {getCountdownText(event.date_time)}
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 2. Cover Image - Moved below header, no title overlay */}
-            <div className="slide-up rounded-2xl overflow-hidden shadow-xl" style={{ animationDelay: '0.2s' }}>
-              <div className="relative h-64 sm:h-80 lg:h-96">
+            {/* 2. Cover Image - aspect-[16/9], rounded-xl */}
+            <div className="rounded-xl overflow-hidden shadow-xl">
+              <div className="relative aspect-[16/9]">
                 {getEventCoverImage(event.cover_image_url, event.vibe) ? (
                   <img
                     src={getEventCoverImage(event.cover_image_url, event.vibe)}
@@ -694,7 +943,6 @@ export function EventDetail() {
                         {event.vibe || 'Event'}
                       </div>
                     </div>
-                    {/* Subtle pattern overlay */}
                     <div className="absolute inset-0 opacity-10">
                       <div className="w-full h-full" style={{
                         backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px)`
@@ -705,281 +953,224 @@ export function EventDetail() {
               </div>
             </div>
 
-            {/* 3. About the Event */}
-            {event.notes && (
-              <div className="slide-up glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300" style={{ animationDelay: '0.3s' }}>
-                <div className="p-4 sm:p-6">
-                  <h2 className="text-lg font-display font-semibold text-white mb-4 flex items-center gap-2">
-                    <StickyNote className="w-5 h-5 text-white" />
-                    About the Event
-                  </h2>
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-[#B3B3B3] leading-relaxed text-base sm:text-lg">{event.notes}</p>
-                  </div>
+            {/* 3. Vibe Tags */}
+            <div className="flex flex-wrap gap-3">
+              {event.vibe && (
+                <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                  <span className="text-xl">{getVibeEmoji(event.vibe)}</span>
+                  <span className="text-white font-medium capitalize">{event.vibe} Vibe</span>
+                </div>
+              )}
+              {event.drink_type && (
+                <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                  <span className="text-xl">{getDrinkEmoji(event.drink_type)}</span>
+                  <span className="text-white font-medium capitalize">{event.drink_type}</span>
+                </div>
+              )}
+              <div className="glass-card rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm">
+                <span className="text-lg">{event.is_public ? '🌍' : '🔒'}</span>
+                <span className="text-white font-medium">
+                  {event.is_public ? 'Public Session' : 'Private Session'}
+                </span>
+              </div>
+            </div>
 
-                  {/* Host Notes - Collapsible section could be added here if needed */}
+            {/* 4. Description/About */}
+            {event.notes && (
+              <div className="glass-card rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <StickyNote className="w-5 h-5 text-white" />
+                  About the Event
+                </h2>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-[#B3B3B3] leading-relaxed text-base">{event.notes}</p>
                 </div>
               </div>
             )}
 
-            {/* 4. Vibe Details - Horizontal Cards/Tags */}
-            <div className="slide-up glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300 mb-8" style={{ animationDelay: '0.4s' }}>
-              <div className="p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-display font-semibold text-white mb-4 flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl">{getDrinkEmoji(event.drink_type)}</span>
-                  Vibe Details
+            {/* 5. Who's Coming - Avatar Stack */}
+            <div className="glass-card rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-white" />
+                  Who's Coming
                 </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  {/* Drink of the Night */}
-                  {event.drink_type && (
-                    <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white/5 hover:bg-white/8 rounded-xl border border-white/10 backdrop-blur-sm transition-all duration-200 min-w-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                        <Wine className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-white capitalize text-sm sm:text-base">
-                          {event.drink_type}
-                        </p>
-                        <p className="text-xs sm:text-sm text-[#B3B3B3]">Drink of the Night</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Party Mood */}
-                  {event.vibe && (
-                    <div className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-white/5 hover:bg-white/8 rounded-xl border border-white/10 backdrop-blur-sm transition-all duration-200 min-w-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl sm:text-2xl">{getVibeEmoji(event.vibe)}</span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-white capitalize text-sm sm:text-base">
-                          {event.vibe} Vibe
-                        </p>
-                        <p className="text-xs sm:text-sm text-[#B3B3B3]">Party Mood</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dress Code - Optional (if we had this field) */}
-                  {/* Could add dress_code field to event schema in future */}
-                </div>
+                {maybeCount > 0 && (
+                  <Badge variant="outline" className="text-[#B3B3B3] border-white/20 bg-white/5">
+                    {maybeCount} maybe
+                  </Badge>
+                )}
               </div>
-            </div>
 
-            {/* 5. Who's Coming - Up to 8 attendees */}
-            <div className="slide-up glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300" style={{ animationDelay: '0.5s' }}>
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h2 className="text-base sm:text-lg font-display font-semibold text-white flex items-center gap-2">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    {goingCount > 0 ? `Who's Coming (${goingCount})` : "Who's Coming"}
-                  </h2>
-                  {maybeCount > 0 && (
-                    <Badge variant="outline" className="text-[#B3B3B3] border-white/20 bg-white/5">
-                      {maybeCount} maybe
-                    </Badge>
+              {allAttendees.length === 0 ? (
+                <div className="text-center py-8">
+                  {!isHost ? (
+                    <>
+                      <div className="text-4xl mb-3">🎉</div>
+                      <h3 className="text-lg font-display font-semibold text-white mb-2">
+                        Be the first to raise hell!
+                      </h3>
+                      <p className="text-[#B3B3B3]">
+                        This party is waiting for someone legendary to get it started 🤘
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-4xl mb-3">👥</div>
+                      <h3 className="text-lg font-display font-semibold text-white mb-2">
+                        No one has joined yet
+                      </h3>
+                      <p className="text-[#B3B3B3]">
+                        Share your event to invite more legends to the party! 🍻
+                      </p>
+                    </>
                   )}
                 </div>
-
-                {allAttendees.length === 0 ? (
-                  <div className="text-center py-8">
-                    {!isHost ? (
-                      <>
-                        <div className="text-4xl mb-3">🎉</div>
-                        <h3 className="text-lg font-display font-semibold text-white mb-2">
-                          Be the first to raise hell!
-                        </h3>
-                        <p className="text-[#B3B3B3]">
-                          This party is waiting for someone legendary to get it started 🤘
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-4xl mb-3">👥</div>
-                        <h3 className="text-lg font-display font-semibold text-white mb-2">
-                          No one has joined yet
-                        </h3>
-                        <p className="text-[#B3B3B3]">
-                          Share your event to invite more legends to the party! 🍻
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    {/* Up to 8 visible attendees + +X badge for overflow */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                      {allAttendees.slice(0, 8).map((rsvp, index) => {
+              ) : (
+                <div className="space-y-4">
+                  {/* Avatar Stack */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-2">
+                      {allAttendees.slice(0, 5).map((rsvp, index) => {
                         const profile = participantProfiles[rsvp.user_id] || {}
-
-                        // Enhanced display name logic with better fallbacks
-                        const getDisplayName = () => {
-                          // Priority 1: Nickname (if available)
-                          if (profile.nickname && profile.nickname.trim()) {
-                            return profile.nickname.trim()
-                          }
-
-                          // Priority 2: Display name (if available)
-                          if (profile.display_name && profile.display_name.trim()) {
-                            return profile.display_name.trim()
-                          }
-
-                          // Priority 3: Check if this is the host and use host data
-                          if (rsvp.user_id === event.created_by) {
-                            if (event.host?.display_name) return event.host.display_name
-                            if (event.host?.nickname) return event.host.nickname
-                            if (creatorData?.display_name) return creatorData.display_name
-                            if (creatorData?.nickname) return creatorData.nickname
-                          }
-
-                          // Priority 4: Fallback to User ID
-                          return `User ${rsvp.user_id.slice(-4) || 'Anonymous'}`
-                        }
-
-                        const displayName = getDisplayName()
-                        const hasNickname = Boolean(profile.nickname && profile.nickname.trim())
+                        const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
                         const isEventHost = rsvp.user_id === event.created_by
 
+
                         return (
-                          <div key={rsvp.user_id || index} className="flex flex-col items-center">
-                            <UserHoverCard
+                          <div key={rsvp.user_id || index} className="relative">
+                            <UserAvatar
                               userId={rsvp.user_id}
                               displayName={displayName}
                               avatarUrl={profile.avatar_url ?? undefined}
-                            >
-                              <div className={`flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl hover:bg-white/8 transition-all duration-200 cursor-pointer hover:scale-105 ${
-                                isEventHost ? 'bg-white/10 border border-white/20' : 'bg-white/5 border border-white/10'
-                              } backdrop-blur-sm min-w-0`}>
-                                <div className="relative">
-                                  <UserAvatar
-                                    userId={rsvp.user_id}
-                                    displayName={displayName}
-                                    avatarUrl={profile.avatar_url ?? undefined}
-                                    size="lg"
-                                  />
-                                  {isEventHost && (
-                                    <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-white rounded-full flex items-center justify-center border-2 border-background">
-                                      <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-black" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-center w-full">
-                                  {hasNickname ? (
-                                    <p className="text-xs text-yellow-400 italic font-medium truncate w-full">
-                                      {profile.nickname!.trim()} 🍻
-                                    </p>
-                                  ) : (
-                                    <p className="text-xs font-medium text-white truncate w-full">
-                                      {displayName}
-                                    </p>
-                                  )}
-                                  {isEventHost && (
-                                    <p className="text-xs text-white font-medium">Host</p>
-                                  )}
-                                </div>
+                              size="md"
+                              className="ring-2 ring-background"
+                            />
+                            {isEventHost && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center border border-background">
+                                <Crown className="w-2 h-2 text-black" />
                               </div>
-                            </UserHoverCard>
+                            )}
                           </div>
                         )
                       })}
-                      {allAttendees.length > 8 && (
-                        <div className="flex flex-col items-center">
-                          <div className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white/5 hover:bg-white/8 rounded-xl border border-white/10 backdrop-blur-sm transition-all duration-200 cursor-pointer hover:scale-105 min-w-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
-                              <span className="text-xs sm:text-sm font-bold text-white">
-                                +{allAttendees.length - 8}
-                              </span>
-                            </div>
-                            <p className="text-xs text-[#B3B3B3] font-medium">more legends</p>
-                          </div>
+                      {allAttendees.length > 5 && (
+                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border-2 border-background text-xs font-bold text-white">
+                          +{allAttendees.length - 5}
                         </div>
                       )}
                     </div>
+                    <div>
+                      <p className="text-white font-medium">
+                        {goingCount} {goingCount === 1 ? 'person is' : 'people are'} going
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {allAttendees.slice(0, 3).map((rsvp, index) => {
+                          const profile = participantProfiles[rsvp.user_id] || {}
+                          const isEventHost = rsvp.user_id === event.created_by
+                          const isCurrentUser = user && rsvp.user_id === user.id
+                          const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
+
+                          return (
+                            <span key={rsvp.user_id || index} className="text-xs text-[#B3B3B3]">
+                              {isCurrentUser ? 'You' : displayName}
+                              {isEventHost && ' (Host)'}
+                              {index < Math.min(allAttendees.length, 3) - 1 && ', '}
+                            </span>
+                          )
+                        })}
+                        {allAttendees.length > 3 && (
+                          <span className="text-xs text-[#B3B3B3]">
+                            and {allAttendees.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 6. Event Location */}
             {event.latitude != null && event.longitude != null && (
-              <div className="slide-up glass-card rounded-2xl hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300 overflow-hidden" style={{ animationDelay: '0.6s' }}>
-                <div className="p-4 sm:p-6">
-                  <h2 className="text-base sm:text-lg font-display font-semibold text-white mb-4 flex items-center gap-2">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    Event Location
-                  </h2>
-                  <div className="rounded-xl overflow-hidden border border-white/10 backdrop-blur-sm">
-                    <InteractiveMap
-                      location={{
-                        latitude: event.latitude,
-                        longitude: event.longitude,
-                        place_name: String(event.place_nickname || getLocationDisplayName(event as any)),
-                        place_id: event.place_id ?? '',
-                        address: String(event.place_name ?? event.location ?? '')
-                      }}
-                      height={300}
-                      className="rounded-xl"
-                    />
-                  </div>
+              <div className="glass-card rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-white" />
+                  Event Location
+                </h2>
+                <div className="rounded-xl overflow-hidden border border-white/10 backdrop-blur-sm">
+                  <InteractiveMap
+                    location={{
+                      latitude: event.latitude,
+                      longitude: event.longitude,
+                      place_name: String(event.place_nickname || getLocationDisplayName(event as any)),
+                      place_id: event.place_id ?? '',
+                      address: String(event.place_name ?? event.location ?? '')
+                    }}
+                    height={300}
+                    className="rounded-xl"
+                  />
                 </div>
               </div>
             )}
 
-            {/* 7. Post-Event Additions (if event is in past) */}
+            {/* 6. Toast Recap (if event is in past and user attended) */}
             {isPastEvent && userAttended && (
-              <>
+              <div className="glass-card rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <span className="text-xl">🎉</span>
+                  Toast Recap
+                </h2>
                 <ToastRecap
                   event={event as any}
                   attendeeCount={goingCount}
                   photoCount={0}
                   commentCount={0}
                 />
-
-                <EventGallery
-                  eventId={event.id}
-                  canUpload={Boolean(userAttended)}
-                  canModerate={Boolean(isHost)}
-                />
-
-                <EventComments
-                  eventId={event.id}
-                  canComment={Boolean(userAttended)}
-                  canModerate={Boolean(isHost)}
-                />
-
-                <ReviewsPanel
-                  eventName={event.title || 'Event'}
-                  averageRating={event.average_rating || 0}
-                  reviewCount={event.total_ratings || 0}
-                  event={event as any}
-                  className="mt-6"
-                />
-              </>
+              </div>
             )}
+
+            {/* 7. Post-Event Gallery (if event is in past) */}
+            {isPastEvent && userAttended && (
+              <EventGallery
+                eventId={event.id}
+                canUpload={Boolean(userAttended)}
+                canModerate={Boolean(isHost)}
+              />
+            )}
+
+            {/* 8. Post-Event Comments (if event is in past) */}
+            {isPastEvent && userAttended && (
+              <EventComments
+                eventId={event.id}
+                canComment={Boolean(userAttended)}
+                canModerate={Boolean(isHost)}
+              />
+            )}
+
+
           </div>
 
-          {/* RIGHT COLUMN - Summary Sidebar (45%) */}
-          <div className="lg:col-span-5">
-            <div className="sticky top-6 space-y-6">
+          {/* RIGHT COLUMN - Actions & Meta */}
+          <div className="hidden lg:block lg:col-span-4">
+              <div className="sticky top-6 z-40 space-y-4 max-h-screen overflow-y-auto">
 
-              {/* RSVP Status & CTA */}
-              {!isPastEvent && (
-                <div className="slide-up glass-card rounded-2xl p-4 sm:p-6 hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:scale-[1.01] transition-all duration-300" style={{ animationDelay: '0.1s' }}>
-                  {!isHost ? (
-                    <div className="text-center space-y-4">
-                      <div className="space-y-2">
-                        <h3 className="text-lg sm:text-xl font-display font-bold text-white">
-                          Ready to raise some hell? 🍻
-                        </h3>
-                        <p className="text-sm sm:text-base text-[#B3B3B3]">
-                          Join this epic session and let's make some memories!
-                        </p>
-                      </div>
+                {/* 1. Share Button - Standalone Glass Button */}
+                <Button
+                  variant="outline"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="w-full glass-button backdrop-blur-lg hover:backdrop-blur-xl hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 group rounded-xl overflow-hidden"
+                >
+                  <Share2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                  Share Event
+                </Button>
+
+                {/* 2. Join CTA or Status Message */}
+                {!isPastEvent && !isHost && (
+                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+                    {/* Glass shimmer effect with proper border radius */}
+                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                    <div className="relative z-10">
                       <JoinEventButton
                         eventId={event.id}
                         initialJoined={isJoined}
@@ -987,153 +1178,178 @@ export function EventDetail() {
                           setIsJoined(joined)
                           refetchEvent()
                         }}
-                        className="w-full px-6 sm:px-8 py-3 text-base sm:text-lg font-bold bg-white text-black hover:bg-white/90 hover:scale-105 transition-all duration-200"
+                        className="w-full px-6 py-3 text-lg font-bold bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_20px_rgba(0,255,163,0.3)] hover:scale-105 transition-all duration-200"
                         size="lg"
                       />
                       {!user && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-[#B3B3B3] text-center mt-3">
                           Sign in to join this legendary session! 🤘
                         </p>
                       )}
                     </div>
-                  ) : (
-                    <div className="text-center space-y-3">
+                  </div>
+                )}
+
+                {/* Host Status Message */}
+                {isHost && (
+                  <div className="bg-glass rounded-xl p-4 shadow-sm text-center group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+                    {/* Glass shimmer effect with proper border radius */}
+                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                    <div className="relative z-10">
                       <div className="flex items-center justify-center gap-2 mb-2">
-                        <Crown className="w-6 h-6 text-accent-primary" />
-                        <span className="text-lg sm:text-xl font-display font-bold text-foreground">
-                          You're hosting this session!
-                        </span>
+                        <span className="text-lg group-hover:scale-110 transition-transform">👑</span>
+                        <span className="font-bold text-white">You're hosting this session!</span>
                       </div>
-                      <p className="text-sm sm:text-base text-muted-foreground">
-                        Share the event link to invite more legends to the party 🎉
+                      <p className="text-[#B3B3B3] text-sm">
+                        Share the event link to invite more legends 🎉
                       </p>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {/* Host Info */}
-              <div className="slide-up bg-gradient-card border border-border hover:border-border-hover rounded-2xl backdrop-blur-md shadow-amber" style={{ animationDelay: '0.2s' }}>
-                <div className="p-6">
-                  <h3 className="text-base sm:text-lg font-display font-semibold text-foreground flex items-center gap-2 mb-4">
-                    <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-accent-primary" />
-                    Hosted By
-                  </h3>
-                  <div className="flex items-center gap-4 p-4 bg-bg-glass hover:bg-bg-glass-hover rounded-xl border border-border/30 backdrop-blur-sm transition-all duration-200">
-                    <UserAvatar
-                      userId={event.created_by}
-                      displayName={
-                        event.host?.display_name ||
-                        event.host?.nickname ||
-                        creatorData?.display_name ||
-                        creatorData?.nickname ||
-                        `User ${event.created_by.slice(-4)}`
-                      }
-                      avatarUrl={event.host?.avatar_url || creatorData?.avatar_url || undefined}
-                      size="lg"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-display font-bold text-foreground">
-                          {event.host?.display_name ||
-                           event.host?.nickname ||
-                           creatorData?.display_name ||
-                           creatorData?.nickname ||
-                           `User ${event.created_by.slice(-4)}`}
-                        </h4>
-                        {/* Show nickname in italic gold if available */}
-                        {(event.host?.nickname || creatorData?.nickname) && (
-                          <span className="text-accent-secondary italic text-sm font-medium">
-                            aka {event.host?.nickname || creatorData?.nickname} 🍻
-                          </span>
-                        )}
+                {/* Past Event Status */}
+                {isPastEvent && !userAttended && (
+                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+                    {/* Glass shimmer effect with proper border radius */}
+                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                    <div className="relative z-10">
+                      <div className="text-center">
+                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">😢</div>
+                        <h3 className="font-semibold text-white mb-1">You missed this one!</h3>
+                        <p className="text-[#B3B3B3] text-sm">
+                          Join future events to be part of the action! 🍻
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {isHost
-                          ? "You're the host of this legendary session! 🤘"
-                          : "Ready to raise some hell with you! 🍻"}
-                      </p>
+                    </div>
+                  </div>
+                )}
+
+
+
+                {/* 3. Event Info */}
+                <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+                  {/* Glass shimmer effect with proper border radius */}
+                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                  <div className="relative z-10">
+                    <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                      <span className="group-hover:scale-110 transition-transform">🕒</span>
+                      Event Info
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                        <div>
+                          <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
+                          <p className="text-[#B3B3B3] text-xs">{date}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                        <div>
+                          <p className="text-white text-sm">
+                            {event.place_nickname || getLocationDisplayName(event as any)}
+                          </p>
+                        </div>
+                      </div>
+                      {!event.is_public && (
+                        <Badge variant="secondary" className="bg-white/10 text-white border-white/20 text-xs">
+                          🔒 Invite Only
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Quick Event Details Recap */}
-              <div className="slide-up bg-gradient-card border border-border hover:border-border-hover rounded-2xl backdrop-blur-md shadow-amber" style={{ animationDelay: '0.3s' }}>
-                <div className="p-6 space-y-4">
-                  <h3 className="text-base sm:text-lg font-display font-semibold text-foreground">Event Details</h3>
-
-                  {/* Date & Time Recap */}
-                  <div className="flex items-center gap-3 text-sm">
-                    <Clock className="w-4 h-4 text-accent-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">{formatEventTiming(event.date_time, event.end_time)}</p>
-                      <p className="text-muted-foreground">{date}</p>
+                {/* 4. Hosted By */}
+                {event.host && (
+                  <div className="bg-glass rounded-xl p-4 shadow-sm group hover:bg-glass-hover hover:scale-[1.02] hover:shadow-lg hover:ring-1 hover:ring-white/10 transition-all duration-300 relative overflow-hidden">
+                    {/* Glass shimmer effect with proper border radius */}
+                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                    <div className="relative z-10">
+                      <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
+                        <span className="group-hover:scale-110 transition-transform">👑</span>
+                        Hosted By
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          userId={event.host.id}
+                          displayName={event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                          avatarUrl={event.host.avatar_url ?? undefined}
+                          size="md"
+                          className="ring-2 ring-white/20 group-hover:ring-white/40 group-hover:scale-105 transition-all duration-300"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-white font-medium text-sm">
+                              {event.host.display_name || `User ${event.host.id.slice(-4)}`}
+                            </p>
+                            {event.host.nickname && (
+                              <p className="text-yellow-400 italic text-sm">
+                                "{event.host.nickname}"
+                              </p>
+                            )}
+                          </div>
+                          <p className="text-[#B3B3B3] text-xs">Event Host</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Location Recap */}
-                  <div className="flex items-center gap-3 text-sm">
-                    <MapPin className="w-4 h-4 text-accent-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {event.place_nickname || getLocationDisplayName(event as any)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Privacy Tag */}
-                  {!event.is_public && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-accent-primary/10 text-accent-primary border-accent-primary/20">
-                        🔒 Invite Only
-                      </Badge>
-                    </div>
-                  )}
-                </div>
               </div>
-
-
-
             </div>
-          </div>
         </div>
 
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          title={event?.title || 'Event'}
+          url={`${window.location.origin}${
+            isPrivateEvent ? '/private-event' : '/event'
+          }/${slug}`}
+        />
+
+        {/* Edit Modal */}
+        {event && (
+          <EditEventModal
+            event={event as any}
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            onEventUpdated={() => refetchEvent()}
+          />
+        )}
+
+        {/* Delete Dialog */}
+        {event && (
+          <DeleteEventDialog
+            event={event as any}
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            onEventDeleted={() => {
+              toast.success('Event deleted successfully!')
+              handleDeleteSuccess('event')
+            }}
+          />
+        )}
+
+        {/* Rating Modal */}
+        {event && (
+          <EventRatingModal
+            event={event as any}
+            isOpen={isRatingModalOpen}
+            onClose={() => setIsRatingModalOpen(false)}
+            existingRating={userRating}
+            onRatingSubmitted={(rating) => {
+              setUserRating(rating)
+              // Refresh event data to get updated rating stats
+              refetchEvent()
+              setIsRatingModalOpen(false)
+            }}
+          />
+        )}
 
       </div>
-
-      {/* Share Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title={event.title || 'Event'}
-        url={`${window.location.origin}${
-          isPrivateEvent ? '/private-event' : '/event'
-        }/${slug}`}
-      />
-
-      {/* Edit Modal */}
-      {event && (
-        <EditEventModal
-          event={event as any}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onEventUpdated={() => refetchEvent()}
-        />
-      )}
-
-      {/* Delete Dialog */}
-      {event && (
-        <DeleteEventDialog
-          event={event as any}
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          onEventDeleted={() => {
-            toast.success('Event deleted successfully!')
-            handleDeleteSuccess('event')
-          }}
-        />
-      )}
     </div>
   )
 }
