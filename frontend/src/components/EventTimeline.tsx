@@ -518,7 +518,11 @@ export function EventTimeline({
                                         <ArrowRight className="w-4 h-4 mr-2" />
                                         View Details
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => setShareModalEvent(timelineEvent)}>
+                                      <DropdownMenuItem onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShareModalEvent(timelineEvent)
+                                      }}>
                                         <Share2 className="w-4 h-4 mr-2" />
                                         Share Event
                                       </DropdownMenuItem>
@@ -526,14 +530,22 @@ export function EventTimeline({
                                         <>
                                           <DropdownMenuSeparator />
                                           {onEdit && (
-                                            <DropdownMenuItem onClick={() => onEdit(event)}>
+                                            <DropdownMenuItem onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              onEdit(event)
+                                            }}>
                                               <Edit className="w-4 h-4 mr-2" />
                                               Edit Event
                                             </DropdownMenuItem>
                                           )}
                                           {onDelete && (
                                             <DropdownMenuItem
-                                              onClick={() => onDelete(event)}
+                                              onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                onDelete(event)
+                                              }}
                                               className="text-destructive focus:text-destructive"
                                             >
                                               <Trash2 className="w-4 h-4 mr-2" />

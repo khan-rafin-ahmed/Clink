@@ -212,23 +212,35 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleViewMembers}>
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation()
+                  handleViewMembers()
+                }}>
                   <Users className="w-4 h-4 mr-2" />
                   View Members
                 </DropdownMenuItem>
                 {crew.is_creator && (
                   <>
-                    <DropdownMenuItem onClick={() => setShowEditModal(true)}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      setShowEditModal(true)
+                    }}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Crew
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleShareCrew}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      handleShareCrew()
+                    }}>
                       <Share2 className="w-4 h-4 mr-2" />
                       Create Invite Link
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => setShowDeleteDialog(true)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowDeleteDialog(true)
+                      }}
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -238,7 +250,10 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                 )}
                 {!crew.is_creator && (
                   <DropdownMenuItem
-                    onClick={handleLeaveCrew}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleLeaveCrew()
+                    }}
                     className="text-destructive focus:text-destructive"
                   >
                     <UserMinus className="w-4 h-4 mr-2" />

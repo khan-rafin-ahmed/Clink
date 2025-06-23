@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { ScrollArea } from '@/components/ui/scroll-area'
+
 import { User, LogOut, Settings, Edit, Menu, Search, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
@@ -168,21 +168,20 @@ export function Navbar() {
                   <Menu className="w-5 h-5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
-                <ScrollArea className="max-h-[80vh]">
-                  <div className="px-4 py-4">
+              <PopoverContent className="max-w-[320px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
+                <div className="px-3 py-2">
                   {/* Profile Block - Avatar + Name Only */}
                   {user && (
-                    <div className="bg-white/5 rounded-xl px-4 py-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12 ring-2 ring-white/20">
+                    <div className="bg-white/5 rounded-lg px-3 py-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-10 h-10 ring-2 ring-white/20">
                           <AvatarImage src={userProfile?.avatar_url || undefined} />
-                          <AvatarFallback className="bg-white/10 text-white">
+                          <AvatarFallback className="bg-white/10 text-white text-sm">
                             {avatarFallback}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white text-base truncate">
+                          <p className="font-semibold text-white text-sm truncate">
                             {displayName}
                           </p>
                         </div>
@@ -191,15 +190,15 @@ export function Navbar() {
                   )}
 
                   {/* Menu Items */}
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     {/* Discover */}
                     <Link
                       to="/discover"
-                      className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
+                      className="w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <Search className="w-5 h-5 text-gray-400" />
-                      <span>Discover</span>
+                      <Search className="w-4 h-4 text-[#888888]" />
+                      <span className="text-sm">Discover</span>
                     </Link>
 
                     {user ? (
@@ -207,45 +206,46 @@ export function Navbar() {
                         {/* My Profile */}
                         <Link
                           to="/profile"
-                          className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
+                          className="w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          <User className="w-5 h-5 text-gray-400" />
-                          <span>My Profile</span>
+                          <User className="w-4 h-4 text-[#888888]" />
+                          <span className="text-sm">My Profile</span>
                         </Link>
 
                         {/* Edit Profile */}
                         <Link
                           to="/profile/edit"
-                          className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
+                          className="w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors flex items-center gap-3"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          <Edit className="w-5 h-5 text-gray-400" />
-                          <span>Edit Profile</span>
+                          <Edit className="w-4 h-4 text-[#888888]" />
+                          <span className="text-sm">Edit Profile</span>
                         </Link>
 
+                        {/* Visual Separator */}
+                        <div className="border-t border-white/10 my-1"></div>
+
                         {/* Sign Out Button */}
-                        <div className="pt-4 border-t border-white/10">
-                          <button
-                            onClick={() => {
-                              signOut()
-                              setIsMobileMenuOpen(false)
-                            }}
-                            className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-red-500/10 text-red-300 hover:text-red-500 font-medium transition-colors flex items-center gap-3"
-                          >
-                            <LogOut className="w-5 h-5 text-red-300" />
-                            <span>Sign out</span>
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => {
+                            signOut()
+                            setIsMobileMenuOpen(false)
+                          }}
+                          className="w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-red-300 hover:text-red-500 font-medium transition-colors flex items-center gap-3"
+                        >
+                          <LogOut className="w-4 h-4 text-red-300" />
+                          <span className="text-sm">Sign out</span>
+                        </button>
                       </>
                     ) : (
                       <>
                         {/* Auth Actions */}
-                        <div className="space-y-4">
+                        <div className="space-y-1">
                           <Link
                             to="/login"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="w-full px-4 py-4 rounded-lg bg-white text-black font-bold transition-colors hover:bg-gray-100 text-center block"
+                            className="w-full px-3 py-2.5 rounded-lg bg-white text-black font-bold transition-colors hover:bg-gray-100 text-center block text-sm"
                           >
                             Log in
                           </Link>
@@ -253,7 +253,7 @@ export function Navbar() {
                           <Link
                             to="/login"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="w-full px-4 py-4 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors text-center block"
+                            className="w-full px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/8 text-white font-medium transition-colors text-center block text-sm"
                           >
                             Sign Up
                           </Link>
@@ -261,8 +261,7 @@ export function Navbar() {
                       </>
                     )}
                   </div>
-                  </div>
-                </ScrollArea>
+                </div>
               </PopoverContent>
             </Popover>
           </div>

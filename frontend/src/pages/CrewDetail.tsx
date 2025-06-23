@@ -432,16 +432,6 @@ export function CrewDetail() {
                     Delete
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border-red-500/30"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-
                   <Dialog open={showInviteModal} onOpenChange={(open) => {
                     setShowInviteModal(open)
                     if (!open) {
