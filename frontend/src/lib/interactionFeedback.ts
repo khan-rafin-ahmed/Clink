@@ -285,5 +285,6 @@ export function useInteractionFeedback() {
 
 // Auto-initialize
 if (typeof window !== 'undefined') {
-  console.log('🎵 Interaction feedback system initialized')
+  // Disable logging to reduce console noise
+  // console.log('🎵 Interaction feedback system initialized')
 }

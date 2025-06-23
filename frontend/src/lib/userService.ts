@@ -2,15 +2,31 @@ import { supabase } from './supabase'
 import type { UserProfile, UserFollow } from '@/types'
 import { withCache, CACHE_KEYS, invalidateUserCaches } from './cache'
 
+// Disable debug logging to reduce console noise
+const DEBUG_LOGGING = false
+
+// Debug logging helpers
+const debugLog = (...args: any[]) => {
+  if (DEBUG_LOGGING) {
+    console.log(...args)
+  }
+}
+
+const debugError = (...args: any[]) => {
+  if (DEBUG_LOGGING) {
+    console.error(...args)
+  }
+}
+
 // User Profile Functions
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   // STRONGEST GUARD: Validate input parameters
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-    console.error('🚨 getUserProfile: Invalid userId provided:', userId)
+    debugError('🚨 getUserProfile: Invalid userId provided:', userId)
     throw new Error('Invalid user ID provided')
   }
 
-  console.log('🔍 getUserProfile: Fetching profile for userId:', userId)
+  debugLog('🔍 getUserProfile: Fetching profile for userId:', userId)
 
   return withCache(
     CACHE_KEYS.USER_PROFILE(userId),
@@ -24,16 +40,16 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
           .single()
 
         if (error) {
-          console.error('🚨 getUserProfile: Supabase error:', error)
+          debugError('🚨 getUserProfile: Supabase error:', error)
 
           if (error.code === 'PGRST116') {
-            console.log('📭 getUserProfile: No profile found for userId:', userId)
+            debugLog('📭 getUserProfile: No profile found for userId:', userId)
             return null // No rows returned
           }
 
           // If error might be due to missing column, try with basic columns only
           if (error.message?.includes('column') || error.message?.includes('Content-Length')) {
-            console.log('🔄 getUserProfile: Retrying with basic columns due to column error')
+            debugLog('🔄 getUserProfile: Retrying with basic columns due to column error')
 
             const { data: basicData, error: basicError } = await supabase
               .from('user_profiles')
@@ -43,14 +59,14 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
             if (basicError) {
               if (basicError.code === 'PGRST116') {
-                console.log('📭 getUserProfile: No profile found (basic query) for userId:', userId)
+                debugLog('📭 getUserProfile: No profile found (basic query) for userId:', userId)
                 return null
               }
-              console.error('🚨 getUserProfile: Basic query failed:', basicError)
+              debugError('🚨 getUserProfile: Basic query failed:', basicError)
               throw basicError
             }
 
-            console.log('✅ getUserProfile: Basic profile loaded for userId:', userId)
+            debugLog('✅ getUserProfile: Basic profile loaded for userId:', userId)
             // Return data with favorite_drink as null if column doesn't exist
             return {
               ...basicData,
@@ -61,10 +77,10 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
           throw error
         }
 
-        console.log('✅ getUserProfile: Full profile loaded for userId:', userId)
+        debugLog('✅ getUserProfile: Full profile loaded for userId:', userId)
         return data
       } catch (error) {
-        console.error('🚨 getUserProfile: Unexpected error:', error)
+        debugError('🚨 getUserProfile: Unexpected error:', error)
         throw error
       }
     },
@@ -83,7 +99,7 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 
   // If no rows were updated (profile doesn't exist), create it
   if (error && error.code === 'PGRST116') {
-    console.log('Profile not found, creating new one...')
+    debugLog('Profile not found, creating new one...')
     const result = await createUserProfile(userId, updates)
     // Invalidate cache after creating
     invalidateUserCaches(userId)

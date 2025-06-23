@@ -25,7 +25,9 @@ DECLARE
   emails_failed_count INTEGER := 0;
   email_data JSONB;
   supabase_url TEXT := 'https://arpphimkotjvnfoacquj.supabase.co';
-  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E';
+  -- SECURITY: Service key should be stored as environment variable in Edge Functions
+  -- This SQL file should not contain hardcoded credentials
+  service_role_key TEXT := 'REPLACE_WITH_ENVIRONMENT_VARIABLE';
 BEGIN
   -- Get event details
   SELECT e.*, up.display_name as host_name
@@ -111,7 +113,9 @@ DECLARE
   user_email TEXT;
   email_data JSONB;
   supabase_url TEXT := 'https://arpphimkotjvnfoacquj.supabase.co';
-  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E';
+  -- SECURITY: Service key should be stored as environment variable in Edge Functions
+  -- This SQL file should not contain hardcoded credentials
+  service_role_key TEXT := 'REPLACE_WITH_ENVIRONMENT_VARIABLE';
 BEGIN
   -- Get crew details
   SELECT c.*, up.display_name as creator_name

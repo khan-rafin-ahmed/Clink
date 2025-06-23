@@ -35,13 +35,13 @@ class ProgressTracker {
     }
 
     this.addMetric(metric)
-    
-    // Log for debugging
-    console.log(`[LOCATION TRACKER] Event ${eventId}:`, {
-      hasLocation,
-      displayText,
-      success: metric.success
-    })
+
+    // Disable logging to reduce console noise
+    // console.log(`[LOCATION TRACKER] Event ${eventId}:`, {
+    //   hasLocation,
+    //   displayText,
+    //   success: metric.success
+    // })
   }
 
   /**
@@ -75,13 +75,13 @@ class ProgressTracker {
     }
 
     this.addMetric(metric)
-    
-    // Log for debugging
-    console.log(`[STATS TRACKER] User ${userId}:`, {
-      totalCalculated: statsBreakdown.totalEvents,
-      breakdown: statsBreakdown.breakdown,
-      success: metric.success
-    })
+
+    // Disable logging to reduce console noise
+    // console.log(`[STATS TRACKER] User ${userId}:`, {
+    //   totalCalculated: statsBreakdown.totalEvents,
+    //   breakdown: statsBreakdown.breakdown,
+    //   success: metric.success
+    // })
   }
 
   /**
@@ -101,13 +101,13 @@ class ProgressTracker {
     }
 
     this.addMetric(metric)
-    
-    // Log for debugging
-    console.log(`[GENERAL TRACKER] ${fixType} for user ${userId}:`, {
-      details,
-      success,
-      error
-    })
+
+    // Disable logging to reduce console noise
+    // console.log(`[GENERAL TRACKER] ${fixType} for user ${userId}:`, {
+    //   details,
+    //   success,
+    //   error
+    // })
   }
 
   /**

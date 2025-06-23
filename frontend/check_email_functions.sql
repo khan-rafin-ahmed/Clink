@@ -11,9 +11,9 @@ SELECT 'CURRENT DATABASE SETTINGS' as section;
 SELECT 
   name,
   setting,
-  CASE 
+  CASE
     WHEN name = 'app.supabase_url' THEN 'https://arpphimkotjvnfoacquj.supabase.co'
-    WHEN name = 'app.service_role_key' THEN 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E'
+    WHEN name = 'app.service_role_key' THEN 'REDACTED_FOR_SECURITY'
     ELSE 'Other setting'
   END as description
 FROM pg_settings 

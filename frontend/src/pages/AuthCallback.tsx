@@ -182,17 +182,11 @@ export function AuthCallback() {
         } else if (result.error) {
           navigate('/login?error=' + encodeURIComponent(result.error))
         } else {
-          // Listen for auth state change (for magic links)
-          const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session) {
-              const setupResult = await handleAuthCallback()
-              if (setupResult.success) {
-                navigate('/profile')
-              } else {
-                navigate('/login?error=' + encodeURIComponent(setupResult.error || 'Setup failed'))
-              }
-            }
-          })
+          // For magic links, wait for the main AuthContext to handle the auth state change
+          // Don't create additional listeners to avoid console spam
+          setTimeout(() => {
+            navigate('/profile')
+          }, 1000)
 
           // Clean up listener after 10 seconds if nothing happens
           setTimeout(() => {

@@ -1,6 +1,22 @@
 import { supabase } from './supabase'
 import type { Crew, CrewMember, CreateCrewData } from '@/types'
 
+// Disable debug logging to reduce console noise
+const DEBUG_LOGGING = false
+
+// Debug logging helpers
+const debugLog = (...args: any[]) => {
+  if (DEBUG_LOGGING) {
+    console.log(...args)
+  }
+}
+
+const debugError = (...args: any[]) => {
+  if (DEBUG_LOGGING) {
+    console.error(...args)
+  }
+}
+
 // Get user's crews (where they are a member)
 export async function getUserCrews(userId?: string): Promise<Crew[]> {
   try {
@@ -35,16 +51,16 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       .in('id', crewIds)
 
     if (crewsError) {
-      console.error('❌ Error fetching crew details:', crewsError)
+      debugError('❌ Error fetching crew details:', crewsError)
       throw crewsError
     }
 
     if (!crewsData) {
-      console.log('✅ getUserCrews: No crew data found')
+      debugLog('✅ getUserCrews: No crew data found')
       return []
     }
 
-    console.log('🔍 getUserCrews: Found crews:', crewsData.length)
+    debugLog('🔍 getUserCrews: Found crews:', crewsData.length)
 
     // Get member counts for each crew (including creator, but avoid double counting)
     const crewsWithCounts = await Promise.all(
@@ -75,7 +91,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
             is_creator: crew.created_by === currentUserId
           } as Crew
         } catch (error) {
-          console.error('❌ Error getting member count for crew:', crew.id, error)
+          debugError('❌ Error getting member count for crew:', crew.id, error)
           // Return crew with just creator count if there's an error
           return {
             ...crew,
@@ -87,10 +103,10 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       })
     )
 
-    console.log('✅ getUserCrews: Successfully loaded crews with counts')
+    debugLog('✅ getUserCrews: Successfully loaded crews with counts')
     return crewsWithCounts
   } catch (error) {
-    console.error('❌ getUserCrews: Unexpected error:', error)
+    debugError('❌ getUserCrews: Unexpected error:', error)
     throw error
   }
 }

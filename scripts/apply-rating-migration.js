@@ -9,7 +9,12 @@ const __dirname = path.dirname(__filename)
 
 // Supabase configuration
 const supabaseUrl = 'https://arpphimkotjvnfoacquj.supabase.co'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMDYwNjYsImV4cCI6MjA2Mzc4MjA2Nn0.GksQ0jn0RuJCAqDcP2m2B0Z5uPP7_y-efc2EqztrL3k'
+// SECURITY: Use environment variables only - never hardcode keys
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseServiceKey) {
+  throw new Error('SUPABASE_SERVICE_KEY environment variable is required')
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

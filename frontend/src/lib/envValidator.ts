@@ -85,37 +85,38 @@ export function validateEnvironment(): ValidationResult {
  */
 export function logEnvironmentValidation(): ValidationResult {
   const result = validateEnvironment()
-  
-  if (!isLocalEnvironment()) {
-    return result // Only log in local environment
-  }
 
-  console.group('🌍 Environment Validation')
-  
-  console.log('Configuration:', {
-    environment: result.config.environment,
-    baseUrl: result.config.baseUrl,
-    supabaseUrl: result.config.supabaseUrl,
-    authCallbackUrl: result.config.authCallbackUrl,
-  })
+  // Disable environment validation logging to reduce console noise
+  // if (!isLocalEnvironment()) {
+  //   return result // Only log in local environment
+  // }
 
-  if (result.errors.length > 0) {
-    console.group('❌ Errors')
-    result.errors.forEach(error => console.error(error))
-    console.groupEnd()
-  }
+  // console.group('🌍 Environment Validation')
 
-  if (result.warnings.length > 0) {
-    console.group('⚠️ Warnings')
-    result.warnings.forEach(warning => console.warn(warning))
-    console.groupEnd()
-  }
+  // console.log('Configuration:', {
+  //   environment: result.config.environment,
+  //   baseUrl: result.config.baseUrl,
+  //   supabaseUrl: result.config.supabaseUrl,
+  //   authCallbackUrl: result.config.authCallbackUrl,
+  // })
 
-  if (result.isValid && result.warnings.length === 0) {
-    console.log('✅ Environment configuration looks good!')
-  }
+  // if (result.errors.length > 0) {
+  //   console.group('❌ Errors')
+  //   result.errors.forEach(error => console.error(error))
+  //   console.groupEnd()
+  // }
 
-  console.groupEnd()
+  // if (result.warnings.length > 0) {
+  //   console.group('⚠️ Warnings')
+  //   result.warnings.forEach(warning => console.warn(warning))
+  //   console.groupEnd()
+  // }
+
+  // if (result.isValid && result.warnings.length === 0) {
+  //   console.log('✅ Environment configuration looks good!')
+  // }
+
+  // console.groupEnd()
   
   return result
 }

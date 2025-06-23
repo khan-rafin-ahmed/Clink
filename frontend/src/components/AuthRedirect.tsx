@@ -12,8 +12,20 @@ interface AuthRedirectProps {
  * Used to redirect logged-in users away from public pages like home/login
  */
 export function AuthRedirect({ children, redirectTo = '/profile' }: AuthRedirectProps) {
-  const { user, loading, isInitialized } = useAuth()
   const navigate = useNavigate()
+
+  // Add error boundary for auth context
+  let authState
+  try {
+    authState = useAuth()
+  } catch (error) {
+    console.error('AuthRedirect: useAuth failed - AuthProvider may not be mounted yet:', error)
+    // Fallback: render children without redirect if auth context fails
+    // This prevents the app from crashing during initial load
+    return <>{children}</>
+  }
+
+  const { user, loading, isInitialized } = authState
 
   useEffect(() => {
     // Only redirect after auth is fully initialized and we have a user

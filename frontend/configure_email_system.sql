@@ -10,8 +10,9 @@ ALTER DATABASE postgres SET app.supabase_url = 'https://arpphimkotjvnfoacquj.sup
 
 -- Set service role key (you need to get this from your Supabase dashboard)
 -- Go to: Settings > API > service_role key (secret)
+-- SECURITY: NEVER commit actual service keys to version control
 -- IMPORTANT: Replace 'YOUR_SERVICE_ROLE_KEY_HERE' with your actual service role key
-ALTER DATABASE postgres SET app.service_role_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E';
+ALTER DATABASE postgres SET app.service_role_key = 'YOUR_SERVICE_ROLE_KEY_HERE';
 
 -- ============================================================================
 -- VERIFY SETTINGS

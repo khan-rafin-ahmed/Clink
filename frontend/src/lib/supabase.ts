@@ -8,14 +8,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Log configuration in local development
-if (isLocalEnvironment()) {
-  console.log('🔧 Supabase Configuration:', {
-    url: supabaseUrl,
-    environment: import.meta.env.VITE_ENVIRONMENT || 'auto-detected',
-    isDev: import.meta.env.DEV,
-  })
-}
+// Disable configuration logging to reduce console noise
+// if (isLocalEnvironment()) {
+//   console.log('🔧 Supabase Configuration:', {
+//     url: supabaseUrl,
+//     environment: import.meta.env.VITE_ENVIRONMENT || 'auto-detected',
+//     isDev: import.meta.env.DEV,
+//   })
+// }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -32,8 +32,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // This is especially important for mobile users
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'thirstee-auth-token',
-    // Enable debug mode in development and local environments
-    debug: import.meta.env.DEV || isLocalEnvironment()
+    // Disable debug mode to reduce console noise - only enable in local dev
+    debug: false
   },
   // Configure realtime for better performance
   realtime: {
@@ -49,8 +49,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Expose supabase globally for debugging (development only)
-if (typeof window !== 'undefined' && (import.meta.env.DEV || isLocalEnvironment())) {
-  (window as any).supabase = supabase
-  console.log('🔧 Supabase client exposed globally for debugging')
-}
+// Disable global exposure logging to reduce console noise
+// if (typeof window !== 'undefined' && (import.meta.env.DEV || isLocalEnvironment())) {
+//   (window as any).supabase = supabase
+//   console.log('🔧 Supabase client exposed globally for debugging')
+// }

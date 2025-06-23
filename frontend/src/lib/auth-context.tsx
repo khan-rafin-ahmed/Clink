@@ -97,26 +97,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
 
-    // Set up session health check interval - reduced frequency to prevent HTTP/2 errors
-    const sessionHealthCheck = setInterval(async () => {
-      if (!mountedRef.current) return
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const now = Math.floor(Date.now() / 1000)
-          const expiresAt = session.expires_at || 0
-
-          // If session expires within 10 minutes, refresh it
-          if (expiresAt - now < 600) {
-            console.log('Proactive session refresh triggered')
-            await supabase.auth.refreshSession()
-          }
-        }
-      } catch (error) {
-        console.warn('Session health check failed:', error)
-      }
-    }, 15 * 60 * 1000) // Check every 15 minutes instead of 5 to reduce requests
+    // Disable session health check to reduce console noise
+    // Supabase handles automatic token refresh internally
+    // const sessionHealthCheck = setInterval(async () => {
+    //   if (!mountedRef.current) return
+    //   try {
+    //     const { data: { session } } = await supabase.auth.getSession()
+    //     if (session) {
+    //       const now = Math.floor(Date.now() / 1000)
+    //       const expiresAt = session.expires_at || 0
+    //       if (expiresAt - now < 600) {
+    //         console.log('Proactive session refresh triggered')
+    //         await supabase.auth.refreshSession()
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.warn('Session health check failed:', error)
+    //   }
+    // }, 15 * 60 * 1000)
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -184,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe()
-      clearInterval(sessionHealthCheck)
+      // clearInterval(sessionHealthCheck) // Removed since we disabled the health check
       mountedRef.current = false
       initializingRef.current = false
     }
@@ -256,6 +254,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
+    console.error('useAuth called outside of AuthProvider. This might be due to React Strict Mode or hot reloading.')
+    console.error('Component stack:', new Error().stack)
+
+    // In development, provide a fallback to prevent app crashes
+    if (import.meta.env.DEV) {
+      console.warn('Providing fallback auth state for development')
+      return {
+        user: null,
+        loading: true,
+        error: null,
+        isInitialized: false,
+        signInWithGoogle: async () => {},
+        signOut: async () => {},
+        deleteAccount: async () => {},
+        clearError: () => {}
+      }
+    }
+
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context

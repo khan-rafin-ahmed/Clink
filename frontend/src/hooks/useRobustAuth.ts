@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
@@ -12,81 +13,17 @@ export interface RobustAuthState {
 }
 
 /**
- * Robust auth hook that handles race conditions and provides reliable auth state
- * This hook ensures auth state is properly initialized before allowing data fetching
+ * Robust auth hook that uses the centralized AuthContext
+ * This prevents multiple auth listeners and reduces console noise
  */
 export function useRobustAuth(): RobustAuthState {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isReady, setIsReady] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const mountedRef = useRef(true)
-  const initializingRef = useRef(false)
-
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
-
-  const initializeAuth = useCallback(async () => {
-    if (initializingRef.current || !mountedRef.current) return
-    
-    initializingRef.current = true
-    
-    try {
-      // Get session first (faster than getUser)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) {
-        throw sessionError
-      }
-
-      if (mountedRef.current) {
-        setUser(session?.user || null)
-        setError(null)
-        setIsLoading(false)
-        setIsReady(true)
-      }
-    } catch (err: any) {
-      if (mountedRef.current) {
-        setError(err.message || 'Authentication error')
-        setUser(null)
-        setIsLoading(false)
-        setIsReady(true)
-      }
-    } finally {
-      initializingRef.current = false
-    }
-  }, [])
-
-  useEffect(() => {
-    initializeAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!mountedRef.current) return
-
-      // Handle auth state changes
-      const newUser = session?.user || null
-      
-      setUser(newUser)
-      setError(null)
-      setIsLoading(false)
-      setIsReady(true)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [initializeAuth])
+  const { user, loading, error, isInitialized } = useAuth()
 
   return {
     user,
     isAuthenticated: !!user,
-    isLoading,
-    isReady,
+    isLoading: loading,
+    isReady: isInitialized,
     error,
     userId: user?.id || null
   }

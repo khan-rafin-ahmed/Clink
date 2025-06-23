@@ -66,7 +66,8 @@ BEGIN
         url := 'https://arpphimkotjvnfoacquj.supabase.co/functions/v1/send-email',
         headers := jsonb_build_object(
           'Content-Type', 'application/json',
-          'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E'
+          -- SECURITY: Service key should be stored as environment variable
+          'Authorization', 'Bearer REPLACE_WITH_ENVIRONMENT_VARIABLE'
         ),
         body := jsonb_build_object(
           'to', invitation_record.user_email,

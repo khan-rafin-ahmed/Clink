@@ -50,7 +50,8 @@ DECLARE
   response_status INTEGER;
   response_body TEXT;
   supabase_url TEXT := 'https://arpphimkotjvnfoacquj.supabase.co';
-  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODIwNjA2NiwiZXhwIjoyMDYzNzgyMDY2fQ.OjmEGb1RtWWksqz4UN3d1HHNznURRxDGk2IdeEKKP3E';
+  -- SECURITY: Service key should be stored as environment variable
+  service_role_key TEXT := 'REPLACE_WITH_ENVIRONMENT_VARIABLE';
 BEGIN
   -- Test HTTP call to Edge Function
   SELECT status, content INTO response_status, response_body

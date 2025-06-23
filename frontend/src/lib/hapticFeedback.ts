@@ -256,6 +256,6 @@ export function useHapticFeedback() {
 
 // Auto-detect device capabilities
 if (typeof window !== 'undefined') {
-  // Log support status for debugging
-  console.log('Haptic feedback support:', hapticFeedback.isHapticSupported())
+  // Disable logging to reduce console noise
+  // console.log('Haptic feedback support:', hapticFeedback.isHapticSupported())
 }
