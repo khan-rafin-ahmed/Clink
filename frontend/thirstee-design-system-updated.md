@@ -377,6 +377,75 @@ The mobile tag pills and button system now provides an optimized experience acro
 
 ---
 
+## 🔔 Event Notification Consolidation - COMPLETED ✅
+
+### 🎯 **Duplicate Notification Issue Fixed:**
+
+#### **Problem Identified:**
+Users were receiving duplicate notifications when someone accepted an event invitation:
+1. "Rafin joined your party" (from RSVP system)
+2. "Rafin accepted your invitation" (from invitation response system)
+
+#### **Solution Implemented:** ✅
+**Consolidated Notification System** - Single notification per event join/acceptance with enhanced UX:
+
+```sql
+-- Updated respond_to_event_invitation function
+CASE
+  WHEN p_response = 'accepted' THEN '🎉 ' || user_name || ' accepted your invitation to "' || event_title || '"'
+  ELSE '😔 ' || user_name || ' declined your invitation to "' || event_title || '"'
+END
+```
+
+#### **Key Improvements:** ✅
+- **Event Title Integration**: Notification includes event name for better context
+- **View Event Button**: Neon green CTA button following design system patterns
+- **Consolidated Logic**: Single notification eliminates duplicates
+- **Enhanced Data**: `show_view_event_button: true` flag for UI components
+
+#### **Design System Compliance:** ✅
+- **Button Styling**: `bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3]`
+- **Hover Effects**: `hover:shadow-[0_0_8px_rgba(0,255,163,0.3)]` neon glow
+- **Icon Integration**: Eye icon with proper sizing (`w-3 h-3`)
+- **Responsive Design**: Consistent across NotificationBell and NotificationCenter
+
+#### **Technical Implementation:** ✅
+```javascript
+// NotificationBell.tsx & NotificationCenter.tsx
+{notification.type === 'event_invitation_response' && notification.data?.show_view_event_button && (
+  <Button
+    onClick={() => window.location.href = `/event/${notification.data?.event_id}`}
+    className="bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)]"
+  >
+    <Eye className="w-3 h-3" />
+    View Event
+  </Button>
+)}
+```
+
+### ✅ **Files Updated:**
+1. **`supabase/migrations/20250622_enhanced_crew_invitation_system.sql`** - Updated notification message with event title
+2. **`supabase/migrations/20250622_consolidate_event_notifications.sql`** - New migration for consolidated notifications
+3. **`frontend/src/components/NotificationBell.tsx`** - Added View Event button for event_invitation_response
+4. **`frontend/src/components/NotificationCenter.tsx`** - Added View Event button support
+5. **`frontend/thirstee-design-system-updated.md`** - Documented notification system improvements
+
+### 🎯 **User Experience Improvements:**
+- **Clear Context**: Event title in notification provides immediate context
+- **Single Source**: No more duplicate notifications for the same action
+- **Direct Navigation**: View Event button provides quick access to event details
+- **Brand Consistency**: Neon green CTA follows Thirstee's party aesthetic
+- **Reduced Confusion**: Eliminates notification spam and improves clarity
+
+### 🔧 **Notification Flow (After Fix):**
+1. **User receives invitation** → "🍺 You're invited to a session!"
+2. **User accepts invitation** → Host receives: "🎉 [User] accepted your invitation to '[Event Title]'" with "View Event" button
+3. **No duplicate notifications** → Clean, single notification per action
+
+The event notification system now provides a streamlined, user-friendly experience that eliminates duplicates while enhancing context and navigation! 🤘
+
+---
+
 ## 🔧 Authentication UI Improvements - COMPLETED ✅
 
 ### 🎯 **Google OAuth Icon Enhancement:**

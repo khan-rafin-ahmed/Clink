@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AvatarStack } from '@/components/AvatarStack'
-import { leaveCrew, getCrewMembers, createCrewInviteLink } from '@/lib/crewService'
+import { leaveCrew, getCrewMembers, createCrewInviteLink, deleteCrew } from '@/lib/crewService'
 import type { Crew, CrewMember } from '@/types'
 import { EditCrewModal } from '@/components/EditCrewModal'
+import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
 import { toast } from 'sonner'
 
 import {
@@ -21,7 +22,8 @@ import {
   MoreVertical,
   UserMinus,
   Share2,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -46,6 +48,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
   const navigate = useNavigate()
   const [showMembers, setShowMembers] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [members, setMembers] = useState<CrewMember[]>([])
 
   // Fetch crew members for avatar stack
@@ -118,6 +121,17 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
     } catch (error: any) {
       console.error('Error creating invite link:', error)
       toast.error('Failed to create invite link')
+    }
+  }
+
+  const handleDeleteCrew = async () => {
+    try {
+      await deleteCrew(crew.id)
+      toast.success('🗑️ Crew deleted successfully!')
+      onCrewUpdated?.()
+    } catch (error: any) {
+      console.error('Error deleting crew:', error)
+      toast.error(error.message || 'Failed to delete crew')
     }
   }
 
@@ -213,6 +227,13 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                       Create Invite Link
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Crew
+                    </DropdownMenuItem>
                   </>
                 )}
                 {!crew.is_creator && (
@@ -347,6 +368,17 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
           onCrewUpdated?.()
           setShowEditModal(false)
         }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteCrew}
+        title="Delete Crew?"
+        description="Are you sure you want to delete this crew? This action cannot be undone."
+        itemName={crew.name}
+        itemType="crew"
       />
     </>
   )

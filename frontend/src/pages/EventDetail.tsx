@@ -45,9 +45,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { EventWithRsvps } from '@/types'
-import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName, formatEventTiming, getEventTenseText } from '@/lib/eventUtils'
 import { getEventRatingStats, getUserEventRating, canUserRateEvent, hasEventConcluded } from '@/lib/eventRatingService'
 import { getEventDetails, getEventBySlug } from '@/lib/eventService'
+import { useEventMetaTags } from '@/hooks/useMetaTags'
+import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { FullPageSkeleton } from '@/components/SkeletonLoaders'
 
 
@@ -404,6 +406,34 @@ export function EventDetail() {
     loadUserRatingData()
   }, [event, user])
 
+  // Generate event URL for sharing and meta tags - MOVED TO TOP TO AVOID HOOKS ORDER VIOLATION
+  const eventUrl = useMemo(() => {
+    if (!event && !cachedEvent) return ''
+    const currentEvent = event || cachedEvent
+    if (!currentEvent) return ''
+
+    const baseUrl = window.location.origin
+    if (isPrivateEvent) {
+      return `${baseUrl}/private-event/${slug}`
+    }
+    return `${baseUrl}/event/${slug}`
+  }, [event, cachedEvent, slug, isPrivateEvent])
+
+  // Apply dynamic meta tags for social sharing - MOVED TO TOP TO AVOID HOOKS ORDER VIOLATION
+  useEventMetaTags(
+    (event || cachedEvent) ? {
+      title: (event || cachedEvent)!.title,
+      description: (event || cachedEvent)!.notes,
+      cover_image_url: (event || cachedEvent)!.cover_image_url,
+      vibe: (event || cachedEvent)!.vibe,
+      date_time: (event || cachedEvent)!.date_time,
+      location: (event || cachedEvent)!.location,
+      place_nickname: (event || cachedEvent)!.place_nickname,
+      is_public: (event || cachedEvent)!.is_public
+    } : undefined,
+    eventUrl
+  )
+
 
 
 
@@ -487,6 +517,9 @@ export function EventDetail() {
   const maybeCount = event.rsvps.filter(r => r.status === 'maybe').length
   const isHost = user && event.created_by === user.id
 
+  // Get appropriate tense text based on event status
+  const tenseText = getEventTenseText(event.date_time, event.end_time, event.duration_type)
+
   const rsvpAttendees = event.rsvps.filter(r => r.status === 'going')
   const eventMembers = event.event_members?.filter(m => m.status === 'accepted') || []
 
@@ -562,24 +595,7 @@ export function EventDetail() {
 
 
 
-  const formatEventTiming = (dateTime: string, endTime?: string) => {
-    const startDate = new Date(dateTime)
-    const startTime = startDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
-    if (endTime) {
-      const endDate = new Date(endTime)
-      const endTimeFormatted = endDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-      return `${startTime} - ${endTimeFormatted}`
-    }
-    return `${startTime} - All Night`
-  }
+
 
   // Helper function to calculate countdown
   const getCountdownText = (dateTime: string) => {
@@ -693,7 +709,7 @@ export function EventDetail() {
               {event.title}
             </h1>
             <p className="text-sm text-[#B3B3B3]">
-              {date} • {formatEventTiming(event.date_time, event.end_time)}
+              {date} • {formatEventTiming(event.date_time, event.end_time, event.duration_type)}
             </p>
             {getCountdownText(event.date_time) && (
               <p className="text-white font-medium text-sm">
@@ -801,7 +817,7 @@ export function EventDetail() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Users className="w-5 h-5 text-white" />
-                    Who's Coming
+                    {tenseText.whoIsComingTitle}
                   </h2>
                 </div>
                 {allAttendees.length === 0 ? (
@@ -887,7 +903,7 @@ export function EventDetail() {
                   <div className="flex items-center gap-3">
                     <Clock className="w-4 h-4 text-white" />
                     <div>
-                      <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
+                      <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time, event.duration_type)}</p>
                       <p className="text-[#B3B3B3] text-xs">{date}</p>
                     </div>
                   </div>
@@ -934,7 +950,7 @@ export function EventDetail() {
               {event.host && (
                 <div className="glass-card rounded-xl p-4 shadow-sm">
                   <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                    👑 Hosted By
+                    👑 {tenseText.eventStatus === 'concluded' ? 'Hosted By' : 'Hosted By'}
                   </h3>
                   <div className="flex items-center gap-3">
                     <UserAvatar
@@ -1045,7 +1061,7 @@ export function EventDetail() {
                 <Clock className="w-5 h-5 text-white" />
                 <div>
                   <p className="font-semibold text-white text-lg">
-                    {date} • {formatEventTiming(event.date_time, event.end_time)}
+                    {date} • {formatEventTiming(event.date_time, event.end_time, event.duration_type)}
                   </p>
                   {getCountdownText(event.date_time) && (
                     <p className="text-white font-medium">
@@ -1125,7 +1141,7 @@ export function EventDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                   <Users className="w-5 h-5 text-white" />
-                  Who's Coming
+                  {tenseText.whoIsComingTitle}
                 </h2>
                 {maybeCount > 0 && (
                   <Badge variant="outline" className="text-[#B3B3B3] border-white/20 bg-white/5">
@@ -1312,6 +1328,20 @@ export function EventDetail() {
                       className="w-full text-lg font-bold"
                       size="lg"
                     />
+
+                    {/* Add to Calendar button for joined users */}
+                    {user && isJoined && (
+                      <div className="mt-3">
+                        <AddToCalendarButton
+                          event={event}
+                          eventUrl={eventUrl}
+                          variant="outline"
+                          size="lg"
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+
                     {!user && (
                       <p className="text-sm text-[#B3B3B3] text-center mt-3">
                         Sign in to join this legendary session! 🤘
@@ -1357,7 +1387,7 @@ export function EventDetail() {
                     <div className="flex items-center gap-3">
                       <Clock className="w-4 h-4 text-white" />
                       <div>
-                        <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time)}</p>
+                        <p className="text-white text-sm">{formatEventTiming(event.date_time, event.end_time, event.duration_type)}</p>
                         <p className="text-[#B3B3B3] text-xs">{date}</p>
                       </div>
                     </div>
@@ -1381,7 +1411,7 @@ export function EventDetail() {
                 {event.host && (
                   <div className="glass-card rounded-xl p-4 shadow-sm">
                     <h3 className="font-semibold text-white flex items-center gap-2 mb-3">
-                      👑 Hosted By
+                      👑 {tenseText.eventStatus === 'concluded' ? 'Hosted By' : 'Hosted By'}
                     </h3>
                     <div className="flex items-center gap-3">
                       <UserAvatar

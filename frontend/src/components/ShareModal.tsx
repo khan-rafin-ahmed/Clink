@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Share2, Link, MessageCircle, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { generateShareableUrl } from "@/lib/metaTagService";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -16,7 +17,8 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      const shareableUrl = generateShareableUrl(url, 'copy');
+      await navigator.clipboard.writeText(shareableUrl);
       setCopied(true);
       toast.success('📋 Link copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
@@ -28,10 +30,11 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   const handleNativeShare = async () => {
     if (typeof navigator.share === 'function') {
       try {
+        const shareableUrl = generateShareableUrl(url, 'native');
         await navigator.share({
           title: `Join me at ${title}`,
           text: `Hey! I'm organizing a drinking session. Come join us!`,
-          url,
+          url: shareableUrl,
         });
       } catch (err) {
         console.error("Failed to share:", err);
@@ -44,23 +47,39 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   };
 
   const handleWhatsAppShare = () => {
+    const shareableUrl = generateShareableUrl(url, 'whatsapp');
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
-      `${title} ${url}`
+      `🍺 ${title} ${shareableUrl}`
     )}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const handleFacebookShare = () => {
+    const shareableUrl = generateShareableUrl(url, 'facebook');
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      url
+      shareableUrl
     )}`;
     window.open(facebookUrl, "_blank");
   };
 
   const handleSMSShare = () => {
-    const message = `🍻 Join me for "${title}"! ${url}`;
+    const shareableUrl = generateShareableUrl(url, 'copy');
+    const message = `🍻 Join me for "${title}"! ${shareableUrl}`;
     const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
     window.open(smsUrl, "_blank");
+  };
+
+  const handleTwitterShare = () => {
+    const shareableUrl = generateShareableUrl(url, 'twitter');
+    const tweetText = `🍺 Join me for "${title}"! Let's raise some hell together 🤘`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareableUrl)}`;
+    window.open(twitterUrl, "_blank");
+  };
+
+  const handleLinkedInShare = () => {
+    const shareableUrl = generateShareableUrl(url, 'linkedin');
+    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`;
+    window.open(linkedinUrl, "_blank");
   };
 
   const handleInstagramShare = () => {
@@ -159,6 +178,40 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               <p className="text-sm font-medium">Facebook</p>
               <p className="text-sm text-muted-foreground">
                 Share on Facebook
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              onClick={handleTwitterShare}
+            >
+              <span className="text-black font-bold text-sm">𝕏</span>
+            </Button>
+            <div className="flex-1">
+              <p className="text-sm font-medium">Twitter / X</p>
+              <p className="text-sm text-muted-foreground">
+                Share on Twitter
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              onClick={handleLinkedInShare}
+            >
+              <span className="text-blue-700 font-bold text-sm">in</span>
+            </Button>
+            <div className="flex-1">
+              <p className="text-sm font-medium">LinkedIn</p>
+              <p className="text-sm text-muted-foreground">
+                Share on LinkedIn
               </p>
             </div>
           </div>

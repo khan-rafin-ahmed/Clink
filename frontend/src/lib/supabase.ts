@@ -48,3 +48,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Expose supabase globally for debugging (development only)
+if (typeof window !== 'undefined' && (import.meta.env.DEV || isLocalEnvironment())) {
+  (window as any).supabase = supabase
+  console.log('🔧 Supabase client exposed globally for debugging')
+}

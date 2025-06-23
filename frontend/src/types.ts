@@ -49,6 +49,8 @@ export interface Event {
   place_name?: string | null
   notes: string | null
   drink_type?: string
+  duration_type?: 'specific_time' | 'all_night' | null
+  end_time?: string | null
   vibe?: string
   is_public: boolean
   public_slug?: string | null
@@ -78,6 +80,7 @@ export interface EventWithRsvps {
   date_time: string
   is_public: boolean
   drink_type?: string | null
+  duration_type?: 'specific_time' | 'all_night' | null
   vibe?: string | null
   notes?: string | null
   latitude?: number | null

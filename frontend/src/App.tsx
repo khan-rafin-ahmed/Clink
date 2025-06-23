@@ -24,6 +24,10 @@ import { AuthSecurityTest } from './pages/AuthSecurityTest'
 import { StyleGuide } from './components/StyleGuide'
 import { DeleteProfileTest } from './test/DeleteProfileTest'
 import { NotificationTest } from './test/NotificationTest'
+import { DebugUserSearch } from './pages/DebugUserSearch'
+import { TestMetaTags } from './pages/TestMetaTags'
+import { TestEmailSystem } from './pages/TestEmailSystem'
+import { EmailDebugPage } from './pages/EmailDebugPage'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -105,6 +109,18 @@ function App() {
 
               {/* Test route for notification system */}
               <Route path="/test-notifications" element={<NotificationTest />} />
+
+              {/* Debug route for user search issues */}
+              <Route path="/debug-user-search" element={<DebugUserSearch />} />
+
+              {/* Test route for meta tags */}
+              <Route path="/test-meta-tags" element={<TestMetaTags />} />
+
+              {/* Test route for email system */}
+              <Route path="/test-email-system" element={<TestEmailSystem />} />
+
+              {/* Debug route for email system */}
+              <Route path="/debug-email" element={<EmailDebugPage />} />
             </Routes>
           </main>
           <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">

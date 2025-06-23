@@ -695,15 +695,51 @@ export async function updateEvent(id: string, event: Partial<Event>) {
   return data
 }
 
-export async function deleteEvent(id: string) {
-  const { error } = await supabase
-    .from('events')
-    .delete()
-    .eq('id', id)
+/**
+ * Delete an event (only by creator)
+ */
+export async function deleteEvent(id: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
 
-  if (error) throw error
+    console.log('🗑️ Deleting event:', id)
 
-  invalidateEventCache(id)
+    // Verify user is the event creator
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('created_by, title')
+      .eq('id', id)
+      .single()
+
+    if (eventError || !event) {
+      throw new Error('Event not found')
+    }
+
+    if (event.created_by !== user.id) {
+      throw new Error('Only event creator can delete this event')
+    }
+
+    // Delete the event (CASCADE will handle related records)
+    const { error: deleteError } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', id)
+      .eq('created_by', user.id) // Extra safety check
+
+    if (deleteError) {
+      console.error('❌ Error deleting event:', deleteError)
+      throw deleteError
+    }
+
+    console.log('✅ Event deleted successfully:', event.title)
+    invalidateEventCache(id)
+    return true
+
+  } catch (error: any) {
+    console.error('❌ Failed to delete event:', error)
+    throw error
+  }
 }
 
 export function invalidateEventCache(eventId: string) {

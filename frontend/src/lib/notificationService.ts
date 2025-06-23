@@ -6,6 +6,8 @@ export type NotificationType =
   | 'event_reminder'
   | 'crew_invite_accepted'
   | 'crew_invitation'
+  | 'event_invitation'
+  | 'event_invitation_response'
   | 'event_update'
   | 'event_cancelled'
 
@@ -151,6 +153,8 @@ class NotificationService {
       event_reminder: '⏰',
       crew_invite_accepted: '🎯',
       crew_invitation: '👥',
+      event_invitation: '📨',
+      event_invitation_response: '💬',
       event_update: '📝',
       event_cancelled: '❌'
     }

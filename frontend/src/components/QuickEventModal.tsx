@@ -12,8 +12,9 @@ import { getUserCrews } from '@/lib/crewService'
 import { getCrewMembers } from '@/lib/crewService'
 import { uploadEventCover } from '@/lib/fileUpload'
 import { getDefaultCoverImage } from '@/lib/coverImageUtils'
+import { sendEventInvitationsToCrew } from '@/lib/eventInvitationService'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Users, Check, Upload, X } from 'lucide-react'
+import { Loader2, Globe, Lock, Users, Upload, X } from 'lucide-react'
 import type { Crew, CrewMember, LocationData } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -29,7 +30,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [step, setStep] = useState(1)
   const [createdEvent, setCreatedEvent] = useState<{ share_url: string; event_code: string } | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [selectedCrew, setSelectedCrew] = useState<string>('')
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
@@ -55,12 +55,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     try {
       const members = await getCrewMembers(crewId)
       setCrewMembers(members)
-      // Auto-select all crew members
-      setSelectedInvitees(members.map(member => member.user_id))
     } catch (error) {
       console.error('Error loading crew members:', error)
       setCrewMembers([])
-      setSelectedInvitees([])
     }
   }
 
@@ -77,7 +74,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       loadCrewMembers(selectedCrew)
     } else {
       setCrewMembers([])
-      setSelectedInvitees([])
     }
   }, [selectedCrew])
 
@@ -89,6 +85,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     locationData: null as LocationData | null,
     time: 'now',
     drink_type: 'beer',
+    duration_type: 'specific_time' as 'specific_time' | 'all_night',
     vibe: 'casual',
     notes: '',
     custom_time: '',
@@ -227,6 +224,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             return endOfDay.toISOString();
           }
         })(),
+        duration_type: formData.duration_type,
         drink_type: formData.drink_type,
         vibe: formData.vibe,
         notes: formData.notes?.trim() || null,
@@ -249,28 +247,39 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       const createdEventId = event.id
 
-      // If crew is selected, add all crew members as event members
+      // If crew is selected, send invitations to crew members instead of auto-adding
+      let invitationMessage = ''
       if (selectedCrew && crewMembers.length > 0) {
-        const eventMembers = crewMembers.map(member => ({
-          event_id: createdEventId,
-          user_id: member.user_id,
-          invited_by: user.id,
-          status: 'accepted'
-        }))
+        try {
+          console.log('🧪 Sending crew invitations with correct data:', {
+            eventId: createdEventId,
+            crewId: selectedCrew,
+            crewIdType: typeof selectedCrew,
+            crewMembers: crewMembers.length
+          })
 
-        const { error: membersError } = await supabase
-          .from('event_members')
-          .insert(eventMembers)
+          const invitationResult = await sendEventInvitationsToCrew(createdEventId, selectedCrew)
 
-        if (membersError) {
-          // If inserting event members fails, delete the created event to maintain consistency
-          await supabase.from('events').delete().eq('id', createdEventId)
-          throw new Error(`Failed to add crew members: ${membersError.message}`)
+          if (invitationResult.success && invitationResult.invitedCount > 0) {
+            invitationMessage = ` ${invitationResult.message}`
+          } else if (!invitationResult.success) {
+            // Log error but don't fail event creation
+            console.error('Failed to send crew invitations:', invitationResult.message)
+            invitationMessage = ' (Note: Some invitations may not have been sent)'
+          }
+        } catch (invitationError: any) {
+          // Log error but don't fail event creation
+          console.error('Error sending crew invitations:', invitationError)
+          invitationMessage = ' (Note: Crew invitations could not be sent)'
         }
       }
 
       // Success - close modal and notify
-      toast.success('Event created successfully! 🍺')
+      const successMessage = selectedCrew && crewMembers.length > 0
+        ? `Event created successfully!${invitationMessage}`
+        : 'Event created successfully! 🍺'
+
+      toast.success(successMessage)
       setOpen(false)
       onEventCreated?.()
     } catch (error: any) {
@@ -313,6 +322,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       locationData: null,
       time: 'now',
       drink_type: 'beer',
+      duration_type: 'specific_time',
       vibe: 'casual',
       notes: '',
       custom_time: '',
@@ -323,7 +333,6 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     })
     setStep(1)
     setCreatedEvent(null)
-    setSelectedInvitees([])
     setSelectedCrew('')
     setCrewMembers([])
     setUserCrews([])
@@ -490,6 +499,38 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                       <div className="text-xs font-medium">{drink.label}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">How long's the party?</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, duration_type: 'specific_time' })) }}
+                    className={`p-3 rounded-lg border text-center ${
+                      (formData.duration_type || 'specific_time') === 'specific_time'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="text-lg">⏰</div>
+                    <div className="text-xs font-medium">Few Hours</div>
+                    <div className="text-xs text-muted-foreground">3-4 hours</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, duration_type: 'all_night' })) }}
+                    className={`p-3 rounded-lg border text-center ${
+                      formData.duration_type === 'all_night'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="text-lg">🌙</div>
+                    <div className="text-xs font-medium">All Night</div>
+                    <div className="text-xs text-muted-foreground">Until midnight</div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -691,13 +732,13 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 {selectedCrew && crewMembers.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs text-muted-foreground">
-                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will automatically join:
+                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will receive invitations:
                     </div>
                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
                       {crewMembers.map(member => (
                         <div
                           key={member.user_id}
-                          className="flex items-center gap-2 p-2 rounded-lg border border-primary bg-primary/10 text-primary"
+                          className="flex items-center gap-2 p-2 rounded-lg border border-amber-500 bg-amber-500/10 text-amber-400"
                         >
                           <UserAvatar
                             userId={member.user_id}
@@ -708,7 +749,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                           <span className="text-xs font-medium truncate">
                             {member.user?.display_name || 'Anonymous'}
                           </span>
-                          <Check className="w-3 h-3 ml-auto" />
+                          <span className="text-xs ml-auto">📨</span>
                         </div>
                       ))}
                     </div>
@@ -716,10 +757,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 )}
 
                 {/* Summary */}
-                {selectedInvitees.length > 0 && (
+                {selectedCrew && crewMembers.length > 0 && (
                   <div className="text-center py-2">
                     <div className="text-xs text-muted-foreground">
-                      {selectedInvitees.length} member{selectedInvitees.length !== 1 ? 's' : ''} will automatically join the session
+                      📨 Invitations will be sent to {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''}
                     </div>
                   </div>
                 )}

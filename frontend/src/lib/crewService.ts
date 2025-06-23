@@ -310,6 +310,120 @@ export async function getCrewPendingRequests(crewId: string): Promise<CrewMember
   });
 }
 
+// Helper function to send crew invitation email
+async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inviterId: string): Promise<void> {
+  try {
+    console.log('📧 Sending crew invitation email:', { crewId, userId, inviterId })
+
+    // Get crew details
+    const { data: crew, error: crewError } = await supabase
+      .from('crews')
+      .select('id, name, description')
+      .eq('id', crewId)
+      .single()
+
+    if (crewError || !crew) {
+      console.error('Crew not found:', crewError)
+      return
+    }
+
+    // Get invited user's email with fallback strategy
+    let invitedUser: { display_name: string; email: string } | null = null
+
+    // First, try to get email from user_profiles
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('display_name, email')
+      .eq('user_id', userId)
+      .single()
+
+    if (profileData && profileData.email) {
+      invitedUser = profileData
+      console.log('✅ Found email in user_profiles:', profileData.email)
+    } else {
+      console.log('⚠️ No email in user_profiles, trying secure function fallback...')
+
+      // Fallback: Use secure function to get email from auth.users
+      const { data: secureData, error: secureError } = await supabase
+        .rpc('get_user_email_for_invitation', { p_user_id: userId })
+        .single()
+
+      if (secureData && (secureData as any).email) {
+        invitedUser = {
+          display_name: (secureData as any).display_name,
+          email: (secureData as any).email
+        }
+        console.log('✅ Found email via secure function:', (secureData as any).email)
+      } else {
+        console.error('❌ No email found for user:', { userId, profileError, secureError })
+        return
+      }
+    }
+
+    if (!invitedUser) {
+      console.error('Invited user not found or no email available')
+      return
+    }
+
+    if (!invitedUser.email) {
+      console.warn(`No email found for user ${userId} (${invitedUser.display_name}), skipping email notification`)
+      return
+    }
+
+    // Get inviter details
+    const { data: inviter, error: inviterError } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('user_id', inviterId)
+      .single()
+
+    if (inviterError || !inviter) {
+      console.error('Inviter not found:', inviterError)
+      return
+    }
+
+    // Get crew member count
+    const { count: memberCount } = await supabase
+      .from('crew_members')
+      .select('*', { count: 'exact' })
+      .eq('crew_id', crewId)
+      .eq('status', 'accepted')
+
+    console.log(`📧 Sending crew invitation email to ${invitedUser.email} (${invitedUser.display_name})`)
+
+    // Prepare email data
+    const emailData = {
+      crewName: crew.name,
+      inviterName: inviter.display_name,
+      crewDescription: crew.description || '',
+      memberCount: memberCount || 0,
+      acceptUrl: `${window.location.origin}/crew/${crew.id}`
+    }
+
+    // Call Edge Function directly
+    const { data, error } = await supabase.functions.invoke('send-email', {
+      body: {
+        to: invitedUser.email,
+        subject: `🤘 You're invited to join ${crew.name}`,
+        type: 'crew_invitation',
+        data: emailData
+      }
+    })
+
+    console.log('📧 Email function response:', { data, error })
+
+    if (error) {
+      console.error('❌ Failed to send crew invitation email:', error)
+    } else {
+      console.log('✅ Crew invitation email sent successfully to:', invitedUser.email)
+      console.log('📧 Email response:', data)
+    }
+
+  } catch (error) {
+    console.error('❌ Error in crew invitation email function:', error)
+  }
+}
+
 // Invite user to crew by user ID
 export async function inviteUserToCrew(crewId: string, userId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
@@ -325,6 +439,14 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
     })
 
   if (error) throw error
+
+  // Send email invitation
+  try {
+    await sendCrewInvitationEmailToUser(crewId, userId, user.id)
+  } catch (emailError) {
+    console.error('⚠️ Failed to send crew invitation email:', emailError)
+    // Don't fail the whole operation if email fails
+  }
 }
 
 // Invite user to crew by username/email
@@ -581,30 +703,69 @@ export async function removeMemberFromCrew(crewId: string, userId: string): Prom
   if (error) throw error
 }
 
-// Search users for crew invitation
-export async function searchUsersForInvite(query: string, crewId?: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null }>> {
+// Enhanced search users for crew invitation with multiple search criteria
+export async function searchUsersForInvite(query: string, crewId?: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null; email?: string }>> {
   if (!query.trim()) return []
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  // Search by display name in user_profiles
-  // Note: We can't directly query auth.users from client for security reasons
-  // So we only search by display name for now
+  console.log('🔍 Searching for users with query:', query)
+
+  // Search by display name, nickname, and tagline in user_profiles
   const { data: profileData, error: profileError } = await supabase
     .from('user_profiles')
-    .select('user_id, display_name, avatar_url')
-    .ilike('display_name', `%${query}%`)
+    .select('user_id, display_name, nickname, tagline, avatar_url')
+    .or(`display_name.ilike.%${query}%,nickname.ilike.%${query}%,tagline.ilike.%${query}%`)
     .neq('user_id', user.id) // Exclude current user
     .limit(20) // Get more results to filter out existing members
 
-  if (profileError) throw profileError
+  if (profileError) {
+    console.error('❌ Error searching user profiles:', profileError)
+    throw profileError
+  }
 
-  let filteredResults = profileData || []
+  console.log('📊 Profile search results:', profileData?.length || 0, 'users found')
+
+  // Also search by email using RPC function for security
+  let emailResults: any[] = []
+  try {
+    const { data: emailData, error: emailError } = await supabase
+      .rpc('search_users_by_email', {
+        search_query: query.toLowerCase(),
+        current_user_id: user.id
+      })
+
+    if (!emailError && emailData) {
+      emailResults = emailData
+      console.log('📧 Email search results:', emailResults.length, 'users found')
+    }
+  } catch (error) {
+    console.log('⚠️ Email search not available (RPC function may not exist)')
+  }
+
+  // Combine and deduplicate results
+  const allResults = [...(profileData || []), ...emailResults]
+  const uniqueResults = allResults.reduce((acc: Array<{ user_id: string; display_name: string; avatar_url: string | null; email?: string }>, current: any) => {
+    const existing = acc.find((item: { user_id: string }) => item.user_id === current.user_id)
+    if (!existing) {
+      acc.push({
+        user_id: current.user_id,
+        display_name: current.display_name || 'Unknown User',
+        avatar_url: current.avatar_url,
+        email: current.email // Include email if available from RPC
+      })
+    }
+    return acc
+  }, [])
+
+  console.log('🔄 Combined unique results:', uniqueResults.length, 'users')
+
+  let filteredResults = uniqueResults
 
   // If crewId is provided, filter out existing crew members
   if (crewId && filteredResults.length > 0) {
-    const userIds = filteredResults.map(u => u.user_id)
+    const userIds = filteredResults.map((u: { user_id: string }) => u.user_id)
 
     const { data: existingMembers, error: membersError } = await supabase
       .from('crew_members')
@@ -612,13 +773,21 @@ export async function searchUsersForInvite(query: string, crewId?: string): Prom
       .eq('crew_id', crewId)
       .in('user_id', userIds)
 
-    if (membersError) throw membersError
+    if (membersError) {
+      console.error('❌ Error checking existing members:', membersError)
+      throw membersError
+    }
 
     const existingMemberIds = new Set(existingMembers?.map(m => m.user_id) || [])
-    filteredResults = filteredResults.filter(user => !existingMemberIds.has(user.user_id))
+    filteredResults = filteredResults.filter((user: { user_id: string }) => !existingMemberIds.has(user.user_id))
+
+    console.log('🚫 Filtered out existing members, remaining:', filteredResults.length, 'users')
   }
 
-  return filteredResults.slice(0, 10) // Return max 10 results
+  const finalResults = filteredResults.slice(0, 10) // Return max 10 results
+  console.log('✅ Final search results:', finalResults.length, 'users')
+
+  return finalResults
 }
 
 // Update crew
@@ -633,6 +802,61 @@ export async function updateCrew(crewId: string, updates: Partial<Crew>): Promis
     .eq('created_by', user.id) // Only creator can edit
 
   if (error) throw error
+}
+
+/**
+ * Delete a crew (only by creator, even with existing members)
+ */
+export async function deleteCrew(crewId: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    console.log('🗑️ Deleting crew:', crewId)
+
+    // Verify user is the crew creator
+    const { data: crew, error: crewError } = await supabase
+      .from('crews')
+      .select('created_by, name')
+      .eq('id', crewId)
+      .single()
+
+    if (crewError || !crew) {
+      throw new Error('Crew not found')
+    }
+
+    if (crew.created_by !== user.id) {
+      throw new Error('Only crew creator can delete this crew')
+    }
+
+    // Get member count for logging
+    const { data: members } = await supabase
+      .from('crew_members')
+      .select('user_id')
+      .eq('crew_id', crewId)
+
+    const memberCount = members?.length || 0
+    console.log(`🗑️ Deleting crew "${crew.name}" with ${memberCount} members`)
+
+    // Delete the crew (CASCADE will handle related records like crew_members, crew_invitations, etc.)
+    const { error: deleteError } = await supabase
+      .from('crews')
+      .delete()
+      .eq('id', crewId)
+      .eq('created_by', user.id) // Extra safety check
+
+    if (deleteError) {
+      console.error('❌ Error deleting crew:', deleteError)
+      throw deleteError
+    }
+
+    console.log('✅ Crew deleted successfully:', crew.name)
+    return true
+
+  } catch (error: any) {
+    console.error('❌ Failed to delete crew:', error)
+    throw error
+  }
 }
 
 // Helper function to generate invite codes

@@ -14,7 +14,9 @@ import {
   createCrewInviteLink,
   searchUsersForInvite,
   getCrewPendingRequests,
+  deleteCrew,
 } from '@/lib/crewService'
+import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
 import { toast } from 'sonner'
 import {
   Users,
@@ -33,6 +35,7 @@ import {
   ExternalLink,
   Check,
   Clock,
+  Trash2,
 } from 'lucide-react'
 import {
   Dialog,
@@ -51,6 +54,7 @@ export function CrewDetail() {
   const [pendingRequests, setPendingRequests] = useState<CrewMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [inviteIdentifier, setInviteIdentifier] = useState('')
   const [isInviting, setIsInviting] = useState(false)
   const [searchResults, setSearchResults] = useState<Array<{ user_id: string; display_name: string; avatar_url: string | null }>>([])
@@ -263,6 +267,19 @@ export function CrewDetail() {
     }
   }
 
+  const handleDeleteCrew = async () => {
+    if (!crewId) return
+
+    try {
+      await deleteCrew(crewId)
+      toast.success('🗑️ Crew deleted successfully!')
+      navigate('/profile')
+    } catch (error: any) {
+      console.error('Error deleting crew:', error)
+      toast.error(error.message || 'Failed to delete crew')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen relative overflow-hidden">
@@ -403,6 +420,16 @@ export function CrewDetail() {
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Link
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border-red-500/30"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
                   </Button>
 
                   <Dialog open={showInviteModal} onOpenChange={(open) => {

@@ -18,7 +18,7 @@ import {
 import { respondToCrewInvitation } from '@/lib/crewService'
 import { respondToEventInvitation } from '@/lib/eventService'
 import { toast } from 'sonner'
-import { Bell, Check, X, Users, Calendar } from 'lucide-react'
+import { Bell, Check, X, Users, Calendar, Eye } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 export function NotificationCenter() {
@@ -224,8 +224,22 @@ export function NotificationCenter() {
               </div>
             )}
 
+            {/* Event invitation response actions (consolidated notification with View Event button) */}
+            {notification.type === 'event_invitation_response' && notification.data?.show_view_event_button && notification.data?.event_id && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  window.location.href = `/event/${notification.data?.event_id}`
+                }}
+                className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)] mt-3"
+              >
+                <Eye className="w-3 h-3" />
+                View Event
+              </Button>
+            )}
+
             {/* Mark as read button for other notifications */}
-            {!['crew_invitation', 'event_invitation'].includes(notification.type) && !notification.read && (
+            {!['crew_invitation', 'event_invitation', 'event_invitation_response'].includes(notification.type) && !notification.read && (
               <Button
                 size="sm"
                 variant="ghost"

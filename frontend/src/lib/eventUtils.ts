@@ -1,5 +1,5 @@
 import type { Event } from '@/types'
-import { isToday, isTomorrow, isPast } from 'date-fns'
+import { isToday, isTomorrow } from 'date-fns'
 
 /**
  * Utility functions for event-related operations
@@ -228,49 +228,83 @@ export function hasValidCoordinates(event: Event): boolean {
 }
 
 /**
- * Get event timing status
+ * Get event timing status with support for duration and "All Night" events
  */
-export function getEventTimingStatus(dateTime: string): 'past' | 'now' | 'today' | 'tomorrow' | 'future' {
+export function getEventTimingStatus(
+  dateTime: string,
+  endTime?: string | null,
+  durationType?: string | null
+): 'past' | 'now' | 'today' | 'tomorrow' | 'future' {
   const eventDate = new Date(dateTime)
   const now = new Date()
 
-  if (isPast(eventDate)) return 'past'
+  // Calculate end time based on duration type
+  let eventEndTime: Date
+  if (endTime) {
+    eventEndTime = new Date(endTime)
+  } else if (durationType === 'all_night') {
+    // All night events end at midnight the next day
+    eventEndTime = new Date(eventDate)
+    eventEndTime.setDate(eventEndTime.getDate() + 1)
+    eventEndTime.setHours(0, 0, 0, 0) // Midnight next day
+  } else {
+    // Default: events last 3 hours
+    eventEndTime = new Date(eventDate.getTime() + (3 * 60 * 60 * 1000))
+  }
 
-  // Check if it's happening now (within 1 hour)
-  const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
-  if (isToday(eventDate) && diffHours <= 1) return 'now'
+  // Check if event has ended
+  if (now > eventEndTime) return 'past'
 
+  // Check if event is currently happening
+  if (now >= eventDate && now <= eventEndTime) return 'now'
+
+  // Event hasn't started yet
   if (isToday(eventDate)) return 'today'
   if (isTomorrow(eventDate)) return 'tomorrow'
   return 'future'
 }
 
 /**
- * Format event timing for display
+ * Format event timing for display with duration support
  */
-export function formatEventTiming(dateTime: string): string {
-  const status = getEventTimingStatus(dateTime)
+export function formatEventTiming(
+  dateTime: string,
+  endTime?: string | null,
+  durationType?: string | null
+): string {
+  const status = getEventTimingStatus(dateTime, endTime, durationType)
   const date = new Date(dateTime)
 
   switch (status) {
     case 'past':
       return 'Event ended'
     case 'now':
+      if (durationType === 'all_night') {
+        return 'All night session in progress! 🌙'
+      }
       return 'Happening now!'
     case 'today':
-      return `Today at ${date.toLocaleTimeString('en-US', {
+      const timeStr = date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
-      })}`
+      })
+      if (durationType === 'all_night') {
+        return `Tonight at ${timeStr} - All Night! 🌙`
+      }
+      return `Today at ${timeStr}`
     case 'tomorrow':
-      return `Tomorrow at ${date.toLocaleTimeString('en-US', {
+      const tomorrowTimeStr = date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
-      })}`
+      })
+      if (durationType === 'all_night') {
+        return `Tomorrow at ${tomorrowTimeStr} - All Night! 🌙`
+      }
+      return `Tomorrow at ${tomorrowTimeStr}`
     default:
-      return date.toLocaleDateString('en-US', {
+      const fullTimeStr = date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -278,5 +312,29 @@ export function formatEventTiming(dateTime: string): string {
         minute: '2-digit',
         hour12: true
       })
+      if (durationType === 'all_night') {
+        return `${fullTimeStr} - All Night! 🌙`
+      }
+      return fullTimeStr
+  }
+}
+
+/**
+ * Get appropriate tense text based on event status
+ */
+export function getEventTenseText(
+  dateTime: string,
+  endTime?: string | null,
+  durationType?: string | null
+) {
+  const status = getEventTimingStatus(dateTime, endTime, durationType)
+  const isPast = status === 'past'
+
+  return {
+    whoIsComingTitle: isPast ? "Who Joined" : "Who's Coming",
+    hostingText: isPast ? "hosted" : "is hosting",
+    attendingText: isPast ? "attended" : "attending",
+    joinedText: isPast ? "joined" : "going",
+    eventStatus: isPast ? "concluded" : "upcoming"
   }
 }
