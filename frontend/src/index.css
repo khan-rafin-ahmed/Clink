@@ -907,6 +907,32 @@
     }
   }
 
+  /* Mobile touch optimization for buttons */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Ensure buttons have proper touch targets on mobile */
+  @media (max-width: 768px) {
+    button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Join/Leave button specific mobile styling */
+    .join-event-button {
+      min-height: 48px;
+      padding: 12px 20px;
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+  }
+
   /* Icon sizing within pills */
   .glass-pill svg,
   .glass-pill .icon {

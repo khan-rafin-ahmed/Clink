@@ -28,6 +28,7 @@ import { DebugUserSearch } from './pages/DebugUserSearch'
 import { TestMetaTags } from './pages/TestMetaTags'
 import { TestEmailSystem } from './pages/TestEmailSystem'
 import { EmailDebugPage } from './pages/EmailDebugPage'
+import { TestJoinButton } from './pages/TestJoinButton'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -121,6 +122,9 @@ function App() {
 
               {/* Debug route for email system */}
               <Route path="/debug-email" element={<EmailDebugPage />} />
+
+              {/* Test route for join button functionality */}
+              <Route path="/test-join-button" element={<TestJoinButton />} />
             </Routes>
           </main>
           <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">
