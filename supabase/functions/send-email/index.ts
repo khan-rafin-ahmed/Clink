@@ -45,51 +45,54 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>You're Invited to ${event_title}</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #0A0A0A; color: #FFFFFF; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #08090A; color: #FFFFFF; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #FF7747, #FFD37E); border-radius: 12px; margin-bottom: 30px; }
-        .logo { font-size: 32px; font-weight: bold; color: #000; margin-bottom: 10px; }
-        .tagline { font-size: 16px; color: #333; }
-        .content { background: #1A1A1A; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #333; }
-        .event-title { font-size: 24px; font-weight: bold; color: #FF7747; margin-bottom: 20px; }
-        .event-details { margin: 20px 0; }
-        .detail-row { margin: 10px 0; padding: 10px; background: #2A2A2A; border-radius: 8px; }
-        .detail-label { font-weight: bold; color: #FFD37E; }
-        .cta-button { display: inline-block; background: #00FFA3; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px; }
-        .cta-button:hover { background: #00E693; }
-        .footer { text-align: center; color: #999; font-size: 14px; margin-top: 30px; }
+        .header { text-align: center; padding: 30px 20px; background-color: #08090A; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo { font-size: 28px; font-weight: bold; color: #FFFFFF; margin-bottom: 8px; }
+        .tagline { font-size: 14px; color: #B3B3B3; }
+        .content { background-color: #08090A; padding: 40px 20px; }
+        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 24px 0; backdrop-filter: blur(10px); }
+        .card-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px; }
+        .card-detail { margin: 12px 0; color: #B3B3B3; font-size: 15px; line-height: 1.6; }
+        .card-detail strong { color: #FFFFFF; }
+        .btn-primary { display: inline-block; background-color: #FFFFFF; color: #08090A; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; }
+        .btn-secondary { display: inline-block; background-color: #07080A; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .footer { text-align: center; color: #B3B3B3; font-size: 12px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+        .footer a { color: #00FFA3; text-decoration: none; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">🍺 Thirstee</div>
-          <div class="tagline">Time to raise hell!</div>
+          <div class="logo">🤘 Thirstee</div>
+          <div class="tagline">Tap. Plan. Thirstee.</div>
         </div>
 
         <div class="content">
-          <h1>🎉 You're Invited!</h1>
-          <p><strong>${inviter_name}</strong> has invited you to join their drinking session:</p>
+          <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">🥂 You're Invited to Raise Hell!</h1>
+          <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;"><strong style="color: #FFFFFF;">${inviter_name}</strong> invited you to a Session</p>
 
-          <div class="event-title">${event_title}</div>
-
-          <div class="event-details">
-            <div class="detail-row">
-              <span class="detail-label">📅 When:</span> ${eventDate}
+          <div class="glass-card">
+            <div class="card-title">${event_title}</div>
+            <div class="card-detail">
+              <strong>📅 Date:</strong> ${eventDate}
             </div>
-            ${event_location ? `<div class="detail-row"><span class="detail-label">📍 Where:</span> ${event_location}</div>` : ''}
+            ${event_location ? `<div class="card-detail"><strong>📍 Location:</strong> ${event_location}</div>` : '<div class="card-detail"><strong>📍 Location:</strong> To be announced</div>'}
           </div>
 
-          <p>Ready to raise hell? Let ${inviter_name} know if you're in!</p>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${acceptUrl}" class="cta-button">🍻 View Invitation</a>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${acceptUrl}" class="btn-primary">🍺 Accept Invitation</a>
+            <a href="${acceptUrl}" class="btn-secondary">😔 Can't Make It</a>
           </div>
+
+          <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
+            <a href="${acceptUrl}" style="color: #00FFA3; text-decoration: underline;">View full event details</a>
+          </p>
         </div>
 
         <div class="footer">
-          <p>© 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘</p>
-          <p>This email was sent because you're part of a crew that was invited to this event.</p>
+          <p>© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin</p>
+          <p><a href="#">Unsubscribe</a> | <a href="#">Update Preferences</a></p>
         </div>
       </div>
     </body>
@@ -97,19 +100,17 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
   `
 
   const text = `
-🍺 You're Invited to ${event_title}!
+🥂 You're Invited to Raise Hell!
 
-${inviter_name} has invited you to join their drinking session.
+${inviter_name} invited you to a Session: "${event_title}"
 
-Event Details:
-📅 When: ${eventDate}
-${event_location ? `📍 Where: ${event_location}` : ''}
+📅 Date: ${eventDate}
+📍 Location: ${event_location || 'To be announced'}
 
-Ready to raise hell? Check your notifications in the Thirstee app to respond!
+Accept: ${acceptUrl}
+View Details: ${acceptUrl}
 
-Visit: ${acceptUrl}
-
-© 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘
+© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `
 
   return { html, text }
@@ -124,6 +125,10 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
     acceptUrl
   } = data
 
+  const memberCountText = memberCount === 0
+    ? '👤 Be the first to join!'
+    : `👥 ${memberCount} member${memberCount !== 1 ? 's' : ''}`
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -132,48 +137,57 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Join ${crewName} Crew</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #0A0A0A; color: #FFFFFF; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #08090A; color: #FFFFFF; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #FF7747, #FFD37E); border-radius: 12px; margin-bottom: 30px; }
-        .logo { font-size: 32px; font-weight: bold; color: #000; margin-bottom: 10px; }
-        .tagline { font-size: 16px; color: #333; }
-        .content { background: #1A1A1A; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #333; }
-        .crew-name { font-size: 24px; font-weight: bold; color: #FF7747; margin-bottom: 20px; }
-        .crew-stats { margin: 20px 0; padding: 15px; background: #2A2A2A; border-radius: 8px; }
-        .cta-button { display: inline-block; background: #00FFA3; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px; }
-        .cta-button:hover { background: #00E693; }
-        .footer { text-align: center; color: #999; font-size: 14px; margin-top: 30px; }
+        .header { text-align: center; padding: 30px 20px; background-color: #08090A; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo { font-size: 28px; font-weight: bold; color: #FFFFFF; margin-bottom: 8px; }
+        .tagline { font-size: 14px; color: #B3B3B3; }
+        .content { background-color: #08090A; padding: 40px 20px; }
+        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 24px 0; backdrop-filter: blur(10px); }
+        .card-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px; }
+        .card-detail { margin: 12px 0; color: #B3B3B3; font-size: 15px; line-height: 1.6; }
+        .card-detail strong { color: #FFFFFF; }
+        .btn-primary { display: inline-block; background-color: #FFFFFF; color: #08090A; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; }
+        .footer { text-align: center; color: #B3B3B3; font-size: 12px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+        .footer a { color: #00FFA3; text-decoration: none; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
           <div class="logo">🤘 Thirstee</div>
-          <div class="tagline">Join the crew!</div>
+          <div class="tagline">Join the Crew!</div>
         </div>
 
         <div class="content">
-          <h1>🍺 Crew Invitation</h1>
-          <p><strong>${inviterName}</strong> has invited you to join their crew:</p>
+          <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">🍻 Crew Invitation</h1>
+          <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;"><strong style="color: #FFFFFF;">${inviterName}</strong> has invited you to join their crew</p>
 
-          <div class="crew-name">${crewName}</div>
-
-          ${crewDescription ? `<p>${crewDescription}</p>` : ''}
-
-          <div class="crew-stats">
-            <strong>👥 ${memberCount} member${memberCount !== 1 ? 's' : ''}</strong>
+          <div class="glass-card">
+            <div class="card-title" style="color: #FFFFFF;">${crewName}</div>
+            <div class="card-detail">
+              ${memberCountText}
+            </div>
+            ${crewDescription ? `
+              <div class="card-detail" style="margin-top: 16px;">
+                <strong>📝 Description:</strong><br>
+                ${crewDescription}
+              </div>
+            ` : ''}
           </div>
 
-          <p>Ready to join the crew and start raising hell together?</p>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${acceptUrl}" class="cta-button">🤘 View Invitation</a>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${acceptUrl}" class="btn-primary">🤘 View Invitation</a>
           </div>
+
+          <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
+            If button doesn't work: <a href="${acceptUrl}" style="color: #00FFA3; text-decoration: underline;">View in browser</a>
+          </p>
         </div>
 
         <div class="footer">
-          <p>© 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘</p>
-          <p>This email was sent because ${inviterName} invited you to join their crew.</p>
+          <p>© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin</p>
+          <p><a href="#">Unsubscribe</a> | <a href="#">Update Preferences</a></p>
         </div>
       </div>
     </body>
@@ -181,19 +195,17 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
   `
 
   const text = `
-🤘 You're Invited to Join ${crewName}!
+🍻 Crew Invitation
 
-${inviterName} has invited you to join their crew.
+${inviterName} has invited you to join "${crewName}"
 
-Crew: ${crewName}
-${crewDescription ? `Description: ${crewDescription}` : ''}
-Members: ${memberCount}
+${memberCountText}
+${crewDescription ? `📝 Description: ${crewDescription}` : ''}
 
-Ready to join the crew? Check your notifications in the Thirstee app to respond!
+Join: ${acceptUrl}
+View Details: ${acceptUrl}
 
-Visit: ${acceptUrl}
-
-© 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘
+© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `
 
   return { html, text }

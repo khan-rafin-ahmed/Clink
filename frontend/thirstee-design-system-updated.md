@@ -328,6 +328,139 @@ The mobile hamburger menu now provides **instant access** to all navigation opti
 
 ---
 
+## 📧 Email Template Design System Overhaul - COMPLETED ✅
+
+### 🎯 **Complete Email Redesign:**
+
+#### **Problem Identified:**
+The existing email templates were using outdated design elements that didn't align with the current Thirstee design system:
+- **Legacy Colors**: Orange/amber gradients (#FF7747, #FFD37E) instead of monochromatic system
+- **Inconsistent Typography**: Mixed font weights and color hierarchy
+- **Old Button Styles**: Rounded rectangles instead of pill-shaped buttons
+- **Poor Mobile Experience**: Limited responsive design considerations
+
+#### **Solution Implemented:** ✅
+
+##### **1. Updated Color System** ✅
+```css
+/* Before (Legacy) */
+background: linear-gradient(135deg, #FF7747 0%, #FFD37E 100%);
+color: #FF7747;
+
+/* After (Design System Compliant) */
+background-color: #08090A; /* --bg-base */
+color: #FFFFFF; /* --text-primary */
+border: 1px solid rgba(255,255,255,0.1); /* --btn-border-subtle */
+```
+
+##### **2. Glass Card System** ✅
+- **Background**: `rgba(255,255,255,0.05)` (--bg-glass)
+- **Border**: `1px solid rgba(255,255,255,0.1)` for subtle glass effect
+- **Border Radius**: `16px` for modern rounded corners
+- **Backdrop Filter**: `blur(10px)` for glassmorphism effect
+- **Padding**: `24px` for comfortable content spacing
+
+##### **3. Button System Redesign** ✅
+- **Primary Button**: White background (#FFFFFF), dark text (#08090A), pill-shaped (`border-radius: 9999px`)
+- **Secondary Button**: Dark background (#07080A), white text, subtle border
+- **Hover Effects**: Subtle transform and shadow effects
+- **Mobile Responsive**: Stack buttons vertically on small screens
+
+##### **4. Typography Hierarchy** ✅
+- **Headers**: `font-size: 24px`, `font-weight: 600`, `color: #FFFFFF`
+- **Body Text**: `font-size: 16px`, `color: #B3B3B3`, `line-height: 1.6`
+- **Details**: `font-size: 15px`, `color: #B3B3B3` with `#FFFFFF` for emphasis
+- **Footer**: `font-size: 12px`, `color: #B3B3B3`
+
+##### **5. Enhanced Content Structure** ✅
+
+###### **Event Invitation Template:**
+```html
+<h1>🥂 You're Invited to Raise Hell!</h1>
+<p><strong>Inviter Name</strong> invited you to a Session</p>
+
+<div class="glass-card">
+  <div class="card-title">Event Title</div>
+  <div class="vibe-badge">🍷 CLASSY VIBES</div>
+  <div class="card-detail"><strong>📅 Date:</strong> Event Date</div>
+  <div class="card-detail"><strong>📍 Location:</strong> Location or "To be announced"</div>
+</div>
+
+<div style="text-align: center;">
+  <a href="#" class="btn-primary">🍺 Accept Invitation</a>
+  <a href="#" class="btn-secondary">😔 Can't Make It</a>
+</div>
+```
+
+###### **Crew Invitation Template:**
+```html
+<h1>🍻 Crew Invitation</h1>
+<p><strong>Inviter Name</strong> has invited you to join their crew</p>
+
+<div class="glass-card">
+  <div class="card-title">Crew Name</div>
+  <div class="card-detail">👥 X members / 👤 Be the first to join!</div>
+  <div class="card-detail"><strong>📝 Description:</strong> Crew Description</div>
+</div>
+
+<div style="text-align: center;">
+  <a href="#" class="btn-primary">🤘 View Invitation</a>
+</div>
+```
+
+##### **6. Mobile-First Responsive Design** ✅
+```css
+@media only screen and (max-width: 600px) {
+  .btn-primary, .btn-secondary {
+    display: block !important;
+    width: 90% !important;
+    margin: 10px auto !important;
+  }
+  .glass-card {
+    padding: 16px !important;
+    margin: 16px 0 !important;
+  }
+  .card-title {
+    font-size: 18px !important;
+  }
+}
+```
+
+##### **7. Improved Footer Design** ✅
+- **Updated Copy**: "© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin"
+- **Link Colors**: `#00FFA3` for accent links (Unsubscribe, Update Preferences)
+- **Border**: Subtle top border with `rgba(255,255,255,0.1)`
+
+##### **8. Logic Improvements** ✅
+- **Location Handling**: Shows "To be announced" when location is null/empty
+- **Member Count Logic**: "👤 Be the first to join!" for crews with 0 members
+- **Fallback Links**: "View in browser" option for crew invitations
+- **Consistent Branding**: Updated header with "🤘 Thirstee" logo and appropriate taglines
+
+### ✅ **Files Updated:**
+- **`frontend/src/lib/emailTemplates.ts`**: Complete redesign of all email templates with new design system
+- **`supabase/functions/send-email/index.ts`**: Updated Edge function templates to match frontend templates
+- **`frontend/thirstee-design-system-updated.md`**: Documented email template design system compliance
+
+### 🎯 **User Experience Improvements:**
+- **Brand Consistency**: All emails now match the app's current design system
+- **Professional Appearance**: Glass cards and modern typography create premium feel
+- **Clear Hierarchy**: Improved information architecture with proper emphasis
+- **Mobile Optimized**: Responsive design ensures great experience on all devices
+- **Accessibility**: Better contrast ratios and readable font sizes
+- **Reduced Confusion**: Clear CTAs and improved content structure
+
+### 🎨 **Design System Compliance:**
+- **Color Tokens**: All emails use --bg-base, --text-primary, --text-secondary, --btn-primary-bg
+- **Glass Effects**: Consistent glassmorphism with backdrop-blur and translucent backgrounds
+- **Button System**: Pill-shaped buttons with proper hover states and responsive behavior
+- **Typography**: Consistent font weights, sizes, and color hierarchy
+- **Spacing**: Proper padding and margin using design system spacing scale
+
+The email templates now provide a cohesive, professional experience that perfectly aligns with the Thirstee app's design system while maintaining the rebellious, fun brand personality! 🤘
+
+---
+
 ## 📱 Mobile Tag Pills & Button System - COMPLETED ✅
 
 ### 🎯 **Mobile Tag Pill Optimization:**

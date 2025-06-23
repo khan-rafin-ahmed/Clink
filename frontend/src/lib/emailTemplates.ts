@@ -41,7 +41,7 @@ export interface CrewInvitationData {
 }
 
 /**
- * Base email template with Thirstee branding
+ * Base email template with Thirstee branding - Updated Design System
  */
 function getBaseTemplate(content: string, preheader?: string): string {
   return `
@@ -71,53 +71,54 @@ function getBaseTemplate(content: string, preheader?: string): string {
             outline: none;
             text-decoration: none;
         }
-        
-        /* Base styles */
+
+        /* Base styles - Updated Design System */
         body {
             margin: 0 !important;
             padding: 0 !important;
-            background-color: #0E0E10 !important;
+            background-color: #08090A !important;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #ffffff;
+            color: #FFFFFF;
         }
-        
+
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #0E0E10;
+            background-color: #08090A;
         }
-        
+
         .header {
-            background: linear-gradient(135deg, #FF7747 0%, #FFD37E 100%);
+            background-color: #08090A;
             padding: 30px 20px;
             text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        
+
         .logo {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
-            color: #000000;
+            color: #FFFFFF;
             text-decoration: none;
             text-shadow: none;
         }
-        
+
         .tagline {
             font-size: 14px;
-            color: #000000;
-            margin-top: 5px;
-            opacity: 0.8;
+            color: #B3B3B3;
+            margin-top: 8px;
+            opacity: 1;
         }
-        
+
         .content {
             padding: 40px 20px;
-            background-color: #1A1A1A;
+            background-color: #08090A;
         }
-        
+
         .footer {
             padding: 30px 20px;
-            background-color: #0E0E10;
+            background-color: #08090A;
             text-align: center;
-            border-top: 1px solid #333333;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
         .footer-text {
@@ -125,61 +126,95 @@ function getBaseTemplate(content: string, preheader?: string): string {
             color: #B3B3B3;
             line-height: 1.5;
         }
-        
-        .button {
-            display: inline-block;
-            padding: 15px 30px;
-            background-color: #FF7747;
-            color: #ffffff !important;
+
+        .footer-text a {
+            color: #00FFA3;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #FFFFFF;
+            color: #08090A !important;
+            text-decoration: none;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 15px;
             text-align: center;
-            margin: 10px 5px;
+            margin: 8px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: rgba(255,255,255,0.9);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #07080A;
+            color: #FFFFFF !important;
+            text-decoration: none;
+            border-radius: 9999px;
+            font-weight: 500;
+            font-size: 15px;
+            text-align: center;
+            margin: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255,255,255,0.03);
+            color: #FFFFFF !important;
         }
         
-        .button-secondary {
-            background-color: transparent;
-            border: 2px solid #FF7747;
-            color: #FF7747 !important;
+        .glass-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+            backdrop-filter: blur(10px);
         }
-        
-        .event-card {
-            background-color: #2A2A2A;
-            border: 1px solid #FF7747;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 20px 0;
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 16px;
         }
-        
-        .event-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #FF7747;
-            margin-bottom: 15px;
-        }
-        
-        .event-detail {
-            margin: 10px 0;
+
+        .card-detail {
+            margin: 12px 0;
             color: #B3B3B3;
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.6;
         }
-        
-        .event-detail strong {
-            color: #ffffff;
+
+        .card-detail strong {
+            color: #FFFFFF;
         }
-        
+
         .vibe-badge {
             display: inline-block;
-            background-color: #FFD37E;
-            color: #000000;
-            padding: 5px 12px;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.08);
+            color: #FFFFFF;
+            padding: 6px 12px;
+            border-radius: 9999px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 500;
             text-transform: uppercase;
-            margin: 10px 0;
+            margin: 12px 0;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         /* Mobile responsive */
@@ -190,10 +225,17 @@ function getBaseTemplate(content: string, preheader?: string): string {
             .content {
                 padding: 20px 15px !important;
             }
-            .button {
+            .btn-primary, .btn-secondary {
                 display: block !important;
                 width: 90% !important;
                 margin: 10px auto !important;
+            }
+            .glass-card {
+                padding: 16px !important;
+                margin: 16px 0 !important;
+            }
+            .card-title {
+                font-size: 18px !important;
             }
         }
     </style>
@@ -201,21 +243,20 @@ function getBaseTemplate(content: string, preheader?: string): string {
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">THIRSTEE</div>
-            <div class="tagline">Tap. Plan. Thirstee.</div>
+            <div class="logo">🤘 Thirstee</div>
+            <div class="tagline">Join the Crew!</div>
         </div>
-        
+
         <div class="content">
             ${content}
         </div>
-        
+
         <div class="footer">
             <div class="footer-text">
-                © 2025 Thirstee. Built by Roughin while drinking beers and raising hell. 🤘<br>
+                © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin<br>
                 <br>
-                This email was sent because you're part of the Thirstee community.<br>
-                <a href="#" style="color: #FF7747;">Unsubscribe</a> | 
-                <a href="#" style="color: #FF7747;">Update Preferences</a>
+                <a href="#" class="footer-text">Unsubscribe</a> |
+                <a href="#" class="footer-text">Update Preferences</a>
             </div>
         </div>
     </div>
@@ -238,47 +279,46 @@ export function generateEventInvitationEmail(data: EventInvitationData): { html:
   }[data.vibe || 'casual'] || '🍺'
 
   const content = `
-    <h1 style="color: #FF7747; font-size: 28px; margin-bottom: 20px;">
-      ${vibeEmoji} You're Invited to Raise Hell!
+    <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">
+      🥂 You're Invited to Raise Hell!
     </h1>
-    
-    <p style="font-size: 16px; color: #ffffff; line-height: 1.6;">
-      <strong>${data.inviterName}</strong> has invited you to join their drinking session. 
-      Time to gather the crew and make some memories!
+
+    <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;">
+      <strong style="color: #FFFFFF;">${data.inviterName}</strong> invited you to a Session
     </p>
-    
-    <div class="event-card">
-      <div class="event-title">${data.eventTitle}</div>
-      
-      ${data.vibe ? `<div class="vibe-badge">${data.vibe} vibes</div>` : ''}
-      
-      <div class="event-detail">
-        <strong>📅 When:</strong> ${data.eventDate} at ${data.eventTime}
+
+    <div class="glass-card">
+      <div class="card-title">${data.eventTitle}</div>
+
+      ${data.vibe ? `<div class="vibe-badge">${vibeEmoji} ${data.vibe.toUpperCase()} VIBES</div>` : ''}
+
+      <div class="card-detail">
+        <strong>📅 Date:</strong> ${data.eventDate} at ${data.eventTime}
       </div>
-      
-      <div class="event-detail">
-        <strong>📍 Where:</strong> ${data.eventLocation}
+
+      <div class="card-detail">
+        <strong>📍 Location:</strong> ${data.eventLocation || 'To be announced'}
       </div>
-      
+
       ${data.eventDescription ? `
-        <div class="event-detail" style="margin-top: 15px;">
+        <div class="card-detail" style="margin-top: 16px;">
           <strong>📝 Details:</strong><br>
           ${data.eventDescription}
         </div>
       ` : ''}
     </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.acceptUrl}" class="button">
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.acceptUrl}" class="btn-primary">
         🍺 Accept Invitation
       </a>
-      <a href="${data.declineUrl}" class="button button-secondary">
+      <a href="${data.declineUrl}" class="btn-secondary">
         😔 Can't Make It
       </a>
     </div>
-    
+
     <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
-      <a href="${data.eventUrl}" style="color: #FF7747;">View full event details</a>
+      <a href="${data.eventUrl}" style="color: #00FFA3; text-decoration: underline;">View full event details</a>
     </p>
   `
 
@@ -310,56 +350,56 @@ View Details: ${data.eventUrl}
  */
 export function generateEventReminderEmail(data: EventReminderData): { html: string; text: string; subject: string } {
   const content = `
-    <h1 style="color: #FF7747; font-size: 28px; margin-bottom: 20px;">
+    <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">
       ⏰ Session Starting Soon!
     </h1>
-    
-    <p style="font-size: 16px; color: #ffffff; line-height: 1.6;">
-      Don't forget! Your drinking session is starting in 1 hour. 
+
+    <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;">
+      Don't forget! Your drinking session is starting in 1 hour.
       Time to get ready and head out! 🍺
     </p>
-    
-    <div class="event-card">
-      <div class="event-title">${data.eventTitle}</div>
-      
-      <div class="event-detail">
+
+    <div class="glass-card">
+      <div class="card-title">${data.eventTitle}</div>
+
+      <div class="card-detail">
         <strong>📅 When:</strong> ${data.eventDate} at ${data.eventTime}
       </div>
-      
-      <div class="event-detail">
+
+      <div class="card-detail">
         <strong>📍 Where:</strong> ${data.eventLocation}
       </div>
-      
-      <div class="event-detail">
+
+      <div class="card-detail">
         <strong>👥 Who's Going:</strong> ${data.attendeeCount} people (including you!)
       </div>
-      
-      <div class="event-detail">
+
+      <div class="card-detail">
         <strong>🎯 Host:</strong> ${data.hostName}
       </div>
-      
+
       ${data.eventDescription ? `
-        <div class="event-detail" style="margin-top: 15px;">
+        <div class="card-detail" style="margin-top: 16px;">
           <strong>📝 Details:</strong><br>
           ${data.eventDescription}
         </div>
       ` : ''}
     </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.eventUrl}" class="button">
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.eventUrl}" class="btn-primary">
         🍺 View Event Details
       </a>
       ${data.mapUrl ? `
-        <a href="${data.mapUrl}" class="button button-secondary">
+        <a href="${data.mapUrl}" class="btn-secondary">
           🗺️ Get Directions
         </a>
       ` : ''}
     </div>
-    
-    <div style="background-color: #2A2A2A; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="color: #FFD37E; margin-top: 0;">📱 Quick Tips:</h3>
-      <ul style="color: #B3B3B3; font-size: 14px; line-height: 1.6;">
+
+    <div class="glass-card" style="margin-top: 24px;">
+      <h3 style="color: #FFFFFF; margin-top: 0; font-size: 16px; font-weight: 600;">📱 Quick Tips:</h3>
+      <ul style="color: #B3B3B3; font-size: 14px; line-height: 1.6; margin: 0; padding-left: 20px;">
         <li>Bring your ID and some cash</li>
         <li>Stay hydrated and drink responsibly</li>
         <li>Let someone know where you're going</li>
@@ -402,42 +442,42 @@ Quick Tips:
  * Crew Invitation Email Template
  */
 export function generateCrewInvitationEmail(data: CrewInvitationData): { html: string; text: string; subject: string } {
+  const memberCountText = data.memberCount === 0
+    ? '👤 Be the first to join!'
+    : `👥 ${data.memberCount} member${data.memberCount !== 1 ? 's' : ''}`
+
   const content = `
-    <h1 style="color: #FF7747; font-size: 28px; margin-bottom: 20px;">
-      🤘 Join the Crew!
+    <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">
+      🍻 Crew Invitation
     </h1>
 
-    <p style="font-size: 16px; color: #ffffff; line-height: 1.6;">
-      <strong>${data.inviterName}</strong> has invited you to join their crew on Thirstee.
-      Time to connect with fellow hell-raisers and never drink alone!
+    <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;">
+      <strong style="color: #FFFFFF;">${data.inviterName}</strong> has invited you to join their crew
     </p>
 
-    <div class="event-card">
-      <div class="event-title">${data.crewName}</div>
+    <div class="glass-card">
+      <div class="card-title" style="color: #FFFFFF;">${data.crewName}</div>
 
-      <div class="event-detail">
-        <strong>👥 Members:</strong> ${data.memberCount} crew member${data.memberCount !== 1 ? 's' : ''}
+      <div class="card-detail">
+        ${memberCountText}
       </div>
 
       ${data.crewDescription ? `
-        <div class="event-detail" style="margin-top: 15px;">
-          <strong>📝 About:</strong><br>
+        <div class="card-detail" style="margin-top: 16px;">
+          <strong>📝 Description:</strong><br>
           ${data.crewDescription}
         </div>
       ` : ''}
     </div>
 
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.acceptUrl}" class="button">
-        🤘 Join the Crew
-      </a>
-      <a href="${data.declineUrl}" class="button button-secondary">
-        😔 Not Interested
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.acceptUrl}" class="btn-primary">
+        🤘 View Invitation
       </a>
     </div>
 
     <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
-      <a href="${data.crewUrl}" style="color: #FF7747;">View crew details</a>
+      If button doesn't work: <a href="${data.crewUrl}" style="color: #00FFA3; text-decoration: underline;">View in browser</a>
     </p>
   `
 
