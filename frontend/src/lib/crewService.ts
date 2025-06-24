@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Crew, CrewMember, CreateCrewData } from '@/types'
+import { generateTokenizedUrls } from './invitationTokenService'
 
 // Disable debug logging to reduce console noise
 const DEBUG_LOGGING = false
@@ -327,7 +328,7 @@ export async function getCrewPendingRequests(crewId: string): Promise<CrewMember
 }
 
 // Helper function to send crew invitation email
-async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inviterId: string): Promise<void> {
+async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inviterId: string, invitationId: string): Promise<void> {
   try {
     console.log('📧 Sending crew invitation email:', { crewId, userId, inviterId })
 
@@ -405,7 +406,17 @@ async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inv
       .eq('crew_id', crewId)
       .eq('status', 'accepted')
 
-    console.log(`📧 Sending crew invitation email to ${invitedUser.email} (${invitedUser.display_name})`)
+    // Generate secure tokenized URLs for invitation actions
+    let acceptUrl, declineUrl
+    try {
+      const urls = await generateTokenizedUrls('crew', invitationId, userId)
+      acceptUrl = urls.acceptUrl
+      declineUrl = urls.declineUrl
+    } catch (error) {
+      // Fallback to basic URLs if token generation fails
+      acceptUrl = `https://thirstee.app/crew/${crew.id}`
+      declineUrl = `https://thirstee.app/crew/${crew.id}`
+    }
 
     // Prepare email data
     const emailData = {
@@ -413,11 +424,14 @@ async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inv
       inviterName: inviter.display_name,
       crewDescription: crew.description || '',
       memberCount: memberCount || 0,
-      acceptUrl: `${window.location.origin}/crew/${crew.id}`
+      acceptUrl,
+      declineUrl,
+      crewUrl: `https://thirstee.app/crew/${crew.id}`
     }
 
+
     // Call Edge Function directly
-    const { data, error } = await supabase.functions.invoke('send-email', {
+    const { error } = await supabase.functions.invoke('send-email', {
       body: {
         to: invitedUser.email,
         subject: `🤘 You're invited to join ${crew.name}`,
@@ -426,17 +440,12 @@ async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inv
       }
     })
 
-    console.log('📧 Email function response:', { data, error })
-
     if (error) {
-      console.error('❌ Failed to send crew invitation email:', error)
-    } else {
-      console.log('✅ Crew invitation email sent successfully to:', invitedUser.email)
-      console.log('📧 Email response:', data)
+      throw new Error('Failed to send crew invitation email')
     }
 
   } catch (error) {
-    console.error('❌ Error in crew invitation email function:', error)
+    // Silently fail email sending to not break the invitation process
   }
 }
 
@@ -445,7 +454,7 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase
+  const { data: invitation, error } = await supabase
     .from('crew_members')
     .insert({
       crew_id: crewId,
@@ -453,12 +462,14 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
       status: 'pending',
       invited_by: user.id
     })
+    .select()
+    .single()
 
   if (error) throw error
 
-  // Send email invitation
+  // Send email invitation with the invitation ID
   try {
-    await sendCrewInvitationEmailToUser(crewId, userId, user.id)
+    await sendCrewInvitationEmailToUser(crewId, userId, user.id, invitation.id)
   } catch (emailError) {
     console.error('⚠️ Failed to send crew invitation email:', emailError)
     // Don't fail the whole operation if email fails

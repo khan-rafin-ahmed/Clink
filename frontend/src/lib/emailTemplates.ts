@@ -583,7 +583,10 @@ export function generateCrewInvitationEmail(data: CrewInvitationData): { html: s
 
     <div style="text-align: center; margin: 32px 0;">
       <a href="${data.acceptUrl}" class="btn-primary">
-        🤘 View Invitation
+        🤘 Join Crew
+      </a>
+      <a href="${data.declineUrl}" class="btn-secondary">
+        😔 Not Interested
       </a>
     </div>
 

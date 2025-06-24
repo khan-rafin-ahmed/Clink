@@ -30,6 +30,8 @@ import { TestEmailSystem } from './pages/TestEmailSystem'
 import { EmailDebugPage } from './pages/EmailDebugPage'
 import { TestJoinButton } from './pages/TestJoinButton'
 import { LiveBadgeDemo } from './components/LiveBadgeDemo'
+import { InvitationAction } from './pages/InvitationAction'
+import { TestInvitationTokens } from './pages/TestInvitationTokens'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -94,6 +96,9 @@ function App() {
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />
 
+              {/* Invitation action routes */}
+              <Route path="/invitation/:type/:action/:token" element={<InvitationAction />} />
+
               {/* Test route for rating components */}
               <Route path="/test-ratings" element={<TestRatings />} />
 
@@ -129,6 +134,9 @@ function App() {
 
               {/* Test route for LiveBadge component */}
               <Route path="/test-live-badge" element={<LiveBadgeDemo />} />
+
+              {/* Test route for invitation tokens */}
+              <Route path="/test-invitation-tokens" element={<TestInvitationTokens />} />
             </Routes>
           </main>
           <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">

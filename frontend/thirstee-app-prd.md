@@ -486,6 +486,48 @@ if (errors.length > 0) {
 - **Files Modified**: `notificationService.ts`, notification trigger functions, RLS policies
 - **Database**: Added migration `fix_rsvp_notifications_and_profile_events.sql`
 
+#### **Dynamic Email Invitation Action Buttons (2025-06-24)**
+- **Issue**: Email invitations required users to manually navigate to app and find invitations to respond
+- **Root Cause**: Static email templates with basic links instead of direct action buttons
+- **Solution**: Implemented secure, tokenized URLs for direct email actions
+- **New Features**:
+  - Secure, time-limited tokens for email invitation actions (48-hour expiration)
+  - Direct "Accept" and "Decline" buttons in both event and crew invitation emails
+  - Token-based API endpoints for processing invitation actions without authentication
+  - Automatic redirection to relevant pages after action completion
+  - Comprehensive error handling for expired/invalid tokens
+  - Token cleanup system for security and database maintenance
+- **Security Implementation**:
+  - UUID-based tokens with type and action prefixes for security
+  - Time-limited tokens (48 hours) with automatic expiration
+  - One-time use tokens marked as used after action
+  - User validation to ensure tokens match intended recipients
+  - No sensitive data exposed in URLs
+- **Database Changes**:
+  - New `invitation_tokens` table with secure token storage
+  - `process_event_invitation_token()` function for event actions
+  - `process_crew_invitation_token()` function for crew actions
+  - `cleanup_expired_invitation_tokens()` function for maintenance
+  - RLS policies for secure token access
+- **Email Template Updates**:
+  - Updated event invitation emails with Accept/Decline buttons
+  - Updated crew invitation emails with Join/Decline buttons
+  - Improved button styling and mobile responsiveness
+  - Clear action messaging and error handling
+- **Frontend Components**:
+  - `InvitationAction` component for handling token-based actions
+  - Success/error pages with proper redirections
+  - Test page for invitation token system validation
+- **API Endpoints**:
+  - `/invitation/event/accept/{token}` - Accept event invitation
+  - `/invitation/event/decline/{token}` - Decline event invitation
+  - `/invitation/crew/accept/{token}` - Accept crew invitation
+  - `/invitation/crew/decline/{token}` - Decline crew invitation
+- **Files Created**: `invitationTokenService.ts`, `InvitationAction.tsx`, `TestInvitationTokens.tsx`
+- **Files Modified**: `eventInvitationService.ts`, `crewService.ts`, `emailTemplates.ts`, `App.tsx`
+- **Database**: Added migration `20250624_invitation_tokens_system.sql`
+- **Expected Results**: Users can accept/decline invitations directly from email with secure, one-click actions
+
 ---
 
 ## **🎯 IMPLEMENTATION STATUS: ALL 7 PRIORITIES COMPLETED ✅**
@@ -531,6 +573,7 @@ if (errors.length > 0) {
 - **Meta Tags Testing:** `/test-meta-tags` - Social media preview validation
 - **Email System Testing:** `/test-email-system` - Email templates and calendar integration
 - **User Search Debug:** `/debug-user-search` - Search functionality investigation
+- **Invitation Tokens Testing:** `/test-invitation-tokens` - Token generation and validation system
 
 ### **📁 Key Files Created**
 - `metaTagService.ts` - Social media optimization
@@ -652,6 +695,20 @@ All features are implemented, tested, and documented. The Thirstee app now has:
 | `user_id`     | `uuid`                           | NOT NULL, FK → `auth.users(id)`                                                   |
 | `reaction`    | `text`                           | CHECK in (`🍻`, `🙌`, `🤘`, `🥴`, `😂`, `❤️`, `🔥`), NOT NULL                        |
 | `created_at`  | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
+
+### `public.invitation_tokens`
+| Column            | Type                             | Constraints                                                                       |
+|-------------------|----------------------------------|-----------------------------------------------------------------------------------|
+| `id`              | `uuid`                           | PRIMARY KEY, NOT NULL, DEFAULT `gen_random_uuid()`                                |
+| `token`           | `text`                           | NOT NULL, UNIQUE                                                                  |
+| `invitation_type` | `text`                           | NOT NULL, CHECK IN ('event', 'crew')                                             |
+| `invitation_id`   | `uuid`                           | NOT NULL                                                                          |
+| `action`          | `text`                           | NOT NULL, CHECK IN ('accept', 'decline')                                         |
+| `user_id`         | `uuid`                           | NOT NULL, FK → `auth.users(id)`                                                   |
+| `expires_at`      | `timestamp with time zone`       | NOT NULL                                                                          |
+| `used`            | `boolean`                        | DEFAULT `false`                                                                   |
+| `created_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
+| `updated_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 
 ### `public.event_invitations`
 | Column        | Type                             | Constraints                                                                       |

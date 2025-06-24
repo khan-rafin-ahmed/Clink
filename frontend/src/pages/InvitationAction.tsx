@@ -1,0 +1,234 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
+import { 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle, 
+  Calendar, 
+  Users, 
+  ArrowRight,
+  Loader2
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+interface InvitationActionProps {}
+
+interface ActionResult {
+  success: boolean
+  action?: 'accepted' | 'declined'
+  message: string
+  event_title?: string
+  event_slug?: string
+  crew_name?: string
+  crew_id?: string
+  redirect_url?: string
+  error?: string
+}
+
+export function InvitationAction({}: InvitationActionProps) {
+  const { type, action, token } = useParams<{
+    type: 'event' | 'crew'
+    action: 'accept' | 'decline'
+    token: string
+  }>()
+  
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [result, setResult] = useState<ActionResult | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
+
+  useEffect(() => {
+    if (!type || !action || !token) {
+      setResult({
+        success: false,
+        message: 'Invalid invitation link',
+        error: 'Missing required parameters'
+      })
+      setLoading(false)
+      return
+    }
+
+    processInvitationToken()
+  }, [type, action, token, user])
+
+  const processInvitationToken = async () => {
+    try {
+      setLoading(true)
+
+      let functionName: string
+      if (type === 'event') {
+        functionName = 'process_event_invitation_token'
+      } else if (type === 'crew') {
+        functionName = 'process_crew_invitation_token'
+      } else {
+        throw new Error('Invalid invitation type')
+      }
+
+      const { data, error } = await supabase.rpc(functionName, {
+        p_token: token,
+        p_user_id: user?.id || null
+      })
+
+      if (error) {
+        throw error
+      }
+
+      setResult(data)
+
+      // Show success/error toast
+      if (data.success) {
+        toast.success(data.message)
+      } else {
+        toast.error(data.error || 'Failed to process invitation')
+      }
+
+    } catch (error: any) {
+      setResult({
+        success: false,
+        message: 'Failed to process invitation',
+        error: error.message
+      })
+      toast.error('Failed to process invitation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRedirect = async () => {
+    if (!result?.redirect_url) return
+    
+    setRedirecting(true)
+    
+    // Small delay for better UX
+    setTimeout(() => {
+      navigate(result.redirect_url!)
+    }, 1000)
+  }
+
+  const handleGoHome = () => {
+    navigate('/events')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background/80">
+        <Card className="w-full max-w-md mx-4 glass-card">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground mt-4">Processing invitation...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!result) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background/80">
+        <Card className="w-full max-w-md mx-4 glass-card">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="w-12 h-12 text-yellow-500 mb-4" />
+            <p className="text-muted-foreground">Something went wrong</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background/80 p-4">
+      <Card className="w-full max-w-md glass-card">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            {result.success ? (
+              result.action === 'accepted' ? (
+                <CheckCircle className="w-16 h-16 text-green-500" />
+              ) : (
+                <XCircle className="w-16 h-16 text-orange-500" />
+              )
+            ) : (
+              <AlertCircle className="w-16 h-16 text-red-500" />
+            )}
+          </div>
+          
+          <CardTitle className="text-xl">
+            {result.success ? (
+              result.action === 'accepted' ? (
+                type === 'event' ? 'Event Joined!' : 'Crew Joined!'
+              ) : (
+                type === 'event' ? 'Event Declined' : 'Crew Invitation Declined'
+              )
+            ) : (
+              'Invitation Error'
+            )}
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              {result.message}
+            </p>
+            
+            {(result.event_title || result.crew_name) && (
+              <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  {type === 'event' ? (
+                    <Calendar className="w-4 h-4" />
+                  ) : (
+                    <Users className="w-4 h-4" />
+                  )}
+                  <span className="font-medium">
+                    {result.event_title || result.crew_name}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {result.success && result.redirect_url && (
+              <Button 
+                onClick={handleRedirect}
+                disabled={redirecting}
+                className="w-full"
+              >
+                {redirecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Redirecting...
+                  </>
+                ) : (
+                  <>
+                    {type === 'event' ? 'View Event' : 'View Crew'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={handleGoHome}
+              className="w-full"
+            >
+              {result.success ? 'Browse Events' : 'Go Back'}
+            </Button>
+          </div>
+
+          {!result.success && result.error && (
+            <div className="text-xs text-muted-foreground text-center">
+              Error: {result.error}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

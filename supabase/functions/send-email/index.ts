@@ -313,7 +313,8 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
     inviterName,
     crewDescription,
     memberCount,
-    acceptUrl
+    acceptUrl,
+    declineUrl
   } = data
 
   const memberCountText = memberCount === 0
@@ -438,6 +439,20 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
           text-align: center;
         }
 
+        .btn-secondary {
+          display: inline-block;
+          background-color: transparent !important;
+          color: #B3B3B3 !important;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 9999px;
+          font-weight: 600;
+          font-size: 15px;
+          margin: 8px;
+          border: 1px solid rgba(179, 179, 179, 0.3) !important;
+          text-align: center;
+        }
+
         .footer {
           text-align: center;
           color: #B3B3B3 !important;
@@ -477,7 +492,7 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
             font-size: 18px !important;
           }
 
-          .btn-primary {
+          .btn-primary, .btn-secondary {
             display: block !important;
             width: 90% !important;
             margin: 10px auto !important;
@@ -528,7 +543,8 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
           </div>
 
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${acceptUrl}" class="btn-primary">🤘 View Invitation</a>
+            <a href="${acceptUrl}" class="btn-primary">🤘 Join Crew</a>
+            <a href="${declineUrl}" class="btn-secondary">😔 Not Interested</a>
           </div>
 
           <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
@@ -553,8 +569,8 @@ ${inviterName} has invited you to join "${crewName}"
 ${memberCountText}
 ${crewDescription ? `📝 Description: ${crewDescription}` : ''}
 
-Join: ${acceptUrl}
-View Details: ${acceptUrl}
+🤘 Join Crew: ${acceptUrl}
+😔 Not Interested: ${declineUrl}
 
 © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `
@@ -663,7 +679,16 @@ serve(async (req) => {
             type: 'text/html',
             value: emailHtml
           }
-        ]
+        ],
+        // CRITICAL: Disable click tracking to preserve tokenized URLs
+        tracking_settings: {
+          click_tracking: {
+            enable: false
+          },
+          open_tracking: {
+            enable: true
+          }
+        }
       })
     })
 

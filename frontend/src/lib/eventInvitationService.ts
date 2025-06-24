@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { sendEventInvitationEmail, type EventInvitationData } from './emailService'
+import { generateTokenizedUrls } from './invitationTokenService'
 import { toast } from 'sonner'
 
 /**
@@ -168,6 +169,18 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         hour12: true
       })
 
+      // Generate secure tokenized URLs for invitation actions
+      let acceptUrl, declineUrl
+      try {
+        const urls = await generateTokenizedUrls('event', invitation.id, invitation.user_id)
+        acceptUrl = urls.acceptUrl
+        declineUrl = urls.declineUrl
+      } catch (error) {
+        // Fallback to basic URLs if token generation fails
+        acceptUrl = `https://thirstee.app/event/${event.slug || event.id}`
+        declineUrl = `https://thirstee.app/event/${event.slug || event.id}`
+      }
+
       const emailData: EventInvitationData = {
         eventTitle: event.title,
         eventDate: eventDate,
@@ -175,9 +188,9 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         eventLocation: event.location,
         inviterName: inviter.display_name,
         eventDescription: event.notes || undefined,
-        acceptUrl: `${window.location.origin}/event/${event.id}/accept/${invitation.id}`,
-        declineUrl: `${window.location.origin}/event/${event.id}/decline/${invitation.id}`,
-        eventUrl: `${window.location.origin}/event/${event.id}`,
+        acceptUrl,
+        declineUrl,
+        eventUrl: `https://thirstee.app/event/${event.slug || event.id}`,
         vibe: event.vibe || 'casual'
       }
 
