@@ -256,8 +256,8 @@ export const notificationTriggers = {
     await notification.createNotification({
       user_id: hostId,
       type: 'event_rsvp',
-      title: `🍺 ${userName} just joined your party!`,
-      message: `Someone new is ready to raise hell at "${eventTitle}"`,
+      title: `🍺 ${userName} joined your session`,
+      message: `${userName} has joined "${eventTitle}" and is ready to drink!`,
       data: { eventId, eventTitle, rsvpUserId },
       read: false
     })
@@ -273,8 +273,8 @@ export const notificationTriggers = {
       await notification.createNotification({
         user_id: userId,
         type: 'event_reminder',
-        title: "It's go-time. Grab your pants.",
-        message: `"${eventTitle}" starts in 30 minutes!`,
+        title: "Your session starts in 30 minutes!",
+        message: `"${eventTitle}" is starting soon - time to get ready!`,
         data: { eventId, eventTitle },
         read: false
       })

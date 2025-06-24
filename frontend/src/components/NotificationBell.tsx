@@ -217,7 +217,15 @@ export function NotificationBell() {
           )}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="max-w-[340px] p-0 bg-[#0E0E10]/90 backdrop-blur-md border-white/8 rounded-2xl shadow-xl" align="end">
+      <PopoverContent
+        className={cn(
+          "max-w-[340px] p-0 border-white/8 shadow-xl shadow-dark-900/50 rounded-2xl",
+          "bg-[#1A1A1A]",
+          notifications.length > 0 && "md:min-h-[320px]",
+          notifications.length > 0 && "max-md:min-h-[260px]"
+        )}
+        align="end"
+      >
         <div className="border-b border-white/10 px-4 py-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-white">Notifications</h3>
@@ -234,17 +242,20 @@ export function NotificationBell() {
           </div>
         </div>
 
-        <ScrollArea className="h-80">
+        <ScrollArea className={cn(
+          "overflow-y-auto max-h-[70vh]",
+          notifications.length === 0 ? "" : "md:min-h-[280px] max-md:min-h-[220px]"
+        )}>
           {isLoading ? (
             <div className="flex items-center justify-center px-4 py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center px-4 py-4 text-gray-400 space-y-4">
-              <Bell className="w-8 h-8 mx-auto opacity-50" />
-              <div>
-                <p className="text-sm">No notifications yet</p>
-                <p className="text-xs">We'll let you know when something happens!</p>
+            <div className="text-center px-6 py-8 text-gray-400 space-y-4">
+              <Bell className="w-12 h-12 mx-auto opacity-50" />
+              <div className="space-y-2">
+                <p className="text-base font-medium">No notifications yet</p>
+                <p className="text-sm opacity-75">We'll let you know when something happens!</p>
               </div>
             </div>
           ) : (
@@ -285,7 +296,7 @@ export function NotificationBell() {
 
                       {/* Crew invitation actions */}
                       {notification.type === 'crew_invitation' && !notification.read && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
-                        <div className="space-y-2 mt-3">
+                        <div className="space-y-3 mt-3">
                           {/* View Crew Details Button */}
                           {notification.data?.crew_id && (
                             <Button
@@ -296,7 +307,7 @@ export function NotificationBell() {
                                 window.location.href = `/crew/${notification.data?.crew_id}`
                                 setIsOpen(false)
                               }}
-                              className="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10"
+                              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                             >
                               <Eye className="w-3 h-3" />
                               View Crew Details
@@ -304,7 +315,7 @@ export function NotificationBell() {
                           )}
 
                           {/* Accept/Decline Buttons */}
-                          <div className="flex flex-row gap-2">
+                          <div className="flex flex-col gap-1.5 md:gap-2">
                             <Button
                               size="sm"
                               onClick={(e) => {
@@ -316,14 +327,14 @@ export function NotificationBell() {
                                   'accepted'
                                 )
                               }}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-white text-black hover:bg-gray-100 flex-1"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                             >
                               <Check className="w-3 h-3" />
                               Join Crew
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleCrewInvitationResponse(
@@ -333,7 +344,7 @@ export function NotificationBell() {
                                   'declined'
                                 )
                               }}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10 flex-1"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                             >
                               <X className="w-3 h-3" />
                               Decline
@@ -356,14 +367,14 @@ export function NotificationBell() {
                               }
                               setIsOpen(false)
                             }}
-                            className="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10"
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                           >
                             <Eye className="w-3 h-3" />
                             View Details
                           </Button>
 
                           {/* Accept/Decline Buttons */}
-                          <div className="flex flex-row gap-2">
+                          <div className="flex flex-col gap-1.5 md:gap-2">
                             <Button
                               size="sm"
                               onClick={(e) => {
@@ -374,14 +385,14 @@ export function NotificationBell() {
                                   'accepted'
                                 )
                               }}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-green-600 text-white hover:bg-green-700 flex-1"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                             >
                               <Check className="w-3 h-3" />
                               Accept
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleEventInvitationResponse(
@@ -390,7 +401,7 @@ export function NotificationBell() {
                                   'declined'
                                 )
                               }}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-red-500/50 text-red-400 hover:bg-red-500/10 flex-1"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                             >
                               <X className="w-3 h-3" />
                               Decline
@@ -409,7 +420,7 @@ export function NotificationBell() {
                               window.location.href = `/event/${notification.data?.event_id}`
                               setIsOpen(false)
                             }}
-                            className="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)]"
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)] h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                           >
                             <Eye className="w-3 h-3" />
                             View Event

@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { EventWithRsvps } from '@/types'
-import { calculateAttendeeCount, getLocationDisplayName, formatEventTiming, getEventTenseText } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName, formatEventTiming, getEventTenseText, getEventTimingStatus } from '@/lib/eventUtils'
 import { getEventRatingStats, getUserEventRating, canUserRateEvent, hasEventConcluded } from '@/lib/eventRatingService'
 import { getEventDetails, getEventBySlug } from '@/lib/eventService'
 import { useEventMetaTags } from '@/hooks/useMetaTags'
@@ -556,10 +556,9 @@ export function EventDetail() {
     }
   })
 
-  const now = new Date()
-  const eventDate = new Date(event.date_time)
-  const diffHours = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60)
-  const isPastEvent = diffHours < 0
+  // Use proper event timing logic that accounts for duration
+  const eventTimingStatus = getEventTimingStatus(event.date_time, event.end_time, event.duration_type)
+  const isPastEvent = eventTimingStatus === 'past'
 
   const userAttended =
     user &&

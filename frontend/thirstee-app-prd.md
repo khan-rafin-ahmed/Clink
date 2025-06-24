@@ -471,6 +471,21 @@ if (errors.length > 0) {
 - **Files Modified**: `crewService.ts`, `eventInvitationService.ts`, database schema
 - **Database**: Email sync migration and verification scripts
 
+#### **RSVP Notifications and Profile Events Fix (2025-06-24)**
+- **Issue**: Missing notifications when users join events directly via shared links, and events not showing in user profiles
+- **Root Cause**: No database trigger on RSVPs table and RLS policy excluding RSVP users from private events
+- **Solution**: Added RSVP notification trigger and fixed RLS policies
+- **New Features**:
+  - Automatic notifications to event hosts when someone joins their event
+  - Clear, specific notification messages instead of vague "ready to raise hell" language
+  - Private events now visible in user profiles when joined via shared link
+- **Technical Implementation**:
+  - Added `handle_rsvp_notification()` trigger function on `rsvps` table
+  - Updated RLS policy for events to include users who have RSVP'd to private events
+  - Improved notification message clarity across all notification types
+- **Files Modified**: `notificationService.ts`, notification trigger functions, RLS policies
+- **Database**: Added migration `fix_rsvp_notifications_and_profile_events.sql`
+
 ---
 
 ## **🎯 IMPLEMENTATION STATUS: ALL 7 PRIORITIES COMPLETED ✅**
