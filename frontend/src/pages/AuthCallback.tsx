@@ -188,9 +188,8 @@ export function AuthCallback() {
             navigate('/profile')
           }, 1000)
 
-          // Clean up listener after 10 seconds if nothing happens
+          // Clean up after 10 seconds if nothing happens
           setTimeout(() => {
-            authListener.subscription.unsubscribe()
             navigate('/login?error=magic_link_timeout')
           }, 10000)
         }

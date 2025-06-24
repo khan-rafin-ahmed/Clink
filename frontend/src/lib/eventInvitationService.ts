@@ -280,7 +280,7 @@ export async function sendEventInvitationsToCrew(
         console.log('📧 Calling sendEventInvitationEmails with:', { eventId, inviterId: user.id })
         await sendEventInvitationEmails(eventId, user.id)
         console.log('✅ Email invitations sent successfully')
-      } catch (emailError) {
+      } catch (emailError: any) {
         console.error('❌ Email invitation error:', emailError)
         // Don't fail the whole operation but log the error clearly
         console.error('❌ Email error details:', {
@@ -288,7 +288,7 @@ export async function sendEventInvitationsToCrew(
           userId: user.id,
           invitedCount,
           error: emailError,
-          errorStack: emailError.stack
+          errorStack: emailError?.stack
         })
       }
     } else {

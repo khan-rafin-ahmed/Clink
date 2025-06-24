@@ -8,6 +8,9 @@ import {
   type CrewInvitationData
 } from './emailTemplates'
 
+// Re-export types for external use
+export type { EventInvitationData, EventReminderData, CrewInvitationData }
+
 /**
  * Email Service for Thirstee App
  * Handles sending emails via Supabase Edge Functions
