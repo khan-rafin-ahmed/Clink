@@ -42,6 +42,7 @@ export interface CrewInvitationData {
 
 /**
  * Base email template with Thirstee branding - Updated Design System
+ * Enhanced for mobile email client compatibility
  */
 function getBaseTemplate(content: string, preheader?: string): string {
   return `
@@ -51,10 +52,25 @@ function getBaseTemplate(content: string, preheader?: string): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="format-detection" content="date=no">
+    <meta name="format-detection" content="address=no">
+    <meta name="format-detection" content="email=no">
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
     <title>Thirstee</title>
     ${preheader ? `<meta name="description" content="${preheader}">` : ''}
+    ${preheader ? `
+    <!--[if !mso]><!-->
+    <div style="display: none; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: transparent; opacity: 0;">
+        ${preheader}
+    </div>
+    <!--<![endif]-->` : ''}
     <style>
         /* Reset styles */
+        * {
+            box-sizing: border-box;
+        }
         body, table, td, p, a, li, blockquote {
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
@@ -62,6 +78,7 @@ function getBaseTemplate(content: string, preheader?: string): string {
         table, td {
             mso-table-lspace: 0pt;
             mso-table-rspace: 0pt;
+            border-collapse: collapse;
         }
         img {
             -ms-interpolation-mode: bicubic;
@@ -72,157 +89,183 @@ function getBaseTemplate(content: string, preheader?: string): string {
             text-decoration: none;
         }
 
-        /* Base styles - Updated Design System */
+        /* Base styles - Enhanced Mobile Support */
+        html {
+            background-color: #08090A !important;
+        }
         body {
             margin: 0 !important;
             padding: 0 !important;
             background-color: #08090A !important;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #FFFFFF !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Force dark background on all email clients */
+        .email-wrapper {
+            background-color: #08090A !important;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #08090A;
+            max-width: 600px !important;
+            margin: 0 auto !important;
+            background-color: #08090A !important;
+            width: 100% !important;
         }
 
         .header {
-            background-color: #08090A;
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background-color: #08090A !important;
+            padding: 30px 20px !important;
+            text-align: center !important;
+            border-bottom: 1px solid rgba(255,255,255,0.1) !important;
         }
 
         .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #FFFFFF;
-            text-decoration: none;
-            text-shadow: none;
+            font-size: 28px !important;
+            font-weight: bold !important;
+            color: #FFFFFF !important;
+            text-decoration: none !important;
+            text-shadow: none !important;
         }
 
         .tagline {
-            font-size: 14px;
-            color: #B3B3B3;
-            margin-top: 8px;
-            opacity: 1;
+            font-size: 14px !important;
+            color: #B3B3B3 !important;
+            margin-top: 8px !important;
+            opacity: 1 !important;
         }
 
         .content {
-            padding: 40px 20px;
-            background-color: #08090A;
+            padding: 40px 20px !important;
+            background-color: #08090A !important;
         }
 
         .footer {
-            padding: 30px 20px;
-            background-color: #08090A;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 30px 20px !important;
+            background-color: #08090A !important;
+            text-align: center !important;
+            border-top: 1px solid rgba(255,255,255,0.1) !important;
         }
-        
+
         .footer-text {
-            font-size: 12px;
-            color: #B3B3B3;
-            line-height: 1.5;
+            font-size: 12px !important;
+            color: #B3B3B3 !important;
+            line-height: 1.5 !important;
         }
 
         .footer-text a {
-            color: #00FFA3;
-            text-decoration: none;
+            color: #00FFA3 !important;
+            text-decoration: none !important;
         }
 
         .footer-text a:hover {
-            text-decoration: underline;
+            text-decoration: underline !important;
         }
 
         .btn-primary {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #FFFFFF;
+            display: inline-block !important;
+            padding: 12px 24px !important;
+            background-color: #FFFFFF !important;
             color: #08090A !important;
-            text-decoration: none;
-            border-radius: 9999px;
-            font-weight: 600;
-            font-size: 15px;
-            text-align: center;
-            margin: 8px;
-            border: none;
+            text-decoration: none !important;
+            border-radius: 9999px !important;
+            font-weight: 600 !important;
+            font-size: 15px !important;
+            text-align: center !important;
+            margin: 8px !important;
+            border: none !important;
             transition: all 0.2s ease;
         }
 
         .btn-primary:hover {
-            background-color: rgba(255,255,255,0.9);
+            background-color: rgba(255,255,255,0.9) !important;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(255,255,255,0.2);
         }
 
         .btn-secondary {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #07080A;
+            display: inline-block !important;
+            padding: 12px 24px !important;
+            background-color: #07080A !important;
             color: #FFFFFF !important;
-            text-decoration: none;
-            border-radius: 9999px;
-            font-weight: 500;
-            font-size: 15px;
-            text-align: center;
-            margin: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
+            text-decoration: none !important;
+            border-radius: 9999px !important;
+            font-weight: 500 !important;
+            font-size: 15px !important;
+            text-align: center !important;
+            margin: 8px !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
             transition: all 0.2s ease;
         }
 
         .btn-secondary:hover {
-            background-color: rgba(255,255,255,0.03);
+            background-color: rgba(255,255,255,0.03) !important;
             color: #FFFFFF !important;
         }
-        
+
         .glass-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 24px;
-            margin: 24px 0;
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 16px !important;
+            padding: 24px !important;
+            margin: 24px 0 !important;
             backdrop-filter: blur(10px);
         }
 
         .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #FFFFFF;
-            margin-bottom: 16px;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            color: #FFFFFF !important;
+            margin-bottom: 16px !important;
         }
 
         .card-detail {
-            margin: 12px 0;
-            color: #B3B3B3;
-            font-size: 15px;
-            line-height: 1.6;
+            margin: 12px 0 !important;
+            color: #B3B3B3 !important;
+            font-size: 15px !important;
+            line-height: 1.6 !important;
         }
 
         .card-detail strong {
-            color: #FFFFFF;
+            color: #FFFFFF !important;
         }
 
         .vibe-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.08);
-            color: #FFFFFF;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-            margin: 12px 0;
-            border: 1px solid rgba(255,255,255,0.1);
+            display: inline-block !important;
+            background: rgba(255,255,255,0.08) !important;
+            color: #FFFFFF !important;
+            padding: 6px 12px !important;
+            border-radius: 9999px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            text-transform: uppercase !important;
+            margin: 12px 0 !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
         }
-        
-        /* Mobile responsive */
+
+        /* Mobile responsive and email client specific fixes */
         @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                background-color: #08090A !important;
+            }
             .email-container {
                 width: 100% !important;
+                background-color: #08090A !important;
+            }
+            .header {
+                background-color: #08090A !important;
+                padding: 20px 15px !important;
             }
             .content {
+                padding: 20px 15px !important;
+                background-color: #08090A !important;
+            }
+            .footer {
+                background-color: #08090A !important;
                 padding: 20px 15px !important;
             }
             .btn-primary, .btn-secondary {
@@ -233,33 +276,101 @@ function getBaseTemplate(content: string, preheader?: string): string {
             .glass-card {
                 padding: 16px !important;
                 margin: 16px 0 !important;
+                background: rgba(255,255,255,0.05) !important;
             }
             .card-title {
                 font-size: 18px !important;
             }
         }
+
+        /* Dark mode support for email clients that support it */
+        @media (prefers-color-scheme: dark) {
+            .email-wrapper {
+                background-color: #08090A !important;
+            }
+            .email-container {
+                background-color: #08090A !important;
+            }
+            .header, .content, .footer {
+                background-color: #08090A !important;
+            }
+        }
+
+        /* iOS Mail specific fixes */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            .email-wrapper {
+                background-color: #08090A !important;
+            }
+            body {
+                background-color: #08090A !important;
+            }
+        }
+
+        /* Gmail mobile app fixes */
+        u + .body .email-wrapper {
+            background-color: #08090A !important;
+        }
+
+        /* Outlook mobile fixes */
+        .ExternalClass {
+            width: 100% !important;
+            background-color: #08090A !important;
+        }
+        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {
+            line-height: 100% !important;
+            background-color: #08090A !important;
+        }
     </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="logo">🤘 Thirstee</div>
-            <div class="tagline">Join the Crew!</div>
-        </div>
+<body class="body" style="margin: 0 !important; padding: 0 !important; background-color: #08090A !important; color: #FFFFFF !important;">
+    <!--[if mso | IE]>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #08090A;">
+        <tr>
+            <td>
+    <![endif]-->
 
-        <div class="content">
-            ${content}
-        </div>
+    <div class="email-wrapper" style="background-color: #08090A !important; width: 100% !important; height: 100% !important;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #08090A !important;">
+            <tr>
+                <td align="center" style="background-color: #08090A !important;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="email-container" style="max-width: 600px !important; width: 100% !important; background-color: #08090A !important;">
+                        <!-- Header -->
+                        <tr>
+                            <td class="header" style="background-color: #08090A !important; padding: 30px 20px !important; text-align: center !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
+                                <div class="logo" style="font-size: 28px !important; font-weight: bold !important; color: #FFFFFF !important; text-decoration: none !important;">🤘 Thirstee</div>
+                                <div class="tagline" style="font-size: 14px !important; color: #B3B3B3 !important; margin-top: 8px !important;">Join the Crew!</div>
+                            </td>
+                        </tr>
 
-        <div class="footer">
-            <div class="footer-text">
-                © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin<br>
-                <br>
-                <a href="#" class="footer-text">Unsubscribe</a> |
-                <a href="#" class="footer-text">Update Preferences</a>
-            </div>
-        </div>
+                        <!-- Content -->
+                        <tr>
+                            <td class="content" style="padding: 40px 20px !important; background-color: #08090A !important;">
+                                ${content}
+                            </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                            <td class="footer" style="padding: 30px 20px !important; background-color: #08090A !important; text-align: center !important; border-top: 1px solid rgba(255,255,255,0.1) !important;">
+                                <div class="footer-text" style="font-size: 12px !important; color: #B3B3B3 !important; line-height: 1.5 !important;">
+                                    © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin<br>
+                                    <br>
+                                    <a href="#" style="color: #00FFA3 !important; text-decoration: none !important;">Unsubscribe</a> |
+                                    <a href="#" style="color: #00FFA3 !important; text-decoration: none !important;">Update Preferences</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
     </div>
+
+    <!--[if mso | IE]>
+            </td>
+        </tr>
+    </table>
+    <![endif]-->
 </body>
 </html>
   `.trim()

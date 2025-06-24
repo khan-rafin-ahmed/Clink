@@ -1,11 +1,10 @@
--- Fix email functions without requiring database-level settings
--- This approach uses hardcoded values instead of database settings
+-- Fix email URLs to point to thirstee.app instead of Supabase URLs
+-- This migration updates the email functions to use the correct app URLs
 
 -- ============================================================================
--- UPDATED EMAIL FUNCTIONS WITH HARDCODED VALUES
+-- UPDATE EVENT INVITATION EMAIL FUNCTION
 -- ============================================================================
 
--- Function to send event invitation emails (updated)
 CREATE OR REPLACE FUNCTION send_event_invitation_emails(
   p_event_id UUID,
   p_inviter_id UUID
@@ -41,7 +40,7 @@ BEGIN
   END IF;
 
   -- Get inviter details
-  SELECT up.display_name, au.email
+  SELECT up.display_name
   INTO inviter_record
   FROM user_profiles up
   JOIN auth.users au ON up.user_id = au.id
@@ -57,7 +56,7 @@ BEGIN
       AND au.email IS NOT NULL
   LOOP
     BEGIN
-      -- Prepare email data
+      -- Prepare email data with correct URLs
       email_data := jsonb_build_object(
         'event_title', event_record.title,
         'inviter_name', inviter_record.display_name,
@@ -70,7 +69,7 @@ BEGIN
         'eventUrl', format('https://thirstee.app/event/%s', event_record.id)
       );
 
-      -- Call the send-email edge function with hardcoded values
+      -- Call the send-email edge function
       PERFORM
         net.http_post(
           url := format('%s/functions/v1/send-email', supabase_url),
@@ -99,7 +98,10 @@ BEGIN
 END;
 $$;
 
--- Function to send crew invitation emails (updated)
+-- ============================================================================
+-- UPDATE CREW INVITATION EMAIL FUNCTION
+-- ============================================================================
+
 CREATE OR REPLACE FUNCTION send_crew_invitation_email(
   p_crew_id UUID,
   p_user_id UUID,
@@ -157,7 +159,7 @@ BEGIN
     WHERE crew_id = p_crew_id AND status = 'accepted';
   END;
 
-  -- Prepare email data
+  -- Prepare email data with correct URLs
   email_data := jsonb_build_object(
     'crewName', crew_record.name,
     'inviterName', inviter_record.display_name,
@@ -197,10 +199,14 @@ $$;
 GRANT EXECUTE ON FUNCTION send_event_invitation_emails(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION send_crew_invitation_email(UUID, UUID, UUID) TO authenticated;
 
+-- Add comments
+COMMENT ON FUNCTION send_event_invitation_emails IS 'Sends event invitation emails with correct thirstee.app URLs';
+COMMENT ON FUNCTION send_crew_invitation_email IS 'Sends crew invitation emails with correct thirstee.app URLs';
+
 -- ============================================================================
--- TEST THE FUNCTIONS
+-- VERIFICATION
 -- ============================================================================
 
-SELECT '🎉 Email functions updated with hardcoded credentials!' as status;
-SELECT 'Functions are now ready to send emails.' as message;
-SELECT 'Test by creating an event and inviting crew members.' as next_step;
+SELECT '🎉 Email URL fix migration completed!' as status;
+SELECT 'All email functions now use https://thirstee.app URLs' as message;
+SELECT 'Email links will now work correctly without HSTS issues' as result;

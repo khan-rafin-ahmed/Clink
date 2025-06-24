@@ -35,7 +35,7 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
     minute: '2-digit'
   })
 
-  const acceptUrl = `${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}/notifications`
+  const acceptUrl = `https://thirstee.app/notifications`
 
   const html = `
     <!DOCTYPE html>
@@ -45,56 +45,247 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>You're Invited to ${event_title}</title>
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #08090A; color: #FFFFFF; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 30px 20px; background-color: #08090A; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo { font-size: 28px; font-weight: bold; color: #FFFFFF; margin-bottom: 8px; }
-        .tagline { font-size: 14px; color: #B3B3B3; }
-        .content { background-color: #08090A; padding: 40px 20px; }
-        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 24px 0; backdrop-filter: blur(10px); }
-        .card-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px; }
-        .card-detail { margin: 12px 0; color: #B3B3B3; font-size: 15px; line-height: 1.6; }
-        .card-detail strong { color: #FFFFFF; }
-        .btn-primary { display: inline-block; background-color: #FFFFFF; color: #08090A; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; }
-        .btn-secondary { display: inline-block; background-color: #07080A; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        .footer { text-align: center; color: #B3B3B3; font-size: 12px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
-        .footer a { color: #00FFA3; text-decoration: none; }
+        /* Reset and base styles for email clients */
+        body, table, td, p, a, li, blockquote {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        table, td {
+          mso-table-lspace: 0pt;
+          mso-table-rspace: 0pt;
+        }
+        img {
+          -ms-interpolation-mode: bicubic;
+          border: 0;
+          height: auto;
+          line-height: 100%;
+          outline: none;
+          text-decoration: none;
+        }
+
+        /* Force dark background on all email clients */
+        body {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: #08090A !important;
+          color: #FFFFFF !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+        }
+
+        /* Wrapper table for email client compatibility */
+        .email-wrapper {
+          width: 100% !important;
+          background-color: #08090A !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #08090A !important;
+        }
+
+        .header {
+          text-align: center;
+          padding: 30px 20px;
+          background-color: #08090A !important;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFFFFF !important;
+          margin-bottom: 8px;
+        }
+
+        .tagline {
+          font-size: 14px;
+          color: #B3B3B3 !important;
+        }
+
+        .content {
+          background-color: #08090A !important;
+          padding: 40px 20px;
+        }
+
+        .glass-card {
+          background: rgba(255,255,255,0.05) !important;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 24px;
+          margin: 24px 0;
+        }
+
+        .card-title {
+          font-size: 20px;
+          font-weight: 600;
+          color: #FFFFFF !important;
+          margin-bottom: 16px;
+        }
+
+        .card-detail {
+          margin: 12px 0;
+          color: #B3B3B3 !important;
+          font-size: 15px;
+          line-height: 1.6;
+        }
+
+        .card-detail strong {
+          color: #FFFFFF !important;
+        }
+
+        .btn-primary {
+          display: inline-block;
+          background-color: #FFFFFF !important;
+          color: #08090A !important;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 9999px;
+          font-weight: 600;
+          font-size: 15px;
+          margin: 8px;
+          border: none;
+          text-align: center;
+        }
+
+        .btn-secondary {
+          display: inline-block;
+          background-color: #07080A !important;
+          color: #FFFFFF !important;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 9999px;
+          font-weight: 500;
+          font-size: 15px;
+          margin: 8px;
+          border: 1px solid rgba(255,255,255,0.1);
+          text-align: center;
+        }
+
+        .footer {
+          text-align: center;
+          color: #B3B3B3 !important;
+          font-size: 12px;
+          margin-top: 30px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          padding-top: 30px;
+          background-color: #08090A !important;
+        }
+
+        .footer a {
+          color: #00FFA3 !important;
+          text-decoration: none;
+        }
+
+        /* Mobile responsive styles */
+        @media only screen and (max-width: 600px) {
+          .container {
+            width: 100% !important;
+            padding: 15px !important;
+          }
+
+          .header {
+            padding: 20px 15px !important;
+          }
+
+          .content {
+            padding: 20px 15px !important;
+          }
+
+          .glass-card {
+            padding: 16px !important;
+            margin: 16px 0 !important;
+          }
+
+          .card-title {
+            font-size: 18px !important;
+          }
+
+          .btn-primary, .btn-secondary {
+            display: block !important;
+            width: 90% !important;
+            margin: 10px auto !important;
+            padding: 14px 20px !important;
+            font-size: 16px !important;
+          }
+
+          .logo {
+            font-size: 24px !important;
+          }
+
+          h1 {
+            font-size: 20px !important;
+          }
+        }
+
+        /* Dark mode support for email clients */
+        @media (prefers-color-scheme: dark) {
+          body {
+            background-color: #08090A !important;
+            color: #FFFFFF !important;
+          }
+        }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">🤘 Thirstee</div>
-          <div class="tagline">Tap. Plan. Thirstee.</div>
-        </div>
+      <!-- Wrapper table for email client compatibility -->
+      <table class="email-wrapper" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td align="center" style="background-color: #08090A !important; padding: 0;">
+            <table class="container" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #08090A !important;">
 
-        <div class="content">
-          <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center;">🥂 You're Invited to Raise Hell!</h1>
-          <p style="font-size: 16px; color: #B3B3B3; line-height: 1.6; text-align: center; margin-bottom: 24px;"><strong style="color: #FFFFFF;">${inviter_name}</strong> invited you to a Session</p>
+              <!-- Header -->
+              <tr>
+                <td class="header" style="text-align: center; padding: 30px 20px; background-color: #08090A !important; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                  <div class="logo" style="font-size: 28px; font-weight: bold; color: #FFFFFF !important; margin-bottom: 8px;">🤘 Thirstee</div>
+                  <div class="tagline" style="font-size: 14px; color: #B3B3B3 !important;">Tap. Plan. Thirstee.</div>
+                </td>
+              </tr>
 
-          <div class="glass-card">
-            <div class="card-title">${event_title}</div>
-            <div class="card-detail">
-              <strong>📅 Date:</strong> ${eventDate}
-            </div>
-            ${event_location ? `<div class="card-detail"><strong>📍 Location:</strong> ${event_location}</div>` : '<div class="card-detail"><strong>📍 Location:</strong> To be announced</div>'}
-          </div>
+              <!-- Content -->
+              <tr>
+                <td class="content" style="background-color: #08090A !important; padding: 40px 20px;">
+                  <h1 style="color: #FFFFFF !important; font-size: 24px; font-weight: 600; margin-bottom: 20px; text-align: center; margin-top: 0;">🥂 You're Invited to Raise Hell!</h1>
+                  <p style="font-size: 16px; color: #B3B3B3 !important; line-height: 1.6; text-align: center; margin-bottom: 24px;"><strong style="color: #FFFFFF !important;">${inviter_name}</strong> invited you to a Session</p>
 
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${acceptUrl}" class="btn-primary">🍺 Accept Invitation</a>
-            <a href="${acceptUrl}" class="btn-secondary">😔 Can't Make It</a>
-          </div>
+                  <div class="glass-card" style="background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 24px 0;">
+                    <div class="card-title" style="font-size: 20px; font-weight: 600; color: #FFFFFF !important; margin-bottom: 16px;">${event_title}</div>
+                    <div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;">
+                      <strong style="color: #FFFFFF !important;">📅 Date:</strong> ${eventDate}
+                    </div>
+                    ${event_location ? `<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> ${event_location}</div>` : '<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> To be announced</div>'}
+                  </div>
 
-          <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
-            <a href="${acceptUrl}" style="color: #00FFA3; text-decoration: underline;">View full event details</a>
-          </p>
-        </div>
+                  <div style="text-align: center; margin: 32px 0;">
+                    <a href="${acceptUrl}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; text-align: center;">🍺 Accept Invitation</a>
+                    <a href="${acceptUrl}" class="btn-secondary" style="display: inline-block; background-color: #07080A !important; color: #FFFFFF !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">😔 Can't Make It</a>
+                  </div>
 
-        <div class="footer">
-          <p>© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin</p>
-          <p><a href="#">Unsubscribe</a> | <a href="#">Update Preferences</a></p>
-        </div>
-      </div>
+                  <p style="font-size: 14px; color: #B3B3B3 !important; text-align: center;">
+                    <a href="${acceptUrl}" style="color: #00FFA3 !important; text-decoration: underline;">View full event details</a>
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td class="footer" style="text-align: center; color: #B3B3B3 !important; font-size: 12px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; background-color: #08090A !important; padding: 30px 20px;">
+                  <p style="margin: 0; color: #B3B3B3 !important;">© 2025 Thirstee. Built with 🍻 & 🤘 by Roughin</p>
+                  <p style="margin: 10px 0 0 0; color: #B3B3B3 !important;"><a href="#" style="color: #00FFA3 !important; text-decoration: none;">Unsubscribe</a> | <a href="#" style="color: #00FFA3 !important; text-decoration: none;">Update Preferences</a></p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `
@@ -137,19 +328,179 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Join ${crewName} Crew</title>
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #08090A; color: #FFFFFF; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 30px 20px; background-color: #08090A; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo { font-size: 28px; font-weight: bold; color: #FFFFFF; margin-bottom: 8px; }
-        .tagline { font-size: 14px; color: #B3B3B3; }
-        .content { background-color: #08090A; padding: 40px 20px; }
-        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 24px 0; backdrop-filter: blur(10px); }
-        .card-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 16px; }
-        .card-detail { margin: 12px 0; color: #B3B3B3; font-size: 15px; line-height: 1.6; }
-        .card-detail strong { color: #FFFFFF; }
-        .btn-primary { display: inline-block; background-color: #FFFFFF; color: #08090A; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; }
-        .footer { text-align: center; color: #B3B3B3; font-size: 12px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
-        .footer a { color: #00FFA3; text-decoration: none; }
+        /* Reset and base styles for email clients */
+        body, table, td, p, a, li, blockquote {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        table, td {
+          mso-table-lspace: 0pt;
+          mso-table-rspace: 0pt;
+        }
+        img {
+          -ms-interpolation-mode: bicubic;
+          border: 0;
+          height: auto;
+          line-height: 100%;
+          outline: none;
+          text-decoration: none;
+        }
+
+        /* Force dark background on all email clients */
+        body {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: #08090A !important;
+          color: #FFFFFF !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+        }
+
+        /* Wrapper table for email client compatibility */
+        .email-wrapper {
+          width: 100% !important;
+          background-color: #08090A !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #08090A !important;
+        }
+
+        .header {
+          text-align: center;
+          padding: 30px 20px;
+          background-color: #08090A !important;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFFFFF !important;
+          margin-bottom: 8px;
+        }
+
+        .tagline {
+          font-size: 14px;
+          color: #B3B3B3 !important;
+        }
+
+        .content {
+          background-color: #08090A !important;
+          padding: 40px 20px;
+        }
+
+        .glass-card {
+          background: rgba(255,255,255,0.05) !important;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 24px;
+          margin: 24px 0;
+        }
+
+        .card-title {
+          font-size: 20px;
+          font-weight: 600;
+          color: #FFFFFF !important;
+          margin-bottom: 16px;
+        }
+
+        .card-detail {
+          margin: 12px 0;
+          color: #B3B3B3 !important;
+          font-size: 15px;
+          line-height: 1.6;
+        }
+
+        .card-detail strong {
+          color: #FFFFFF !important;
+        }
+
+        .btn-primary {
+          display: inline-block;
+          background-color: #FFFFFF !important;
+          color: #08090A !important;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 9999px;
+          font-weight: 600;
+          font-size: 15px;
+          margin: 8px;
+          border: none;
+          text-align: center;
+        }
+
+        .footer {
+          text-align: center;
+          color: #B3B3B3 !important;
+          font-size: 12px;
+          margin-top: 30px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          padding-top: 30px;
+          background-color: #08090A !important;
+        }
+
+        .footer a {
+          color: #00FFA3 !important;
+          text-decoration: none;
+        }
+
+        /* Mobile responsive styles */
+        @media only screen and (max-width: 600px) {
+          .container {
+            width: 100% !important;
+            padding: 15px !important;
+          }
+
+          .header {
+            padding: 20px 15px !important;
+          }
+
+          .content {
+            padding: 20px 15px !important;
+          }
+
+          .glass-card {
+            padding: 16px !important;
+            margin: 16px 0 !important;
+          }
+
+          .card-title {
+            font-size: 18px !important;
+          }
+
+          .btn-primary {
+            display: block !important;
+            width: 90% !important;
+            margin: 10px auto !important;
+            padding: 14px 20px !important;
+            font-size: 16px !important;
+          }
+
+          .logo {
+            font-size: 24px !important;
+          }
+
+          h1 {
+            font-size: 20px !important;
+          }
+        }
+
+        /* Dark mode support for email clients */
+        @media (prefers-color-scheme: dark) {
+          body {
+            background-color: #08090A !important;
+            color: #FFFFFF !important;
+          }
+        }
       </style>
     </head>
     <body>
