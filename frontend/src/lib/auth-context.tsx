@@ -62,15 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const now = Math.floor(Date.now() / 1000)
           const expiresAt = session.expires_at || 0
 
-          // If session expires within 5 minutes, try to refresh it
-          if (expiresAt - now < 300) {
-            console.log('Session expires soon, attempting refresh...')
+          // With 30-day sessions, refresh if expires within 24 hours (more conservative)
+          if (expiresAt - now < 86400) {
+            console.log('Session expires within 24 hours, attempting refresh...')
             try {
               const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
               if (refreshError) {
                 console.warn('Session refresh failed:', refreshError)
               } else if (refreshData.session) {
-                console.log('Session refreshed successfully')
+                console.log('Session refreshed successfully - new expiry:', new Date(refreshData.session.expires_at! * 1000))
               }
             } catch (refreshErr) {
               console.warn('Session refresh error:', refreshErr)

@@ -29,22 +29,40 @@ export function StatCard({
       <div className="relative z-10">
         {icon ? (
           <>
-            <div className="text-2xl sm:text-3xl mb-2">{icon}</div>
-            <div className={cn(
-              "text-sm font-medium truncate",
-              className?.includes('text-[#999999]') ? 'text-[#999999]' : 'text-foreground'
-            )}>{label}</div>
+            {loading ? (
+              <>
+                <div className="h-8 sm:h-10 w-8 mx-auto mb-2 bg-white/10 animate-pulse rounded-full" />
+                <div className="h-4 w-16 mx-auto bg-white/10 animate-pulse rounded" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl sm:text-3xl mb-2">{icon}</div>
+                <div className={cn(
+                  "text-sm font-medium truncate",
+                  className?.includes('text-[#999999]') ? 'text-[#999999]' : 'text-foreground'
+                )}>{label}</div>
+              </>
+            )}
           </>
         ) : (
           <>
-            <div className={cn(
-              "text-2xl sm:text-3xl font-bold mb-1",
-              error ? 'text-muted-foreground' : 'text-primary'
-            )}>
-              {loading ? '...' : (error ? '—' : count)}
-            </div>
-            <div className="text-sm text-muted-foreground font-medium">{label}</div>
-            {error && <div className="text-xs text-destructive mt-1">Failed to load</div>}
+            {loading ? (
+              <>
+                <div className="h-8 sm:h-10 w-16 mx-auto mb-1 bg-white/10 animate-pulse rounded" />
+                <div className="h-4 w-20 mx-auto bg-white/10 animate-pulse rounded" />
+              </>
+            ) : (
+              <>
+                <div className={cn(
+                  "text-2xl sm:text-3xl font-bold mb-1",
+                  error ? 'text-muted-foreground' : 'text-primary'
+                )}>
+                  {error ? '—' : count}
+                </div>
+                <div className="text-sm text-muted-foreground font-medium">{label}</div>
+                {error && <div className="text-xs text-destructive mt-1">Failed to load</div>}
+              </>
+            )}
           </>
         )}
       </div>

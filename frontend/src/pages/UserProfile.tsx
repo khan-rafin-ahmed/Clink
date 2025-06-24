@@ -11,7 +11,7 @@ import { NextEventBanner } from '@/components/NextEventBanner'
 import { ProgressAnalysisPanel } from '@/components/ProgressAnalysisPanel'
 import { StatCard } from '@/components/StatCard'
 import { Plus, Users as UsersIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useUserStats } from '@/hooks/useUserStats'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
 import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
 import { filterEventsByDate } from '@/lib/eventUtils'
+import { useRealtimeEvents } from '@/hooks/useSimpleRealtime'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -70,6 +71,16 @@ export function UserProfile() {
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
+
+  // Simple refresh function for real-time updates
+  const refreshData = useCallback(() => {
+    setSessionsRefresh(prev => prev + 1)
+    setStatsRefresh(prev => prev + 1)
+    setCrewsRefresh(prev => prev + 1)
+  }, [])
+
+  // Use simple real-time hook for events
+  useRealtimeEvents(refreshData)
 
   // Get user stats for inline display
   const { stats } = useUserStats(statsRefresh)
@@ -591,18 +602,19 @@ export function UserProfile() {
           <div className="mt-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard
-                count={stats.totalEvents || 0}
+                count={stats?.totalEvents}
                 label="Sessions"
                 loading={!stats}
               />
               <StatCard
-                count={stats.totalRSVPs || 0}
+                count={stats?.totalRSVPs}
                 label="RSVPs"
                 loading={!stats}
               />
               <StatCard
                 count={userCrews.length}
                 label="Crews"
+                loading={!userProfile} // Show loading until profile is loaded
               />
               {(() => {
                 const drinkInfo = getDrinkInfo(userProfile?.favorite_drink)
@@ -611,6 +623,7 @@ export function UserProfile() {
                     icon={drinkInfo.emoji}
                     label={drinkInfo.label}
                     className={!userProfile?.favorite_drink ? 'text-[#999999]' : ''}
+                    loading={!userProfile} // Show loading until profile is loaded
                   />
                 )
               })()}

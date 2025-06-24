@@ -91,6 +91,22 @@ export function UserStats({ className, refreshTrigger, userId }: UserStatsProps)
   const drinkEmoji = getDrinkEmoji(favoriteDrink)
   const showDrinkStat = favoriteDrink && drinkEmoji
 
+  // Simple loading state
+  if (loading) {
+    return (
+      <div className={`grid ${showDrinkStat ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-4 sm:gap-6 ${className}`}>
+        {Array.from({ length: showDrinkStat ? 4 : 3 }).map((_, i) => (
+          <div key={i} className="glass-card relative overflow-hidden">
+            <div className="p-4 sm:p-6 text-center">
+              <div className="h-8 sm:h-10 w-16 mx-auto mb-2 bg-white/10 animate-pulse rounded" />
+              <div className="h-4 w-20 mx-auto bg-white/10 animate-pulse rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className={`grid ${showDrinkStat ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-4 sm:gap-6 ${className}`}>
       {/* Total Sessions - Glass Card with Shimmer */}
@@ -98,7 +114,7 @@ export function UserStats({ className, refreshTrigger, userId }: UserStatsProps)
         <div className="glass-shimmer absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="relative z-10 p-4 sm:p-6 text-center">
           <div className={`text-2xl sm:text-3xl font-bold count-up ${error ? 'text-muted-foreground' : 'text-primary'}`}>
-            {loading ? '...' : (error ? '—' : animatedTotalEvents)}
+            {error ? '—' : animatedTotalEvents}
           </div>
           <div className="text-sm text-muted-foreground font-medium">Sessions</div>
           {error && <div className="text-xs text-destructive mt-1">Failed to load</div>}
@@ -110,7 +126,7 @@ export function UserStats({ className, refreshTrigger, userId }: UserStatsProps)
         <div className="glass-shimmer absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="relative z-10 p-4 sm:p-6 text-center">
           <div className={`text-2xl sm:text-3xl font-bold count-up ${error ? 'text-muted-foreground' : 'text-accent-secondary'}`}>
-            {loading ? '...' : (error ? '—' : animatedTotalRSVPs)}
+            {error ? '—' : animatedTotalRSVPs}
           </div>
           <div className="text-sm text-muted-foreground font-medium">RSVPs</div>
           {error && <div className="text-xs text-destructive mt-1">Failed to load</div>}
@@ -122,7 +138,7 @@ export function UserStats({ className, refreshTrigger, userId }: UserStatsProps)
         <div className="glass-shimmer absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="relative z-10 p-4 sm:p-6 text-center">
           <div className={`text-2xl sm:text-3xl font-bold count-up ${error ? 'text-muted-foreground' : 'text-primary'}`}>
-            {loading ? '...' : (error ? '—' : animatedUpcomingEvents)}
+            {error ? '—' : animatedUpcomingEvents}
           </div>
           <div className="text-sm text-muted-foreground font-medium">Upcoming</div>
           {error && <div className="text-xs text-destructive mt-1">Failed to load</div>}
