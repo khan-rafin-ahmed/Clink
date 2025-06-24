@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell, Check, X, Users, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,7 +15,6 @@ import { supabase } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { useRealtimeNotifications } from '@/hooks/useSimpleRealtime'
 
 export function NotificationBell() {
   const { user } = useAuth()
@@ -25,17 +24,6 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false)
 
   const notificationService = NotificationService.getInstance()
-
-  // Simple refresh function for real-time updates
-  const refreshNotifications = useCallback(() => {
-    if (user?.id) {
-      loadNotifications()
-      loadUnreadCount()
-    }
-  }, [user?.id])
-
-  // Use simple real-time hook
-  useRealtimeNotifications(user?.id || '', refreshNotifications)
 
   // Load notifications when component mounts or user changes
   useEffect(() => {

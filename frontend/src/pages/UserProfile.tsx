@@ -11,7 +11,7 @@ import { NextEventBanner } from '@/components/NextEventBanner'
 import { ProgressAnalysisPanel } from '@/components/ProgressAnalysisPanel'
 import { StatCard } from '@/components/StatCard'
 import { Plus, Users as UsersIcon } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useUserStats } from '@/hooks/useUserStats'
 import { getUserProfile } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
@@ -19,7 +19,6 @@ import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
 import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
 import { filterEventsByDate } from '@/lib/eventUtils'
-import { useRealtimeEvents } from '@/hooks/useSimpleRealtime'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -72,15 +71,7 @@ export function UserProfile() {
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
 
-  // Simple refresh function for real-time updates
-  const refreshData = useCallback(() => {
-    setSessionsRefresh(prev => prev + 1)
-    setStatsRefresh(prev => prev + 1)
-    setCrewsRefresh(prev => prev + 1)
-  }, [])
-
-  // Use simple real-time hook for events
-  useRealtimeEvents(refreshData)
+  // Real-time updates disabled for now
 
   // Get user stats for inline display
   const { stats } = useUserStats(statsRefresh)
