@@ -13,19 +13,29 @@ export interface AttendeeInfo {
 }
 
 /**
- * Filter events into upcoming and past based on current date
+ * Filter events into upcoming and past based on event duration and end time
+ * Uses the same logic as getEventTimingStatus to ensure consistency
  */
-export function filterEventsByDate<T extends { date_time: string }>(events: T[]): {
+export function filterEventsByDate<T extends {
+  date_time: string
+  end_time?: string | null
+  duration_type?: string | null
+}>(events: T[]): {
   upcoming: T[]
   past: T[]
 } {
-  const now = new Date()
   const upcoming: T[] = []
   const past: T[] = []
 
   events.forEach(event => {
-    const eventDate = new Date(event.date_time)
-    if (eventDate >= now) {
+    const status = getEventTimingStatus(
+      event.date_time,
+      event.end_time || null,
+      event.duration_type || null
+    )
+
+    // Events that are 'now' (LIVE) or in the future are considered upcoming
+    if (status === 'now' || status === 'today' || status === 'tomorrow' || status === 'future') {
       upcoming.push(event)
     } else {
       past.push(event)
@@ -248,8 +258,9 @@ export function getEventTimingStatus(
     eventEndTime.setDate(eventEndTime.getDate() + 1)
     eventEndTime.setHours(0, 0, 0, 0) // Midnight next day
   } else {
-    // Default: events last 3 hours
-    eventEndTime = new Date(eventDate.getTime() + (3 * 60 * 60 * 1000))
+    // Default: events last 4 hours for "specific_time" duration type
+    const durationHours = durationType === 'specific_time' ? 4 : 3
+    eventEndTime = new Date(eventDate.getTime() + (durationHours * 60 * 60 * 1000))
   }
 
   // Check if event has ended

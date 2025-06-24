@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RSVPButton } from '@/components/RSVPButton'
 import { ShareModal } from '@/components/ShareModal'
+import { LiveBadge } from './LiveBadge'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 
@@ -104,6 +105,9 @@ export function SessionCard({
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <LiveBadge
+                  dateTime={event.date_time}
+                />
               </div>
               <div className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
@@ -179,6 +183,9 @@ export function SessionCard({
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4" />
           {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <LiveBadge
+            dateTime={event.date_time}
+          />
         </div>
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />

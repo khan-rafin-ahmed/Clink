@@ -1,4 +1,4 @@
-import { format, isToday, isTomorrow, isThisWeek, isPast } from 'date-fns'
+// Removed unused date-fns imports - using centralized eventUtils functions
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
@@ -9,6 +9,7 @@ import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
 import { GyroGlassCard } from './GyroGlassCard'
+import { LiveBadge } from './LiveBadge'
 
 // import { InnerCircleBadge } from './InnerCircleBadge' // Removed - using Crew System now
 import {
@@ -25,7 +26,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import type { Event } from '@/types'
-import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
+import { calculateAttendeeCount, getLocationDisplayName, getEventTimingStatus, formatEventTiming } from '@/lib/eventUtils'
 
 interface EventCardProps {
   event: Event & {
@@ -72,63 +73,22 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
     ? event.rsvp_count
     : calculateAttendeeCount(event)
 
-  // Format event time and get status badge
-  const formatEventTime = (dateTime: string) => {
-    const date = new Date(dateTime)
-    const now = new Date()
+  // Use centralized timing functions
+  const getStatusBadge = (dateTime: string, endTime?: string | null, durationType?: string | null) => {
+    const status = getEventTimingStatus(dateTime, endTime, durationType)
 
-    if (isPast(date)) {
-      return format(date, 'MMM d, h:mm a')
+    switch (status) {
+      case 'past':
+        return { text: 'Past', variant: 'secondary' as const }
+      case 'now':
+        return { text: 'LIVE', variant: 'destructive' as const }
+      case 'today':
+        return { text: 'Tonight', variant: 'default' as const }
+      case 'tomorrow':
+        return { text: 'Tomorrow', variant: 'secondary' as const }
+      default:
+        return { text: 'Upcoming', variant: 'outline' as const }
     }
-
-    if (isToday(date)) {
-      const hours = date.getHours()
-      const minutes = date.getMinutes()
-      const nowHours = now.getHours()
-      const nowMinutes = now.getMinutes()
-
-      if (hours < nowHours || (hours === nowHours && minutes <= nowMinutes + 30)) {
-        return 'Right Now! 🔥'
-      }
-      return `Today at ${format(date, 'h:mm a')}`
-    }
-
-    if (isTomorrow(date)) {
-      return `Tomorrow at ${format(date, 'h:mm a')}`
-    }
-
-    if (isThisWeek(date)) {
-      return format(date, 'EEEE \'at\' h:mm a')
-    }
-
-    return format(date, 'MMM d \'at\' h:mm a')
-  }
-
-  const getStatusBadge = (dateTime: string) => {
-    const date = new Date(dateTime)
-    const now = new Date()
-
-    if (isPast(date)) {
-      return { text: 'Past', variant: 'secondary' as const }
-    }
-
-    if (isToday(date)) {
-      const hours = date.getHours()
-      const minutes = date.getMinutes()
-      const nowHours = now.getHours()
-      const nowMinutes = now.getMinutes()
-
-      if (hours < nowHours || (hours === nowHours && minutes <= nowMinutes + 30)) {
-        return { text: 'Right Now', variant: 'destructive' as const }
-      }
-      return { text: 'Tonight', variant: 'default' as const }
-    }
-
-    if (isTomorrow(date)) {
-      return { text: 'Tomorrow', variant: 'secondary' as const }
-    }
-
-    return { text: 'Upcoming', variant: 'outline' as const }
   }
 
   const getDrinkIcon = (drinkType: string | undefined) => {
@@ -166,7 +126,7 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
     return event.creator.display_name || `User ${event.created_by.slice(-4)}`
   }
 
-  const statusBadge = getStatusBadge(event.date_time)
+  const statusBadge = getStatusBadge(event.date_time, event.end_time, event.duration_type)
 
   return (
     <GyroGlassCard
@@ -195,8 +155,13 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Calendar className="w-4 h-4 group-hover:text-primary" />
               <span className="group-hover:text-foreground">
-                {formatEventTime(event.date_time)}
+                {formatEventTiming(event.date_time, event.end_time, event.duration_type)}
               </span>
+              <LiveBadge
+                dateTime={event.date_time}
+                endTime={event.end_time}
+                durationType={event.duration_type}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 group-hover:text-primary" />

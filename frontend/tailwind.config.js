@@ -133,10 +133,23 @@ export default {
         'gradient-card': 'var(--gradient-card)',
         'gradient-hero': 'var(--gradient-hero)',
       },
+      keyframes: {
+        'pulse-glow': {
+          '0%, 100%': {
+            opacity: '1',
+            boxShadow: '0 0 8px rgba(255, 95, 46, 0.4)'
+          },
+          '50%': {
+            opacity: '0.8',
+            boxShadow: '0 0 16px rgba(255, 95, 46, 0.6)'
+          }
+        }
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.4s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
+        'pulse-glow': 'pulse-glow 1.8s ease-in-out infinite',
         // Removed performance-heavy animations
         // 'slide-in-left': 'slideInLeft 0.5s ease-out',
         // 'slide-in-right': 'slideInRight 0.5s ease-out',

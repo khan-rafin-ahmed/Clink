@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
 import { UserHoverCard } from './UserHoverCard'
+import { LiveBadge } from './LiveBadge'
 import {
   Calendar,
   MapPin,
@@ -179,6 +180,11 @@ export function EnhancedEventCard({
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <Clock className="w-3 h-3" />
                     {formatEventTime(event.date_time)}
+                    <LiveBadge
+                      dateTime={event.date_time}
+                      endTime={event.end_time}
+                      durationType={event.duration_type}
+                    />
                   </div>
                 </div>
                 <Badge variant={statusBadge.variant} size="sm">
@@ -240,6 +246,11 @@ export function EnhancedEventCard({
                 <div className="flex items-center gap-1 text-xs font-medium text-accent-primary flex-shrink-0">
                   <Clock className="w-3 h-3" />
                   <span>{formatEventTime(event.date_time)}</span>
+                  <LiveBadge
+                    dateTime={event.date_time}
+                    endTime={event.end_time}
+                    durationType={event.duration_type}
+                  />
                 </div>
               </div>
 
@@ -422,6 +433,11 @@ export function EnhancedEventCard({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
               <span>{formatEventTime(event.date_time)}</span>
+              <LiveBadge
+                dateTime={event.date_time}
+                endTime={event.end_time}
+                durationType={event.duration_type}
+              />
             </div>
 
             {/* Location */}

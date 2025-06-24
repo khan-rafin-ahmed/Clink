@@ -18,6 +18,7 @@ import { getUserCrews } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
 import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
+import { filterEventsByDate } from '@/lib/eventUtils'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -130,9 +131,6 @@ export function UserProfile() {
         .eq('user_id', user.id)
         .eq('status', 'accepted')
 
-      // Let's start simple and build up - just get events you created first
-      const now = new Date().toISOString()
-
       console.log('Fetching events for user:', user.id)
 
       // Get user's crew memberships for crew-associated events
@@ -145,17 +143,14 @@ export function UserProfile() {
       const userCrewIds = userCrewMemberships?.map(cm => cm.crew_id) || []
       console.log('User is member of crews:', userCrewIds)
 
+      // Get ALL events first, then filter by duration-aware logic on frontend
       const [
-        createdUpcomingResult,
-        createdPastResult,
-        rsvpUpcomingResult,
-        rsvpPastResult,
-        crewInvitedUpcomingResult,
-        crewInvitedPastResult,
-        crewAssociatedUpcomingResult,
-        crewAssociatedPastResult
+        createdEventsResult,
+        rsvpEventsResult,
+        crewInvitedEventsResult,
+        crewAssociatedEventsResult
       ] = await Promise.all([
-        // 1. Get upcoming events created by user with attendee data
+        // 1. Get ALL events created by user with attendee data
         supabase
           .from('events')
           .select(`
@@ -164,22 +159,9 @@ export function UserProfile() {
             event_members(user_id, status)
           `)
           .eq('created_by', user.id)
-          .gte('date_time', now)
           .order('date_time', { ascending: true }),
 
-        // 2. Get past events created by user with attendee data
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps(user_id, status),
-            event_members(user_id, status)
-          `)
-          .eq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false }),
-
-        // 3. Get upcoming events user RSVP'd to with status 'going'
+        // 2. Get ALL events user RSVP'd to with status 'going'
         supabase
           .from('events')
           .select(`
@@ -190,24 +172,9 @@ export function UserProfile() {
           .eq('rsvps.user_id', user.id)
           .eq('rsvps.status', 'going')
           .neq('created_by', user.id)
-          .gte('date_time', now)
           .order('date_time', { ascending: true }),
 
-        // 4. Get past events user RSVP'd to with status 'going'
-        supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps!inner(user_id, status),
-            event_members(user_id, status)
-          `)
-          .eq('rsvps.user_id', user.id)
-          .eq('rsvps.status', 'going')
-          .neq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false }),
-
-        // 5. Get upcoming events user was directly invited to via event_members
+        // 3. Get ALL events user was directly invited to via event_members
         supabase
           .from('events')
           .select(`
@@ -218,24 +185,9 @@ export function UserProfile() {
           .eq('event_members.user_id', user.id)
           .eq('event_members.status', 'accepted')
           .neq('created_by', user.id)
-          .gte('date_time', now)
           .order('date_time', { ascending: true }),
 
-        // 6. Get past events user was directly invited to via event_members
-        supabase
-          .from('events')
-          .select(`
-            *,
-            event_members!inner(user_id, status),
-            rsvps(user_id, status)
-          `)
-          .eq('event_members.user_id', user.id)
-          .eq('event_members.status', 'accepted')
-          .neq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false }),
-
-        // 7. Get upcoming events associated with crews user is a member of
+        // 4. Get ALL events associated with crews user is a member of
         userCrewIds.length > 0 ? supabase
           .from('events')
           .select(`
@@ -245,42 +197,20 @@ export function UserProfile() {
           `)
           .in('crew_id', userCrewIds)
           .neq('created_by', user.id)
-          .gte('date_time', now)
-          .order('date_time', { ascending: true }) : Promise.resolve({ data: [], error: null }),
-
-        // 8. Get past events associated with crews user is a member of
-        userCrewIds.length > 0 ? supabase
-          .from('events')
-          .select(`
-            *,
-            rsvps(user_id, status),
-            event_members(user_id, status)
-          `)
-          .in('crew_id', userCrewIds)
-          .neq('created_by', user.id)
-          .lt('date_time', now)
-          .order('date_time', { ascending: false }) : Promise.resolve({ data: [], error: null })
+          .order('date_time', { ascending: true }) : Promise.resolve({ data: [], error: null })
       ])
 
-      console.log('Created upcoming events result:', createdUpcomingResult)
-      console.log('Created past events result:', createdPastResult)
-      console.log('RSVP upcoming events result:', rsvpUpcomingResult)
-      console.log('RSVP past events result:', rsvpPastResult)
-      console.log('Crew invited upcoming events result:', crewInvitedUpcomingResult)
-      console.log('Crew invited past events result:', crewInvitedPastResult)
-      console.log('Crew associated upcoming events result:', crewAssociatedUpcomingResult)
-      console.log('Crew associated past events result:', crewAssociatedPastResult)
+      console.log('Created events result:', createdEventsResult)
+      console.log('RSVP events result:', rsvpEventsResult)
+      console.log('Crew invited events result:', crewInvitedEventsResult)
+      console.log('Crew associated events result:', crewAssociatedEventsResult)
 
       // Check for errors
       const errors = [
-        createdUpcomingResult.error,
-        createdPastResult.error,
-        rsvpUpcomingResult.error,
-        rsvpPastResult.error,
-        crewInvitedUpcomingResult.error,
-        crewInvitedPastResult.error,
-        crewAssociatedUpcomingResult.error,
-        crewAssociatedPastResult.error
+        createdEventsResult.error,
+        rsvpEventsResult.error,
+        crewInvitedEventsResult.error,
+        crewAssociatedEventsResult.error
       ].filter(Boolean)
 
       if (errors.length > 0) {
@@ -288,44 +218,34 @@ export function UserProfile() {
         throw errors[0]
       }
 
-      // Combine all upcoming events from different sources
-      const allUpcomingEventsRaw = [
-        ...(createdUpcomingResult.data || []),
-        ...(rsvpUpcomingResult.data || []),
-        ...(crewInvitedUpcomingResult.data || []),
-        ...(crewAssociatedUpcomingResult.data || [])
-      ]
-
-      // Combine all past events from different sources
-      const allPastEventsRaw = [
-        ...(createdPastResult.data || []),
-        ...(rsvpPastResult.data || []),
-        ...(crewInvitedPastResult.data || []),
-        ...(crewAssociatedPastResult.data || [])
+      // Combine all events from different sources
+      const allEventsRaw = [
+        ...(createdEventsResult.data || []),
+        ...(rsvpEventsResult.data || []),
+        ...(crewInvitedEventsResult.data || []),
+        ...(crewAssociatedEventsResult.data || [])
       ]
 
       // Remove duplicates (in case user both created and RSVP'd to same event)
-      const uniqueUpcomingEvents = allUpcomingEventsRaw.reduce((acc: any[], event: any) => {
+      const uniqueEvents = allEventsRaw.reduce((acc: any[], event: any) => {
         if (!acc.find(e => e.id === event.id)) {
           acc.push(event)
         }
         return acc
       }, [])
 
-      const uniquePastEvents = allPastEventsRaw.reduce((acc: any[], event: any) => {
-        if (!acc.find(e => e.id === event.id)) {
-          acc.push(event)
-        }
-        return acc
-      }, [])
+      console.log('Found total events before filtering:', uniqueEvents.length)
 
-      console.log('Found total upcoming events:', uniqueUpcomingEvents.length)
-      console.log('Found total past events:', uniquePastEvents.length)
+      // Now use duration-aware filtering to separate upcoming vs past
+      const { upcoming: upcomingEvents, past: pastEvents } = filterEventsByDate(uniqueEvents)
+
+      console.log('Found upcoming events after duration-aware filtering:', upcomingEvents.length)
+      console.log('Found past events after duration-aware filtering:', pastEvents.length)
 
 
 
       // Transform upcoming events data for EventCard compatibility
-      let allUpcomingEvents = await Promise.all(uniqueUpcomingEvents.map(async (event: any) => {
+      let allUpcomingEvents = await Promise.all(upcomingEvents.map(async (event: any) => {
         const isHosting = event.created_by === user.id
 
         // Get creator info for events not created by current user
@@ -379,7 +299,7 @@ export function UserProfile() {
       setEnhancedSessions(allUpcomingEvents)
 
       // Transform past events data for EventCard compatibility
-      let allPastEvents = await Promise.all(uniquePastEvents.map(async (event: any) => {
+      let allPastEvents = await Promise.all(pastEvents.map(async (event: any) => {
         const isHosting = event.created_by === user.id
 
         // Get creator info for events not created by current user

@@ -31,6 +31,7 @@ import { getEventCoverImage, getVibeEmoji } from '@/lib/coverImageUtils'
 import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { LiveBadge } from '@/components/LiveBadge'
 import type { Event } from '@/types'
 
 interface EventTimelineProps {
@@ -383,6 +384,11 @@ export function EventTimeline({
                                     <div className="flex items-center gap-1 text-xs font-medium text-accent-primary flex-shrink-0">
                                       <Clock className="w-3 h-3" />
                                       <span>{formatEventTime(event.date_time)}</span>
+                                      <LiveBadge
+                                        dateTime={event.date_time}
+                                        endTime={event.end_time}
+                                        durationType={event.duration_type}
+                                      />
                                     </div>
                                   </div>
 

@@ -29,6 +29,7 @@ import { TestMetaTags } from './pages/TestMetaTags'
 import { TestEmailSystem } from './pages/TestEmailSystem'
 import { EmailDebugPage } from './pages/EmailDebugPage'
 import { TestJoinButton } from './pages/TestJoinButton'
+import { LiveBadgeDemo } from './components/LiveBadgeDemo'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -125,6 +126,9 @@ function App() {
 
               {/* Test route for join button functionality */}
               <Route path="/test-join-button" element={<TestJoinButton />} />
+
+              {/* Test route for LiveBadge component */}
+              <Route path="/test-live-badge" element={<LiveBadgeDemo />} />
             </Routes>
           </main>
           <footer className="glass-nav border-t border-white/10 py-8 mt-auto relative">

@@ -231,10 +231,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
           defaultTime.setDate(defaultTime.getDate() + 1)
         }
         eventDateTime = defaultTime
-      } else { // 'now' - Set to end of current day to keep event active
-        const endOfDay = new Date(now)
-        endOfDay.setHours(23, 59, 59, 999)
-        eventDateTime = endOfDay
+      } else { // 'now' - Set to current time for immediate LIVE status
+        eventDateTime = now
       }
 
       const updateData = {

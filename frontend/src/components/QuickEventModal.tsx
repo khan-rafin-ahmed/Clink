@@ -218,10 +218,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
               // If it's before 8 PM, set to 8 PM tonight
               return tonight.toISOString();
             }
-          } else { // 'now' - Set to end of current day to keep event active
-            const endOfDay = new Date(now);
-            endOfDay.setHours(23, 59, 59, 999);
-            return endOfDay.toISOString();
+          } else { // 'now' - Set to current time for immediate LIVE status
+            return now.toISOString();
           }
         })(),
         duration_type: formData.duration_type,
