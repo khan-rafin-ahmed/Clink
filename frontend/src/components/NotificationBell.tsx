@@ -343,7 +343,7 @@ export function NotificationBell() {
                       )}
 
                       {/* Event invitation actions */}
-                      {notification.type === 'event_invitation' && !notification.read && notification.data?.invitation_id && notification.id && (
+                      {notification.type === 'event_invitation' && !notification.read && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
                         <div className="space-y-2 mt-3">
                           {/* View Details Button */}
                           <Button
@@ -370,7 +370,7 @@ export function NotificationBell() {
                                 e.stopPropagation()
                                 handleEventInvitationResponse(
                                   notification.id!,
-                                  notification.data?.invitation_id || null,
+                                  notification.data?.invitation_id || notification.data?.event_member_id || null,
                                   'accepted'
                                 )
                               }}
@@ -386,7 +386,7 @@ export function NotificationBell() {
                                 e.stopPropagation()
                                 handleEventInvitationResponse(
                                   notification.id!,
-                                  notification.data?.invitation_id || null,
+                                  notification.data?.invitation_id || notification.data?.event_member_id || null,
                                   'declined'
                                 )
                               }}

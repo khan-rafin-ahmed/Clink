@@ -93,18 +93,23 @@ export function JoinEventButton({
     setIsLoading(true)
     try {
       if (isJoined) {
-        // Leave event
-        const { error } = await supabase
-          .from('rsvps')
-          .delete()
-          .eq('event_id', eventId)
-          .eq('user_id', user.id)
+        // Leave event using RPC function to handle both rsvps and event_members
+        const { data, error } = await supabase
+          .rpc('leave_event', {
+            p_event_id: eventId,
+            p_user_id: user.id
+          })
 
         if (error) throw error
 
-        setIsJoined(false)
-        toast.success('Left the session')
-        onJoinChange?.(false)
+        const result = data?.[0]
+        if (result?.success) {
+          setIsJoined(false)
+          toast.success('Left the session')
+          onJoinChange?.(false)
+        } else {
+          throw new Error(result?.message || 'Failed to leave event')
+        }
       } else {
         // Join event
         const { error } = await supabase
