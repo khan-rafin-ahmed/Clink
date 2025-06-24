@@ -76,9 +76,11 @@ class NotificationService {
           data: notification.data || {},
           read: false
         })
+        .select()
 
       if (error) {
-        return
+        console.error('❌ Error creating notification:', error)
+        throw error
       }
 
       // Show in-app toast notification
@@ -87,7 +89,8 @@ class NotificationService {
       // Send push notification if enabled
       await this.sendPushNotification(notification)
     } catch (error) {
-      // Error creating notification
+      console.error('❌ Error in createNotification:', error)
+      throw error
     }
   }
 

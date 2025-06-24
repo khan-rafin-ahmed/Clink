@@ -39,6 +39,13 @@ export function AuthCallback() {
         const error_description = urlParams.get('error_description')
         const code = urlParams.get('code')
 
+        console.log('🔍 AuthCallback: URL params:', {
+          error_code,
+          error_description,
+          code: code ? 'present' : 'missing',
+          fullUrl: window.location.href
+        })
+
         // Handle errors from URL
         if (error_code) {
           navigate('/login?error=' + encodeURIComponent(error_description || error_code))
@@ -53,7 +60,7 @@ export function AuthCallback() {
           // The tokens have already been cleared from the URL above for security
           try {
             // Wait a moment for Supabase to process the session from URL
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await new Promise(resolve => setTimeout(resolve, 200))
 
             const { data: { session }, error } = await supabase.auth.getSession()
 
@@ -65,12 +72,9 @@ export function AuthCallback() {
 
             if (session) {
               console.log('✅ AuthCallback: Implicit flow session established')
-              const result = await handleAuthCallback()
-              if (result.success) {
-                navigate('/profile')
-              } else {
-                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
-              }
+              // Don't call handleAuthCallback here - let AuthContext handle the welcome toast
+              // Just navigate to profile and let the auth state change trigger the welcome
+              navigate('/profile')
               return
             } else {
               console.log('⚠️ AuthCallback: No session found after implicit flow, falling back to polling')
@@ -83,84 +87,32 @@ export function AuthCallback() {
 
         // If we have a code parameter, this is the authorization code flow
         if (code) {
-          // Try to exchange the code for a session using Supabase's method
-          try {
-            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+          console.log('🔄 AuthCallback: Processing authorization code flow')
 
-            if (error) {
-              // Handle specific Google OAuth errors
-              if (error.message?.includes('Database error saving new user')) {
-                // Wait a moment for any background processes to complete
-                await new Promise(resolve => setTimeout(resolve, 2000))
-
-                // Try to get session - user might have been created despite the error
-                const { data: sessionData } = await supabase.auth.getSession()
-                if (sessionData?.session?.user) {
-                  // Force profile creation using our manual function
-                  try {
-                    await supabase.rpc('create_profile_for_user', {
-                      target_user_id: sessionData.session.user.id
-                    })
-                  } catch (profileError) {
-                    // Continue anyway if profile creation fails
-                  }
-
-                  const result = await handleAuthCallback()
-                  if (result.success) {
-                    navigate('/profile')
-                    return
-                  }
-                } else {
-                  navigate('/login?error=' + encodeURIComponent('Google signup had an issue. Please try again or use magic link.'))
-                  return
-                }
-              }
-
-              navigate('/login?error=' + encodeURIComponent(`OAuth exchange failed: ${error.message}`))
-              return
-            }
-
-            if (data?.session) {
-              // Use our robust auth callback handler
-              const result = await handleAuthCallback()
-              if (result.success) {
-                navigate('/profile')
-              } else {
-                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
-              }
-              return
-            }
-          } catch (exchangeError: any) {
-            // Exchange failed, falling back to polling
-          }
-
-          // Fallback: Poll for session (in case exchangeCodeForSession doesn't work)
+          // Let Supabase handle the PKCE flow automatically by checking for session
+          // This avoids manual code exchange which can fail with PKCE issues
           let attempts = 0
-          const maxAttempts = 15
+          const maxAttempts = 10
 
-          const checkForSession = async (): Promise<void> => {
+          const waitForSession = async (): Promise<void> => {
             attempts++
 
             const { data: { session }, error } = await supabase.auth.getSession()
 
-            if (error) {
-              if (attempts >= maxAttempts) {
-                navigate('/login?error=' + encodeURIComponent(`Session polling failed: ${error.message}`))
-                return
-              }
-              setTimeout(checkForSession, 1500)
+            if (session) {
+              console.log('✅ AuthCallback: Session found after code flow')
+              // Don't call handleAuthCallback here - let AuthContext handle the welcome toast
+              // Just navigate to profile and let the auth state change trigger the welcome
+              navigate('/profile')
               return
             }
 
-            if (session) {
-              // Use our robust auth callback handler
-              const result = await handleAuthCallback()
-              if (result.success) {
-                navigate('/profile')
-              } else {
-                navigate('/login?error=' + encodeURIComponent(result.error || 'Setup failed'))
+            if (error) {
+              console.error('❌ AuthCallback: Session error:', error)
+              if (attempts >= maxAttempts) {
+                navigate('/login?error=' + encodeURIComponent(`Session error: ${error.message}`))
+                return
               }
-              return
             }
 
             if (attempts >= maxAttempts) {
@@ -168,25 +120,21 @@ export function AuthCallback() {
               return
             }
 
-            setTimeout(checkForSession, 1500)
+            // Wait and try again
+            setTimeout(waitForSession, 500)
           }
 
-          await checkForSession()
+          await waitForSession()
           return
-        }
-
-        // For magic links (no code parameter), use our robust handler
-        const result = await handleAuthCallback()
-        if (result.success) {
-          navigate('/profile')
-        } else if (result.error) {
-          navigate('/login?error=' + encodeURIComponent(result.error))
         } else {
-          // For magic links, wait for the main AuthContext to handle the auth state change
-          // Don't create additional listeners to avoid console spam
+          // For magic links (no code parameter), let AuthContext handle everything
+          // Just wait for the auth state change and navigate
+          console.log('🔄 AuthCallback: Waiting for auth state change (magic link flow)')
+
+          // Wait for the main AuthContext to handle the auth state change
           setTimeout(() => {
             navigate('/profile')
-          }, 1000)
+          }, 500)
 
           // Clean up after 10 seconds if nothing happens
           setTimeout(() => {

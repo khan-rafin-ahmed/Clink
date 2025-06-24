@@ -16,12 +16,15 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
+
+
 export function NotificationBell() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [respondedNotifications, setRespondedNotifications] = useState<Set<string>>(new Set())
 
   const notificationService = NotificationService.getInstance()
 
@@ -40,6 +43,12 @@ export function NotificationBell() {
     }
   }, [isOpen, user?.id])
 
+
+
+
+
+
+
   const loadNotifications = async () => {
     if (!user?.id) return
 
@@ -48,7 +57,8 @@ export function NotificationBell() {
       const data = await notificationService.getUserNotifications(user.id)
       setNotifications(data)
     } catch (error) {
-      // Handle error silently in production
+      console.error('❌ Error loading notifications:', error)
+      toast.error('Failed to load notifications')
     } finally {
       setIsLoading(false)
     }
@@ -56,18 +66,27 @@ export function NotificationBell() {
 
   const loadUnreadCount = async () => {
     if (!user?.id) return
-    
+
     try {
       const count = await notificationService.getUnreadCount(user.id)
       setUnreadCount(count)
     } catch (error) {
-      // Handle error silently in production
+      console.error('❌ Error loading unread count:', error)
     }
   }
 
   const handleEventInvitationResponse = async (notificationId: string, invitationId: string | null, response: 'accepted' | 'declined') => {
     try {
+      // Immediately mark as responded to hide buttons
+      setRespondedNotifications(prev => new Set(prev).add(notificationId))
+
       if (!invitationId) {
+        // Remove from responded set if failed
+        setRespondedNotifications(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(notificationId)
+          return newSet
+        })
         toast.error('Unable to process invitation - please try refreshing the page')
         return
       }
@@ -76,11 +95,25 @@ export function NotificationBell() {
 
       if (result.success) {
         await markAsRead(notificationId)
-        toast.success(result.message)
+        // Remove the notification from the list after successful response
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+        // Toast is handled by the service function
       } else {
+        // Remove from responded set if failed
+        setRespondedNotifications(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(notificationId)
+          return newSet
+        })
         toast.error(result.message)
       }
     } catch (error: any) {
+      // Remove from responded set if failed
+      setRespondedNotifications(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(notificationId)
+        return newSet
+      })
       console.error('Error responding to event invitation:', error)
       toast.error('Failed to respond to invitation')
     }
@@ -89,7 +122,7 @@ export function NotificationBell() {
   const markAsRead = async (notificationId: string) => {
     try {
       await notificationService.markAsRead(notificationId)
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -97,6 +130,8 @@ export function NotificationBell() {
       // Handle error silently in production
     }
   }
+
+
 
   const markAllAsRead = async () => {
     if (!user?.id) return
@@ -112,6 +147,9 @@ export function NotificationBell() {
 
   const handleCrewInvitationResponse = async (notificationId: string, crewMemberId: string | null, crewId: string | null, response: 'accepted' | 'declined') => {
     try {
+      // Immediately mark as responded to hide buttons
+      setRespondedNotifications(prev => new Set(prev).add(notificationId))
+
       let memberIdToUse = crewMemberId
 
       // If crew_member_id is missing, try to find it using crew_id
@@ -146,6 +184,12 @@ export function NotificationBell() {
       }
 
       if (!memberIdToUse) {
+        // Remove from responded set if failed
+        setRespondedNotifications(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(notificationId)
+          return newSet
+        })
         toast.error('Unable to process invitation - please try refreshing the page')
         return
       }
@@ -153,6 +197,7 @@ export function NotificationBell() {
       await respondToCrewInvitation(memberIdToUse, response)
       await markAsRead(notificationId)
 
+      // Show success toast
       if (response === 'accepted') {
         toast.success('Joined the crew! 🍺')
       } else {
@@ -161,8 +206,13 @@ export function NotificationBell() {
 
       // Remove the notification from the list
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
-      setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (error) {
+      // Remove from responded set if failed
+      setRespondedNotifications(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(notificationId)
+        return newSet
+      })
       toast.error('Failed to respond to invitation')
     }
   }
@@ -221,8 +271,8 @@ export function NotificationBell() {
         className={cn(
           "max-w-[340px] p-0 border-white/8 shadow-xl shadow-dark-900/50 rounded-2xl",
           "bg-[#1A1A1A]",
-          notifications.length > 0 && "md:min-h-[320px]",
-          notifications.length > 0 && "max-md:min-h-[260px]"
+          notifications.length > 0 && "md:min-h-[320px] md:max-h-[480px]",
+          notifications.length > 0 && "max-md:min-h-[260px] max-md:max-h-[360px]"
         )}
         align="end"
       >
@@ -243,8 +293,8 @@ export function NotificationBell() {
         </div>
 
         <ScrollArea className={cn(
-          "overflow-y-auto max-h-[70vh]",
-          notifications.length === 0 ? "" : "md:min-h-[280px] max-md:min-h-[220px]"
+          "overflow-y-auto",
+          notifications.length === 0 ? "" : "md:min-h-[280px] md:max-h-[440px] max-md:min-h-[220px] max-md:max-h-[320px]"
         )}>
           {isLoading ? (
             <div className="flex items-center justify-center px-4 py-4">
@@ -296,116 +346,132 @@ export function NotificationBell() {
 
                       {/* Crew invitation actions */}
                       {notification.type === 'crew_invitation' && !notification.read && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
-                        <div className="space-y-3 mt-3">
-                          {/* View Crew Details Button */}
-                          {notification.data?.crew_id && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                window.location.href = `/crew/${notification.data?.crew_id}`
-                                setIsOpen(false)
-                              }}
-                              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                            >
-                              <Eye className="w-3 h-3" />
-                              View Crew Details
-                            </Button>
-                          )}
+                        <div className="mt-3 space-y-2">
+                          {/* Mobile: 2 lines, Desktop: 1 line */}
+                          <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
+                            {/* View Details Button - Full width on mobile, flex-1 on desktop */}
+                            {notification.data?.crew_id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  window.location.href = `/crew/${notification.data?.crew_id}`
+                                  setIsOpen(false)
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] w-full sm:flex-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                Details
+                              </Button>
+                            )}
 
-                          {/* Accept/Decline Buttons */}
-                          <div className="flex flex-col gap-1.5 md:gap-2">
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleCrewInvitationResponse(
-                                  notification.id!,
-                                  notification.data?.crew_member_id || null,
-                                  notification.data?.crew_id || null,
-                                  'accepted'
-                                )
-                              }}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                            >
-                              <Check className="w-3 h-3" />
-                              Join Crew
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleCrewInvitationResponse(
-                                  notification.id!,
-                                  notification.data?.crew_member_id || null,
-                                  notification.data?.crew_id || null,
-                                  'declined'
-                                )
-                              }}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                            >
-                              <X className="w-3 h-3" />
-                              Decline
-                            </Button>
+                            {/* Join/Decline container - Horizontal on both mobile and desktop */}
+                            {!respondedNotifications.has(notification.id!) && (
+                              <div className="flex gap-1.5 sm:contents">
+                                {/* Join Button */}
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCrewInvitationResponse(
+                                      notification.id!,
+                                      notification.data?.crew_member_id || null,
+                                      notification.data?.crew_id || null,
+                                      'accepted'
+                                    )
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 sm:flex-1"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  Join
+                                </Button>
+
+                                {/* Decline Button */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCrewInvitationResponse(
+                                      notification.id!,
+                                      notification.data?.crew_member_id || null,
+                                      notification.data?.crew_id || null,
+                                      'declined'
+                                    )
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 sm:flex-1"
+                                >
+                                  <X className="w-3 h-3" />
+                                  Decline
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {/* Event invitation actions */}
                       {notification.type === 'event_invitation' && !notification.read && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
-                        <div className="space-y-2 mt-3">
-                          {/* View Details Button */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (notification.data?.event_id) {
-                                window.location.href = `/event/${notification.data.event_id}`
-                              }
-                              setIsOpen(false)
-                            }}
-                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                          >
-                            <Eye className="w-3 h-3" />
-                            View Details
-                          </Button>
+                        <div className="mt-3 space-y-2">
+                          {/* Mobile: 2 lines, Desktop: 1 line */}
+                          <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
+                            {/* View Details Button - Full width on mobile, flex-1 on desktop */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (notification.data?.event_id) {
+                                  window.location.href = `/event/${notification.data.event_id}`
+                                }
+                                setIsOpen(false)
+                              }}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] w-full sm:flex-1"
+                            >
+                              <Eye className="w-3 h-3" />
+                              Details
+                            </Button>
 
-                          {/* Accept/Decline Buttons */}
-                          <div className="flex flex-col gap-1.5 md:gap-2">
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEventInvitationResponse(
-                                  notification.id!,
-                                  notification.data?.invitation_id || notification.data?.event_member_id || null,
-                                  'accepted'
-                                )
-                              }}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                            >
-                              <Check className="w-3 h-3" />
-                              Accept
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEventInvitationResponse(
-                                  notification.id!,
-                                  notification.data?.invitation_id || notification.data?.event_member_id || null,
-                                  'declined'
-                                )
-                              }}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
-                            >
-                              <X className="w-3 h-3" />
-                              Decline
-                            </Button>
+                            {/* Join/Decline container - Horizontal on both mobile and desktop */}
+                            {!respondedNotifications.has(notification.id!) && (
+                              <div className="flex gap-1.5 sm:contents">
+                                {/* Join Button */}
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEventInvitationResponse(
+                                      notification.id!,
+                                      notification.data?.invitation_id || notification.data?.event_member_id || null,
+                                      'accepted'
+                                    )
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 sm:flex-1"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  Join
+                                </Button>
+
+                                {/* Decline Button */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEventInvitationResponse(
+                                      notification.id!,
+                                      notification.data?.invitation_id || notification.data?.event_member_id || null,
+                                      'declined'
+                                    )
+                                  }}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 sm:flex-1"
+                                >
+                                  <X className="w-3 h-3" />
+                                  Decline
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

@@ -24,9 +24,10 @@ import { formatDistanceToNow } from 'date-fns'
 interface EventInvitationCardProps {
   invitation: EventInvitation
   onResponse?: (invitationId: string, response: 'accepted' | 'declined') => void
+  showToast?: boolean // Control whether to show toast notifications
 }
 
-export function EventInvitationCard({ invitation, onResponse }: EventInvitationCardProps) {
+export function EventInvitationCard({ invitation, onResponse, showToast = true }: EventInvitationCardProps) {
   const [isResponding, setIsResponding] = useState(false)
   const [showCommentBox, setShowCommentBox] = useState(false)
   const [comment, setComment] = useState('')
@@ -51,7 +52,10 @@ export function EventInvitationCard({ invitation, onResponse }: EventInvitationC
       })
 
       if (result.success) {
-        showInvitationResponseToast(response, comment.trim() || undefined)
+        // Only show toast if showToast prop is true
+        if (showToast) {
+          showInvitationResponseToast(response, comment.trim() || undefined)
+        }
         onResponse?.(invitation.invitation_id, response)
       } else {
         throw new Error(result.message)

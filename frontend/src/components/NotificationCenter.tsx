@@ -26,6 +26,7 @@ export function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [respondedNotifications, setRespondedNotifications] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadNotifications()
@@ -89,6 +90,9 @@ export function NotificationCenter() {
 
   const handleCrewInvitationResponse = async (notificationId: string, crewMemberId: string, response: 'accepted' | 'declined') => {
     try {
+      // Immediately mark as responded to hide buttons
+      setRespondedNotifications(prev => new Set(prev).add(notificationId))
+
       await respondToCrewInvitation(crewMemberId, response)
       await handleMarkAsRead(notificationId)
 
@@ -101,6 +105,12 @@ export function NotificationCenter() {
       // Remove the notification from the list
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
     } catch (error) {
+      // Remove from responded set if failed
+      setRespondedNotifications(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(notificationId)
+        return newSet
+      })
       console.error('Error responding to crew invitation:', error)
       toast.error('Failed to respond to invitation')
     }
@@ -108,6 +118,9 @@ export function NotificationCenter() {
 
   const handleEventInvitationResponse = async (notificationId: string, eventMemberId: string, response: 'accepted' | 'declined') => {
     try {
+      // Immediately mark as responded to hide buttons
+      setRespondedNotifications(prev => new Set(prev).add(notificationId))
+
       await respondToEventInvitation(eventMemberId, response)
       await handleMarkAsRead(notificationId)
 
@@ -120,6 +133,12 @@ export function NotificationCenter() {
       // Remove the notification from the list
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
     } catch (error) {
+      // Remove from responded set if failed
+      setRespondedNotifications(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(notificationId)
+        return newSet
+      })
       console.error('Error responding to event invitation:', error)
       toast.error('Failed to respond to invitation')
     }
@@ -162,32 +181,55 @@ export function NotificationCenter() {
 
             {/* Crew invitation actions */}
             {notification.type === 'crew_invitation' && !notification.read && notification.data?.crew_member_id && (
-              <div className="flex flex-row gap-2 mt-3">
-                <Button
-                  size="sm"
-                  onClick={() => handleCrewInvitationResponse(
-                    notification.id,
-                    notification.data.crew_member_id,
-                    'accepted'
-                  )}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition bg-white text-black hover:bg-gray-100 flex-1"
-                >
-                  <Check className="w-3 h-3" />
-                  Join Crew
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCrewInvitationResponse(
-                    notification.id,
-                    notification.data.crew_member_id,
-                    'declined'
-                  )}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition border-white/20 text-white hover:bg-white/10 flex-1"
-                >
-                  <X className="w-3 h-3" />
-                  Decline
-                </Button>
+              <div className="flex gap-1.5 mt-3">
+                {/* View Details Button */}
+                {notification.data?.crew_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      window.location.href = `/crew/${notification.data?.crew_id}`
+                    }}
+                    className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] flex-1 min-w-0"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span className="truncate">Details</span>
+                  </Button>
+                )}
+
+                {/* Join/Decline Buttons - Only show if not responded */}
+                {!respondedNotifications.has(notification.id) && (
+                  <>
+                    {/* Join Button */}
+                    <Button
+                      size="sm"
+                      onClick={() => handleCrewInvitationResponse(
+                        notification.id,
+                        notification.data.crew_member_id,
+                        'accepted'
+                      )}
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 min-w-0"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span className="truncate">Join</span>
+                    </Button>
+
+                    {/* Decline Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCrewInvitationResponse(
+                        notification.id,
+                        notification.data.crew_member_id,
+                        'declined'
+                      )}
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 min-w-0"
+                    >
+                      <X className="w-3 h-3" />
+                      <span className="truncate">Decline</span>
+                    </Button>
+                  </>
+                )}
               </div>
             )}
 
@@ -195,32 +237,55 @@ export function NotificationCenter() {
 
             {/* Event invitation actions */}
             {notification.type === 'event_invitation' && !notification.read && (
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  onClick={() => handleEventInvitationResponse(
-                    notification.id,
-                    notification.data.event_member_id,
-                    'accepted'
-                  )}
-                  className="h-7 px-3"
-                >
-                  <Check className="w-3 h-3 mr-1" />
-                  Accept
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEventInvitationResponse(
-                    notification.id,
-                    notification.data.event_member_id,
-                    'declined'
-                  )}
-                  className="h-7 px-3"
-                >
-                  <X className="w-3 h-3 mr-1" />
-                  Decline
-                </Button>
+              <div className="flex gap-1.5 mt-3">
+                {/* View Details Button */}
+                {notification.data?.event_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      window.location.href = `/event/${notification.data?.event_id}`
+                    }}
+                    className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] flex-1 min-w-0"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span className="truncate">Details</span>
+                  </Button>
+                )}
+
+                {/* Join/Decline Buttons - Only show if not responded */}
+                {!respondedNotifications.has(notification.id) && (
+                  <>
+                    {/* Join Button */}
+                    <Button
+                      size="sm"
+                      onClick={() => handleEventInvitationResponse(
+                        notification.id,
+                        notification.data.event_member_id,
+                        'accepted'
+                      )}
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 min-w-0"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span className="truncate">Join</span>
+                    </Button>
+
+                    {/* Decline Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEventInvitationResponse(
+                        notification.id,
+                        notification.data.event_member_id,
+                        'declined'
+                      )}
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 min-w-0"
+                    >
+                      <X className="w-3 h-3" />
+                      <span className="truncate">Decline</span>
+                    </Button>
+                  </>
+                )}
               </div>
             )}
 

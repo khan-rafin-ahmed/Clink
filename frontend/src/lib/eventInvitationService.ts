@@ -356,9 +356,12 @@ export async function respondToEventInvitation(
 
     console.log('✅ Invitation response sent')
 
-    const message = response.response === 'accepted' 
+    const message = response.response === 'accepted'
       ? '🎉 You\'re in! See you at the session!'
       : '👍 Response sent. Maybe next time!'
+
+    // Show success toast
+    toast.success(message)
 
     return {
       success: true,
