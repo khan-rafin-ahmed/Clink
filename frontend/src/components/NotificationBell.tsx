@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { cacheService } from '@/lib/cacheService'
 
 
 
@@ -25,6 +26,11 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [respondedNotifications, setRespondedNotifications] = useState<Set<string>>(new Set())
+
+  const CACHE_TTL = 60 * 1000 // 60 seconds
+
+  const getNotificationsCacheKey = (userId: string) => `user_notifications_${userId}`
+  const getUnreadCacheKey = (userId: string) => `unread_count_${userId}`
 
   const notificationService = NotificationService.getInstance()
 
@@ -54,7 +60,12 @@ export function NotificationBell() {
 
     setIsLoading(true)
     try {
-      const data = await notificationService.getUserNotifications(user.id)
+      const cacheKey = getNotificationsCacheKey(user.id)
+      let data = cacheService.get<NotificationData[]>(cacheKey)
+      if (!data) {
+        data = await notificationService.getUserNotifications(user.id)
+        cacheService.set(cacheKey, data, CACHE_TTL)
+      }
       setNotifications(data)
     } catch (error) {
       console.error('❌ Error loading notifications:', error)
@@ -68,7 +79,12 @@ export function NotificationBell() {
     if (!user?.id) return
 
     try {
-      const count = await notificationService.getUnreadCount(user.id)
+      const cacheKey = getUnreadCacheKey(user.id)
+      let count = cacheService.get<number>(cacheKey)
+      if (count === null || count === undefined) {
+        count = await notificationService.getUnreadCount(user.id)
+        cacheService.set(cacheKey, count, CACHE_TTL)
+      }
       setUnreadCount(count)
     } catch (error) {
       console.error('❌ Error loading unread count:', error)
@@ -96,7 +112,13 @@ export function NotificationBell() {
       if (result.success) {
         await markAsRead(notificationId)
         // Remove the notification from the list after successful response
-        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+        setNotifications(prev => {
+          const updated = prev.filter(n => n.id !== notificationId)
+          if (user?.id) {
+            cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
+          }
+          return updated
+        })
         // Toast is handled by the service function
       } else {
         // Remove from responded set if failed
@@ -122,10 +144,20 @@ export function NotificationBell() {
   const markAsRead = async (notificationId: string) => {
     try {
       await notificationService.markAsRead(notificationId)
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      setNotifications(prev => {
+        const updated = prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        if (user?.id) {
+          cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
+        }
+        return updated
+      })
+      setUnreadCount(prev => {
+        const newCount = Math.max(0, prev - 1)
+        if (user?.id) {
+          cacheService.set(getUnreadCacheKey(user.id), newCount, CACHE_TTL)
+        }
+        return newCount
+      })
     } catch (error) {
       // Handle error silently in production
     }
@@ -138,8 +170,15 @@ export function NotificationBell() {
 
     try {
       await notificationService.markAllAsRead(user.id)
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      setUnreadCount(0)
+      setNotifications(prev => {
+        const updated = prev.map(n => ({ ...n, read: true }))
+        cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
+        return updated
+      })
+      setUnreadCount(() => {
+        cacheService.set(getUnreadCacheKey(user.id), 0, CACHE_TTL)
+        return 0
+      })
     } catch (error) {
       // Handle error silently in production
     }
@@ -205,7 +244,13 @@ export function NotificationBell() {
       }
 
       // Remove the notification from the list
-      setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      setNotifications(prev => {
+        const updated = prev.filter(n => n.id !== notificationId)
+        if (user?.id) {
+          cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
+        }
+        return updated
+      })
     } catch (error) {
       // Remove from responded set if failed
       setRespondedNotifications(prev => {
