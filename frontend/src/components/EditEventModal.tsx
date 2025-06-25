@@ -8,7 +8,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { updateEvent } from '@/lib/eventService'
 import { getUserCrews, getCrewMembers } from '@/lib/crewService'
-import { bulkAddCrewMembersToEvent } from '@/lib/memberService'
+import { bulkInviteCrewMembersToEvent } from '@/lib/memberService'
 import { uploadEventCover } from '@/lib/fileUpload'
 import { getDefaultCoverImage } from '@/lib/coverImageUtils'
 import { useAuth } from '@/lib/auth-context'
@@ -254,10 +254,10 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       console.log('Updating event with data:', updateData)
       await updateEvent(event.id, updateData)
 
-      // Add selected crew members if any (they automatically join)
+      // Send invitations to selected crew members
       if (selectedInvitees.length > 0) {
         try {
-          await bulkAddCrewMembersToEvent(event.id, selectedInvitees, user!.id)
+          await bulkInviteCrewMembersToEvent(event.id, selectedInvitees, user!.id)
           toast.success(`🍺 Session updated and ${selectedInvitees.length} crew members invited!`)
         } catch (error) {
           console.error('Error inviting crew members:', error)

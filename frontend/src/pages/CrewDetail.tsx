@@ -15,8 +15,11 @@ import {
   searchUsersForInvite,
   getCrewPendingRequests,
   deleteCrew,
+  hasCrewManagementPermissions,
 } from '@/lib/crewService'
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
+import { EditCrewModal } from '@/components/EditCrewModal'
+import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import {
   Users,
@@ -36,6 +39,7 @@ import {
   Check,
   Clock,
   Trash2,
+  Edit,
 } from 'lucide-react'
 import {
   Dialog,
@@ -49,12 +53,14 @@ import type { Crew, CrewMember } from '@/types'
 export function CrewDetail() {
   const { crewId } = useParams<{ crewId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [crew, setCrew] = useState<Crew | null>(null)
   const [members, setMembers] = useState<CrewMember[]>([])
   const [pendingRequests, setPendingRequests] = useState<CrewMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [inviteIdentifier, setInviteIdentifier] = useState('')
   const [isInviting, setIsInviting] = useState(false)
   const [searchResults, setSearchResults] = useState<Array<{ user_id: string; display_name: string; avatar_url: string | null }>>([])
@@ -63,6 +69,7 @@ export function CrewDetail() {
   const [inviteResult, setInviteResult] = useState<{ success: boolean; shareLink?: string; message: string } | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [lastSearchQuery, setLastSearchQuery] = useState('')
+  const [canManageCrew, setCanManageCrew] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -103,6 +110,17 @@ export function CrewDetail() {
       setCrew(crewData)
       setMembers(membersData)
       setPendingRequests(pendingData)
+
+      // Check management permissions
+      if (user && crewId) {
+        try {
+          const hasPermissions = await hasCrewManagementPermissions(crewId, user.id)
+          setCanManageCrew(hasPermissions)
+        } catch (error) {
+          console.error('Error checking permissions:', error)
+          setCanManageCrew(false)
+        }
+      }
     } catch (error: any) {
       console.error('Error loading crew data:', error)
       toast.error('Failed to load crew details')
@@ -410,27 +428,43 @@ export function CrewDetail() {
                 )}
               </div>
 
-              {isCreator && (
+              {(isCreator || canManageCrew) && (
                 <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreateInviteLink}
-                    className="bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white border-white/20"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share Link
-                  </Button>
+                  {canManageCrew && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEditModal(true)}
+                      className="bg-yellow-600/10 text-yellow-400 hover:bg-yellow-600/20 hover:text-yellow-300 border-yellow-600/30"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Crew
+                    </Button>
+                  )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border-red-500/30"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
+                  {isCreator && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCreateInviteLink}
+                        className="bg-white/5 text-[#B3B3B3] hover:bg-white/10 hover:text-white border-white/20"
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share Link
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border-red-500/30"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
 
                   <Dialog open={showInviteModal} onOpenChange={(open) => {
                     setShowInviteModal(open)
@@ -748,6 +782,19 @@ export function CrewDetail() {
           description="Are you sure you want to delete this crew? All members will be removed and this action cannot be undone."
           itemName={crew.name}
           itemType="crew"
+        />
+      )}
+
+      {/* Edit Crew Modal */}
+      {crew && (
+        <EditCrewModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          crew={crew}
+          onCrewUpdated={() => {
+            loadCrewData()
+            setShowEditModal(false)
+          }}
         />
       )}
     </div>

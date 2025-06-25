@@ -10,6 +10,7 @@ export type NotificationType =
   | 'event_invitation_response'
   | 'event_update'
   | 'event_cancelled'
+  | 'crew_promotion'
 
 export interface NotificationData {
   id?: string
@@ -159,7 +160,8 @@ class NotificationService {
       event_invitation: '📨',
       event_invitation_response: '💬',
       event_update: '📝',
-      event_cancelled: '❌'
+      event_cancelled: '❌',
+      crew_promotion: '👑'
     }
     return emojis[type] || '🔔'
   }
@@ -294,6 +296,21 @@ export const notificationTriggers = {
       type: 'crew_invite_accepted',
       title: `🎯 You've got a new clink mate`,
       message: `${acceptedUserName} joined your "${crewName}" crew!`,
+      data: { crewId, crewName },
+      read: false
+    })
+  },
+
+  /**
+   * Co-host promotion
+   */
+  async onCoHostPromotion(crewId: string, crewName: string, promotedUserId: string): Promise<void> {
+    const notification = NotificationService.getInstance()
+    await notification.createNotification({
+      user_id: promotedUserId,
+      type: 'crew_promotion',
+      title: `👑 You've been promoted to co-host!`,
+      message: `You're now a co-host of "${crewName}" crew. Time to help lead the party!`,
       data: { crewId, crewName },
       read: false
     })

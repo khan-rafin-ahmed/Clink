@@ -199,7 +199,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
     // Get all accepted crew members (excluding creator to avoid duplicates)
     const { data: members, error } = await supabase
       .from('crew_members')
-      .select('*')
+      .select('*, role')
       .eq('crew_id', crewId)
       .eq('status', 'accepted')
       .order('joined_at', { ascending: true })
@@ -250,6 +250,7 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
           crew_id: crewId,
           user_id: crewData.created_by,
           status: 'accepted' as const,
+          role: 'host' as const,
           joined_at: crewData.created_at, // Use crew creation date
           created_at: crewData.created_at, // Use crew creation date
           updated_at: crewData.created_at, // Use crew creation date
@@ -299,7 +300,7 @@ export async function getCrewPendingRequests(crewId: string): Promise<CrewMember
   // Step 1: Query crew_members for pending rows
   const { data: rows, error: rowsError } = await supabase
     .from('crew_members')
-    .select('id, crew_id, user_id, status, joined_at, created_at, updated_at')
+    .select('id, crew_id, user_id, status, role, joined_at, created_at, updated_at')
     .eq('crew_id', crewId)
     .eq('status', 'pending')
     .order('joined_at', { ascending: true });
@@ -718,6 +719,53 @@ export async function leaveCrew(crewId: string): Promise<void> {
     .eq('user_id', user.id)
 
   if (error) throw error
+}
+
+// Simplified co-host management functions
+export async function promoteToCoHost(crewId: string, memberId: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase.rpc('promote_crew_member_to_cohost', {
+    p_crew_id: crewId, p_member_id: memberId, p_promoter_id: user.id
+  })
+  if (error) throw error
+}
+
+export async function demoteCoHost(crewId: string, memberId: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase.rpc('demote_crew_cohost_to_member', {
+    p_crew_id: crewId, p_member_id: memberId, p_demoter_id: user.id
+  })
+  if (error) throw error
+}
+
+export async function removeCrewMember(crewId: string, memberId: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase.rpc('remove_crew_member', {
+    p_crew_id: crewId, p_member_id: memberId, p_remover_id: user.id
+  })
+  if (error) throw error
+}
+
+export async function hasCrewManagementPermissions(crewId: string, userId?: string): Promise<boolean> {
+  const user = await getCurrentUser()
+  const checkUserId = userId || user?.id
+  if (!checkUserId) return false
+
+  const { data } = await supabase
+    .from('crew_members')
+    .select('role')
+    .eq('crew_id', crewId)
+    .eq('user_id', checkUserId)
+    .eq('status', 'accepted')
+    .maybeSingle()
+
+  return data?.role === 'host' || data?.role === 'co_host'
 }
 
 // Remove member from crew (crew creator only)

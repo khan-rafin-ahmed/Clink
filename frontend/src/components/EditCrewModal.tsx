@@ -5,10 +5,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { updateCrew } from '@/lib/crewService'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
+import { MemberList } from '@/components/shared/MemberList'
+import { InviteLinkGenerator } from '@/components/shared/InviteLinkGenerator'
+import { updateCrew, getCrewMembers, inviteUserToCrew, createCrewInviteLink, promoteToCoHost, demoteCoHost, removeCrewMember, hasCrewManagementPermissions } from '@/lib/crewService'
+import { notificationTriggers } from '@/lib/notificationService'
+import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
-import type { Crew } from '@/types'
+import type { Crew, CrewMember } from '@/types'
 
 interface EditCrewModalProps {
   isOpen: boolean
@@ -18,7 +24,13 @@ interface EditCrewModalProps {
 }
 
 export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrewModalProps) {
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('details')
+  const [members, setMembers] = useState<CrewMember[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
+  const [canManage, setCanManage] = useState(false)
+
   const [formData, setFormData] = useState<{
     name: string
     description: string
@@ -43,16 +55,87 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     }
   }, [crew])
 
+  // Load crew members and check permissions when modal opens
+  useEffect(() => {
+    if (isOpen && crew && user) {
+      loadCrewMembers()
+      checkManagementPermissions()
+    }
+  }, [isOpen, crew, user])
+
+  const loadCrewMembers = async () => {
+    if (!crew) return
+    try {
+      setLoadingMembers(true)
+      const crewMembers = await getCrewMembers(crew.id)
+      setMembers(crewMembers)
+    } catch (error: any) {
+      console.error('Error loading crew members:', error)
+      toast.error('Failed to load crew members')
+    } finally {
+      setLoadingMembers(false)
+    }
+  }
+
+  const checkManagementPermissions = async () => {
+    if (!crew || !user) return
+    try {
+      const hasPermissions = await hasCrewManagementPermissions(crew.id, user.id)
+      setCanManage(hasPermissions)
+    } catch (error) {
+      console.error('Error checking permissions:', error)
+      setCanManage(false)
+    }
+  }
+
+  // Simplified handlers using reusable components
+  const handleInviteUser = async (userId: string) => {
+    if (!crew) return
+    await inviteUserToCrew(crew.id, userId)
+    toast.success('🍺 Invitation sent!')
+    loadCrewMembers()
+  }
+
+  const handleGenerateInviteLink = async (): Promise<string> => {
+    if (!crew) throw new Error('No crew selected')
+    return await createCrewInviteLink(crew.id)
+  }
+
+  const handlePromote = async (userId: string) => {
+    if (!crew) return
+
+    try {
+      await promoteToCoHost(crew.id, userId)
+      toast.success('🍺 Member promoted to co-host!')
+
+      // Send notification to the promoted user
+      await notificationTriggers.onCoHostPromotion(crew.id, crew.name, userId)
+
+      loadCrewMembers()
+    } catch (error) {
+      console.error('Error promoting member:', error)
+      toast.error('Failed to promote member')
+    }
+  }
+
+  const handleDemote = async (userId: string) => {
+    if (!crew) return
+    await demoteCoHost(crew.id, userId)
+    toast.success('🍺 Co-host demoted to member!')
+    loadCrewMembers()
+  }
+
+  const handleRemove = async (userId: string) => {
+    if (!crew) return
+    await removeCrewMember(crew.id, userId)
+    toast.success('🍺 Member removed from crew!')
+    loadCrewMembers()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!formData.name.trim()) {
       toast.error('Crew name is required')
-      return
-    }
-
-    if (!formData.vibe) {
-      toast.error('Please select a vibe')
       return
     }
 
@@ -64,7 +147,6 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
         vibe: formData.vibe,
         visibility: formData.visibility
       })
-
       toast.success('🍺 Crew updated successfully!')
       onCrewUpdated()
       onClose()
@@ -76,25 +158,41 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     }
   }
 
-  const handleClose = () => {
-    if (!isLoading) {
-      onClose()
-    }
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-black border-gray-800">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-[95vw] sm:max-w-[700px] max-h-[90vh] sm:max-h-[80vh] bg-black border-gray-800 overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold">
-            Edit Crew
-          </DialogTitle>
+          <DialogTitle className="text-white text-xl font-bold">Edit Crew</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Update your crew's details and settings.
+            Manage your crew details, members, and invitations.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-900 h-12 sm:h-10">
+            <TabsTrigger
+              value="details"
+              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
+            >
+              Details
+            </TabsTrigger>
+            <TabsTrigger
+              value="members"
+              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
+            >
+              Members ({members.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="invite"
+              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
+            >
+              Invite
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="max-h-[60vh] sm:max-h-[50vh] overflow-y-auto px-1">
+            <TabsContent value="details" className="space-y-6 mt-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
           {/* Crew Name */}
           <div className="space-y-2">
             <Label htmlFor="name" className="text-white">
@@ -168,33 +266,62 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
             </Select>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="flex-1 border-gray-700 text-white hover:bg-gray-800"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !formData.name.trim() || !formData.vibe}
-              className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-semibold"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
-                </>
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !formData.name.trim()}
+                    className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-semibold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Crew'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+
+            {/* Members Tab */}
+            <TabsContent value="members" className="space-y-4 mt-6">
+              {loadingMembers ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-yellow-400" />
+                  <span className="ml-2 text-gray-400">Loading members...</span>
+                </div>
               ) : (
-                'Update Crew'
+                <MemberList
+                  members={members}
+                  canManage={canManage}
+                  currentUserId={user?.id}
+                  onPromote={handlePromote}
+                  onDemote={handleDemote}
+                  onRemove={handleRemove}
+                  isCreator={(userId) => crew.created_by === userId}
+                />
               )}
-            </Button>
+            </TabsContent>
+
+            {/* Invite Tab */}
+            <TabsContent value="invite" className="space-y-6 mt-6">
+              <UserSearchInvite onInvite={handleInviteUser} />
+              <InviteLinkGenerator onGenerate={handleGenerateInviteLink} />
+            </TabsContent>
           </div>
-        </form>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

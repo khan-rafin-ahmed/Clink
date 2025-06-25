@@ -291,7 +291,8 @@ export function NotificationBell() {
       event_invitation: '📨',
       event_invitation_response: '💬',
       event_update: '📝',
-      event_cancelled: '❌'
+      event_cancelled: '❌',
+      crew_promotion: '👑'
     }
     return icons[type] || '🔔'
   }

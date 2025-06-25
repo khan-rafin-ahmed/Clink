@@ -5,7 +5,8 @@ import { cache, CACHE_KEYS } from './cache'
 import type { EventPhoto, EventComment, EventCommentReaction } from '@/types'
 
 /**
- * Check if user attended an event (has permission to view/add media)
+ * Check if user can access event media (photos/comments)
+ * Allows access for hosts, attendees, and during live events
  */
 export async function checkEventAttendance(eventId: string, userId: string): Promise<boolean> {
   const cacheKey = CACHE_KEYS.EVENT_ATTENDANCE(eventId, userId)
@@ -17,10 +18,10 @@ export async function checkEventAttendance(eventId: string, userId: string): Pro
   }
 
   try {
-    // First get the event to check if user is the host
+    // First get the event to check if user is the host and event status
     const { data: event } = await supabase
       .from('events')
-      .select('id, created_by')
+      .select('id, created_by, date_time, end_time, duration_type')
       .eq('id', eventId)
       .single()
 
@@ -86,10 +87,10 @@ export async function uploadEventPhoto(
     throw new Error('User not authenticated')
   }
 
-  // Check if user attended the event
+  // Check if user can upload to this event
   const canUpload = await checkEventAttendance(eventId, user.id)
   if (!canUpload) {
-    throw new Error('You can only upload photos to events you attended')
+    throw new Error('You can only upload photos to events you are attending or have attended')
   }
 
   try {
@@ -145,10 +146,10 @@ export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
     throw new Error('User not authenticated')
   }
 
-  // Check if user attended the event
+  // Check if user can view photos from this event
   const canView = await checkEventAttendance(eventId, user.id)
   if (!canView) {
-    throw new Error('You can only view photos from events you attended')
+    throw new Error('You can only view photos from events you are attending or have attended')
   }
 
   try {
@@ -243,10 +244,10 @@ export async function addEventComment(eventId: string, content: string): Promise
     throw new Error('User not authenticated')
   }
 
-  // Check if user attended the event
+  // Check if user can comment on this event
   const canComment = await checkEventAttendance(eventId, user.id)
   if (!canComment) {
-    throw new Error('You can only comment on events you attended')
+    throw new Error('You can only comment on events you are attending or have attended')
   }
 
   try {
@@ -291,10 +292,10 @@ export async function getEventComments(eventId: string): Promise<EventComment[]>
     throw new Error('User not authenticated')
   }
 
-  // Check if user attended the event
+  // Check if user can view comments from this event
   const canView = await checkEventAttendance(eventId, user.id)
   if (!canView) {
-    throw new Error('You can only view comments from events you attended')
+    throw new Error('You can only view comments from events you are attending or have attended')
   }
 
   try {

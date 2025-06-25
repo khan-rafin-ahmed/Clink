@@ -165,6 +165,7 @@ export interface CrewMember {
   crew_id: string
   user_id: string
   status: 'pending' | 'accepted' | 'declined'
+  role: 'member' | 'co_host' | 'host'
   invited_by?: string
   joined_at: string
   created_at: string

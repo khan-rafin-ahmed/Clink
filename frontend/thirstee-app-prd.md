@@ -528,6 +528,56 @@ if (errors.length > 0) {
 - **Database**: Added migration `20250624_invitation_tokens_system.sql`
 - **Expected Results**: Users can accept/decline invitations directly from email with secure, one-click actions
 
+#### **Advanced Crew Management & Event Features (2025-06-25)**
+- **Issue**: Limited crew management capabilities and missing live event interaction features
+- **Root Cause**: Basic crew system without role hierarchy and no photo/comment support for ongoing events
+- **Solution**: Implemented comprehensive crew co-host system and live event interactions
+- **New Features**:
+  - **Crew Co-Host System**: Hierarchical permission system with Host, Co-Host, and Member roles
+  - **Enhanced Edit Crew Interface**: Tabbed interface for crew details, member management, and invitations
+  - **Event Editing Email Invitations**: Automatic email notifications when adding crews to existing events
+  - **Live Event Media Support**: Photo uploads and commenting during ongoing events
+- **Crew Co-Host Implementation**:
+  - Added `role` column to `crew_members` table with values: 'member', 'co_host', 'host'
+  - Co-hosts can edit crew details, invite members, and remove regular members
+  - Only original hosts can promote/demote co-hosts and remove other co-hosts
+  - Enhanced RLS policies to support co-host permissions for crew management
+  - Role-based UI with crown (host), shield (co-host), and user (member) icons
+- **Enhanced Edit Crew Modal**:
+  - Three-tab interface: Details, Members, and Invite
+  - Member management with role display and promotion/demotion controls
+  - Integrated invitation system supporting username search, email invites, and shareable links
+  - Real-time member list updates with role-based action menus
+- **Event Editing Improvements**:
+  - Modified `EditEventModal` to use invitation system instead of auto-adding crew members
+  - Created `bulkInviteCrewMembersToEvent` function with email notification support
+  - Enhanced email templates for event invitations during editing
+- **Live Event Media Features**:
+  - Updated `eventMediaService` to support photo uploads during live events
+  - Enhanced permission checks to allow media access for ongoing events
+  - Updated error messages to reflect live event capabilities
+  - Consistent photo and comment functionality for both live and completed events
+- **Database Changes**:
+  - Added `role` column to `crew_members` table with proper constraints
+  - Created `promote_crew_member_to_cohost()` function for role management
+  - Created `demote_crew_cohost_to_member()` function with permission checks
+  - Created `remove_crew_member()` function with role-based permissions
+  - Created `send_event_invitations_to_users()` function for bulk email invitations
+  - Updated RLS policies to support co-host permissions
+- **Frontend Enhancements**:
+  - Enhanced `EditCrewModal.tsx` with tabbed interface and member management
+  - Updated `crewService.ts` with co-host management functions
+  - Modified `memberService.ts` to support invitation-based event editing
+  - Updated `eventMediaService.ts` for live event support
+  - Enhanced type definitions to include crew member roles
+- **Files Created**: `add_crew_cohost_system.sql` migration
+- **Files Modified**: `EditCrewModal.tsx`, `EditEventModal.tsx`, `crewService.ts`, `memberService.ts`, `eventMediaService.ts`, `types.ts`
+- **Expected Results**:
+  - Crew hosts can delegate management responsibilities to trusted co-hosts
+  - Enhanced crew invitation capabilities with multiple invitation methods
+  - Event editing automatically sends email invitations to newly added crew members
+  - Live events support real-time photo sharing and commenting for attendees
+
 ---
 
 ## **🎯 IMPLEMENTATION STATUS: ALL 7 PRIORITIES COMPLETED ✅**
@@ -660,6 +710,7 @@ All features are implemented, tested, and documented. The Thirstee app now has:
 | `crew_id`     | `uuid`                           | NOT NULL, FK → `public.crews(id)`                                                 |
 | `user_id`     | `uuid`                           | NOT NULL, FK → `auth.users(id)`                                                   |
 | `status`      | `crew_member_status` (enum)      | NOT NULL, DEFAULT `'pending'`                                                     |
+| `role`        | `text`                           | CHECK IN ('member', 'co_host', 'host'), DEFAULT `'member'`                       |
 | `invited_by`  | `uuid`                           | FK → `auth.users(id)`                                                             |
 | `joined_at`   | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 | `created_at`  | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
