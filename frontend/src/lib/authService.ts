@@ -218,15 +218,22 @@ export async function handleAuthCallback() {
 // Robust sign out
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
+    // Use local scope to ensure tokens are cleared even if refresh token is invalid
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
 
-    if (error) {
+    if (error && error.status !== 401 && error.status !== 403) {
       throw error
+    }
+
+    // Attempt global sign out but ignore invalid token errors
+    const { error: globalError } = await supabase.auth.signOut({ scope: 'global' })
+    if (globalError && globalError.status !== 401 && globalError.status !== 403) {
+      throw globalError
     }
 
     // Toast message is handled in auth-context.tsx to avoid duplicates
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     toast.error('Failed to sign out. Please try again.')
     throw error
   }

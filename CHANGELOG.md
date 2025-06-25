@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile Menu**: Corrected glassmorphism effects and accessibility standards
 - **Event Cards**: Fixed clickability and event propagation handling
 - **Time Display**: Corrected event timing logic using date-fns for accuracy
+- **Logout**: Fixed 403 errors by forcing a local sign out before global logout
 
 ### Added
 - **Age Gate**: Implemented age verification system per compliance requirements
