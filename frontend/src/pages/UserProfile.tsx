@@ -126,13 +126,6 @@ export function UserProfile() {
     try {
 
 
-      // Get all crews the user is a member of
-      const { data: _ } = await supabase
-        .from('crew_members')
-        .select('crew_id')
-        .eq('user_id', user.id)
-        .eq('status', 'accepted')
-
       console.log('Fetching events for user:', user.id)
 
       // Get user's crew memberships for crew-associated events
