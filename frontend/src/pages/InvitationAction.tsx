@@ -28,6 +28,9 @@ interface ActionResult {
   crew_id?: string
   redirect_url?: string
   error?: string
+  requires_auth?: boolean
+  event_id?: string
+  invitation_id?: string
 }
 
 export function InvitationAction({}: InvitationActionProps) {

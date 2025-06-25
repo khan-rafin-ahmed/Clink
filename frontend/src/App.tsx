@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { setupSessionRefresh } from './lib/sessionUtils'
 import { useEnvironmentValidation } from './lib/envValidator'
+import { useAppMetaTags } from './hooks/useMetaTags'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
 import { HomePage } from './pages/HomePage'
@@ -51,6 +52,9 @@ function App() {
 
   // Validate environment configuration in local development
   useEnvironmentValidation()
+
+  // Apply default app meta tags
+  useAppMetaTags()
 
   return (
     <QueryClientProvider client={queryClient}>

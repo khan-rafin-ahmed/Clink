@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigation'
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
+import { useEventMetaTags } from '@/hooks/useMetaTags'
 import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
@@ -73,6 +74,10 @@ export function EventDetails() {
     requireAuth: false, // Event viewing doesn't require auth
     onError: () => toast.error('Failed to load event details')
   })
+
+  // Apply dynamic meta tags for social sharing
+  const metaEventUrl = event?.slug ? `/event/${event.slug}` : `/event/${eventId}`
+  useEventMetaTags(event, metaEventUrl)
 
   const handleEventUpdated = useCallback(() => {
     refetch()

@@ -79,15 +79,15 @@ function getDefaultSocialImage(vibe?: string | null): string {
 
   // Map vibes to existing default cover images in /assets/covers/
   const vibeImages: Record<string, string> = {
-    casual: `${baseUrl}/assets/covers/casual.webp`,
-    party: `${baseUrl}/assets/covers/party.webp`,
-    chill: `${baseUrl}/assets/covers/chill.webp`,
-    wild: `${baseUrl}/assets/covers/wild.webp`,
-    classy: `${baseUrl}/assets/covers/classy.webp`,
-    shots: `${baseUrl}/assets/covers/shots.webp`
+    casual: `${baseUrl}/assets/covers/Casual Hang.webp`,
+    party: `${baseUrl}/assets/covers/Party Mode.webp`,
+    chill: `${baseUrl}/assets/covers/Chill Vibes.webp`,
+    wild: `${baseUrl}/assets/covers/Wild Night.webp`,
+    classy: `${baseUrl}/assets/covers/Classy Evening.webp`,
+    shots: `${baseUrl}/assets/covers/Shots Night.webp`
   }
 
-  return vibeImages[vibe || 'casual'] || `${baseUrl}/assets/covers/casual.webp`
+  return vibeImages[vibe || 'casual'] || `${baseUrl}/assets/covers/Party Mode.webp`
 }
 
 /**
@@ -97,7 +97,7 @@ export function generateAppMetaTags(): MetaTagData {
   return {
     title: 'Thirstee - Tap. Plan. Thirstee.',
     description: 'The ultimate social drinking app for ages 21-35. Create spontaneous drinking sessions, join your crew, and raise hell together. 60-second event creation, real-time coordination.',
-    image: `${window.location.origin}/assets/covers/party.webp`, // Use existing party cover as main app image
+    image: `${window.location.origin}/assets/covers/Party Mode.webp`, // Use existing party cover as main app image
     url: window.location.origin,
     type: 'website',
     siteName: 'Thirstee',
