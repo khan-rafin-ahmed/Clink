@@ -2,16 +2,14 @@ import { supabase } from './supabase'
 import type { EventMember, MemberStatus } from '@/types'
 
 // Event Member Functions
-export async function inviteUserToEvent(eventId: string, userId: string) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function inviteUserToEvent(eventId: string, userId: string, currentUserId: string) {
 
   const { data, error } = await supabase
     .from('event_members')
     .insert({
       event_id: eventId,
       user_id: userId,
-      invited_by: user.id,
+      invited_by: currentUserId,
       status: 'pending'
     })
     .select()
@@ -32,15 +30,13 @@ export async function inviteUserToEvent(eventId: string, userId: string) {
   }
 }
 
-export async function updateMemberStatus(eventId: string, status: MemberStatus) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function updateMemberStatus(eventId: string, status: MemberStatus, currentUserId: string) {
 
   const { data, error } = await supabase
     .from('event_members')
     .update({ status })
     .eq('event_id', eventId)
-    .eq('user_id', user.id)
+    .eq('user_id', currentUserId)
     .select()
     .single()
 
@@ -82,9 +78,7 @@ export async function getEventMembers(eventId: string): Promise<EventMember[]> {
   }))
 }
 
-export async function getUserEventInvitations(): Promise<EventMember[]> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function getUserEventInvitations(currentUserId: string): Promise<EventMember[]> {
 
   const { data, error } = await supabase
     .from('event_members')
@@ -92,21 +86,19 @@ export async function getUserEventInvitations(): Promise<EventMember[]> {
       *,
       event:events(*)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', currentUserId)
     .eq('status', 'pending')
 
   if (error) throw error
   return data || []
 }
 
-export async function bulkInviteUsers(eventId: string, userIds: string[]) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function bulkInviteUsers(eventId: string, userIds: string[], currentUserId: string) {
 
   const invitations = userIds.map(userId => ({
     event_id: eventId,
     user_id: userId,
-    invited_by: user.id,
+    invited_by: currentUserId,
     status: 'pending' as MemberStatus
   }))
 
@@ -133,14 +125,12 @@ export async function bulkInviteUsers(eventId: string, userIds: string[]) {
 }
 
 // Bulk add crew members to event as automatically accepted
-export async function bulkAddCrewMembersToEvent(eventId: string, userIds: string[]) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function bulkAddCrewMembersToEvent(eventId: string, userIds: string[], currentUserId: string) {
 
   const memberships = userIds.map(userId => ({
     event_id: eventId,
     user_id: userId,
-    invited_by: user.id,
+    invited_by: currentUserId,
     status: 'accepted' as MemberStatus
   }))
 

@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  respondToEventInvitation, 
+import {
+  respondToEventInvitation,
   showInvitationResponseToast,
-  type EventInvitation 
+  type EventInvitation
 } from '@/lib/eventInvitationService'
+import { useAuth } from '@/lib/auth-context'
 import { 
   Calendar, 
   MapPin, 
@@ -32,6 +33,7 @@ export function EventInvitationCard({ invitation, onResponse, showToast = true }
   const [showCommentBox, setShowCommentBox] = useState(false)
   const [comment, setComment] = useState('')
   const [pendingResponse, setPendingResponse] = useState<'accepted' | 'declined' | null>(null)
+  const { user } = useAuth()
 
   const handleResponse = async (response: 'accepted' | 'declined') => {
     if (isResponding) return
@@ -49,7 +51,7 @@ export function EventInvitationCard({ invitation, onResponse, showToast = true }
       const result = await respondToEventInvitation(invitation.invitation_id, {
         response,
         comment: comment.trim() || undefined
-      })
+      }, user!.id)
 
       if (result.success) {
         // Only show toast if showToast prop is true

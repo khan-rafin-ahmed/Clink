@@ -256,7 +256,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             crewMembers: crewMembers.length
           })
 
-          const invitationResult = await sendEventInvitationsToCrew(createdEventId, selectedCrew)
+          const invitationResult = await sendEventInvitationsToCrew(createdEventId, selectedCrew, user!.id)
 
           if (invitationResult.success && invitationResult.invitedCount > 0) {
             invitationMessage = ` ${invitationResult.message}`

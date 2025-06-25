@@ -257,7 +257,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       // Add selected crew members if any (they automatically join)
       if (selectedInvitees.length > 0) {
         try {
-          await bulkAddCrewMembersToEvent(event.id, selectedInvitees)
+          await bulkAddCrewMembersToEvent(event.id, selectedInvitees, user!.id)
           toast.success(`🍺 Session updated and ${selectedInvitees.length} crew members invited!`)
         } catch (error) {
           console.error('Error inviting crew members:', error)
