@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { getBaseUrl } from '@/lib/envUtils'
 import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
 
@@ -59,15 +60,32 @@ const loadEventsData = async (currentUser: any = null): Promise<EventWithCreator
       return cached
     }
 
-    // Get public events using RPC to bypass RLS issues
-    const { data: publicEvents, error: publicEventsError } = await supabase
-      .rpc('get_public_events_for_discover', {
-        limit_count: 50
-      })
+    // Attempt to load events from cached backend route first
+    let publicEvents: any[] | null = null
+    try {
+      const resp = await fetch(`${getBaseUrl()}/public-events`)
+      if (resp.ok) {
+        publicEvents = await resp.json()
+      } else {
+        console.error('❌ Cached events fetch failed:', resp.status)
+      }
+    } catch (err) {
+      console.error('❌ Error fetching cached events:', err)
+    }
 
-    if (publicEventsError) {
-      console.error('❌ Error loading public events:', publicEventsError)
-      throw publicEventsError // Throw to be caught by the hook's error handling
+    // Fallback to Supabase RPC if cache miss or error
+    if (!publicEvents) {
+      const { data: events, error: eventsError } = await supabase
+        .rpc('get_public_events_for_discover', {
+          limit_count: 50
+        })
+
+      if (eventsError) {
+        console.error('❌ Error loading public events:', eventsError)
+        throw eventsError // Throw to be caught by the hook's error handling
+      }
+
+      publicEvents = events
     }
 
     console.log('📅 Found public events:', publicEvents?.length || 0)

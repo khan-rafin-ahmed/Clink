@@ -126,13 +126,6 @@ export function UserProfile() {
     try {
 
 
-      // Get all crews the user is a member of
-      const { data: _ } = await supabase
-        .from('crew_members')
-        .select('crew_id')
-        .eq('user_id', user.id)
-        .eq('status', 'accepted')
-
       console.log('Fetching events for user:', user.id)
 
       // Get user's crew memberships for crew-associated events
@@ -244,16 +237,38 @@ export function UserProfile() {
       console.log('Found upcoming events after duration-aware filtering:', upcomingEvents.length)
       console.log('Found past events after duration-aware filtering:', pastEvents.length)
 
+      // Batch fetch creator profiles to avoid N+1 queries
+      const allCreatorIds = Array.from(new Set([
+        ...upcomingEvents,
+        ...pastEvents
+      ].map((e: any) => e.created_by).filter((id: string) => id !== user.id)))
+
+      let creatorProfileMap: Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null; user_id: string }> = {}
+      if (allCreatorIds.length > 0) {
+        try {
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('display_name, nickname, avatar_url, user_id')
+            .in('user_id', allCreatorIds)
+
+          if (profiles) {
+            profiles.forEach(profile => {
+              creatorProfileMap[profile.user_id] = profile
+            })
+          }
+        } catch (error) {
+          console.error('Error batch fetching creator profiles:', error)
+        }
+      }
+
 
 
       // Transform upcoming events data for EventCard compatibility
-      let allUpcomingEvents = await Promise.all(upcomingEvents.map(async (event: any) => {
+      let allUpcomingEvents = upcomingEvents.map((event: any) => {
         const isHosting = event.created_by === user.id
 
-        // Get creator info for events not created by current user
         let creatorData
         if (isHosting) {
-          // Use current user's profile for events they created
           creatorData = {
             display_name: userProfile?.display_name || user?.email?.split('@')[0] || 'Unknown Host',
             nickname: userProfile?.nickname,
@@ -261,28 +276,12 @@ export function UserProfile() {
             user_id: user.id
           }
         } else {
-          // Fetch creator profile for events created by others
-          try {
-            const { data: creatorProfile } = await supabase
-              .from('user_profiles')
-              .select('display_name, nickname, avatar_url, user_id')
-              .eq('user_id', event.created_by)
-              .single()
-
-            creatorData = creatorProfile || {
-              display_name: `User ${event.created_by.slice(-4)}`,
-              nickname: null,
-              avatar_url: null,
-              user_id: event.created_by
-            }
-          } catch (error) {
-            console.error('Error fetching creator profile:', error)
-            creatorData = {
-              display_name: `User ${event.created_by.slice(-4)}`,
-              nickname: null,
-              avatar_url: null,
-              user_id: event.created_by
-            }
+          const profile = creatorProfileMap[event.created_by]
+          creatorData = profile || {
+            display_name: `User ${event.created_by.slice(-4)}`,
+            nickname: null,
+            avatar_url: null,
+            user_id: event.created_by
           }
         }
 
@@ -291,7 +290,7 @@ export function UserProfile() {
           creator: creatorData,
           isHosting
         }
-      }))
+      })
 
 
 
@@ -301,13 +300,11 @@ export function UserProfile() {
       setEnhancedSessions(allUpcomingEvents)
 
       // Transform past events data for EventCard compatibility
-      let allPastEvents = await Promise.all(pastEvents.map(async (event: any) => {
+      let allPastEvents = pastEvents.map((event: any) => {
         const isHosting = event.created_by === user.id
 
-        // Get creator info for events not created by current user
         let creatorData
         if (isHosting) {
-          // Use current user's profile for events they created
           creatorData = {
             display_name: userProfile?.display_name || user?.email?.split('@')[0] || 'Unknown Host',
             nickname: userProfile?.nickname,
@@ -315,28 +312,12 @@ export function UserProfile() {
             user_id: user.id
           }
         } else {
-          // Fetch creator profile for events created by others
-          try {
-            const { data: creatorProfile } = await supabase
-              .from('user_profiles')
-              .select('display_name, nickname, avatar_url, user_id')
-              .eq('user_id', event.created_by)
-              .single()
-
-            creatorData = creatorProfile || {
-              display_name: `User ${event.created_by.slice(-4)}`,
-              nickname: null,
-              avatar_url: null,
-              user_id: event.created_by
-            }
-          } catch (error) {
-            console.error('Error fetching creator profile:', error)
-            creatorData = {
-              display_name: `User ${event.created_by.slice(-4)}`,
-              nickname: null,
-              avatar_url: null,
-              user_id: event.created_by
-            }
+          const profile = creatorProfileMap[event.created_by]
+          creatorData = profile || {
+            display_name: `User ${event.created_by.slice(-4)}`,
+            nickname: null,
+            avatar_url: null,
+            user_id: event.created_by
           }
         }
 
@@ -345,7 +326,7 @@ export function UserProfile() {
           creator: creatorData,
           isHosting
         }
-      }))
+      })
 
       // Sort past events by date (descending - most recent first)
       allPastEvents.sort((a: any, b: any) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime())
