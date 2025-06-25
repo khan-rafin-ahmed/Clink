@@ -63,46 +63,46 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
 
     debugLog('🔍 getUserCrews: Found crews:', crewsData.length)
 
-    // Get member counts for each crew (including creator, but avoid double counting)
-    const crewsWithCounts = await Promise.all(
-      crewsData.map(async (crew: any) => {
-        try {
-          const { count } = await supabase
-            .from('crew_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('crew_id', crew.id)
-            .eq('status', 'accepted')
+    // Map crewId -> creator to easily check membership inclusion
+    const creatorMap: Record<string, string> = {}
+    crewsData.forEach((crew: any) => {
+      creatorMap[crew.id] = crew.created_by
+    })
 
-          // Check if creator is already in crew_members table
-          const { data: creatorMembership } = await supabase
-            .from('crew_members')
-            .select('id')
-            .eq('crew_id', crew.id)
-            .eq('user_id', crew.created_by)
-            .eq('status', 'accepted')
-            .maybeSingle()
+    // Fetch all accepted crew_members for these crews in one request
+    const { data: memberRows, error: membersError } = await supabase
+      .from('crew_members')
+      .select('crew_id, user_id')
+      .in('crew_id', crewIds)
+      .eq('status', 'accepted')
 
-          // Add 1 for creator only if they're not already counted in crew_members
-          const totalMembers = (count || 0) + (creatorMembership ? 0 : 1)
+    if (membersError) {
+      debugError('❌ Error fetching crew member rows:', membersError)
+      throw membersError
+    }
 
-          return {
-            ...crew,
-            member_count: totalMembers,
-            is_member: true,
-            is_creator: crew.created_by === currentUserId
-          } as Crew
-        } catch (error) {
-          debugError('❌ Error getting member count for crew:', crew.id, error)
-          // Return crew with just creator count if there's an error
-          return {
-            ...crew,
-            member_count: 1, // At least the creator
-            is_member: true,
-            is_creator: crew.created_by === currentUserId
-          } as Crew
-        }
-      })
-    )
+    // Build lookup of counts and creator inclusion
+    const membershipMap: Record<string, { count: number; creatorIncluded: boolean }> = {}
+    memberRows?.forEach(row => {
+      if (!membershipMap[row.crew_id]) {
+        membershipMap[row.crew_id] = { count: 0, creatorIncluded: false }
+      }
+      membershipMap[row.crew_id].count += 1
+      if (row.user_id === creatorMap[row.crew_id]) {
+        membershipMap[row.crew_id].creatorIncluded = true
+      }
+    })
+
+    const crewsWithCounts = crewsData.map((crew: any) => {
+      const info = membershipMap[crew.id] || { count: 0, creatorIncluded: false }
+      const totalMembers = info.count + (info.creatorIncluded ? 0 : 1)
+      return {
+        ...crew,
+        member_count: totalMembers,
+        is_member: true,
+        is_creator: crew.created_by === currentUserId
+      } as Crew
+    })
 
     debugLog('✅ getUserCrews: Successfully loaded crews with counts')
     return crewsWithCounts
