@@ -40,6 +40,7 @@ export function EditProfile() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [formData, setFormData] = useState({
+    username: '',
     display_name: '',
     nickname: '',
     bio: '',
@@ -82,6 +83,7 @@ export function EditProfile() {
         profileData = {
           id: '',
           user_id: user.id,
+          username: '', // Will be generated on save
           display_name: user.email?.split('@')[0] || 'User',
           nickname: null,
           bio: null,
@@ -96,6 +98,7 @@ export function EditProfile() {
 
       setProfile(profileData)
       setFormData({
+        username: profileData?.username || '',
         display_name: profileData?.display_name || '',
         nickname: profileData?.nickname || '',
         bio: profileData?.bio || '',
@@ -136,6 +139,7 @@ export function EditProfile() {
     if (!user || !profile) return
 
     const updateData = {
+      username: formData.username.trim() || null,
       display_name: formData.display_name.trim() || null,
       nickname: formData.nickname.trim() || null,
       bio: formData.bio.trim() || null,
@@ -146,21 +150,13 @@ export function EditProfile() {
       show_crews_publicly: formData.show_crews_publicly
     }
 
-    console.log('[EditProfile] Saving profile with data:', updateData)
     setSaving(true)
     try {
-      const result = await updateUserProfile(user.id, updateData)
-      console.log('[EditProfile] Profile update result:', result)
-
-      // Show special toast if nickname was set
-      if (updateData.nickname && updateData.nickname !== profile?.nickname) {
-        toast.success(`🔥 You're now known as ${updateData.nickname}`)
-      } else {
-        toast.success('Profile updated successfully! 🎉')
-      }
+      await updateUserProfile(user.id, updateData)
+      toast.success('Profile updated successfully! 🎉')
       handleUpdateSuccess()
-    } catch (error) {
-      console.error('[EditProfile] Error updating profile:', error)
+    } catch (error: any) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile')
     } finally {
       setSaving(false)
@@ -262,6 +258,21 @@ export function EditProfile() {
                 userId={user.id}
                 disabled={saving}
               />
+
+              {/* Username */}
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="your-username"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your profile URL: thirstee.app/profile/{formData.username || 'username'}
+                </p>
+              </div>
 
               {/* Display Name */}
               <div className="space-y-2">

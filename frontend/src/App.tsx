@@ -7,9 +7,9 @@ import { useEnvironmentValidation } from './lib/envValidator'
 import { useAppMetaTags } from './hooks/useMetaTags'
 import { Navbar } from './components/Navbar'
 import { AuthRedirect } from './components/AuthRedirect'
+import { SimpleProfileRedirect } from './components/SimpleProfileRedirect'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
-import { UserProfile } from './pages/UserProfile'
 import { EditProfile } from './pages/EditProfile'
 import { Events } from './pages/Events'
 import { Discover } from './pages/Discover'
@@ -84,7 +84,7 @@ function App() {
               } />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
-              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/profile" element={<SimpleProfileRedirect />} />
               <Route path="/profile/edit" element={<EditProfile />} />
 
               <Route path="/events" element={<Events />} />
@@ -95,7 +95,8 @@ function App() {
               <Route path="/event/:slug" element={<EventDetail />} />
               <Route path="/private-event/:slug" element={<EventDetail />} />
 
-              <Route path="/profile/:userId" element={<PublicProfile />} />
+              {/* Username-based profile routing */}
+              <Route path="/profile/:username" element={<PublicProfile />} />
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />

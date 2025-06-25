@@ -2,113 +2,68 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
-import { getUserProfile } from '@/lib/userService'
+import { getUserProfileByUsername } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Users, Calendar, Lock } from 'lucide-react'
+import { ArrowLeft, Users, Calendar } from 'lucide-react'
 import { UserStats } from '@/components/UserStats'
 import { CrewCard } from '@/components/CrewCard'
+import { Simple404 } from '@/components/Simple404'
 import type { UserProfile, Crew } from '@/types'
 
 export function PublicProfile() {
-  const { userId } = useParams<{ userId: string }>()
+  const { username } = useParams<{ username: string }>()
   const { user: currentUser } = useAuth()
   const { goBackSmart } = useSmartNavigation()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [crews, setCrews] = useState<Crew[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    if (!userId) {
-      setError('User ID not provided')
+    if (!username) {
+      setError(true)
       setLoading(false)
       return
     }
-
     loadProfile()
-  }, [userId])
+  }, [username])
 
   const loadProfile = async () => {
-    if (!userId) return
-
-    setLoading(true)
-    setError(null)
+    if (!username) return
 
     try {
-      // Try to get the user profile
-      const profileData = await getUserProfile(userId)
+      const profileData = await getUserProfileByUsername(username)
 
       if (!profileData) {
-        setError('User not found')
+        setError(true)
         return
       }
 
-      // Check if current user can view this profile
-      if (!canViewProfile(profileData)) {
-        setError(getPrivacyMessage(profileData))
+      // Simple privacy check
+      if (profileData.profile_visibility === 'private' && currentUser?.id !== profileData.user_id) {
+        setError(true)
         return
       }
 
       setProfile(profileData)
 
-      // Load crews if they should be shown publicly
+      // Load crews if public
       if (profileData.show_crews_publicly) {
-        try {
-          const userCrews = await getUserCrews(userId)
-          setCrews(userCrews || [])
-        } catch (crewError) {
-          console.error('Error loading crews:', crewError)
-          // Don't fail the whole page if crews can't be loaded
-        }
+        const userCrews = await getUserCrews(profileData.user_id)
+        setCrews(userCrews || [])
       }
-    } catch (error: any) {
-      if (error.message?.includes('not found') || error.message?.includes('PGRST116')) {
-        setError('User not found')
-      } else if (error.message?.includes('permission') || error.message?.includes('access')) {
-        setError('You don\'t have permission to view this profile')
-      } else {
-        setError('Failed to load profile')
-      }
+    } catch (error) {
+      setError(true)
     } finally {
       setLoading(false)
     }
   }
 
-  const canViewProfile = (profile: UserProfile): boolean => {
-    // User can always view their own profile
-    if (currentUser?.id === profile.user_id) {
-      return true
-    }
 
-    // Public profiles can be viewed by anyone
-    if (profile.profile_visibility === 'public') {
-      return true
-    }
-
-    // Private profiles can only be viewed by the owner
-    if (profile.profile_visibility === 'private') {
-      return false
-    }
-
-    // Crew-only profiles require crew membership check
-    // This would need to be implemented with a proper crew membership check
-    // For now, we'll rely on the database RLS policies
-    return profile.profile_visibility === 'crew_only'
-  }
-
-  const getPrivacyMessage = (profile: UserProfile): string => {
-    if (profile.profile_visibility === 'private') {
-      return 'This profile is private'
-    }
-    if (profile.profile_visibility === 'crew_only') {
-      return 'This profile is only visible to crew members'
-    }
-    return 'You don\'t have permission to view this profile'
-  }
 
   const getDisplayName = (profile: UserProfile): string => {
     return profile.display_name || 'Thirstee User'
@@ -135,26 +90,7 @@ export function PublicProfile() {
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button variant="outline" size="sm" onClick={goBackSmart}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </div>
-
-          <Card>
-            <CardContent className="text-center py-12">
-              <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Profile Not Available</h2>
-              <p className="text-muted-foreground">{error}</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <Simple404 username={username} />
   }
 
   if (!profile) {
@@ -218,6 +154,8 @@ export function PublicProfile() {
                       🍺 {profile.favorite_drink}
                     </Badge>
                   )}
+
+
 
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
