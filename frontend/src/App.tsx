@@ -98,6 +98,7 @@ function App() {
 
               {/* Invitation action routes */}
               <Route path="/invitation/:type/:action/:token" element={<InvitationAction />} />
+              <Route path="/invitation/:token" element={<InvitationAction />} />
 
               {/* Test route for rating components */}
               <Route path="/test-ratings" element={<TestRatings />} />

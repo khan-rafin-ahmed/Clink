@@ -23,7 +23,9 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
     event_date_time,
     event_location,
     event_id,
-    invitation_id
+    invitation_id,
+    accept_token,
+    decline_token
   } = data
 
   const eventDate = new Date(event_date_time).toLocaleDateString('en-US', {
@@ -35,7 +37,8 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
     minute: '2-digit'
   })
 
-  const acceptUrl = `https://thirstee.app/notifications`
+  const acceptUrl = accept_token ? `https://thirstee.app/invitation/event/accept/${accept_token}` : `https://thirstee.app/notifications`
+  const declineUrl = decline_token ? `https://thirstee.app/invitation/event/decline/${decline_token}` : `https://thirstee.app/notifications`
 
   const html = `
     <!DOCTYPE html>
@@ -265,11 +268,11 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
 
                   <div style="text-align: center; margin: 32px 0;">
                     <a href="${acceptUrl}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; text-align: center;">🍺 Accept Invitation</a>
-                    <a href="${acceptUrl}" class="btn-secondary" style="display: inline-block; background-color: #07080A !important; color: #FFFFFF !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">😔 Can't Make It</a>
+                    <a href="${declineUrl}" class="btn-secondary" style="display: inline-block; background-color: #07080A !important; color: #FFFFFF !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">😔 Can't Make It</a>
                   </div>
 
                   <p style="font-size: 14px; color: #B3B3B3 !important; text-align: center;">
-                    <a href="${acceptUrl}" style="color: #00FFA3 !important; text-decoration: underline;">View full event details</a>
+                    <a href="https://thirstee.app/event/${event_id}" style="color: #00FFA3 !important; text-decoration: underline;">View full event details</a>
                   </p>
                 </td>
               </tr>
@@ -299,7 +302,8 @@ ${inviter_name} invited you to a Session: "${event_title}"
 📍 Location: ${event_location || 'To be announced'}
 
 Accept: ${acceptUrl}
-View Details: ${acceptUrl}
+Decline: ${declineUrl}
+View Details: https://thirstee.app/event/${event_id}
 
 © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `

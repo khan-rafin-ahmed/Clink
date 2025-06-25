@@ -31,43 +31,68 @@ interface ActionResult {
 }
 
 export function InvitationAction({}: InvitationActionProps) {
-  const { type, action, token } = useParams<{
-    type: 'event' | 'crew'
-    action: 'accept' | 'decline'
+  const params = useParams<{
+    type?: 'event' | 'crew'
+    action?: 'accept' | 'decline'
     token: string
   }>()
-  
+
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [result, setResult] = useState<ActionResult | null>(null)
   const [redirecting, setRedirecting] = useState(false)
 
+  // Handle both URL structures: /invitation/:type/:action/:token and /invitation/:token
+  const token = params.token
+  const type = params.type
+  const action = params.action
+
   useEffect(() => {
-    if (!type || !action || !token) {
+    if (!token) {
       setResult({
         success: false,
         message: 'Invalid invitation link',
-        error: 'Missing required parameters'
+        error: 'Missing token'
       })
       setLoading(false)
       return
     }
 
     processInvitationToken()
-  }, [type, action, token, user])
+  }, [token, user])
 
   const processInvitationToken = async () => {
     try {
       setLoading(true)
 
+      // If type and action are provided in URL, use the specific function
+      // Otherwise, determine from token prefix
       let functionName: string
-      if (type === 'event') {
-        functionName = 'process_event_invitation_token'
-      } else if (type === 'crew') {
-        functionName = 'process_crew_invitation_token'
+      let tokenType: string
+
+      if (type && action) {
+        // URL structure: /invitation/:type/:action/:token
+        if (type === 'event') {
+          functionName = 'process_event_invitation_token'
+          tokenType = 'event'
+        } else if (type === 'crew') {
+          functionName = 'process_crew_invitation_token'
+          tokenType = 'crew'
+        } else {
+          throw new Error('Invalid invitation type')
+        }
       } else {
-        throw new Error('Invalid invitation type')
+        // URL structure: /invitation/:token - determine type from token prefix
+        if (token.startsWith('event_')) {
+          functionName = 'process_event_invitation_token'
+          tokenType = 'event'
+        } else if (token.startsWith('crew_')) {
+          functionName = 'process_crew_invitation_token'
+          tokenType = 'crew'
+        } else {
+          throw new Error('Unable to determine invitation type from token')
+        }
       }
 
       const { data, error } = await supabase.rpc(functionName, {
@@ -160,9 +185,9 @@ export function InvitationAction({}: InvitationActionProps) {
           <CardTitle className="text-xl">
             {result.success ? (
               result.action === 'accepted' ? (
-                type === 'event' ? 'Event Joined!' : 'Crew Joined!'
+                (type === 'event' || token?.startsWith('event_')) ? 'Event Joined!' : 'Crew Joined!'
               ) : (
-                type === 'event' ? 'Event Declined' : 'Crew Invitation Declined'
+                (type === 'event' || token?.startsWith('event_')) ? 'Event Declined' : 'Crew Invitation Declined'
               )
             ) : (
               'Invitation Error'
@@ -206,15 +231,15 @@ export function InvitationAction({}: InvitationActionProps) {
                   </>
                 ) : (
                   <>
-                    {type === 'event' ? 'View Event' : 'View Crew'}
+                    {(type === 'event' || token?.startsWith('event_')) ? 'View Event' : 'View Crew'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </Button>
             )}
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               onClick={handleGoHome}
               className="w-full"
             >

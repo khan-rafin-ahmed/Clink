@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { sendEventInvitationEmail, type EventInvitationData } from './emailService'
-import { generateTokenizedUrls } from './invitationTokenService'
+import { generateInvitationToken } from './invitationTokenService'
 import { toast } from 'sonner'
 
 /**
@@ -170,15 +170,17 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
       })
 
       // Generate secure tokenized URLs for invitation actions
-      let acceptUrl, declineUrl
+      let acceptToken, declineToken
       try {
-        const urls = await generateTokenizedUrls('event', invitation.id, invitation.user_id)
-        acceptUrl = urls.acceptUrl
-        declineUrl = urls.declineUrl
+        const [acceptTokenResult, declineTokenResult] = await Promise.all([
+          generateInvitationToken('event', invitation.id, 'accept', invitation.user_id),
+          generateInvitationToken('event', invitation.id, 'decline', invitation.user_id)
+        ])
+        acceptToken = acceptTokenResult
+        declineToken = declineTokenResult
       } catch (error) {
-        // Fallback to basic URLs if token generation fails
-        acceptUrl = `https://thirstee.app/event/${event.slug || event.id}`
-        declineUrl = `https://thirstee.app/event/${event.slug || event.id}`
+        console.error('Failed to generate invitation tokens:', error)
+        // Tokens will be undefined, email template will use fallback URLs
       }
 
       const emailData: EventInvitationData = {
@@ -188,8 +190,8 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         eventLocation: event.location,
         inviterName: inviter.display_name,
         eventDescription: event.notes || undefined,
-        acceptUrl,
-        declineUrl,
+        acceptUrl: acceptToken ? `https://thirstee.app/invitation/event/accept/${acceptToken}` : `https://thirstee.app/notifications`,
+        declineUrl: declineToken ? `https://thirstee.app/invitation/event/decline/${declineToken}` : `https://thirstee.app/notifications`,
         eventUrl: `https://thirstee.app/event/${event.slug || event.id}`,
         vibe: event.vibe || 'casual'
       }
