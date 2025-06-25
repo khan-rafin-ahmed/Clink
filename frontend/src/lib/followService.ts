@@ -29,14 +29,11 @@ export interface InnerCircleMember {
 }
 
 // Follow Management
-export async function sendFollowRequest(followingId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
+export async function sendFollowRequest(currentUserId: string, followingId: string): Promise<void> {
   const { error } = await supabase
     .from('follows')
     .insert({
-      follower_id: user.id,
+      follower_id: currentUserId,
       following_id: followingId,
       status: 'pending'
     })
@@ -53,28 +50,24 @@ export async function respondToFollowRequest(followId: string, status: 'accepted
   if (error) throw error
 }
 
-export async function unfollowUser(followingId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
+export async function unfollowUser(currentUserId: string, followingId: string): Promise<void> {
   const { error } = await supabase
     .from('follows')
     .delete()
-    .eq('follower_id', user.id)
+    .eq('follower_id', currentUserId)
     .eq('following_id', followingId)
 
   if (error) throw error
 }
 
 // Get follow status between two users
-export async function getFollowStatus(followingId: string): Promise<Follow | null> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+export async function getFollowStatus(currentUserId: string, followingId: string): Promise<Follow | null> {
+  if (!currentUserId) return null
 
   const { data, error } = await supabase
     .from('follows')
     .select('*')
-    .eq('follower_id', user.id)
+    .eq('follower_id', currentUserId)
     .eq('following_id', followingId)
     .maybeSingle()
 
@@ -83,9 +76,7 @@ export async function getFollowStatus(followingId: string): Promise<Follow | nul
 }
 
 // Get Inner Circle members (people YOU follow)
-export async function getInnerCircle(userId?: string): Promise<InnerCircleMember[]> {
-  const { data: { user } } = await supabase.auth.getUser()
-  const currentUserId = userId || user?.id
+export async function getInnerCircle(currentUserId: string): Promise<InnerCircleMember[]> {
   if (!currentUserId) return []
 
   // Try the new follows table first - get people that the current user follows
@@ -148,15 +139,14 @@ export async function getInnerCircleCount(userId: string): Promise<number> {
 }
 
 // Get pending follow requests
-export async function getPendingFollowRequests(): Promise<Array<Follow & { follower: InnerCircleMember }>> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
+export async function getPendingFollowRequests(currentUserId: string): Promise<Array<Follow & { follower: InnerCircleMember }>> {
+  if (!currentUserId) return []
 
   // First get the follow requests
   const { data: follows, error: followsError } = await supabase
     .from('follows')
     .select('*')
-    .eq('following_id', user.id)
+    .eq('following_id', currentUserId)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
@@ -188,14 +178,13 @@ export async function getPendingFollowRequests(): Promise<Array<Follow & { follo
 }
 
 // Notification Management
-export async function getNotifications(): Promise<Notification[]> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
+export async function getNotifications(currentUserId: string): Promise<Notification[]> {
+  if (!currentUserId) return []
 
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', currentUserId)
     .order('created_at', { ascending: false })
     .limit(50)
 
@@ -212,28 +201,26 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
   if (error) throw error
 }
 
-export async function markAllNotificationsAsRead(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+export async function markAllNotificationsAsRead(currentUserId: string): Promise<void> {
+  if (!currentUserId) return
 
   const { error } = await supabase
     .from('notifications')
     .update({ read: true })
-    .eq('user_id', user.id)
+    .eq('user_id', currentUserId)
     .eq('read', false)
 
   if (error) throw error
 }
 
 // Get unread notification count
-export async function getUnreadNotificationCount(): Promise<number> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return 0
+export async function getUnreadNotificationCount(currentUserId: string): Promise<number> {
+  if (!currentUserId) return 0
 
   const { count, error } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id', currentUserId)
     .eq('read', false)
 
   if (error) throw error
@@ -241,15 +228,14 @@ export async function getUnreadNotificationCount(): Promise<number> {
 }
 
 // Check if a user is in your Inner Circle (accepted follow)
-export async function isInInnerCircle(userId: string): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
+export async function isInInnerCircle(currentUserId: string, userId: string): Promise<boolean> {
+  if (!currentUserId) return false
 
   // Try the new follows table first
   let { data, error } = await supabase
     .from('follows')
     .select('id')
-    .eq('follower_id', user.id)
+    .eq('follower_id', currentUserId)
     .eq('following_id', userId)
     .eq('status', 'accepted')
     .maybeSingle()
@@ -259,7 +245,7 @@ export async function isInInnerCircle(userId: string): Promise<boolean> {
     const { data: oldData, error: oldError } = await supabase
       .from('user_follows')
       .select('id')
-      .eq('follower_id', user.id)
+      .eq('follower_id', currentUserId)
       .eq('following_id', userId)
       .maybeSingle()
 

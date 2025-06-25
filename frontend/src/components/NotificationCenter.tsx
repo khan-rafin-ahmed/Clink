@@ -20,6 +20,7 @@ import { respondToEventInvitation } from '@/lib/eventService'
 import { toast } from 'sonner'
 import { Bell, Check, X, Users, Calendar, Eye } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useAuth } from '@/lib/auth-context'
 
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -27,8 +28,10 @@ export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [respondedNotifications, setRespondedNotifications] = useState<Set<string>>(new Set())
+  const { user } = useAuth()
 
   useEffect(() => {
+    if (!user?.id) return
     loadNotifications()
     loadUnreadCount()
 
@@ -41,11 +44,12 @@ export function NotificationCenter() {
     }, 120000) // Changed from 30s to 2 minutes
 
     return () => clearInterval(interval)
-  }, [isOpen])
+  }, [isOpen, user?.id])
 
   const loadNotifications = async () => {
+    if (!user?.id) return
     try {
-      const data = await getNotifications()
+      const data = await getNotifications(user.id)
       setNotifications(data)
     } catch (error) {
       console.error('Error loading notifications:', error)
@@ -53,8 +57,9 @@ export function NotificationCenter() {
   }
 
   const loadUnreadCount = async () => {
+    if (!user?.id) return
     try {
-      const count = await getUnreadNotificationCount()
+      const count = await getUnreadNotificationCount(user.id)
       setUnreadCount(count)
     } catch (error) {
       console.error('Error loading unread count:', error)
@@ -75,8 +80,9 @@ export function NotificationCenter() {
 
   const handleMarkAllAsRead = async () => {
     try {
+      if (!user?.id) return
       setIsLoading(true)
-      await markAllNotificationsAsRead()
+      await markAllNotificationsAsRead(user.id)
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       setUnreadCount(0)
       toast.success('All notifications marked as read')

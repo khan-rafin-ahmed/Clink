@@ -252,11 +252,10 @@ export interface InvitationResponse {
  */
 export async function sendEventInvitationsToCrew(
   eventId: string,
-  crewId: string
+  crewId: string,
+  currentUserId: string
 ): Promise<{ success: boolean; invitedCount: number; message: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
 
     console.log('🔔 Sending event invitations to crew:', {
       eventId,
@@ -271,7 +270,7 @@ export async function sendEventInvitationsToCrew(
       .rpc('send_event_invitations_to_crew', {
         p_event_id: eventId,
         p_crew_id: crewId,
-        p_inviter_id: user.id
+        p_inviter_id: currentUserId
       })
 
     if (error) {
@@ -285,20 +284,20 @@ export async function sendEventInvitationsToCrew(
     console.log('✅ Crew invitations sent:', { invitedCount })
 
     // Send email invitations if any were sent
-    console.log('🔍 Debug - About to check if we should send emails:', { invitedCount, eventId, userId: user.id })
+    console.log('🔍 Debug - About to check if we should send emails:', { invitedCount, eventId, userId: currentUserId })
 
     if (invitedCount > 0) {
       try {
         console.log('📧 Attempting to send email invitations...')
-        console.log('📧 Calling sendEventInvitationEmails with:', { eventId, inviterId: user.id })
-        await sendEventInvitationEmails(eventId, user.id)
+        console.log('📧 Calling sendEventInvitationEmails with:', { eventId, inviterId: currentUserId })
+        await sendEventInvitationEmails(eventId, currentUserId)
         console.log('✅ Email invitations sent successfully')
       } catch (emailError: any) {
         console.error('❌ Email invitation error:', emailError)
         // Don't fail the whole operation but log the error clearly
         console.error('❌ Email error details:', {
           eventId,
-          userId: user.id,
+          userId: currentUserId,
           invitedCount,
           error: emailError,
           errorStack: emailError?.stack
@@ -332,11 +331,10 @@ export async function sendEventInvitationsToCrew(
  */
 export async function respondToEventInvitation(
   invitationId: string,
-  response: InvitationResponse
+  response: InvitationResponse,
+  currentUserId: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
 
     console.log('📝 Responding to event invitation:', { invitationId, response })
 
@@ -344,7 +342,7 @@ export async function respondToEventInvitation(
     const { data, error } = await supabase
       .rpc('respond_to_event_invitation', {
         p_invitation_id: invitationId,
-        p_user_id: user.id,
+        p_user_id: currentUserId,
         p_response: response.response,
         p_comment: response.comment || null
       })
@@ -380,17 +378,16 @@ export async function respondToEventInvitation(
 /**
  * Get pending event invitations for current user
  */
-export async function getPendingEventInvitations(): Promise<EventInvitation[]> {
+export async function getPendingEventInvitations(currentUserId: string): Promise<EventInvitation[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+    if (!currentUserId) return []
 
     console.log('📥 Fetching pending event invitations')
 
     // Use RPC function to get pending invitations
     const { data, error } = await supabase
       .rpc('get_user_pending_event_invitations', {
-        p_user_id: user.id
+        p_user_id: currentUserId
       })
 
     if (error) {
@@ -423,7 +420,7 @@ export async function getPendingEventInvitations(): Promise<EventInvitation[]> {
 /**
  * Get invitation responses for an event (for event hosts)
  */
-export async function getEventInvitationResponses(eventId: string): Promise<{
+export async function getEventInvitationResponses(eventId: string, currentUserId: string): Promise<{
   pending: number
   accepted: number
   declined: number
@@ -436,8 +433,7 @@ export async function getEventInvitationResponses(eventId: string): Promise<{
   }>
 }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!currentUserId) throw new Error('Not authenticated')
 
     console.log('📊 Fetching invitation responses for event:', eventId)
 
@@ -452,7 +448,7 @@ export async function getEventInvitationResponses(eventId: string): Promise<{
         user_profiles!inner(display_name)
       `)
       .eq('event_id', eventId)
-      .eq('invited_by', user.id) // Only invitations sent by current user
+      .eq('invited_by', currentUserId) // Only invitations sent by current user
 
     if (error) {
       console.error('❌ Error fetching invitation responses:', error)
@@ -494,10 +490,9 @@ export async function getEventInvitationResponses(eventId: string): Promise<{
 /**
  * Cancel pending invitations for an event
  */
-export async function cancelEventInvitations(eventId: string): Promise<boolean> {
+export async function cancelEventInvitations(eventId: string, currentUserId: string): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!currentUserId) throw new Error('Not authenticated')
 
     console.log('❌ Cancelling pending invitations for event:', eventId)
 
@@ -506,7 +501,7 @@ export async function cancelEventInvitations(eventId: string): Promise<boolean> 
       .from('event_members')
       .delete()
       .eq('event_id', eventId)
-      .eq('invited_by', user.id)
+      .eq('invited_by', currentUserId)
       .eq('status', 'pending')
 
     if (error) {

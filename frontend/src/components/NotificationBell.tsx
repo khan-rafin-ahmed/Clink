@@ -91,7 +91,7 @@ export function NotificationBell() {
         return
       }
 
-      const result = await respondToEventInvitation(invitationId, { response })
+      const result = await respondToEventInvitation(invitationId, { response }, user!.id)
 
       if (result.success) {
         await markAsRead(notificationId)
