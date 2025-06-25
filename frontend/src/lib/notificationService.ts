@@ -67,17 +67,14 @@ class NotificationService {
    */
   async createNotification(notification: Omit<NotificationData, 'id' | 'created_at'>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: notification.user_id,
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          data: notification.data || {},
-          read: false
-        })
-        .select()
+      // Use the create_notification function which has SECURITY DEFINER to bypass RLS
+      const { error } = await supabase.rpc('create_notification', {
+        p_user_id: notification.user_id,
+        p_type: notification.type,
+        p_title: notification.title,
+        p_message: notification.message,
+        p_data: notification.data || {}
+      })
 
       if (error) {
         console.error('❌ Error creating notification:', error)
