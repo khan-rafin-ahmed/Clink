@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 import { uploadFile } from './fileUpload'
 import { cache, CACHE_KEYS } from './cache'
 import type { EventPhoto, EventComment, EventCommentReaction } from '@/types'
@@ -79,7 +80,7 @@ export async function uploadEventPhoto(
   file: File,
   caption?: string
 ): Promise<EventPhoto> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -138,7 +139,7 @@ export async function uploadEventPhoto(
  * Get all photos for an event
  */
 export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -188,7 +189,7 @@ export async function getEventPhotos(eventId: string): Promise<EventPhoto[]> {
  * Delete an event photo
  */
 export async function deleteEventPhoto(photoId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -236,7 +237,7 @@ export async function deleteEventPhoto(photoId: string): Promise<void> {
  * Add a comment to an event
  */
 export async function addEventComment(eventId: string, content: string): Promise<EventComment> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -284,7 +285,7 @@ export async function addEventComment(eventId: string, content: string): Promise
  * Get all comments for an event
  */
 export async function getEventComments(eventId: string): Promise<EventComment[]> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -345,7 +346,7 @@ export async function addCommentReaction(
   commentId: string,
   reaction: EventCommentReaction['reaction']
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')
@@ -376,7 +377,7 @@ export async function removeCommentReaction(
   commentId: string,
   reaction: EventCommentReaction['reaction']
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     throw new Error('User not authenticated')

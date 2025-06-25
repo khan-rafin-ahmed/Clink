@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 import type { UserProfile, UserFollow } from '@/types'
 import { withCache, CACHE_KEYS, invalidateUserCaches } from './cache'
 
@@ -286,7 +287,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
 
 // Follow Functions
 export async function followUser(followingId: string) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
@@ -303,7 +304,7 @@ export async function followUser(followingId: string) {
 }
 
 export async function unfollowUser(followingId: string) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase
@@ -375,7 +376,7 @@ export async function getFollowCounts(userId: string) {
 }
 
 export async function isFollowing(followingId: string): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return false
 
   const { data, error } = await supabase
