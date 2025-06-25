@@ -134,6 +134,7 @@ export interface LocationData {
 export interface CreateEventDto {
   title: string
   date_time: string
+  end_time?: string
   location: string
   latitude?: number | null
   longitude?: number | null

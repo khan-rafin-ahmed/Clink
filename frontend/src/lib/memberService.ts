@@ -172,11 +172,15 @@ export async function bulkInviteCrewMembersToEvent(eventId: string, userIds: str
   if (error) throw error
 
   // Send notifications (simplified - no complex error handling)
-  await supabase.rpc('send_event_invitations_to_users', {
-    p_event_id: eventId,
-    p_user_ids: userIds,
-    p_inviter_id: currentUserId
-  }).catch(console.error)
+  try {
+    await supabase.rpc('send_event_invitations_to_users', {
+      p_event_id: eventId,
+      p_user_ids: userIds,
+      p_inviter_id: currentUserId
+    })
+  } catch (error) {
+    console.error('Error sending event invitations:', error)
+  }
 
   return data || []
 }

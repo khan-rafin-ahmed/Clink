@@ -15,6 +15,7 @@ export interface EventInvitationData {
   declineUrl: string
   eventUrl: string
   vibe?: string
+  duration?: string
 }
 
 export interface EventReminderData {
@@ -27,6 +28,7 @@ export interface EventReminderData {
   eventUrl: string
   mapUrl?: string
   attendeeCount: number
+  duration?: string
 }
 
 export interface CrewInvitationData {
@@ -407,6 +409,12 @@ export function generateEventInvitationEmail(data: EventInvitationData): { html:
         <strong>📅 Date:</strong> ${data.eventDate} at ${data.eventTime}
       </div>
 
+      ${data.duration ? `
+        <div class="card-detail">
+          <strong>⏰ Duration:</strong> ${data.duration}
+        </div>
+      ` : ''}
+
       <div class="card-detail">
         <strong>📍 Location:</strong> ${data.eventLocation || 'To be announced'}
       </div>
@@ -439,6 +447,7 @@ export function generateEventInvitationEmail(data: EventInvitationData): { html:
 ${data.inviterName} has invited you to join their drinking session: "${data.eventTitle}"
 
 📅 When: ${data.eventDate} at ${data.eventTime}
+${data.duration ? `⏰ Duration: ${data.duration}` : ''}
 📍 Where: ${data.eventLocation}
 ${data.eventDescription ? `📝 Details: ${data.eventDescription}` : ''}
 
@@ -476,6 +485,12 @@ export function generateEventReminderEmail(data: EventReminderData): { html: str
       <div class="card-detail">
         <strong>📅 When:</strong> ${data.eventDate} at ${data.eventTime}
       </div>
+
+      ${data.duration ? `
+        <div class="card-detail">
+          <strong>⏰ Duration:</strong> ${data.duration}
+        </div>
+      ` : ''}
 
       <div class="card-detail">
         <strong>📍 Where:</strong> ${data.eventLocation}
@@ -525,6 +540,7 @@ export function generateEventReminderEmail(data: EventReminderData): { html: str
 Don't forget! Your drinking session "${data.eventTitle}" is starting in 1 hour.
 
 📅 When: ${data.eventDate} at ${data.eventTime}
+${data.duration ? `⏰ Duration: ${data.duration}` : ''}
 📍 Where: ${data.eventLocation}
 👥 Who's Going: ${data.attendeeCount} people (including you!)
 🎯 Host: ${data.hostName}

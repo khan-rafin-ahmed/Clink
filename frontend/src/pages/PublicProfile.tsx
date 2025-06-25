@@ -5,14 +5,42 @@ import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { getUserProfileByUsername } from '@/lib/userService'
 import { getUserCrews } from '@/lib/crewService'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Users, Calendar } from 'lucide-react'
-import { UserStats } from '@/components/UserStats'
-import { CrewCard } from '@/components/CrewCard'
+import { ArrowLeft } from 'lucide-react'
+import { ProfileInfoCard } from '@/components/ProfileInfoCard'
+import { ActivityTabs } from '@/components/ActivityTabs'
+import { StatCard } from '@/components/StatCard'
+import { NextEventBanner } from '@/components/NextEventBanner'
 import { Simple404 } from '@/components/Simple404'
-import type { UserProfile, Crew } from '@/types'
+import { useUserStats } from '@/hooks/useUserStats'
+import { supabase } from '@/lib/supabase'
+import { filterEventsByDate } from '@/lib/eventUtils'
+import type { UserProfile, Crew, Event } from '@/types'
+
+// Helper function to get drink emoji and label
+const getDrinkInfo = (drink: string | null | undefined) => {
+  if (!drink) {
+    return {
+      emoji: '🍹',
+      label: 'No favorite yet'
+    }
+  }
+
+  const drinkMap: Record<string, { emoji: string; label: string }> = {
+    beer: { emoji: '🍺', label: 'Beer' },
+    wine: { emoji: '🍷', label: 'Wine' },
+    cocktails: { emoji: '🍸', label: 'Cocktails' },
+    whiskey: { emoji: '🥃', label: 'Whiskey' },
+    vodka: { emoji: '🍸', label: 'Vodka' },
+    rum: { emoji: '🍹', label: 'Rum' },
+    gin: { emoji: '🍸', label: 'Gin' },
+    tequila: { emoji: '🥃', label: 'Tequila' },
+    champagne: { emoji: '🥂', label: 'Champagne' },
+    sake: { emoji: '🍶', label: 'Sake' },
+    other: { emoji: '🍻', label: 'Other' }
+  }
+
+  return drinkMap[drink.toLowerCase()] || { emoji: '🍻', label: drink }
+}
 
 export function PublicProfile() {
   const { username } = useParams<{ username: string }>()
@@ -20,8 +48,12 @@ export function PublicProfile() {
   const { goBackSmart } = useSmartNavigation()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [crews, setCrews] = useState<Crew[]>([])
+  const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+
+  // Use the same stats hook as UserProfile
+  const stats = useUserStats(profile?.user_id || '')
 
   useEffect(() => {
     if (!username) {
@@ -56,6 +88,9 @@ export function PublicProfile() {
         const userCrews = await getUserCrews(profileData.user_id)
         setCrews(userCrews || [])
       }
+
+      // Load user events (public events only for other users)
+      await loadUserEvents(profileData.user_id)
     } catch (error) {
       setError(true)
     } finally {
@@ -63,7 +98,27 @@ export function PublicProfile() {
     }
   }
 
+  const loadUserEvents = async (userId: string) => {
+    try {
+      // For public profiles, only load public events
+      const { data: eventsData, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          rsvps!inner(user_id, status),
+          event_members!inner(user_id, status)
+        `)
+        .or(`created_by.eq.${userId},rsvps.user_id.eq.${userId},event_members.user_id.eq.${userId}`)
+        .eq('is_public', true)
+        .order('date_time', { ascending: false })
 
+      if (error) throw error
+      setEvents(eventsData || [])
+    } catch (error) {
+      console.error('Error loading user events:', error)
+      setEvents([])
+    }
+  }
 
   const getDisplayName = (profile: UserProfile): string => {
     return profile.display_name || 'Thirstee User'
@@ -98,18 +153,21 @@ export function PublicProfile() {
   }
 
   const isOwnProfile = currentUser?.id === profile.user_id
+  const displayName = getDisplayName(profile)
+  const avatarFallback = getAvatarFallback(profile)
+
+  // Filter events into upcoming and past
+  const { upcoming: upcomingEvents, past: pastEvents } = filterEventsByDate(events)
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={goBackSmart}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </div>
+        <div className="flex items-center justify-between py-6">
+          <Button variant="outline" size="sm" onClick={goBackSmart}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
 
           {isOwnProfile && (
             <Link to="/profile/edit">
@@ -120,95 +178,79 @@ export function PublicProfile() {
           )}
         </div>
 
-        {/* Profile Header */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="text-2xl">
-                  {getAvatarFallback(profile)}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 text-center sm:text-left">
-                <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-                  {getDisplayName(profile)}
-                </h1>
-
-                {profile.tagline && (
-                  <p className="text-lg text-primary font-medium italic mb-3">
-                    "{profile.tagline}"
-                  </p>
-                )}
-
-                {profile.bio && (
-                  <p className="text-muted-foreground mb-4 max-w-md">
-                    {profile.bio}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                  {profile.favorite_drink && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      🍺 {profile.favorite_drink}
-                    </Badge>
-                  )}
-
-
-
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Joined {new Date(profile.created_at).toLocaleDateString()}
-                  </Badge>
-                </div>
+        {/* Hero Section - Same layout as UserProfile but without action buttons */}
+        <div className="space-y-6">
+          {/* Profile Info Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+            <div className="flex">
+              <div className="w-full">
+                <ProfileInfoCard
+                  userProfile={profile}
+                  displayName={displayName}
+                  avatarFallback={avatarFallback}
+                  className="w-full"
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* User Stats */}
-        <UserStats className="max-w-2xl mx-auto mb-8" refreshTrigger={0} userId={profile.user_id} />
+          {/* Next Event Banner - Only show for own profile */}
+          {isOwnProfile && (
+            <div>
+              <NextEventBanner
+                userId={profile.user_id}
+                className="glass-modal rounded-3xl"
+              />
+            </div>
+          )}
 
-        {/* Crews Section */}
-        {profile.show_crews_publicly && crews.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Crews ({crews.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {crews.map((crew) => (
-                  <CrewCard
-                    key={crew.id}
-                    crew={crew}
-                    onCrewUpdated={() => {}}
+          {/* Stats Section */}
+          <div className="mt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                count={stats?.totalEvents}
+                label="Sessions"
+                loading={!stats}
+              />
+              <StatCard
+                count={stats?.totalRSVPs}
+                label="RSVPs"
+                loading={!stats}
+              />
+              <StatCard
+                count={crews.length}
+                label="Crews"
+                loading={!profile}
+              />
+              {(() => {
+                const drinkInfo = getDrinkInfo(profile?.favorite_drink)
+                return (
+                  <StatCard
+                    icon={drinkInfo.emoji}
+                    label={drinkInfo.label}
+                    className={!profile?.favorite_drink ? 'text-[#999999]' : ''}
+                    loading={!profile}
                   />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                )
+              })()}
+            </div>
+          </div>
+        </div>
 
-        {/* Privacy Notice */}
-        {profile.profile_visibility !== 'public' && (
-          <Card className="mt-8 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                <Lock className="h-4 w-4" />
-                <span className="text-sm">
-                  {profile.profile_visibility === 'crew_only'
-                    ? 'This profile is only visible to crew members'
-                    : 'This profile has limited visibility'
-                  }
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Activity Tabs - Same as UserProfile */}
+        <div className="mt-8">
+          <ActivityTabs
+            upcomingEvents={upcomingEvents}
+            pastEvents={pastEvents}
+            userCrews={crews}
+            showCrews={profile.show_crews_publicly}
+            isOwnProfile={isOwnProfile}
+            onEventEdit={() => {}} // No editing for public profiles
+            onEventDelete={() => {}} // No deleting for public profiles
+            onCrewEdit={() => {}} // No editing for public profiles
+            onCrewDelete={() => {}} // No deleting for public profiles
+          />
+        </div>
       </div>
     </div>
   )

@@ -143,7 +143,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
       // Check if profile already exists
       const { data: existingProfile, error: selectError } = await supabase
         .from('user_profiles')
-        .select('id, user_id, display_name')
+        .select('id, user_id, display_name, username')
         .eq('user_id', user.id)
         .single()
 
@@ -198,7 +198,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
           // Fetch the created profile
           const { data: createdProfile, error: fetchError } = await supabase
             .from('user_profiles')
-            .select('id, user_id, display_name')
+            .select('id, user_id, display_name, username')
             .eq('user_id', user.id)
             .single()
 
@@ -220,9 +220,10 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
         .from('user_profiles')
         .insert({
           user_id: user.id,
-          display_name: displayName
+          display_name: displayName,
+          username: displayName // Set username to same as display_name initially
         })
-        .select('id, user_id, display_name')
+        .select('id, user_id, display_name, username')
         .single()
 
       if (error) {
@@ -242,7 +243,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
 
           const { data: fetchedProfile, error: fetchError } = await supabase
             .from('user_profiles')
-            .select('id, user_id, display_name')
+            .select('id, user_id, display_name, username')
             .eq('user_id', user.id)
             .single()
 

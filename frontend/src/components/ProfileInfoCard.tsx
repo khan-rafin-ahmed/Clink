@@ -49,7 +49,7 @@ export function ProfileInfoCard({
           
           {userProfile?.nickname && (
             <p className="text-base lg:text-lg text-yellow-400 font-medium italic">
-              aka {userProfile.nickname} 🐉
+              aka {userProfile.nickname}
             </p>
           )}
           

@@ -53,7 +53,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     drink_type: event.drink_type || 'beer',
     vibe: event.vibe || 'casual',
     notes: event.notes || '',
-    custom_time: customTimeValue,
+    start_time: customTimeValue,
+    end_time: event.end_time ? new Date(event.end_time).toISOString().slice(0, 16) : '',
     is_public: event.is_public,
     cover_image: null as File | null,
     cover_image_url: (event as any).cover_image_url || null
@@ -96,7 +97,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       drink_type: event.drink_type || 'beer',
       vibe: event.vibe || 'casual',
       notes: event.notes || '',
-      custom_time: customTimeValue,
+      start_time: customTimeValue,
+      end_time: event.end_time ? new Date(event.end_time).toISOString().slice(0, 16) : '',
       is_public: event.is_public,
       cover_image: null,
       cover_image_url: (event as any).cover_image_url || null
@@ -145,9 +147,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   ]
 
   const timeOptions = [
-    { value: 'now', label: 'Right Now!', emoji: '🔥' },
-    { value: 'tonight', label: 'Later Tonight', emoji: '🌙' },
-    { value: 'custom', label: 'Custom Time', emoji: '⏰' }
+    { value: 'now', label: 'Right Now', emoji: '🔥' },
+    { value: 'custom', label: 'Pick Your Time', emoji: '⏰' }
   ]
 
   const vibes = [
@@ -186,6 +187,32 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   async function handleSubmit() {
     if (step !== 4) return
 
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast.error('Event title is required')
+      return
+    }
+
+    // Validate time selection for custom events
+    if (formData.time === 'custom') {
+      if (!formData.start_time) {
+        toast.error('Start time is required')
+        return
+      }
+      if (!formData.end_time) {
+        toast.error('End time is required')
+        return
+      }
+
+      const startTime = new Date(formData.start_time)
+      const endTime = new Date(formData.end_time)
+
+      if (endTime <= startTime) {
+        toast.error('End time must be after start time')
+        return
+      }
+    }
+
     try {
       setIsSubmitting(true)
 
@@ -210,35 +237,26 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       let eventDateTime = new Date()
       const now = new Date()
 
-      if (formData.time === 'tonight') {
-        // 'Later Tonight' should always be tonight, not tomorrow
-        if (now.getHours() >= 20) {
-          // If it's already past 8 PM, set to 1 hour from now (but still tonight)
-          eventDateTime = new Date(now)
-          eventDateTime.setHours(eventDateTime.getHours() + 1, 0, 0, 0)
-        } else {
-          // If it's before 8 PM, set to 8 PM tonight
-          eventDateTime.setHours(20, 0, 0, 0)
-        }
-      } else if (formData.time === 'custom' && formData.custom_time) {
-        eventDateTime = new Date(formData.custom_time)
-      } else if (formData.time === 'custom' && !formData.custom_time) {
-        // If custom date is selected but no time is provided, default to 8 PM today
-        const defaultTime = new Date(now)
-        defaultTime.setHours(20, 0, 0, 0)
-        // If 8 PM today is in the past, set to 8 PM tomorrow
-        if (defaultTime <= now) {
-          defaultTime.setDate(defaultTime.getDate() + 1)
-        }
-        eventDateTime = defaultTime
+      if (formData.time === 'custom' && formData.start_time) {
+        eventDateTime = new Date(formData.start_time)
       } else { // 'now' - Set to current time for immediate LIVE status
         eventDateTime = now
+      }
+
+      // Calculate end time
+      let endDateTime: Date
+      if (formData.time === 'custom' && formData.end_time) {
+        endDateTime = new Date(formData.end_time)
+      } else {
+        // For 'now' events, default to 3 hours from start time
+        endDateTime = new Date(eventDateTime.getTime() + (3 * 60 * 60 * 1000))
       }
 
       const updateData = {
         title: formData.title,
         place_nickname: formData.place_nickname || null,
         date_time: eventDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         location: formData.locationData?.place_name || formData.location,
         latitude: formData.locationData?.latitude || null,
         longitude: formData.locationData?.longitude || null,
@@ -400,14 +418,30 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                   ))}
                 </div>
                 {formData.time === 'custom' && (
-                  <Input
-                    type="datetime-local"
-                    value={formData.custom_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_time: e.target.value }))}
-                    onKeyDown={handleKeyDown}
-                    className="mt-2"
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
+                  <div className="space-y-3 mt-3">
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">Start Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formData.start_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        className="mt-1"
+                        min={new Date().toISOString().slice(0, 16)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">End Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formData.end_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        className="mt-1"
+                        min={formData.start_time || new Date().toISOString().slice(0, 16)}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
 

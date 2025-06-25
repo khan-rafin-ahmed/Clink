@@ -38,8 +38,12 @@ import { useAuth } from '@/lib/auth-context'
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   date_time: z.date(),
+  end_time: z.date(),
   location: z.string().min(1, 'Location is required'),
   notes: z.string().optional(),
+}).refine((data) => data.end_time > data.date_time, {
+  message: "End time must be after start time",
+  path: ["end_time"],
 })
 
 interface CreateEventModalProps {
@@ -56,6 +60,7 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
     defaultValues: {
       title: '',
       date_time: new Date(),
+      end_time: new Date(Date.now() + 3 * 60 * 60 * 1000), // Default to 3 hours later
       location: '',
       notes: '',
     },
@@ -73,6 +78,7 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
       const eventData: CreateEventDto = {
         title: values.title,
         date_time: values.date_time.toISOString(),
+        end_time: values.end_time.toISOString(),
         location: values.location,
         notes: values.notes || null,
         is_public: true,
@@ -137,6 +143,57 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
                             format(field.value, 'PPP p')
                           ) : (
                             <span>Pick a date and time</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                      <div className="p-3 border-t">
+                        <Input
+                          type="time"
+                          value={field.value ? format(field.value, 'HH:mm') : ''}
+                          onChange={(e) => {
+                            const [hours, minutes] = e.target.value.split(':')
+                            const newDate = new Date(field.value)
+                            newDate.setHours(parseInt(hours))
+                            newDate.setMinutes(parseInt(minutes))
+                            field.onChange(newDate)
+                          }}
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="end_time"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>End Time</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, 'PPP p')
+                          ) : (
+                            <span>Pick end date and time</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>

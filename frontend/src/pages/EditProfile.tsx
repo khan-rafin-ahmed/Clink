@@ -139,7 +139,7 @@ export function EditProfile() {
     if (!user || !profile) return
 
     const updateData = {
-      username: formData.username.trim() || null,
+      username: formData.username.trim() || undefined,
       display_name: formData.display_name.trim() || null,
       nickname: formData.nickname.trim() || null,
       bio: formData.bio.trim() || null,

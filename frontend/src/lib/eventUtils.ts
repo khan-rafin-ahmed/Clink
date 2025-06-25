@@ -349,3 +349,29 @@ export function getEventTenseText(
     eventStatus: isPast ? "concluded" : "upcoming"
   }
 }
+
+/**
+ * Calculate and format event duration from start and end times
+ */
+export function calculateEventDuration(
+  startTime: string,
+  endTime?: string | null
+): string {
+  if (!endTime) {
+    return '3 hours' // Default duration
+  }
+
+  const start = new Date(startTime)
+  const end = new Date(endTime)
+  const durationMs = end.getTime() - start.getTime()
+  const durationHours = Math.round(durationMs / (1000 * 60 * 60) * 10) / 10 // Round to 1 decimal
+
+  if (durationHours < 1) {
+    const durationMinutes = Math.round(durationMs / (1000 * 60))
+    return `${durationMinutes} minutes`
+  } else if (durationHours === Math.floor(durationHours)) {
+    return `${Math.floor(durationHours)} hour${Math.floor(durationHours) !== 1 ? 's' : ''}`
+  } else {
+    return `${durationHours} hours`
+  }
+}

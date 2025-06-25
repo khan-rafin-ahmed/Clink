@@ -17,11 +17,11 @@ export function UserSearchInvite({ onInvite, label = "Invite by Username or Emai
   const [results, setResults] = useState<Array<{ user_id: string; display_name: string; avatar_url: string | null }>>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isInviting, setIsInviting] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    
+
     if (!searchQuery.trim()) {
       setResults([])
       return

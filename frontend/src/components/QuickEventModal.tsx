@@ -85,10 +85,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     locationData: null as LocationData | null,
     time: 'now',
     drink_type: 'beer',
-    duration_type: 'specific_time' as 'specific_time' | 'all_night',
     vibe: 'casual',
     notes: '',
-    custom_time: '',
+    start_time: '',
+    end_time: '',
     is_public: true,
     invited_users: [] as string[],
     cover_image: null as File | null,
@@ -138,9 +138,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   }
 
   const timeOptions = [
-    { value: 'now', label: 'Right Now!', emoji: '🚀' },
-    { value: 'tonight', label: 'Later Tonight', emoji: '🌙' },
-    { value: 'custom', label: 'Custom Time', emoji: '⏰' }
+    { value: 'now', label: 'Right Now', emoji: '🚀' },
+    { value: 'custom', label: 'Pick Your Time', emoji: '⏰' }
   ]
 
   // Add handler for location change
@@ -160,6 +159,26 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     if (!formData.title.trim()) {
       toast.error('Event title is required')
       return
+    }
+
+    // Validate time selection for custom events
+    if (formData.time === 'custom') {
+      if (!formData.start_time) {
+        toast.error('Start time is required')
+        return
+      }
+      if (!formData.end_time) {
+        toast.error('End time is required')
+        return
+      }
+
+      const startTime = new Date(formData.start_time)
+      const endTime = new Date(formData.end_time)
+
+      if (endTime <= startTime) {
+        toast.error('End time must be after start time')
+        return
+      }
     }
 
 
@@ -191,38 +210,22 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         place_id: formData.locationData?.place_id || null,
         place_name: formData.locationData?.place_name || null,
         date_time: (() => {
-          const now = new Date();
-          const tonight = new Date(now);
-          tonight.setHours(20, 0, 0, 0); // Set to 8 PM
-
-          if (formData.time === 'custom' && formData.custom_time) {
-            return new Date(formData.custom_time).toISOString();
-          } else if (formData.time === 'custom' && !formData.custom_time) {
-            // If custom date is selected but no time is provided, default to 8 PM today
-            const defaultTime = new Date(now);
-            defaultTime.setHours(20, 0, 0, 0);
-            // If 8 PM today is in the past, set to 8 PM tomorrow
-            if (defaultTime <= now) {
-              defaultTime.setDate(defaultTime.getDate() + 1);
-            }
-            return defaultTime.toISOString();
-          } else if (formData.time === 'tonight') {
-            // 'Later Tonight' should always be tonight at 8 PM, regardless of current time
-            // If it's already past 8 PM, set it to a reasonable time later tonight (current time + 1 hour)
-            if (now.getHours() >= 20) {
-              // If it's already past 8 PM, set to 1 hour from now (but still tonight)
-              const laterTonight = new Date(now);
-              laterTonight.setHours(laterTonight.getHours() + 1, 0, 0, 0);
-              return laterTonight.toISOString();
-            } else {
-              // If it's before 8 PM, set to 8 PM tonight
-              return tonight.toISOString();
-            }
-          } else { // 'now' - Set to current time for immediate LIVE status
-            return now.toISOString();
+          if (formData.time === 'custom' && formData.start_time) {
+            return new Date(formData.start_time).toISOString();
+          } else {
+            // 'now' - Set to current time for immediate LIVE status
+            return new Date().toISOString();
           }
         })(),
-        duration_type: formData.duration_type,
+        end_time: (() => {
+          if (formData.time === 'custom' && formData.end_time) {
+            return new Date(formData.end_time).toISOString();
+          } else {
+            // For 'now' events, default to 3 hours from start time
+            const startTime = new Date();
+            return new Date(startTime.getTime() + (3 * 60 * 60 * 1000)).toISOString();
+          }
+        })(),
         drink_type: formData.drink_type,
         vibe: formData.vibe,
         notes: formData.notes?.trim() || null,
@@ -320,10 +323,10 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       locationData: null,
       time: 'now',
       drink_type: 'beer',
-      duration_type: 'specific_time',
       vibe: 'casual',
       notes: '',
-      custom_time: '',
+      start_time: '',
+      end_time: '',
       is_public: true,
       invited_users: [],
       cover_image: null,
@@ -468,14 +471,30 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                   ))}
                 </div>
                 {formData.time === 'custom' && (
-                  <Input
-                    type="datetime-local"
-                    value={formData.custom_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_time: e.target.value }))}
-                    onKeyDown={handleKeyDown}
-                    className="mt-2"
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
+                  <div className="space-y-3 mt-3">
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">Start Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formData.start_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        className="mt-1"
+                        min={new Date().toISOString().slice(0, 16)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">End Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formData.end_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        className="mt-1"
+                        min={formData.start_time || new Date().toISOString().slice(0, 16)}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -500,37 +519,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 </div>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">How long's the party?</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, duration_type: 'specific_time' })) }}
-                    className={`p-3 rounded-lg border text-center ${
-                      (formData.duration_type || 'specific_time') === 'specific_time'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="text-lg">⏰</div>
-                    <div className="text-xs font-medium">Few Hours</div>
-                    <div className="text-xs text-muted-foreground">3-4 hours</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, duration_type: 'all_night' })) }}
-                    className={`p-3 rounded-lg border text-center ${
-                      formData.duration_type === 'all_night'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="text-lg">🌙</div>
-                    <div className="text-xs font-medium">All Night</div>
-                    <div className="text-xs text-muted-foreground">Until midnight</div>
-                  </button>
-                </div>
-              </div>
+
             </div>
           )}
 
