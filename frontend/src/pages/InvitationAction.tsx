@@ -109,8 +109,28 @@ export function InvitationAction({}: InvitationActionProps) {
       // Show success/error toast
       if (data.success) {
         toast.success(data.message)
+
+        // Auto-redirect after successful action
+        if (data.redirect_url) {
+          setTimeout(() => {
+            navigate(data.redirect_url)
+          }, 2000) // 2 second delay to show success message
+        }
       } else {
-        toast.error(data.error || 'Failed to process invitation')
+        // Handle specific error cases
+        if (data.requires_auth && !user) {
+          toast.error('Please log in to respond to this invitation')
+          // Redirect to login with return URL
+          navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)
+        } else if (data.requires_auth && user) {
+          // User is logged in but token validation failed - retry
+          toast.error('Authentication issue. Please try again.')
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
+        } else {
+          toast.error(data.error || 'Failed to process invitation')
+        }
       }
 
     } catch (error: any) {
