@@ -59,8 +59,19 @@ export function InvitationAction({}: InvitationActionProps) {
       return
     }
 
+    // Always try to process the token, even if user is null initially
+    // The database function will handle the authentication check
     processInvitationToken()
-  }, [token, user])
+  }, [token]) // Remove user dependency to avoid re-running when auth loads
+
+  // Handle user authentication changes (when user logs in)
+  useEffect(() => {
+    if (user && result?.requires_auth) {
+      // User just logged in and we have a pending auth-required result
+      // Retry processing the token
+      processInvitationToken()
+    }
+  }, [user, result?.requires_auth])
 
   const processInvitationToken = async () => {
     try {
@@ -118,16 +129,19 @@ export function InvitationAction({}: InvitationActionProps) {
         }
       } else {
         // Handle specific error cases
-        if (data.requires_auth && !user) {
+        if (data.requires_auth) {
+          // Store the invitation details for after login
+          if (data.event_title) {
+            localStorage.setItem('pending_invitation', JSON.stringify({
+              token,
+              event_title: data.event_title,
+              invitation_id: data.invitation_id
+            }))
+          }
+
           toast.error('Please log in to respond to this invitation')
           // Redirect to login with return URL
           navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)
-        } else if (data.requires_auth && user) {
-          // User is logged in but token validation failed - retry
-          toast.error('Authentication issue. Please try again.')
-          setTimeout(() => {
-            window.location.reload()
-          }, 1000)
         } else {
           toast.error(data.error || 'Failed to process invitation')
         }
