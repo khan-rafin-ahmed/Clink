@@ -26,17 +26,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initializingRef = useRef(false)
   const welcomeShownRef = useRef(new Set<string>()) // Track users who have been welcomed
   const isInitialLoadRef = useRef(true) // Track if this is the initial page load
+  const userRef = useRef<User | null>(null) // Keep latest user for event checks
 
-  // Restore welcomed users from session storage so refreshes don't trigger again
+  // Restore welcomed users and sync across tabs so refreshes and tab switches don't trigger again
   useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'welcomeShownIds') {
+        try {
+          const ids: string[] = event.newValue ? JSON.parse(event.newValue) : []
+          welcomeShownRef.current = new Set(ids)
+        } catch {
+          welcomeShownRef.current = new Set()
+        }
+      }
+    }
+
     try {
-      const stored = sessionStorage.getItem('welcomeShownIds')
+      const stored = localStorage.getItem('welcomeShownIds')
       if (stored) {
         const ids: string[] = JSON.parse(stored)
         welcomeShownRef.current = new Set(ids)
       }
     } catch {
       // ignore parse errors
+    }
+
+    window.addEventListener('storage', handleStorage)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
     }
   }, [])
 
@@ -79,7 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (mountedRef.current) {
-          setUser(session?.user ?? null)
+          const currentUser = session?.user ?? null
+          setUser(currentUser)
+          userRef.current = currentUser
           setLoading(false)
           setError(null)
           setIsInitialized(true)
@@ -124,9 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Handle user sign in with robust profile creation
       // Only show welcome for actual sign-in events, not initial page loads
-      if (event === 'SIGNED_IN' && newUser && !user && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
+      if (event === 'SIGNED_IN' && newUser && !userRef.current && !welcomeShownRef.current.has(newUser.id) && !isInitialLoadRef.current) {
         welcomeShownRef.current.add(newUser.id)
-        sessionStorage.setItem('welcomeShownIds', JSON.stringify(Array.from(welcomeShownRef.current)))
+        localStorage.setItem('welcomeShownIds', JSON.stringify(Array.from(welcomeShownRef.current)))
 
         // Determine if this is a new user
         const userIsNew = isNewUser(newUser)
@@ -161,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_OUT') {
         // Clear welcome tracking
         welcomeShownRef.current.clear()
-        sessionStorage.removeItem('welcomeShownIds')
+        localStorage.removeItem('welcomeShownIds')
 
         toast.success('See you later! 👋')
         // Redirect to home page after sign out
@@ -171,6 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(newUser)
+      userRef.current = newUser
       setLoading(false)
       setError(null)
 
