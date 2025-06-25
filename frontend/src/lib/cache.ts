@@ -138,6 +138,7 @@ if (typeof window !== 'undefined') {
 // Cache keys
 export const CACHE_KEYS = {
   USER_PROFILE: (userId: string) => `user_profile_${userId}`,
+  USER_PROFILE_BY_USERNAME: (username: string) => `user_profile_username_${username}`,
   FOLLOW_COUNTS: (userId: string) => `follow_counts_${userId}`,
   MY_EVENTS: (userId: string) => `my_events_${userId}`,
   PUBLIC_EVENTS: 'public_events',
@@ -184,6 +185,13 @@ export function invalidateUserCaches(userId: string): void {
   cache.delete(CACHE_KEYS.FOLLOW_COUNTS(userId))
   cache.delete(CACHE_KEYS.MY_EVENTS(userId))
   cache.delete(CACHE_KEYS.USER_ACCESSIBLE_EVENTS(userId))
+
+  // Also clear username-based caches for this user
+  for (const key of cache['cache'].keys()) {
+    if (key.includes('user_profile_username_')) {
+      cache.delete(key)
+    }
+  }
 }
 
 export function invalidateEventCaches(): void {

@@ -390,12 +390,50 @@ export async function isFollowing(followingId: string): Promise<boolean> {
   return !!data
 }
 
+// Get user profile by username
+export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {
+  if (!username) return null
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('username', username)
+    .single()
+
+  if (error && error.code !== 'PGRST116') throw error
+  return data || null
+}
+
+// Simple crew membership check
+export async function usersShareCrew(user1Id: string, user2Id: string): Promise<boolean> {
+  if (!user1Id || !user2Id) return false
+
+  const { data } = await supabase
+    .from('crew_members')
+    .select('crew_id')
+    .eq('user_id', user1Id)
+    .eq('status', 'accepted')
+
+  if (!data?.length) return false
+
+  const crewIds = data.map(m => m.crew_id)
+
+  const { data: sharedCrews } = await supabase
+    .from('crew_members')
+    .select('crew_id')
+    .eq('user_id', user2Id)
+    .eq('status', 'accepted')
+    .in('crew_id', crewIds)
+
+  return !!sharedCrews?.length
+}
+
 // Search users
 export async function searchUsers(query: string): Promise<UserProfile[]> {
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
-    .or(`display_name.ilike.%${query}%`)
+    .or(`display_name.ilike.%${query}%,username.ilike.%${query}%`)
     .limit(20)
 
   if (error) throw error

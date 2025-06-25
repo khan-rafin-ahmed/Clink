@@ -4,6 +4,7 @@ export type MemberStatus = 'pending' | 'accepted' | 'declined'
 export interface UserProfile {
   id: string
   user_id: string
+  username: string
   display_name: string | null
   nickname: string | null
   bio: string | null

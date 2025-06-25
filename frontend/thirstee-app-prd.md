@@ -826,6 +826,7 @@ All features are implemented, tested, and documented. The Thirstee app now has:
 |--------------------|----------------------------------|-----------------------------------------------------------------------------------|
 | `id`               | `uuid`                           | PRIMARY KEY, NOT NULL, DEFAULT `gen_random_uuid()`                                |
 | `user_id`          | `uuid`                           | UNIQUE, FK → `auth.users(id)`                                                     |
+| `username`         | `text`                           | UNIQUE, NOT NULL                                                                  |
 | `display_name`     | `text`                           |                                                                                   |
 | `bio`              | `text`                           |                                                                                   |
 | `avatar_url`       | `text`                           |                                                                                   |
