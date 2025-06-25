@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 
 export async function runPrivacyMigration() {
   try {
@@ -91,7 +92,7 @@ export async function runPrivacyMigration() {
 // Helper function to create a user profile for current user
 export async function createCurrentUserProfile() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error('No authenticated user')
 
     const displayName = user.email?.split('@')[0] || 'User'

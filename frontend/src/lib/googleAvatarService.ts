@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 
 /**
  * Service for handling Google avatar URLs from OAuth metadata
@@ -43,7 +44,7 @@ export async function getGoogleAvatarUrl(userId: string): Promise<string | null>
  */
 export async function getCurrentUserGoogleAvatar(): Promise<string | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) {
       return null

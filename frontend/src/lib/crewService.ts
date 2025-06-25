@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 import type { Crew, CrewMember, CreateCrewData } from '@/types'
 import { generateTokenizedUrls } from './invitationTokenService'
 
@@ -21,7 +22,7 @@ const debugError = (...args: any[]) => {
 // Get user's crews (where they are a member)
 export async function getUserCrews(userId?: string): Promise<Crew[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     const currentUserId = userId || user?.id
     if (!currentUserId) {
       return []
@@ -114,7 +115,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
 
 // Create a new crew
 export async function createCrew(data: CreateCrewData): Promise<Crew> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { data: crew, error } = await supabase
@@ -132,7 +133,7 @@ export async function createCrew(data: CreateCrewData): Promise<Crew> {
 
 // Get crew details by ID
 export async function getCrewById(crewId: string): Promise<Crew | null> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const { data, error } = await supabase
     .from('crews')
@@ -451,7 +452,7 @@ async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inv
 
 // Invite user to crew by user ID
 export async function inviteUserToCrew(crewId: string, userId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { data: invitation, error } = await supabase
@@ -541,7 +542,7 @@ export async function respondToCrewInvitation(crewMemberId: string, status: 'acc
 
 // Get pending crew invitations for current user
 export async function getPendingCrewInvitations(): Promise<Array<CrewMember & { crew: Crew }>> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return []
 
   const { data, error } = await supabase
@@ -573,7 +574,7 @@ export async function getPendingCrewInvitations(): Promise<Array<CrewMember & { 
 
 // Create shareable invite link
 export async function createCrewInviteLink(crewId: string, expiresInDays?: number, maxUses?: number): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   // Generate unique invite code
@@ -632,7 +633,7 @@ export async function createCrewInviteLink(crewId: string, expiresInDays?: numbe
 
 // Join crew via invite code
 export async function joinCrewByInviteCode(inviteCode: string): Promise<Crew> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   console.log('Looking up invite code:', inviteCode)
@@ -707,7 +708,7 @@ export async function joinCrewByInviteCode(inviteCode: string): Promise<Crew> {
 
 // Leave crew
 export async function leaveCrew(crewId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase
@@ -734,7 +735,7 @@ export async function removeMemberFromCrew(crewId: string, userId: string): Prom
 export async function searchUsersForInvite(query: string, crewId?: string): Promise<Array<{ user_id: string; display_name: string; avatar_url: string | null; email?: string }>> {
   if (!query.trim()) return []
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return []
 
   console.log('🔍 Searching for users with query:', query)
@@ -819,7 +820,7 @@ export async function searchUsersForInvite(query: string, crewId?: string): Prom
 
 // Update crew
 export async function updateCrew(crewId: string, updates: Partial<Crew>): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase
@@ -836,7 +837,7 @@ export async function updateCrew(crewId: string, updates: Partial<Crew>): Promis
  */
 export async function deleteCrew(crewId: string): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error('Not authenticated')
 
     console.log('🗑️ Deleting crew:', crewId)

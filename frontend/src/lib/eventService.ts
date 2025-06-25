@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getCurrentUser } from './authUtils'
 import type { Event, RsvpStatus, UserProfile } from '@/types'
 import { getDefaultCoverImage } from './coverImageUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
@@ -347,8 +348,9 @@ export async function createEventWithShareableLink(eventData: {
   }
 }) {
   // Get the current user
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) {
+  const user = await getCurrentUser()
+  const userError = null
+  if (!user) {
     throw new Error('Not authenticated')
   }
 
@@ -494,11 +496,9 @@ export async function getPublicEvents(): Promise<Event[]> {
     }
 
     // Get current user (this is optional for public events)
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
-    if (userError) {
-      // Continue without user data if there's an error
-    }
+    // Continue without user data if there's an error (no error expected with getCurrentUser)
 
     // If user is logged in and has valid ID, check which events they've joined
     let userRsvps: any[] = []
@@ -654,7 +654,7 @@ export async function getUserAccessibleEvents() {
 // Respond to event invitation (accept/decline)
 export async function respondToEventInvitation(eventMemberId: string, response: 'accepted' | 'declined') {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) {
       throw new Error('User authentication required')
@@ -700,7 +700,7 @@ export async function updateEvent(id: string, event: Partial<Event>) {
  */
 export async function deleteEvent(id: string): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error('Not authenticated')
 
     console.log('🗑️ Deleting event:', id)

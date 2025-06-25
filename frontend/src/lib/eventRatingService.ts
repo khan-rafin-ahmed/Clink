@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getCurrentUser } from './authUtils'
 import type { EventRating } from '@/types'
 
 /**
@@ -9,7 +10,7 @@ export async function submitEventRating(
   rating: number,
   feedbackText?: string | null
 ): Promise<EventRating> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     throw new Error('You must be signed in to rate events')
   }
@@ -94,7 +95,7 @@ export async function submitEventRating(
  * Get user's rating for a specific event
  */
 export async function getUserEventRating(eventId: string): Promise<EventRating | null> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
   const { data, error } = await supabase
@@ -166,7 +167,7 @@ export async function getEventRatingStats(eventId: string): Promise<{
  */
 export async function canUserRateEvent(eventId: string, userId?: string): Promise<boolean> {
   if (!userId) {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return false
     userId = user.id
   }
@@ -212,7 +213,7 @@ export async function canUserRateEvent(eventId: string, userId?: string): Promis
  * Delete a user's rating for an event
  */
 export async function deleteEventRating(eventId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) {
     throw new Error('You must be signed in to delete ratings')
   }
@@ -256,7 +257,7 @@ export async function hasEventConcluded(eventId: string): Promise<boolean> {
  */
 export async function getUnratedAttendedEvents(userId?: string): Promise<any[]> {
   if (!userId) {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return []
     userId = user.id
   }
