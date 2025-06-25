@@ -84,10 +84,10 @@ export function InvitationAction({}: InvitationActionProps) {
         }
       } else {
         // URL structure: /invitation/:token - determine type from token prefix
-        if (token.startsWith('event_')) {
+        if (token?.startsWith('event_')) {
           functionName = 'process_event_invitation_token'
           tokenType = 'event'
-        } else if (token.startsWith('crew_')) {
+        } else if (token?.startsWith('crew_')) {
           functionName = 'process_crew_invitation_token'
           tokenType = 'crew'
         } else {
