@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Check, X, Users, Eye } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
@@ -16,6 +16,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { cacheService } from '@/lib/cacheService'
+import { getEventTimingStatus } from '@/lib/eventUtils'
 
 
 
@@ -287,14 +288,78 @@ export function NotificationBell() {
       event_rsvp: '🍺',
       event_reminder: '⏰',
       crew_invite_accepted: '🎯',
-      crew_invitation: '🔔',
-      event_invitation: '📨',
-      event_invitation_response: '💬',
+      crew_invitation: '👥',
+      event_invitation: '🎉',
+      event_invitation_response: '✅',
       event_update: '📝',
       event_cancelled: '❌',
       crew_promotion: '👑'
     }
     return icons[type] || '🔔'
+  }
+
+  // Helper to clean notification title (remove all leading emojis)
+  const cleanNotificationTitle = (title: string, type: string) => {
+    const icon = getNotificationIcon(type)
+    // Remove the icon emoji if present at the start
+    let cleaned = title.replace(new RegExp(`^${icon}\\s*`, 'g'), '')
+    // Remove any other leading emojis or non-word characters (unicode aware)
+    cleaned = cleaned.replace(/^[^\p{L}\p{N}]*/u, '')
+    return cleaned.trim()
+  }
+
+  // Helper function to check if event invitation is expired
+  const isEventInvitationExpired = (notification: NotificationData): boolean => {
+    if (notification.type !== 'event_invitation' || !notification.data?.event_date_time) {
+      return false
+    }
+
+    const eventDateTime = notification.data.event_date_time
+    const eventEndTime = notification.data.event_end_time
+    const durationType = notification.data.duration_type
+
+    const status = getEventTimingStatus(eventDateTime, eventEndTime, durationType)
+    return status === 'past'
+  }
+
+  // Helper function to get notification state
+  const getNotificationState = (notification: NotificationData) => {
+    if (notification.type === 'event_invitation' && isEventInvitationExpired(notification)) {
+      const eventTitle = notification.data?.event_title || 'a session'
+      return {
+        isExpired: true,
+        title: '🍂 Invitation expired',
+        message: `You were invited to "${eventTitle}", but it's now over.`,
+        showActions: false
+      }
+    }
+
+    if (notification.type === 'event_invitation_response') {
+      const response = notification.data?.response
+      const eventTitle = notification.data?.event_title || 'your event'
+      if (response === 'accepted') {
+        return {
+          isExpired: false,
+          title: `✅ ${notification.senderName || 'Someone'} accepted your invite to "${eventTitle}"`,
+          message: "They're in. Drinks soon?",
+          showActions: false
+        }
+      } else if (response === 'declined') {
+        return {
+          isExpired: false,
+          title: `❌ ${notification.senderName || 'Someone'} declined your invite to "${eventTitle}"`,
+          message: 'Maybe next time.',
+          showActions: false
+        }
+      }
+    }
+
+    return {
+      isExpired: false,
+      title: notification.title,
+      message: notification.message,
+      showActions: !notification.read
+    }
   }
 
   if (!user) return null
@@ -368,30 +433,38 @@ export function NotificationBell() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-lg flex-shrink-0">
-                      {notification.type === 'crew_invitation' ? (
-                        <Users className="w-4 h-4 text-white mt-0.5" />
-                      ) : (
-                        getNotificationIcon(notification.type)
-                      )}
+                      {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm text-white line-clamp-1">
-                          {notification.title}
-                        </p>
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-white rounded-full flex-shrink-0 mt-1" />
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-300 line-clamp-2 mt-1">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                      </p>
+                      {(() => {
+                        const state = getNotificationState(notification)
+                        return (
+                          <>
+                            <div className="flex items-start justify-between gap-2">
+                              <p
+                                className={cn(
+                                  "font-medium text-sm text-white",
+                                  notification.type === 'event_invitation_response' ? "line-clamp-2" : "line-clamp-1"
+                                )}
+                              >
+                                {cleanNotificationTitle(state.title, notification.type)}
+                              </p>
+                              {!notification.read && !state.isExpired && (
+                                <div className="w-2 h-2 bg-white rounded-full flex-shrink-0 mt-1" />
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                              {state.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                            </p>
+                          </>
+                        )
+                      })()}
 
                       {/* Crew invitation actions */}
-                      {notification.type === 'crew_invitation' && !notification.read && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
+                      {notification.type === 'crew_invitation' && getNotificationState(notification).showActions && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           {/* Mobile: 2 lines, Desktop: 1 line */}
                           <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
@@ -407,8 +480,7 @@ export function NotificationBell() {
                                 }}
                                 className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] w-full sm:flex-1"
                               >
-                                <Eye className="w-3 h-3" />
-                                Details
+                                View Crew →
                               </Button>
                             )}
 
@@ -429,8 +501,7 @@ export function NotificationBell() {
                                   }}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 sm:flex-1"
                                 >
-                                  <Check className="w-3 h-3" />
-                                  Join
+                                  ✔️ Join
                                 </Button>
 
                                 {/* Decline Button */}
@@ -448,17 +519,23 @@ export function NotificationBell() {
                                   }}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 sm:flex-1"
                                 >
-                                  <X className="w-3 h-3" />
-                                  Decline
+                                  ❌ Decline
                                 </Button>
                               </div>
                             )}
                           </div>
+                          {/* Status badge for crew invitation */}
+                          {!getNotificationState(notification).showActions && notification.data?.response === 'accepted' && (
+                            <span className="text-sm text-green-400 mt-2">Already Joined</span>
+                          )}
+                          {!getNotificationState(notification).showActions && notification.data?.response === 'declined' && (
+                            <span className="text-sm text-red-400 mt-2">Declined</span>
+                          )}
                         </div>
                       )}
 
                       {/* Event invitation actions */}
-                      {notification.type === 'event_invitation' && !notification.read && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
+                      {notification.type === 'event_invitation' && getNotificationState(notification).showActions && !isEventInvitationExpired(notification) && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           {/* Mobile: 2 lines, Desktop: 1 line */}
                           <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
@@ -475,8 +552,7 @@ export function NotificationBell() {
                               }}
                               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] w-full sm:flex-1"
                             >
-                              <Eye className="w-3 h-3" />
-                              Details
+                              View Event →
                             </Button>
 
                             {/* Join/Decline container - Horizontal on both mobile and desktop */}
@@ -495,8 +571,7 @@ export function NotificationBell() {
                                   }}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 sm:flex-1"
                                 >
-                                  <Check className="w-3 h-3" />
-                                  Join
+                                  ✔️ Join
                                 </Button>
 
                                 {/* Decline Button */}
@@ -513,12 +588,18 @@ export function NotificationBell() {
                                   }}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 sm:flex-1"
                                 >
-                                  <X className="w-3 h-3" />
-                                  Decline
+                                  ❌ Decline
                                 </Button>
                               </div>
                             )}
                           </div>
+                          {/* Status badge for event invitation */}
+                          {!getNotificationState(notification).showActions && notification.data?.response === 'accepted' && (
+                            <span className="text-sm text-green-400 mt-2">Already Joined</span>
+                          )}
+                          {!getNotificationState(notification).showActions && notification.data?.response === 'declined' && (
+                            <span className="text-sm text-red-400 mt-2">Declined</span>
+                          )}
                         </div>
                       )}
 
@@ -534,8 +615,7 @@ export function NotificationBell() {
                             }}
                             className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)] h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
                           >
-                            <Eye className="w-3 h-3" />
-                            View Event
+                            View Event →
                           </Button>
                         </div>
                       )}
