@@ -277,49 +277,28 @@ export function UserProfile() {
 
         const viewerCrewIds = viewerCrewMemberships?.map(cm => cm.crew_id) || []
 
+        // Updated privacy filtering logic
         filteredEvents = uniqueEvents.filter((event: any) => {
-          // IMPORTANT: Only apply privacy filtering to events CREATED by the profile owner
-          // Events where the profile owner is a participant should always be shown
-          // (they were fetched because the profile owner has legitimate access)
+          const isCreatedByProfileOwner = event.created_by === targetUserId;
 
-          const isCreatedByProfileOwner = event.created_by === targetUserId
+          // If the event was not created by profile owner, show it (user is a participant)
+          if (!isCreatedByProfileOwner) return true;
 
-          // If the profile owner didn't create this event, they must be a participant
-          // so we should always show it (no privacy filtering needed)
-          if (!isCreatedByProfileOwner) {
-            console.log(`✅ Showing participant event "${event.title}" (ID: ${event.id}) - profile owner is participant`)
-            return true
-          }
+          // If event is public, show it
+          if (event.is_public) return true;
 
-          // For events CREATED by the profile owner, apply privacy filtering
-          // Always show public events
-          if (event.is_public) {
-            return true
-          }
+          // If viewer is participant in private event, show it
+          const hasRsvp = event.rsvps?.some(
+            (rsvp: any) => rsvp.user_id === viewerId && rsvp.status === 'going'
+          );
+          const isInvited = event.event_members?.some(
+            (member: any) => member.user_id === viewerId && member.status === 'accepted'
+          );
+          const isCrewEvent =
+            event.crew_id && viewerCrewIds.includes(event.crew_id);
 
-          // For private events created by profile owner, only show if viewer is a participant
-          // Check if viewer is in RSVPs
-          const hasRsvp = event.rsvps?.some((rsvp: any) =>
-            rsvp.user_id === viewerId && rsvp.status === 'going'
-          )
-
-          // Check if viewer is in event members (invited)
-          const isInvited = event.event_members?.some((member: any) =>
-            member.user_id === viewerId && member.status === 'accepted'
-          )
-
-          // Check if event is associated with a crew that viewer is a member of
-          const isCrewEvent = event.crew_id && viewerCrewIds.includes(event.crew_id)
-
-          const shouldShow = hasRsvp || isInvited || isCrewEvent
-
-          // Log private events that are being filtered out for debugging
-          if (!shouldShow) {
-            console.log(`🔒 Filtering out private event "${event.title}" (ID: ${event.id}) created by profile owner - viewer not a participant`)
-          }
-
-          return shouldShow
-        })
+          return hasRsvp || isInvited || isCrewEvent;
+        });
 
         console.log('Events after privacy filtering:', filteredEvents.length, 'removed:', uniqueEvents.length - filteredEvents.length)
       }
@@ -536,12 +515,11 @@ export function UserProfile() {
     )
   }
 
-  // If not logged in but a username is provided, show fallback 404
+  // Allow public profiles to be viewable by unauthenticated users
   if (!user && username) {
-    return <Simple404 username={username} />
-  }
-  if (!user) {
-    return null // Will redirect to login
+    if (profileError) return <Simple404 username={username} />
+    if (!userProfile) return null // Still loading profile
+    if (userProfile.is_private) return <Simple404 username={username} />
   }
 
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
