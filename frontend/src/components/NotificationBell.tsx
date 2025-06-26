@@ -18,11 +18,17 @@ import { toast } from 'sonner'
 import { cacheService } from '@/lib/cacheService'
 import { getEventTimingStatus } from '@/lib/eventUtils'
 
+// Extended notification interface with sender profile info
+interface ExtendedNotificationData extends NotificationData {
+  senderName?: string
+  senderAvatar?: string
+}
+
 
 
 export function NotificationBell() {
   const { user } = useAuth()
-  const [notifications, setNotifications] = useState<NotificationData[]>([])
+  const [notifications, setNotifications] = useState<ExtendedNotificationData[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -62,9 +68,57 @@ export function NotificationBell() {
     setIsLoading(true)
     try {
       const cacheKey = getNotificationsCacheKey(user.id)
-      let data = cacheService.get<NotificationData[]>(cacheKey)
+      let data = cacheService.get<ExtendedNotificationData[]>(cacheKey)
       if (!data) {
-        data = await notificationService.getUserNotifications(user.id)
+        // Fetch notifications with sender profile information
+        const baseNotifications = await notificationService.getUserNotifications(user.id)
+
+        // Enhance notifications with sender profile data
+        const enhancedNotifications = await Promise.all(
+          baseNotifications.map(async (notification) => {
+            let senderName = 'Someone'
+            let senderAvatar = null
+
+            // Extract sender ID from notification data based on notification type
+            let senderId = null
+            if (notification.type === 'event_rsvp') {
+              senderId = notification.data?.rsvpUserId
+            } else if (notification.type === 'event_invitation_response') {
+              senderId = notification.data?.inviter_id || notification.data?.user_id
+            } else if (notification.type === 'crew_invitation') {
+              senderId = notification.data?.inviter_id
+            } else if (notification.type === 'event_invitation') {
+              senderId = notification.data?.inviter_id
+            } else if (notification.type === 'crew_invite_accepted') {
+              senderId = notification.data?.user_id || notification.data?.member_id
+            }
+
+            if (senderId) {
+              try {
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('display_name, avatar_url')
+                  .eq('user_id', senderId)
+                  .single()
+
+                if (profile) {
+                  senderName = profile.display_name || 'Someone'
+                  senderAvatar = profile.avatar_url
+                }
+              } catch (error) {
+                // Fallback to 'Someone' if profile fetch fails
+              }
+            }
+
+            return {
+              ...notification,
+              senderName,
+              senderAvatar
+            } as ExtendedNotificationData
+          })
+        )
+
+        data = enhancedNotifications
         cacheService.set(cacheKey, data, CACHE_TTL)
       }
       setNotifications(data)
@@ -112,9 +166,25 @@ export function NotificationBell() {
 
       if (result.success) {
         await markAsRead(notificationId)
-        // Remove the notification from the list after successful response
+
+        // Update notification to show response message immediately
         setNotifications(prev => {
-          const updated = prev.filter(n => n.id !== notificationId)
+          const updated = prev.map(n => {
+            if (n.id === notificationId) {
+              const eventTitle = n.data?.event_title || 'the event'
+              return {
+                ...n,
+                title: response === 'accepted'
+                  ? `✅ You accepted invitation to "${eventTitle}"`
+                  : `❌ You declined invitation to "${eventTitle}"`,
+                message: response === 'accepted'
+                  ? 'See you there!'
+                  : 'Maybe next time.',
+                read: true
+              }
+            }
+            return n
+          })
           if (user?.id) {
             cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
           }
@@ -244,9 +314,24 @@ export function NotificationBell() {
         toast.success('Crew invitation declined')
       }
 
-      // Remove the notification from the list
+      // Update notification to show response message immediately
       setNotifications(prev => {
-        const updated = prev.filter(n => n.id !== notificationId)
+        const updated = prev.map(n => {
+          if (n.id === notificationId) {
+            const crewName = n.data?.crew_name || 'the crew'
+            return {
+              ...n,
+              title: response === 'accepted'
+                ? `✅ You joined "${crewName}"`
+                : `❌ You declined invitation to "${crewName}"`,
+              message: response === 'accepted'
+                ? 'Welcome to the crew!'
+                : 'Maybe next time.',
+              read: true
+            }
+          }
+          return n
+        })
         if (user?.id) {
           cacheService.set(getNotificationsCacheKey(user.id), updated, CACHE_TTL)
         }
@@ -263,7 +348,7 @@ export function NotificationBell() {
     }
   }
 
-  const handleNotificationClick = (notification: NotificationData) => {
+  const handleNotificationClick = (notification: ExtendedNotificationData) => {
     // Don't mark as read or navigate for crew/event invitations - they have their own action buttons
     if (notification.type === 'crew_invitation' || notification.type === 'event_invitation') {
       return
@@ -309,7 +394,7 @@ export function NotificationBell() {
   }
 
   // Helper function to check if event invitation is expired
-  const isEventInvitationExpired = (notification: NotificationData): boolean => {
+  const isEventInvitationExpired = (notification: ExtendedNotificationData): boolean => {
     if (notification.type !== 'event_invitation' || !notification.data?.event_date_time) {
       return false
     }
@@ -323,34 +408,62 @@ export function NotificationBell() {
   }
 
   // Helper function to get notification state
-  const getNotificationState = (notification: NotificationData) => {
-    if (notification.type === 'event_invitation' && isEventInvitationExpired(notification)) {
-      const eventTitle = notification.data?.event_title || 'a session'
-      return {
-        isExpired: true,
-        title: '🍂 Invitation expired',
-        message: `You were invited to "${eventTitle}", but it's now over.`,
-        showActions: false
-      }
+  const getNotificationState = (notification: ExtendedNotificationData) => {
+    // Hide processed event invitations (already responded to)
+    if (notification.type === 'event_invitation' && notification.data?.status && notification.data.status !== 'pending') {
+      return null // Hide this notification
     }
 
+    // Hide expired event invitations
+    if (notification.type === 'event_invitation' && isEventInvitationExpired(notification)) {
+      return null // Hide this notification
+    }
+
+    // Fix event invitation response notifications - always override stored title/message
     if (notification.type === 'event_invitation_response') {
       const response = notification.data?.response
       const eventTitle = notification.data?.event_title || 'your event'
+      const userName = notification.senderName || 'Someone'
+
       if (response === 'accepted') {
         return {
           isExpired: false,
-          title: `✅ ${notification.senderName || 'Someone'} accepted your invite to "${eventTitle}"`,
-          message: "They're in. Drinks soon?",
-          showActions: false
+          title: `${userName} joined your session`,
+          message: `They joined "${eventTitle}" and are ready to drink!`,
+          showActions: false,
+          showViewEventButton: true
         }
       } else if (response === 'declined') {
         return {
           isExpired: false,
-          title: `❌ ${notification.senderName || 'Someone'} declined your invite to "${eventTitle}"`,
-          message: 'Maybe next time.',
+          title: `${userName} declined your invite`,
+          message: `They can't make it to "${eventTitle}"`,
           showActions: false
         }
+      }
+    }
+
+    // Fix event RSVP notifications - always override stored title/message
+    if (notification.type === 'event_rsvp') {
+      const eventTitle = notification.data?.eventTitle || 'your session'
+      const userName = notification.senderName || 'Someone'
+      return {
+        isExpired: false,
+        title: `${userName} joined your session`,
+        message: `They joined "${eventTitle}" and are ready to drink!`,
+        showActions: false
+      }
+    }
+
+    // Fix crew notifications - always override stored title/message
+    if (notification.type === 'crew_invite_accepted') {
+      const crewName = notification.data?.crew_name || 'your crew'
+      const userName = notification.senderName || 'Someone'
+      return {
+        isExpired: false,
+        title: `${userName} joined your crew`,
+        message: `They joined "${crewName}" crew!`,
+        showActions: false
       }
     }
 
@@ -421,50 +534,66 @@ export function NotificationBell() {
             </div>
           ) : (
             <div className="divide-y divide-white/10">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    "px-4 py-4 transition-colors",
-                    !notification.read && "bg-white/5 border-l-2 border-l-white",
-                    notification.type !== 'crew_invitation' && notification.type !== 'event_invitation' && "hover:bg-white/8 cursor-pointer"
-                  )}
-                  onClick={notification.type !== 'crew_invitation' && notification.type !== 'event_invitation' ? () => handleNotificationClick(notification) : undefined}
-                >
+              {notifications.map((notification) => {
+                const state = getNotificationState(notification)
+
+                // Hide notifications that return null state (processed/expired)
+                if (!state) return null
+
+                return (
+                  <div
+                    key={notification.id}
+                    className={cn(
+                      "px-4 py-4 transition-colors",
+                      !notification.read && "bg-white/5 border-l-2 border-l-white",
+                      notification.type !== 'crew_invitation' && notification.type !== 'event_invitation' && "hover:bg-white/8 cursor-pointer"
+                    )}
+                    onClick={notification.type !== 'crew_invitation' && notification.type !== 'event_invitation' ? () => handleNotificationClick(notification) : undefined}
+                  >
                   <div className="flex items-start gap-3">
-                    <div className="text-lg flex-shrink-0">
-                      {getNotificationIcon(notification.type)}
+                    <div className="flex-shrink-0">
+                      {notification.senderAvatar && (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invite_accepted') ? (
+                        <img
+                          src={notification.senderAvatar}
+                          alt={notification.senderName || 'User'}
+                          className="w-8 h-8 rounded-full object-cover border border-white/20"
+                        />
+                      ) : (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invite_accepted') ? (
+                        // Show placeholder avatar for user-specific notifications without avatar data
+                        <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                          <span className="text-xs text-white/70">👤</span>
+                        </div>
+                      ) : (
+                        <div className="text-lg">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      {(() => {
-                        const state = getNotificationState(notification)
-                        return (
-                          <>
-                            <div className="flex items-start justify-between gap-2">
-                              <p
-                                className={cn(
-                                  "font-medium text-sm text-white",
-                                  notification.type === 'event_invitation_response' ? "line-clamp-2" : "line-clamp-1"
-                                )}
-                              >
-                                {cleanNotificationTitle(state.title, notification.type)}
-                              </p>
-                              {!notification.read && !state.isExpired && (
-                                <div className="w-2 h-2 bg-white rounded-full flex-shrink-0 mt-1" />
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-300 line-clamp-2 mt-1">
-                              {state.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                            </p>
-                          </>
-                        )
-                      })()}
+                      <>
+                        <div className="flex items-start justify-between gap-2">
+                          <p
+                            className={cn(
+                              "font-medium text-sm text-white leading-relaxed",
+                              "line-clamp-2" // Allow 2 lines for all notifications to prevent truncation
+                            )}
+                          >
+                            {cleanNotificationTitle(state.title, notification.type)}
+                          </p>
+                          {!notification.read && !state.isExpired && (
+                            <div className="w-2 h-2 bg-white rounded-full flex-shrink-0 mt-1" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                          {state.message}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </p>
+                      </>
 
                       {/* Crew invitation actions */}
-                      {notification.type === 'crew_invitation' && getNotificationState(notification).showActions && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
+                      {notification.type === 'crew_invitation' && state.showActions && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           {/* Mobile: 2 lines, Desktop: 1 line */}
                           <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
@@ -525,17 +654,17 @@ export function NotificationBell() {
                             )}
                           </div>
                           {/* Status badge for crew invitation */}
-                          {!getNotificationState(notification).showActions && notification.data?.response === 'accepted' && (
+                          {!state.showActions && notification.data?.response === 'accepted' && (
                             <span className="text-sm text-green-400 mt-2">Already Joined</span>
                           )}
-                          {!getNotificationState(notification).showActions && notification.data?.response === 'declined' && (
+                          {!state.showActions && notification.data?.response === 'declined' && (
                             <span className="text-sm text-red-400 mt-2">Declined</span>
                           )}
                         </div>
                       )}
 
                       {/* Event invitation actions */}
-                      {notification.type === 'event_invitation' && getNotificationState(notification).showActions && !isEventInvitationExpired(notification) && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
+                      {notification.type === 'event_invitation' && state.showActions && !isEventInvitationExpired(notification) && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           {/* Mobile: 2 lines, Desktop: 1 line */}
                           <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
@@ -594,17 +723,26 @@ export function NotificationBell() {
                             )}
                           </div>
                           {/* Status badge for event invitation */}
-                          {!getNotificationState(notification).showActions && notification.data?.response === 'accepted' && (
+                          {!state.showActions && notification.data?.response === 'accepted' && (
                             <span className="text-sm text-green-400 mt-2">Already Joined</span>
                           )}
-                          {!getNotificationState(notification).showActions && notification.data?.response === 'declined' && (
+                          {!state.showActions && notification.data?.response === 'declined' && (
                             <span className="text-sm text-red-400 mt-2">Declined</span>
                           )}
                         </div>
                       )}
 
+                      {/* Expired event invitation status */}
+                      {notification.type === 'event_invitation' && isEventInvitationExpired(notification) && (
+                        <div className="mt-3">
+                          <span className="text-sm text-amber-400 flex items-center gap-1.5">
+                            ⚠️ Event has expired
+                          </span>
+                        </div>
+                      )}
+
                       {/* Event invitation response actions (consolidated notification with View Event button) */}
-                      {notification.type === 'event_invitation_response' && notification.data?.show_view_event_button && notification.data?.event_id && (
+                      {notification.type === 'event_invitation_response' && (notification.data?.show_view_event_button || state.showViewEventButton) && notification.data?.event_id && (
                         <div className="mt-3">
                           <Button
                             size="sm"
@@ -613,7 +751,7 @@ export function NotificationBell() {
                               window.location.href = `/event/${notification.data?.event_id}`
                               setIsOpen(false)
                             }}
-                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-[#00FFA3]/10 text-[#00FFA3] border border-[#00FFA3] hover:shadow-[0_0_8px_rgba(0,255,163,0.3)] h-[36px] md:gap-2 md:px-4 md:py-2 md:text-sm md:h-[38px]"
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium bg-white text-[#08090A] h-[32px] md:px-3 md:text-sm md:h-[36px]"
                           >
                             View Event →
                           </Button>
@@ -622,7 +760,8 @@ export function NotificationBell() {
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </ScrollArea>
