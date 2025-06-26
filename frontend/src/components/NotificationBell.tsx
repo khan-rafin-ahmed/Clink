@@ -321,9 +321,13 @@ export function NotificationBell() {
             const crewName = n.data?.crew_name || 'the crew'
             return {
               ...n,
+              data: {
+                ...n.data,
+                response: response
+              },
               title: response === 'accepted'
-                ? `✅ You joined "${crewName}"`
-                : `❌ You declined invitation to "${crewName}"`,
+                ? `You have joined ${crewName}`
+                : `You declined invitation to ${crewName}`,
               message: response === 'accepted'
                 ? 'Welcome to the crew!'
                 : 'Maybe next time.',
@@ -467,6 +471,41 @@ export function NotificationBell() {
       }
     }
 
+    // Handle crew invitation notifications - override stored title/message
+    if (notification.type === 'crew_invitation') {
+      const crewName = notification.data?.crew_name || 'the crew'
+      const userName = notification.senderName || 'Someone'
+
+      // Check if user has already responded
+      const hasResponded = notification.data?.response === 'accepted' || notification.data?.response === 'declined'
+
+      if (hasResponded) {
+        if (notification.data?.response === 'accepted') {
+          return {
+            isExpired: false,
+            title: `You have joined ${crewName}`,
+            message: 'Welcome to the crew!',
+            showActions: false,
+            showViewCrewButton: true
+          }
+        } else {
+          return {
+            isExpired: false,
+            title: `You declined invitation to ${crewName}`,
+            message: 'Maybe next time.',
+            showActions: false
+          }
+        }
+      }
+
+      return {
+        isExpired: false,
+        title: `${userName} invited you to join "${crewName}"`,
+        message: '', // No additional message needed
+        showActions: true
+      }
+    }
+
     return {
       isExpired: false,
       title: notification.title,
@@ -595,71 +634,79 @@ export function NotificationBell() {
                       {/* Crew invitation actions */}
                       {notification.type === 'crew_invitation' && state.showActions && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
                         <div className="mt-3 space-y-2">
-                          {/* Mobile: 2 lines, Desktop: 1 line */}
-                          <div className="flex flex-col gap-2 sm:flex-row sm:gap-1.5">
-                            {/* View Details Button - Full width on mobile, flex-1 on desktop */}
-                            {notification.data?.crew_id && (
+                          {/* Line 1: View Crew Button (full width) */}
+                          {notification.data?.crew_id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `/crew/${notification.data?.crew_id}`
+                                setIsOpen(false)
+                              }}
+                              className="w-full text-xs border-white/20 text-white hover:bg-white/10"
+                            >
+                              View Crew
+                            </Button>
+                          )}
+
+                          {/* Line 2: Accept and Decline buttons (side by side) */}
+                          {!respondedNotifications.has(notification.id!) && (
+                            <div className="flex gap-2">
+                              {/* Accept Button - Primary styling */}
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCrewInvitationResponse(
+                                    notification.id!,
+                                    notification.data?.crew_member_id || null,
+                                    notification.data?.crew_id || null,
+                                    'accepted'
+                                  )
+                                }}
+                                className="flex-1 bg-white text-black hover:bg-gray-100 text-xs font-medium"
+                              >
+                                Accept
+                              </Button>
+
+                              {/* Decline Button - Secondary styling */}
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  window.location.href = `/crew/${notification.data?.crew_id}`
-                                  setIsOpen(false)
+                                  handleCrewInvitationResponse(
+                                    notification.id!,
+                                    notification.data?.crew_member_id || null,
+                                    notification.data?.crew_id || null,
+                                    'declined'
+                                  )
                                 }}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border-white/20 text-white hover:bg-white/10 h-[36px] w-full sm:flex-1"
+                                className="flex-1 border-white/20 text-white hover:bg-white/10 text-xs font-medium"
                               >
-                                View Crew →
+                                Decline
                               </Button>
-                            )}
-
-                            {/* Join/Decline container - Horizontal on both mobile and desktop */}
-                            {!respondedNotifications.has(notification.id!) && (
-                              <div className="flex gap-1.5 sm:contents">
-                                {/* Join Button */}
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleCrewInvitationResponse(
-                                      notification.id!,
-                                      notification.data?.crew_member_id || null,
-                                      notification.data?.crew_id || null,
-                                      'accepted'
-                                    )
-                                  }}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 sm:flex-1"
-                                >
-                                  ✔️ Join
-                                </Button>
-
-                                {/* Decline Button */}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleCrewInvitationResponse(
-                                      notification.id!,
-                                      notification.data?.crew_member_id || null,
-                                      notification.data?.crew_id || null,
-                                      'declined'
-                                    )
-                                  }}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 sm:flex-1"
-                                >
-                                  ❌ Decline
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          {/* Status badge for crew invitation */}
-                          {!state.showActions && notification.data?.response === 'accepted' && (
-                            <span className="text-sm text-green-400 mt-2">Already Joined</span>
+                            </div>
                           )}
-                          {!state.showActions && notification.data?.response === 'declined' && (
-                            <span className="text-sm text-red-400 mt-2">Declined</span>
-                          )}
+                        </div>
+                      )}
+
+                      {/* Show View Crew button for accepted invitations */}
+                      {notification.type === 'crew_invitation' && state.showViewCrewButton && notification.data?.crew_id && (
+                        <div className="mt-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.location.href = `/crew/${notification.data?.crew_id}`
+                              setIsOpen(false)
+                            }}
+                            className="w-full text-xs border-white/20 text-white hover:bg-white/10"
+                          >
+                            View Crew
+                          </Button>
                         </div>
                       )}
 
