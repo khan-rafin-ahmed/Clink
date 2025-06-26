@@ -314,7 +314,7 @@ export function NotificationBell() {
         toast.success('Crew invitation declined')
       }
 
-      // Update notification to show response message immediately
+      // Update notification to show response message immediately and persist the response
       setNotifications(prev => {
         const updated = prev.map(n => {
           if (n.id === notificationId) {
@@ -341,6 +341,22 @@ export function NotificationBell() {
         }
         return updated
       })
+
+      // Also update the notification in the database to persist the response
+      try {
+        await supabase
+          .from('notifications')
+          .update({
+            data: {
+              ...notifications.find(n => n.id === notificationId)?.data,
+              response: response
+            },
+            read: true
+          })
+          .eq('id', notificationId)
+      } catch (dbError) {
+        console.error('Failed to update notification in database:', dbError)
+      }
     } catch (error) {
       // Remove from responded set if failed
       setRespondedNotifications(prev => {

@@ -292,8 +292,14 @@ export async function sendEventInvitationsToCrew(
       try {
         console.log('📧 Attempting to send email invitations...')
         console.log('📧 Calling sendEventInvitationEmails with:', { eventId, inviterId: currentUserId })
+
+        // Send emails immediately without delay
         await sendEventInvitationEmails(eventId, currentUserId)
         console.log('✅ Email invitations sent successfully')
+
+        // Force a small delay to ensure notifications are processed
+        await new Promise(resolve => setTimeout(resolve, 100))
+
       } catch (emailError: any) {
         console.error('❌ Email invitation error:', emailError)
         // Don't fail the whole operation but log the error clearly
