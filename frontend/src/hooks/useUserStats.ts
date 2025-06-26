@@ -59,7 +59,6 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
     if (!forceRefresh) {
       const cached = statsCache.get(cacheKey)
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log('Using cached stats')
         setStats(cached.data)
         setLoading(false)
         setError(null)
@@ -75,12 +74,11 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
     try {
       const now = new Date().toISOString()
 
-      // Get all event IDs the user is associated with
+      // SIMPLIFIED: Get all event IDs the user is associated with
       const [
         createdEventsResult,
         rsvpEventsResult,
-        invitedEventsResult,
-        crewEventsResult
+        invitedEventsResult
       ] = await Promise.allSettled([
         // 1. Events user created
         supabase
@@ -91,91 +89,80 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
         // 2. Events user RSVP'd to with 'going' status
         supabase
           .from('rsvps')
-          .select('event_id, events!inner(id, date_time)')
+          .select('event_id')
           .eq('user_id', targetUserId)
           .eq('status', 'going'),
 
         // 3. Events user was directly invited to with 'accepted' status
         supabase
           .from('event_members')
-          .select('event_id, events!inner(id, date_time)')
-          .eq('user_id', targetUserId)
-          .eq('status', 'accepted'),
-
-        // 4. Events from crews user belongs to
-        supabase
-          .from('crew_members')
-          .select(`
-            crew_id,
-            crews!inner(
-              events!inner(id, date_time)
-            )
-          `)
+          .select('event_id')
           .eq('user_id', targetUserId)
           .eq('status', 'accepted')
       ])
 
-      // Collect all unique event IDs and their dates
+      console.log('🔍 Stats Debug - targetUserId:', targetUserId)
+      console.log('🔍 Stats Debug - createdEvents:', createdEventsResult)
+      console.log('🔍 Stats Debug - rsvpEvents:', rsvpEventsResult)
+      console.log('🔍 Stats Debug - invitedEvents:', invitedEventsResult)
+
+      // Collect all unique event IDs (with detailed debugging)
       const allEventIds = new Set<string>()
-      const eventDates: Record<string, string> = {}
+      const createdEventIds = new Set<string>()
+      const rsvpEventIds = new Set<string>()
+      const invitedEventIds = new Set<string>()
 
       // Process created events
       if (createdEventsResult.status === 'fulfilled' && createdEventsResult.value.data) {
         createdEventsResult.value.data.forEach((event: any) => {
           allEventIds.add(event.id)
-          eventDates[event.id] = event.date_time
+          createdEventIds.add(event.id)
         })
       }
+      console.log('🔍 Stats Debug - Created events count:', createdEventIds.size)
+      console.log('🔍 Stats Debug - Created event IDs:', Array.from(createdEventIds))
 
       // Process RSVP events
       if (rsvpEventsResult.status === 'fulfilled' && rsvpEventsResult.value.data) {
         rsvpEventsResult.value.data.forEach((rsvp: any) => {
-          if (rsvp.events) {
-            allEventIds.add(rsvp.events.id)
-            eventDates[rsvp.events.id] = rsvp.events.date_time
-          }
+          allEventIds.add(rsvp.event_id)
+          rsvpEventIds.add(rsvp.event_id)
         })
       }
+      console.log('🔍 Stats Debug - RSVP events count:', rsvpEventIds.size)
+      console.log('🔍 Stats Debug - RSVP event IDs:', Array.from(rsvpEventIds))
 
       // Process invited events
       if (invitedEventsResult.status === 'fulfilled' && invitedEventsResult.value.data) {
         invitedEventsResult.value.data.forEach((member: any) => {
-          if (member.events) {
-            allEventIds.add(member.events.id)
-            eventDates[member.events.id] = member.events.date_time
-          }
+          allEventIds.add(member.event_id)
+          invitedEventIds.add(member.event_id)
         })
       }
+      console.log('🔍 Stats Debug - Invited events count:', invitedEventIds.size)
+      console.log('🔍 Stats Debug - Invited event IDs:', Array.from(invitedEventIds))
 
-      // Process crew events
-      if (crewEventsResult.status === 'fulfilled' && crewEventsResult.value.data) {
-        crewEventsResult.value.data.forEach((crewMember: any) => {
-          if (crewMember.crews?.events) {
-            crewMember.crews.events.forEach((event: any) => {
-              allEventIds.add(event.id)
-              eventDates[event.id] = event.date_time
-            })
-          }
-        })
-      }
-
-      // Calculate stats
+      // Calculate stats (simplified - just count unique events)
       const totalEvents = allEventIds.size
-      const upcomingEvents = Array.from(allEventIds).filter(eventId =>
-        eventDates[eventId] && new Date(eventDates[eventId]) >= new Date(now)
-      ).length
+      console.log('🔍 Stats Debug - Final totalEvents:', totalEvents)
+      console.log('🔍 Stats Debug - All event IDs:', Array.from(allEventIds))
 
       // Get total RSVPs count (separate from events)
       const totalRSVPsResult = await supabase
         .from('rsvps')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('user_id', targetUserId)
+        .limit(1)
+
+      console.log('🔍 Stats Debug - RSVPs result:', totalRSVPsResult)
 
       const newStats: UserStatsData = {
         totalEvents,
-        upcomingEvents,
+        upcomingEvents: 0, // Simplified for now to focus on totalEvents bug
         totalRSVPs: totalRSVPsResult.count || 0
       }
+
+      console.log('🔍 Stats Debug - Final stats:', newStats)
 
       // Progress tracking - log the improvement
       const statsBreakdown = {
@@ -186,9 +173,7 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
           createdEvents: createdEventsResult.status === 'fulfilled' ? createdEventsResult.value.data?.length || 0 : 0,
           rsvpEvents: rsvpEventsResult.status === 'fulfilled' ? rsvpEventsResult.value.data?.length || 0 : 0,
           invitedEvents: invitedEventsResult.status === 'fulfilled' ? invitedEventsResult.value.data?.length || 0 : 0,
-          crewEvents: crewEventsResult.status === 'fulfilled' ?
-            crewEventsResult.value.data?.reduce((acc: number, crew: any) =>
-              acc + (crew.crews?.events?.length || 0), 0) || 0 : 0
+          crewEvents: 0 // Simplified for now
         }
       }
 
@@ -202,7 +187,11 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
 
       // Only update state if component is still mounted
       if (mountedRef.current) {
+        console.log('🔍 Stats Debug - About to setStats:', newStats)
         setStats(newStats)
+        console.log('🔍 Stats Debug - setStats called successfully')
+      } else {
+        console.log('🔍 Stats Debug - Component unmounted, not setting stats')
       }
 
     } catch (err) {
@@ -220,7 +209,9 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
 
   // Load stats when target user changes or refresh trigger changes
   useEffect(() => {
-    fetchStats()
+    if (targetUserId) {
+      fetchStats()
+    }
   }, [targetUserId, refreshTrigger])
 
   const refresh = () => {

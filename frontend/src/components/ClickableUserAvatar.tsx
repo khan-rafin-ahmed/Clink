@@ -103,8 +103,10 @@ export function ClickableUserAvatar({
       return
     }
 
-    // Navigate to user profile
+    // Navigate to user profile and ensure scroll to top (same as CrewDetail View buttons)
     navigate(`/profile/${targetUsername}`)
+    // Force scroll to top immediately after navigation
+    setTimeout(() => window.scrollTo(0, 0), 0)
   }
 
   // If disabled, no userId, or current user's own avatar, render non-clickable avatar
@@ -129,19 +131,23 @@ export function ClickableUserAvatar({
     <div
       onClick={handleClick}
       className={cn(
+        // Clean, unstyled clickable container - no link appearance
         'inline-block transition-all duration-200',
+        // Remove any potential text decoration or color changes
+        'no-underline text-current',
         isClickable
           ? 'cursor-pointer hover:scale-105 hover:opacity-80'
           : 'cursor-default',
         className
       )}
       role="button"
-      tabIndex={0}
+      tabIndex={isClickable ? 0 : -1}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           handleClick(e as any)
         }
       }}
+      style={{ textDecoration: 'none' }} // Ensure no underline
     >
       {children || (
         <UserAvatar

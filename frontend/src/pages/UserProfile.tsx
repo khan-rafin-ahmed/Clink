@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { useUserStats } from '@/hooks/useUserStats'
+import { useScrollRestoration } from '@/hooks/useScrollToTop'
 import { getUserProfile, getUserProfileByUsername } from '@/lib/userService'
 import { Simple404 } from '@/components/Simple404'
 import { getUserCrews } from '@/lib/crewService'
@@ -77,13 +78,16 @@ export function UserProfile() {
   const [profileError, setProfileError] = useState(false)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
 
+  // Ensure page scrolls to top when navigating to profiles
+  useScrollRestoration()
+
   // Determine if this is the user's own profile
   const isOwnProfile = !username || (userProfile && user?.id === userProfile.user_id)
 
   // Real-time updates disabled for now
 
-  // Get user stats for inline display
-  const { stats } = useUserStats(statsRefresh)
+  // Get user stats for inline display (fetch only after userProfile is loaded)
+  const { stats, loading: statsLoading } = useUserStats(statsRefresh, userProfile?.user_id)
 
   // We're now using enhanced sessions instead of the basic hook
   // const {
@@ -710,14 +714,14 @@ export function UserProfile() {
           <div className="mt-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard
-                count={stats?.totalEvents}
+                count={stats.totalEvents}
                 label="Sessions"
-                loading={!stats}
+                loading={statsLoading}
               />
               <StatCard
-                count={stats?.totalRSVPs}
+                count={stats.totalRSVPs}
                 label="RSVPs"
-                loading={!stats}
+                loading={statsLoading}
               />
               <StatCard
                 count={userCrews.length}

@@ -22,18 +22,18 @@ const textSizeClasses = {
   lg: 'text-base'
 }
 
-export function AvatarStack({ 
-  members, 
-  max = 5, 
-  size = 'md', 
-  className 
+export function AvatarStack({
+  members,
+  max = 5,
+  size = 'md',
+  className
 }: AvatarStackProps) {
   const visibleMembers = members.slice(0, max)
   const remainingCount = Math.max(0, members.length - max)
 
   return (
     <div className={cn("flex items-center", className)}>
-      {/* Avatar Stack */}
+      {/* Avatar Stack - Horizontally aligned with slight overlap */}
       <div className="flex -space-x-2">
         {visibleMembers.map((member, index) => (
           <ClickableUserAvatar
@@ -43,16 +43,17 @@ export function AvatarStack({
             avatarUrl={member.user?.avatar_url}
             size={size}
             className={cn(
-              "border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative",
-              `z-[${10 - index}]` // Higher z-index for earlier avatars
+              // Remove any default link styling and add clean hover effects
+              "relative transition-all duration-300 hover:scale-110 hover:z-20",
+              // Apply proper z-index for stacking
+              index === 0 ? "z-10" : index === 1 ? "z-9" : index === 2 ? "z-8" : index === 3 ? "z-7" : "z-6"
             )}
           >
             <Avatar
               className={cn(
                 sizeClasses[size],
-                "border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative"
+                "border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300"
               )}
-              style={{ zIndex: 10 - index }}
             >
               <AvatarImage src={member.user?.avatar_url || undefined} />
               <AvatarFallback className={cn(
@@ -64,12 +65,12 @@ export function AvatarStack({
             </Avatar>
           </ClickableUserAvatar>
         ))}
-        
+
         {/* Remaining count badge */}
         {remainingCount > 0 && (
           <div className={cn(
             sizeClasses[size],
-            "border-2 border-background bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center text-muted-foreground font-bold relative z-0",
+            "border-2 border-background bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center text-muted-foreground font-bold relative z-5",
             textSizeClasses[size]
           )}>
             +{remainingCount}

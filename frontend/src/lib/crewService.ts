@@ -786,12 +786,25 @@ export async function removePendingCrewInvitation(crewId: string, userId: string
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase
+  // First, get the crew member ID for the pending invitation
+  const { data: memberData, error: findError } = await supabase
     .from('crew_members')
-    .delete()
+    .select('id')
     .eq('crew_id', crewId)
     .eq('user_id', userId)
     .eq('status', 'pending')
+    .single()
+
+  if (findError || !memberData) {
+    throw new Error('Pending invitation not found')
+  }
+
+  // Use the existing RPC function to remove the member
+  const { error } = await supabase.rpc('remove_crew_member', {
+    p_crew_id: crewId,
+    p_member_id: memberData.id,
+    p_remover_id: user.id
+  })
 
   if (error) throw error
 }

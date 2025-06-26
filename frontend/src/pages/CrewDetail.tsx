@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useScrollRestoration } from '@/hooks/useScrollToTop'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +75,9 @@ export function CrewDetail() {
   const [lastSearchQuery, setLastSearchQuery] = useState('')
   const [canManageCrew, setCanManageCrew] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Ensure page scrolls to top when navigating to crew details
+  useScrollRestoration()
 
   useEffect(() => {
     if (!crewId) {
