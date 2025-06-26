@@ -307,7 +307,9 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'upda
   // Assign default cover image if not provided
   const eventWithCover = {
     ...event,
-    cover_image_url: event.cover_image_url || getDefaultCoverImage(event.vibe)
+    cover_image_url: event.cover_image_url || getDefaultCoverImage(event.vibe),
+    // Provide a default duration_type in case the DB lacks a default value
+    duration_type: 'specific_time'
   }
 
   const { data, error } = await supabase
@@ -407,6 +409,8 @@ export async function createEventWithShareableLink(eventData: {
       place_id: eventData.locationData?.place_id,
       place_name: eventData.locationData?.place_name,
       date_time: eventData.date_time,
+      // Ensure duration_type always has a valid value
+      duration_type: 'specific_time',
       drink_type: eventData.drink_type,
       vibe: eventData.vibe,
       notes: eventData.notes,
