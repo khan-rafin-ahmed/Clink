@@ -519,7 +519,8 @@ export function UserProfile() {
   if (!user && username) {
     if (profileError) return <Simple404 username={username} />
     if (!userProfile) return null // Still loading profile
-    if (userProfile.is_private) return <Simple404 username={username} />
+    if (userProfile.profile_visibility === 'private')
+      return <Simple404 username={username} />
   }
 
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
