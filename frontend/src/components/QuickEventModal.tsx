@@ -209,6 +209,8 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
         longitude: formData.locationData?.longitude || null,
         place_id: formData.locationData?.place_id || null,
         place_name: formData.locationData?.place_name || null,
+        // Explicitly set duration_type to satisfy database constraint
+        duration_type: 'specific_time',
         date_time: (() => {
           if (formData.time === 'custom' && formData.start_time) {
             return new Date(formData.start_time).toISOString();
