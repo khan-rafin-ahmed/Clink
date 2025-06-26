@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { UserAvatar } from './UserAvatar'
 import { getUserProfile } from '@/lib/userService'
 import { useAuth } from '@/lib/auth-context'
-import { cn } from '@/lib/utils'
+import { cn, generateUsernameFromDisplayName } from '@/lib/utils'
 
 // Simple cache for usernames to avoid repeated API calls
 const usernameCache = new Map<string, string | null>()
@@ -56,32 +56,55 @@ export function ClickableUserAvatar({
       try {
         setIsLoading(true)
         const profile = await getUserProfile(userId)
-        const fetchedUsername = profile?.username || null
+        let fetchedUsername = profile?.username || null
+
+        // Fallback: if no username, generate one from display_name
+        if (!fetchedUsername && profile?.display_name) {
+          fetchedUsername = generateUsernameFromDisplayName(profile.display_name)
+        }
 
         // Cache the result
         usernameCache.set(userId, fetchedUsername)
         setUsername(fetchedUsername)
       } catch (error) {
         console.error('Error fetching username for avatar click:', error)
-        usernameCache.set(userId, null)
-        setUsername(null)
+        // Try fallback with display name if available
+        if (displayName) {
+          const fallbackUsername = generateUsernameFromDisplayName(displayName)
+          usernameCache.set(userId, fallbackUsername)
+          setUsername(fallbackUsername)
+        } else {
+          usernameCache.set(userId, null)
+          setUsername(null)
+        }
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchUsername()
-  }, [userId, disabled, user?.id])
+  }, [userId, disabled, user?.id, displayName])
 
   const handleClick = (e: React.MouseEvent) => {
     // Prevent event bubbling to parent elements
     e.preventDefault()
     e.stopPropagation()
 
-    if (disabled || !userId || !username || isLoading) return
+    if (disabled || !userId || isLoading) return
+
+    // If we have a username, use it; otherwise try to create one from display name
+    let targetUsername = username
+    if (!targetUsername && displayName) {
+      targetUsername = generateUsernameFromDisplayName(displayName)
+    }
+
+    if (!targetUsername) {
+      console.warn('ClickableUserAvatar: No username available for navigation', { userId, displayName })
+      return
+    }
 
     // Navigate to user profile
-    navigate(`/profile/${username}`)
+    navigate(`/profile/${targetUsername}`)
   }
 
   // If disabled, no userId, or current user's own avatar, render non-clickable avatar
@@ -99,13 +122,15 @@ export function ClickableUserAvatar({
     )
   }
 
-  // Render clickable avatar
+  // Render clickable avatar - make it clickable if we have username OR displayName
+  const isClickable = (username || displayName) && !isLoading
+
   return (
     <div
       onClick={handleClick}
       className={cn(
-        'transition-all duration-200',
-        username && !isLoading
+        'inline-block transition-all duration-200',
+        isClickable
           ? 'cursor-pointer hover:scale-105 hover:opacity-80'
           : 'cursor-default',
         className

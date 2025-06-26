@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
+import { ClickableUserAvatar } from './ClickableUserAvatar'
 import { UserHoverCard } from './UserHoverCard'
 import { GyroGlassCard } from './GyroGlassCard'
 import { LiveBadge } from './LiveBadge'
@@ -219,13 +220,21 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
         >
           <div className="flex items-center gap-2 mb-4 p-3 glass-effect rounded-xl hover:bg-white/10 cursor-pointer border border-white/10 hover:border-primary/30">
             <div className="relative">
-              <UserAvatar
+              <ClickableUserAvatar
                 userId={event.created_by}
                 displayName={event.creator?.display_name || getHostDisplayName()}
                 avatarUrl={event.creator?.avatar_url}
                 size="xs"
-                className="ring-2 ring-white/20 hover:ring-primary/40"
-              />
+              >
+                <div className="ring-2 ring-white/20 hover:ring-primary/40 rounded-full overflow-hidden">
+                  <UserAvatar
+                    userId={event.created_by}
+                    displayName={event.creator?.display_name || getHostDisplayName()}
+                    avatarUrl={event.creator?.avatar_url}
+                    size="xs"
+                  />
+                </div>
+              </ClickableUserAvatar>
               {isHost && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
               )}

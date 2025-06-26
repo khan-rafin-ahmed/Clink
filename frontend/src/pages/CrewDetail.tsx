@@ -18,9 +18,11 @@ import {
   hasCrewManagementPermissions,
 } from '@/lib/crewService'
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
+import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
 import { EditCrewModal } from '@/components/EditCrewModal'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { generateUsernameFromDisplayName } from '@/lib/utils'
 import {
   Users,
   Globe,
@@ -690,14 +692,14 @@ export function CrewDetail() {
               <div className="grid gap-3">
                 {pendingRequests.map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={request.user?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-white/10 text-white">
-                          {request.user?.display_name?.[0]?.toUpperCase() || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <ClickableUserAvatar
+                        userId={request.user_id}
+                        displayName={request.user?.display_name}
+                        avatarUrl={request.user?.avatar_url}
+                        size="md"
+                      />
+                      <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-white">
                             {request.user?.display_name || 'Anonymous'}
@@ -712,6 +714,22 @@ export function CrewDetail() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Profile View Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const username = request.user?.display_name
+                          ? generateUsernameFromDisplayName(request.user.display_name)
+                          : request.user_id.slice(-8)
+                        navigate(`/profile/${username}`)
+                      }}
+                      className="ml-2 text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
+                    >
+                      View
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -734,14 +752,14 @@ export function CrewDetail() {
               <div className="grid gap-3">
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={member.user?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-white/10 text-white">
-                          {member.user?.display_name?.[0]?.toUpperCase() || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <ClickableUserAvatar
+                        userId={member.user_id}
+                        displayName={member.user?.display_name}
+                        avatarUrl={member.user?.avatar_url}
+                        size="md"
+                      />
+                      <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-white">
                             {member.user?.display_name || 'Anonymous'}
@@ -763,6 +781,22 @@ export function CrewDetail() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Profile View Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const username = member.user?.display_name
+                          ? generateUsernameFromDisplayName(member.user.display_name)
+                          : member.user_id.slice(-8)
+                        navigate(`/profile/${username}`)
+                      }}
+                      className="ml-2 text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
+                    >
+                      View
+                    </Button>
                   </div>
                 ))}
               </div>

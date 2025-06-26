@@ -280,8 +280,17 @@ export function EnhancedEventCard({
                       displayName={event.creator?.display_name}
                       avatarUrl={event.creator?.avatar_url}
                       size="sm"
-                      className="border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative w-6 h-6"
-                    />
+                    >
+                      <div className="w-6 h-6 rounded-full border-2 border-background ring-1 ring-white/20 hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative overflow-hidden">
+                        <UserAvatar
+                          userId={event.created_by}
+                          displayName={event.creator?.display_name}
+                          avatarUrl={event.creator?.avatar_url}
+                          size="sm"
+                          className="w-full h-full"
+                        />
+                      </div>
+                    </ClickableUserAvatar>
                     {/* Second attendee placeholder */}
                     {displayCount > 1 && (
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-secondary/20 to-accent-primary/20 border-2 border-background ring-1 ring-white/20 flex items-center justify-center hover:ring-accent-primary/40 transition-all duration-300 hover:scale-110 hover:z-10 relative">

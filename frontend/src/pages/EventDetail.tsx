@@ -1187,7 +1187,7 @@ export function EventDetail() {
 
                         return (
                           <div key={rsvp.user_id || index} className="relative">
-                            <UserAvatar
+                            <ClickableUserAvatar
                               userId={rsvp.user_id}
                               displayName={displayName}
                               avatarUrl={profile.avatar_url ?? undefined}
