@@ -14,7 +14,7 @@ import { notificationTriggers } from '@/lib/notificationService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
-import type { Crew, CrewMember } from '@/types'
+import type { Crew, CrewMember, UserProfile } from '@/types'
 
 interface EditCrewModalProps {
   isOpen: boolean
@@ -30,6 +30,8 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
   const [members, setMembers] = useState<CrewMember[]>([])
   const [loadingMembers, setLoadingMembers] = useState(false)
   const [canManage, setCanManage] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([])
+  const [selectedCrews, setSelectedCrews] = useState<Crew[]>([])
 
   const [formData, setFormData] = useState<{
     name: string
@@ -88,12 +90,43 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     }
   }
 
-  // Simplified handlers using reusable components
-  const handleInviteUser = async (userId: string) => {
+  // Handlers for UserSearchInvite component
+  const handleUserSelect = (user: UserProfile) => {
+    setSelectedUsers(prev => [...prev, user])
+  }
+
+  const handleCrewSelect = (selectedCrew: Crew) => {
+    setSelectedCrews(prev => [...prev, selectedCrew])
+  }
+
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(user => user.user_id !== userId))
+  }
+
+  const handleRemoveCrew = (crewId: string) => {
+    setSelectedCrews(prev => prev.filter(c => c.id !== crewId))
+  }
+
+  const handleSendInvitations = async () => {
     if (!crew) return
-    await inviteUserToCrew(crew.id, userId)
-    toast.success('🍺 Invitation sent!')
-    loadCrewMembers()
+
+    try {
+      // Invite selected users
+      for (const user of selectedUsers) {
+        await inviteUserToCrew(crew.id, user.user_id)
+      }
+
+      // Note: Crew invitations would need additional logic
+      // For now, we'll focus on user invitations
+
+      toast.success(`🍺 ${selectedUsers.length} invitation${selectedUsers.length !== 1 ? 's' : ''} sent!`)
+      setSelectedUsers([])
+      setSelectedCrews([])
+      loadCrewMembers()
+    } catch (error) {
+      console.error('Error sending invitations:', error)
+      toast.error('Failed to send some invitations')
+    }
   }
 
   const handleGenerateInviteLink = async (): Promise<string> => {
@@ -317,7 +350,24 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
 
             {/* Invite Tab */}
             <TabsContent value="invite" className="space-y-6 mt-6">
-              <UserSearchInvite onInvite={handleInviteUser} />
+              <UserSearchInvite
+                onUserSelect={handleUserSelect}
+                onCrewSelect={handleCrewSelect}
+                selectedUsers={selectedUsers}
+                selectedCrews={selectedCrews}
+                onRemoveUser={handleRemoveUser}
+                onRemoveCrew={handleRemoveCrew}
+              />
+
+              {/* Send Invitations Button */}
+              {(selectedUsers.length > 0 || selectedCrews.length > 0) && (
+                <div className="flex justify-end">
+                  <Button onClick={handleSendInvitations} className="bg-primary hover:bg-primary/90">
+                    Send {selectedUsers.length + selectedCrews.length} Invitation{selectedUsers.length + selectedCrews.length !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
+
               <InviteLinkGenerator onGenerate={handleGenerateInviteLink} />
             </TabsContent>
           </div>

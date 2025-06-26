@@ -76,17 +76,17 @@ export function UserSearchInvite({
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('user_id, display_name, nickname, avatar_url, username')
+        .select('id, user_id, display_name, nickname, avatar_url, username, bio, favorite_drink, tagline, join_date, profile_visibility, show_crews_publicly, created_at, updated_at')
         .or(`display_name.ilike.%${query}%,nickname.ilike.%${query}%,username.ilike.%${query}%`)
         .neq('user_id', user?.id) // Exclude current user
         .limit(10)
 
       if (error) throw error
 
-      // Filter out already selected users
+      // Filter out already selected users and ensure proper typing
       const filteredResults = (data || []).filter(
         result => !selectedUsers.some(selected => selected.user_id === result.user_id)
-      )
+      ) as UserProfile[]
 
       setSearchResults(filteredResults)
       setShowResults(true)
