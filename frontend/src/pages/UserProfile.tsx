@@ -267,39 +267,38 @@ export function UserProfile() {
 
       // Apply privacy filtering when viewing another user's profile
       let filteredEvents = uniqueEvents
-      if (!isOwnProfile && viewerId) {
-        // Get viewer's crew memberships for crew-based event access
-        const { data: viewerCrewMemberships } = await supabase
-          .from('crew_members')
-          .select('crew_id')
-          .eq('user_id', viewerId)
-          .eq('status', 'accepted')
+      if (!isOwnProfile) {
+        const viewerCrewIds: string[] = []
 
-        const viewerCrewIds = viewerCrewMemberships?.map(cm => cm.crew_id) || []
+        if (viewerId) {
+          const { data: viewerCrewMemberships } = await supabase
+            .from('crew_members')
+            .select('crew_id')
+            .eq('user_id', viewerId)
+            .eq('status', 'accepted')
+          viewerCrewIds.push(...(viewerCrewMemberships?.map(cm => cm.crew_id) || []))
+        }
 
-        // Updated privacy filtering logic
         filteredEvents = uniqueEvents.filter((event: any) => {
-          const isCreatedByProfileOwner = event.created_by === targetUserId;
+          const isCreatedByProfileOwner = event.created_by === targetUserId
 
-          // If the event was not created by profile owner, show it (user is a participant)
-          if (!isCreatedByProfileOwner) return true;
+          if (!isCreatedByProfileOwner) return true // show events joined by target user
 
-          // If event is public, show it
-          if (event.is_public) return true;
+          if (event.is_public) return true // public events
 
-          // If viewer is participant in private event, show it
+          if (!viewerId) return false // unauthenticated viewer can't see private events
+
           const hasRsvp = event.rsvps?.some(
             (rsvp: any) => rsvp.user_id === viewerId && rsvp.status === 'going'
-          );
+          )
           const isInvited = event.event_members?.some(
             (member: any) => member.user_id === viewerId && member.status === 'accepted'
-          );
+          )
           const isCrewEvent =
-            event.crew_id && viewerCrewIds.includes(event.crew_id);
+            event.crew_id && viewerCrewIds.includes(event.crew_id)
 
-          return hasRsvp || isInvited || isCrewEvent;
-        });
-
+          return hasRsvp || isInvited || isCrewEvent
+        })
         console.log('Events after privacy filtering:', filteredEvents.length, 'removed:', uniqueEvents.length - filteredEvents.length)
       }
 
