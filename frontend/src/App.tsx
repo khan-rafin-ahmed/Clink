@@ -13,7 +13,7 @@ import { LoginPage } from './pages/LoginPage'
 import { EditProfile } from './pages/EditProfile'
 import { Events } from './pages/Events'
 import { Discover } from './pages/Discover'
-import { PublicProfile } from './pages/PublicProfile'
+import { UserProfile } from './pages/UserProfile'
 import { EventDetails } from './pages/EventDetails'
 import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
@@ -95,8 +95,8 @@ function App() {
               <Route path="/event/:slug" element={<EventDetail />} />
               <Route path="/private-event/:slug" element={<EventDetail />} />
 
-              {/* Username-based profile routing */}
-              <Route path="/profile/:username" element={<PublicProfile />} />
+              {/* Username-based profile routing - use same UserProfile component */}
+              <Route path="/profile/:username" element={<UserProfile />} />
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />

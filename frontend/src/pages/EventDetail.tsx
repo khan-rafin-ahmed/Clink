@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
+import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
 
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
@@ -841,7 +842,7 @@ export function EventDetail() {
 
                           return (
                             <div key={rsvp.user_id || index} className="relative">
-                              <UserAvatar
+                              <ClickableUserAvatar
                                 userId={rsvp.user_id}
                                 displayName={displayName}
                                 avatarUrl={profile.avatar_url ?? undefined}

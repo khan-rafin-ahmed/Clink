@@ -391,7 +391,7 @@ export async function isFollowing(followingId: string): Promise<boolean> {
   return !!data
 }
 
-// Get user profile by username
+// Get user profile by username with privacy enforcement
 export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {
   if (!username) return null
 
@@ -402,6 +402,30 @@ export async function getUserProfileByUsername(username: string): Promise<UserPr
     .single()
 
   if (error && error.code !== 'PGRST116') throw error
+
+  // Frontend privacy check - ensures privacy protection works even if RLS policies have issues
+  if (data) {
+    const currentUser = await getCurrentUser()
+
+    // Block private profiles for non-owners
+    if (data.profile_visibility === 'private' && currentUser?.id !== data.user_id) {
+      return null
+    }
+
+    // Block crew-only profiles for non-logged-in users
+    if (data.profile_visibility === 'crew_only' && !currentUser?.id) {
+      return null
+    }
+
+    // Block crew-only profiles for non-crew members
+    if (data.profile_visibility === 'crew_only' && currentUser?.id && currentUser.id !== data.user_id) {
+      const sharesCrew = await usersShareCrew(currentUser.id, data.user_id)
+      if (!sharesCrew) {
+        return null
+      }
+    }
+  }
+
   return data || null
 }
 

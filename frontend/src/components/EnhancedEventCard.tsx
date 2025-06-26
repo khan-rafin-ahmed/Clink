@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShareModal } from './ShareModal'
 import { UserAvatar } from './UserAvatar'
+import { ClickableUserAvatar } from './ClickableUserAvatar'
 import { UserHoverCard } from './UserHoverCard'
 import { LiveBadge } from './LiveBadge'
 import {
@@ -273,8 +274,8 @@ export function EnhancedEventCard({
                 <div className="flex items-center gap-2">
                   {/* Enhanced Attendee Avatars - Show at least 3 avatars */}
                   <div className="flex -space-x-1">
-                    {/* Host Avatar */}
-                    <UserAvatar
+                    {/* Host Avatar - Clickable */}
+                    <ClickableUserAvatar
                       userId={event.created_by}
                       displayName={event.creator?.display_name}
                       avatarUrl={event.creator?.avatar_url}
@@ -612,7 +613,7 @@ export function EnhancedEventCard({
           isHost={true}
         >
           <div className="flex items-center gap-2 mb-4 p-2 glass-effect rounded-lg hover:bg-glass-hover transition-colors cursor-pointer">
-            <UserAvatar
+            <ClickableUserAvatar
               userId={event.created_by}
               displayName={event.creator?.display_name || `User ${event.created_by.slice(-4)}`}
               avatarUrl={event.creator?.avatar_url}

@@ -274,6 +274,81 @@ export function SessionCardSkeleton() {
   )
 }
 
+// Profile redirect skeleton - matches the actual profile layout
+export function ProfileRedirectSkeleton() {
+  return (
+    <div className="min-h-screen bg-bg-base animate-in fade-in-50 duration-300">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Two-Column Hero Section Skeleton */}
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+
+          {/* Left Column - Profile Info Card Skeleton */}
+          <div className="glass-modal rounded-3xl p-6 lg:p-8 relative overflow-hidden transition-all duration-300" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+            {/* Glass shimmer overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-50 pointer-events-none rounded-3xl" />
+
+            <div className="relative z-10 space-y-6">
+              {/* Avatar Section */}
+              <div className="text-center">
+                <SkeletonBox className="w-24 h-24 lg:w-32 lg:h-32 rounded-full mx-auto border-4 border-transparent shadow-glass-lg" />
+                {/* Glowing ring effect */}
+                <div className="absolute inset-0 rounded-full bg-gradient-primary opacity-20 blur-2xl scale-110 mx-auto" style={{ width: '8rem', height: '8rem', left: '50%', transform: 'translateX(-50%)' }}></div>
+              </div>
+
+              {/* User Information */}
+              <div className="text-center space-y-3">
+                <SkeletonBox className="h-8 w-48 mx-auto" />
+                <SkeletonBox className="h-5 w-32 mx-auto" />
+                <div className="inline-block">
+                  <SkeletonBox className="h-6 w-40 rounded-xl" />
+                </div>
+                <div className="rounded-xl p-4" style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+                  <SkeletonBox className="h-4 w-64 mx-auto" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Action Cards Skeleton */}
+          <div className="glass-modal rounded-3xl p-6 lg:p-8 border border-white/15 relative overflow-hidden transition-all duration-300">
+            {/* Glass shimmer overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-50 pointer-events-none rounded-3xl" />
+
+            <div className="relative z-10 space-y-6">
+              <div className="text-center space-y-3">
+                <SkeletonBox className="h-8 w-56 mx-auto" />
+                <SkeletonBox className="h-5 w-48 mx-auto" />
+              </div>
+
+              <div className="space-y-4">
+                <SkeletonBox className="h-12 w-full rounded-md" />
+                <SkeletonBox className="h-12 w-full rounded-md" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Activity Tabs Skeleton */}
+        <div className="space-y-6">
+          {/* Tab Headers */}
+          <div className="flex space-x-1 bg-muted/20 p-1 rounded-lg w-fit">
+            <SkeletonBox className="h-10 w-24 rounded-md" />
+            <SkeletonBox className="h-10 w-20 rounded-md" />
+          </div>
+
+          {/* Tab Content */}
+          <div className="space-y-4">
+            <SkeletonBox className="h-32 w-full rounded-xl" />
+            <SkeletonBox className="h-32 w-full rounded-xl" />
+            <SkeletonBox className="h-32 w-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Full page loading skeleton
 export function FullPageSkeleton() {
   return (

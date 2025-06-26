@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableUserAvatar } from './ClickableUserAvatar'
 import { AvatarStack } from '@/components/AvatarStack'
 import { leaveCrew, getCrewMembers, createCrewInviteLink, deleteCrew } from '@/lib/crewService'
 import type { Crew, CrewMember } from '@/types'
@@ -336,12 +336,12 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
             ) : (
               members.map((member) => (
                 <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={member.user?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                      {member.user?.display_name?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ClickableUserAvatar
+                    userId={member.user_id}
+                    displayName={member.user?.display_name}
+                    avatarUrl={member.user?.avatar_url}
+                    size="md"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground truncate">
                       {member.user?.display_name || 'Unknown User'}

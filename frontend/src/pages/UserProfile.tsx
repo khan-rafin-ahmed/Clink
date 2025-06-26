@@ -8,12 +8,15 @@ import { CrewCard } from '@/components/CrewCard'
 import { ActivityTabs } from '@/components/ActivityTabs'
 import { ProfileInfoCard } from '@/components/ProfileInfoCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
-import { ProgressAnalysisPanel } from '@/components/ProgressAnalysisPanel'
+
 import { StatCard } from '@/components/StatCard'
-import { Plus, Users as UsersIcon } from 'lucide-react'
+import { Plus, Users as UsersIcon, ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { useUserStats } from '@/hooks/useUserStats'
-import { getUserProfile } from '@/lib/userService'
+import { getUserProfile, getUserProfileByUsername } from '@/lib/userService'
+import { Simple404 } from '@/components/Simple404'
 import { getUserCrews } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
@@ -59,7 +62,9 @@ interface EnhancedEvent extends Event {
 }
 
 export function UserProfile() {
+  const { username } = useParams<{ username: string }>()
   const { user, loading } = useAuth()
+  const { goBackSmart } = useSmartNavigation()
   const [statsRefresh, setStatsRefresh] = useState(0)
   const [sessionsRefresh, setSessionsRefresh] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -69,7 +74,11 @@ export function UserProfile() {
   const [pastSessions, setPastSessions] = useState<EnhancedEvent[]>([])
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
+  const [profileError, setProfileError] = useState(false)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
+
+  // Determine if this is the user's own profile
+  const isOwnProfile = !username || (userProfile && user?.id === userProfile.user_id)
 
   // Real-time updates disabled for now
 
@@ -84,37 +93,62 @@ export function UserProfile() {
   // } = useUpcomingSessions(sessionsRefresh, 3)
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !username) {
       // navigate('/login')
     }
-  }, [user, loading])
+  }, [user, loading, username])
 
+  // Simple profile loading for username-based profiles
   useEffect(() => {
-    if (user?.id) {
-      getUserProfile(user.id).then(setUserProfile).catch(console.error)
+    if (!username) return
+
+    const loadProfile = async () => {
+      try {
+        const profile = await getUserProfileByUsername(username)
+        if (!profile) {
+          setProfileError(true)
+        } else {
+          setUserProfile(profile)
+          setProfileError(false)
+        }
+      } catch (error) {
+        setProfileError(true)
+      }
     }
-  }, [user?.id])
+
+    loadProfile()
+  }, [username])
 
   // Fetch user crews
   const fetchUserCrews = async () => {
     try {
-      const crews = await getUserCrews() // no user.id needed anymore
+      // Use profile owner's ID when viewing others, logged-in user's ID for own profile
+      const targetUserId = userProfile?.user_id || user?.id
+      if (!targetUserId) return
+
+      const crews = await getUserCrews(targetUserId)
       setUserCrews(crews)
     } catch (error) {
       console.error('❌ Error fetching user crews:', error)
     }
   }
   useEffect(() => {
-    if (user?.id) {
+    if (userProfile || (user?.id && !username)) {
       fetchUserCrews()
     }
-  }, [user?.id, crewsRefresh])
+  }, [user?.id, userProfile, crewsRefresh])
 
   // Cached fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {
-    if (!user) return
+    // Use profile owner's ID when viewing others, logged-in user's ID for own profile
+    const targetUserId = userProfile?.user_id || user?.id
+    if (!targetUserId) return
 
-    const cacheKey = CacheKeys.userEvents(user.id)
+    // Determine if viewing own profile or another user's profile
+    const isOwnProfile = !username || (user?.id === targetUserId)
+    const viewerId = user?.id // The logged-in user who is viewing the profile
+
+    const cacheKey = CacheKeys.userEvents(targetUserId)
 
     // Try to get from cache first
     const cached = cacheService.get<{ upcoming: any[], past: any[] }>(cacheKey)
@@ -126,19 +160,19 @@ export function UserProfile() {
     try {
 
 
-      console.log('Fetching events for user:', user.id)
+      console.log('Fetching events for user:', targetUserId, 'isOwnProfile:', isOwnProfile)
 
       // Get user's crew memberships for crew-associated events
       const { data: userCrewMemberships } = await supabase
         .from('crew_members')
         .select('crew_id')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .eq('status', 'accepted')
 
       const userCrewIds = userCrewMemberships?.map(cm => cm.crew_id) || []
       console.log('User is member of crews:', userCrewIds)
 
-      // Get ALL events first, then filter by duration-aware logic on frontend
+      // Get ALL events first, then apply privacy filtering on frontend
       const [
         createdEventsResult,
         rsvpEventsResult,
@@ -153,7 +187,7 @@ export function UserProfile() {
             rsvps(user_id, status),
             event_members(user_id, status)
           `)
-          .eq('created_by', user.id)
+          .eq('created_by', targetUserId)
           .order('date_time', { ascending: true }),
 
         // 2. Get ALL events user RSVP'd to with status 'going'
@@ -164,9 +198,9 @@ export function UserProfile() {
             rsvps!inner(user_id, status),
             event_members(user_id, status)
           `)
-          .eq('rsvps.user_id', user.id)
+          .eq('rsvps.user_id', targetUserId)
           .eq('rsvps.status', 'going')
-          .neq('created_by', user.id)
+          .neq('created_by', targetUserId)
           .order('date_time', { ascending: true }),
 
         // 3. Get ALL events user was directly invited to via event_members
@@ -177,9 +211,9 @@ export function UserProfile() {
             event_members!inner(user_id, status),
             rsvps(user_id, status)
           `)
-          .eq('event_members.user_id', user.id)
+          .eq('event_members.user_id', targetUserId)
           .eq('event_members.status', 'accepted')
-          .neq('created_by', user.id)
+          .neq('created_by', targetUserId)
           .order('date_time', { ascending: true }),
 
         // 4. Get ALL events associated with crews user is a member of
@@ -191,7 +225,7 @@ export function UserProfile() {
             event_members(user_id, status)
           `)
           .in('crew_id', userCrewIds)
-          .neq('created_by', user.id)
+          .neq('created_by', targetUserId)
           .order('date_time', { ascending: true }) : Promise.resolve({ data: [], error: null })
       ])
 
@@ -229,10 +263,69 @@ export function UserProfile() {
         return acc
       }, [])
 
-      console.log('Found total events before filtering:', uniqueEvents.length)
+      console.log('Found total events before privacy filtering:', uniqueEvents.length)
+
+      // Apply privacy filtering when viewing another user's profile
+      let filteredEvents = uniqueEvents
+      if (!isOwnProfile && viewerId) {
+        // Get viewer's crew memberships for crew-based event access
+        const { data: viewerCrewMemberships } = await supabase
+          .from('crew_members')
+          .select('crew_id')
+          .eq('user_id', viewerId)
+          .eq('status', 'accepted')
+
+        const viewerCrewIds = viewerCrewMemberships?.map(cm => cm.crew_id) || []
+
+        filteredEvents = uniqueEvents.filter((event: any) => {
+          // IMPORTANT: Only apply privacy filtering to events CREATED by the profile owner
+          // Events where the profile owner is a participant should always be shown
+          // (they were fetched because the profile owner has legitimate access)
+
+          const isCreatedByProfileOwner = event.created_by === targetUserId
+
+          // If the profile owner didn't create this event, they must be a participant
+          // so we should always show it (no privacy filtering needed)
+          if (!isCreatedByProfileOwner) {
+            console.log(`✅ Showing participant event "${event.title}" (ID: ${event.id}) - profile owner is participant`)
+            return true
+          }
+
+          // For events CREATED by the profile owner, apply privacy filtering
+          // Always show public events
+          if (event.is_public) {
+            return true
+          }
+
+          // For private events created by profile owner, only show if viewer is a participant
+          // Check if viewer is in RSVPs
+          const hasRsvp = event.rsvps?.some((rsvp: any) =>
+            rsvp.user_id === viewerId && rsvp.status === 'going'
+          )
+
+          // Check if viewer is in event members (invited)
+          const isInvited = event.event_members?.some((member: any) =>
+            member.user_id === viewerId && member.status === 'accepted'
+          )
+
+          // Check if event is associated with a crew that viewer is a member of
+          const isCrewEvent = event.crew_id && viewerCrewIds.includes(event.crew_id)
+
+          const shouldShow = hasRsvp || isInvited || isCrewEvent
+
+          // Log private events that are being filtered out for debugging
+          if (!shouldShow) {
+            console.log(`🔒 Filtering out private event "${event.title}" (ID: ${event.id}) created by profile owner - viewer not a participant`)
+          }
+
+          return shouldShow
+        })
+
+        console.log('Events after privacy filtering:', filteredEvents.length, 'removed:', uniqueEvents.length - filteredEvents.length)
+      }
 
       // Now use duration-aware filtering to separate upcoming vs past
-      const { upcoming: upcomingEvents, past: pastEvents } = filterEventsByDate(uniqueEvents)
+      const { upcoming: upcomingEvents, past: pastEvents } = filterEventsByDate(filteredEvents)
 
       console.log('Found upcoming events after duration-aware filtering:', upcomingEvents.length)
       console.log('Found past events after duration-aware filtering:', pastEvents.length)
@@ -241,7 +334,7 @@ export function UserProfile() {
       const allCreatorIds = Array.from(new Set([
         ...upcomingEvents,
         ...pastEvents
-      ].map((e: any) => e.created_by).filter((id: string) => id !== user.id)))
+      ].map((e: any) => e.created_by).filter((id: string) => id !== targetUserId)))
 
       let creatorProfileMap: Record<string, { display_name: string | null; nickname: string | null; avatar_url: string | null; user_id: string }> = {}
       if (allCreatorIds.length > 0) {
@@ -265,7 +358,7 @@ export function UserProfile() {
 
       // Transform upcoming events data for EventCard compatibility
       let allUpcomingEvents = upcomingEvents.map((event: any) => {
-        const isHosting = event.created_by === user.id
+        const isHosting = event.created_by === targetUserId
 
         let creatorData
         if (isHosting) {
@@ -273,7 +366,7 @@ export function UserProfile() {
             display_name: userProfile?.display_name || user?.email?.split('@')[0] || 'Unknown Host',
             nickname: userProfile?.nickname,
             avatar_url: userProfile?.avatar_url,
-            user_id: user.id
+            user_id: targetUserId
           }
         } else {
           const profile = creatorProfileMap[event.created_by]
@@ -301,7 +394,7 @@ export function UserProfile() {
 
       // Transform past events data for EventCard compatibility
       let allPastEvents = pastEvents.map((event: any) => {
-        const isHosting = event.created_by === user.id
+        const isHosting = event.created_by === targetUserId
 
         let creatorData
         if (isHosting) {
@@ -309,7 +402,7 @@ export function UserProfile() {
             display_name: userProfile?.display_name || user?.email?.split('@')[0] || 'Unknown Host',
             nickname: userProfile?.nickname,
             avatar_url: userProfile?.avatar_url,
-            user_id: user.id
+            user_id: targetUserId
           }
         } else {
           const profile = creatorProfileMap[event.created_by]
@@ -350,9 +443,10 @@ export function UserProfile() {
 
   const handleEventCreated = () => {
     // Invalidate relevant caches
-    if (user) {
-      invalidateKey(CacheKeys.userEvents(user.id))
-      invalidateKey(CacheKeys.userStats(user.id))
+    const targetUserId = userProfile?.user_id || user?.id
+    if (targetUserId) {
+      invalidateKey(CacheKeys.userEvents(targetUserId))
+      invalidateKey(CacheKeys.userStats(targetUserId))
       invalidatePattern('discover_events')
     }
     // Trigger both stats and sessions refresh
@@ -363,16 +457,18 @@ export function UserProfile() {
 
   const handleCrewCreated = () => {
     // Invalidate crew cache
-    if (user) {
-      invalidateKey(CacheKeys.userCrews(user.id))
+    const targetUserId = userProfile?.user_id || user?.id
+    if (targetUserId) {
+      invalidateKey(CacheKeys.userCrews(targetUserId))
     }
     setCrewsRefresh(prev => prev + 1)
   }
 
   const handleCrewUpdated = () => {
     // Invalidate crew cache
-    if (user) {
-      invalidateKey(CacheKeys.userCrews(user.id))
+    const targetUserId = userProfile?.user_id || user?.id
+    if (targetUserId) {
+      invalidateKey(CacheKeys.userCrews(targetUserId))
     }
     setCrewsRefresh(prev => prev + 1)
   }
@@ -387,9 +483,10 @@ export function UserProfile() {
 
   const handleEventUpdated = () => {
     // Invalidate relevant caches
-    if (user) {
-      invalidateKey(CacheKeys.userEvents(user.id))
-      invalidateKey(CacheKeys.userStats(user.id))
+    const targetUserId = userProfile?.user_id || user?.id
+    if (targetUserId) {
+      invalidateKey(CacheKeys.userEvents(targetUserId))
+      invalidateKey(CacheKeys.userStats(targetUserId))
       invalidatePattern('discover_events')
       invalidatePattern('event_details')
     }
@@ -401,9 +498,10 @@ export function UserProfile() {
 
   const handleEventDeleted = () => {
     // Invalidate relevant caches
-    if (user) {
-      invalidateKey(CacheKeys.userEvents(user.id))
-      invalidateKey(CacheKeys.userStats(user.id))
+    const targetUserId = userProfile?.user_id || user?.id
+    if (targetUserId) {
+      invalidateKey(CacheKeys.userEvents(targetUserId))
+      invalidateKey(CacheKeys.userStats(targetUserId))
       invalidatePattern('discover_events')
       invalidatePattern('event_details')
     }
@@ -415,10 +513,10 @@ export function UserProfile() {
 
   // Fetch enhanced sessions when user changes or refresh triggers
   useEffect(() => {
-    if (user?.id) {
+    if (userProfile || (user?.id && !username)) {
       fetchEnhancedSessions()
     }
-  }, [user?.id, sessionsRefresh]) // Remove fetchEnhancedSessions from dependencies to prevent infinite loop
+  }, [user?.id, userProfile, sessionsRefresh]) // Remove fetchEnhancedSessions from dependencies to prevent infinite loop
 
   if (loading) {
     return (
@@ -438,6 +536,10 @@ export function UserProfile() {
     )
   }
 
+  // If not logged in but a username is provided, show fallback 404
+  if (!user && username) {
+    return <Simple404 username={username} />
+  }
   if (!user) {
     return null // Will redirect to login
   }
@@ -486,11 +588,51 @@ export function UserProfile() {
     )
   }
 
+  console.log('🎯 UserProfile render:', { loading, profileError, userProfile: !!userProfile, username })
+
+  // ALWAYS show Simple404 if profileError is true
+  if (profileError) {
+    console.log('🚨 Rendering Simple404 due to profileError')
+    return <Simple404 username={username} />
+  }
+
+  // Handle loading and error states
+  if (loading) {
+    console.log('⏳ Rendering loading state')
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-base">
+        <div className="text-center space-y-4">
+          <img
+            src="/thirstee-logo.svg"
+            alt="Thirstee"
+            className="h-16 w-auto mx-auto mb-4"
+          />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!userProfile) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-bg-base">
       {/* Consistent Width Container - Matching Timeline Layout */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          {/* Header - Only show for non-own profiles */}
+          {!isOwnProfile && (
+            <div className="flex items-center justify-between">
+              <Button variant="outline" size="sm" onClick={goBackSmart}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
+          )}
+
           {/* Two-Column Hero Section - 50:50 Layout */}
           <div>
             <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
@@ -505,23 +647,24 @@ export function UserProfile() {
                 />
               </div>
 
-              {/* Right Column - Action Cards (50% width) */}
+              {/* Right Column - Action Cards or Info Panel (50% width) */}
               <div className="flex">
                 <div className="w-full">
-                  {/* Primary CTA Card Only */}
-                  <div className="glass-modal rounded-3xl p-6 lg:p-8 border border-white/15 hover:border-primary/30 relative overflow-hidden h-full flex flex-col justify-center">
-                    {/* Glass shimmer overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-0 hover:opacity-100 pointer-events-none rounded-3xl" />
+                  {isOwnProfile ? (
+                    // Primary CTA Card for Own Profile
+                    <div className="glass-modal rounded-3xl p-6 lg:p-8 border border-white/15 hover:border-primary/30 relative overflow-hidden h-full flex flex-col justify-center">
+                      {/* Glass shimmer overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-0 hover:opacity-100 pointer-events-none rounded-3xl" />
 
-                    <div className="relative z-10 space-y-6">
-                      <div className="text-center space-y-3">
-                        <h2 className="text-2xl lg:text-3xl font-display font-bold text-foreground">
-                          Ready to Raise Hell? 🔥
-                        </h2>
-                        <p className="text-muted-foreground text-base lg:text-lg">
-                          Create your next session or build your crew
-                        </p>
-                      </div>
+                      <div className="relative z-10 space-y-6">
+                        <div className="text-center space-y-3">
+                          <h2 className="text-2xl lg:text-3xl font-display font-bold text-foreground">
+                            Ready to Raise Hell? 🔥
+                          </h2>
+                          <p className="text-muted-foreground text-base lg:text-lg">
+                            Create your next session or build your crew
+                          </p>
+                        </div>
 
                       <div className="space-y-4">
                         {/* Create Session Button */}
@@ -555,20 +698,35 @@ export function UserProfile() {
                           onCrewCreated={handleCrewCreated}
                         />
                       </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    // Info Panel for Other Profiles
+                    <div className="glass-modal rounded-3xl p-6 lg:p-8 border border-white/15 relative overflow-hidden h-full flex flex-col justify-center">
+                      <div className="text-center">
+                        <h2 className="text-xl lg:text-2xl font-display font-bold text-foreground mb-2">
+                          {displayName}'s Profile
+                        </h2>
+                        <p className="text-muted-foreground text-sm lg:text-base">
+                          Check out their sessions and crews
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Next Clink Section - Separate from Hero */}
-          <div>
-            <NextEventBanner
-              userId={user?.id || ''}
-              className="glass-modal rounded-3xl"
-            />
-          </div>
+          {/* Next Clink Section - Separate from Hero (only for own profile) */}
+          {isOwnProfile && (
+            <div>
+              <NextEventBanner
+                userId={user?.id || ''}
+                className="glass-modal rounded-3xl"
+              />
+            </div>
+          )}
 
           {/* Stats Section - Separate from Hero */}
           <div className="mt-6">
@@ -609,9 +767,9 @@ export function UserProfile() {
               crewsContent={renderCrewsContent()}
               upcomingEvents={enhancedSessions}
               pastEvents={pastSessions}
-              onEventEdit={handleEdit}
-              onEventDelete={handleDelete}
-              storageKey="userProfile_activityTabs"
+              onEventEdit={isOwnProfile ? handleEdit : undefined}
+              onEventDelete={isOwnProfile ? handleDelete : undefined}
+              storageKey={`userProfile_${username || 'own'}_activityTabs`}
               className="mt-6"
             />
           </div>
@@ -684,11 +842,6 @@ export function UserProfile() {
           onEventDeleted={handleEventDeleted}
         />
       )}
-
-
-
-      {/* Progress Analysis Panel - Only show in development */}
-      {process.env.NODE_ENV === 'development' && <ProgressAnalysisPanel />}
     </div>
   )
 }

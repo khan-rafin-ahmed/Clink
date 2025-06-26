@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableUserAvatar } from './ClickableUserAvatar'
 import { Textarea } from '@/components/ui/textarea'
 import { MessageCircle, Send } from 'lucide-react'
 import { toast } from 'sonner'
@@ -205,12 +206,12 @@ export function EventComments({ eventId, canComment }: EventCommentsProps) {
               <div key={comment.id} className="space-y-3">
                 {/* Comment Header */}
                 <div className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {comment.user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ClickableUserAvatar
+                    userId={comment.user_id}
+                    displayName={comment.user?.display_name}
+                    avatarUrl={comment.user?.avatar_url}
+                    size="sm"
+                  />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">

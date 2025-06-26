@@ -1,4 +1,5 @@
 import { UserAvatar } from '@/components/UserAvatar'
+import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Crown, Shield, User, MoreVertical, Trash2 } from 'lucide-react'
@@ -44,7 +45,8 @@ export function MemberList({
       {members.map((member) => (
         <div key={member.id} className="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
           <div className="flex items-center gap-3">
-            <UserAvatar
+            <ClickableUserAvatar
+              userId={member.user_id}
               displayName={member.user?.display_name || 'Unknown'}
               avatarUrl={member.user?.avatar_url || null}
               size="sm"
