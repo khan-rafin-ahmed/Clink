@@ -234,10 +234,12 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
         user: profile ? {
           id: profile.user_id,
           display_name: profile.display_name,
+          nickname: profile.nickname,
           avatar_url: profile.avatar_url
         } : {
           id: creatorInMembers.user_id,
           display_name: 'Unknown User',
+          nickname: null,
           avatar_url: null
         }
       })
@@ -775,6 +777,21 @@ export async function removeMemberFromCrew(crewId: string, userId: string): Prom
     .delete()
     .eq('crew_id', crewId)
     .eq('user_id', userId)
+
+  if (error) throw error
+}
+
+// Remove pending crew invitation (crew creator only)
+export async function removePendingCrewInvitation(crewId: string, userId: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('crew_members')
+    .delete()
+    .eq('crew_id', crewId)
+    .eq('user_id', userId)
+    .eq('status', 'pending')
 
   if (error) throw error
 }

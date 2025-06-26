@@ -349,6 +349,11 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                         <Crown className="w-4 h-4 inline ml-2 text-white" />
                       )}
                     </p>
+                    {member.user?.nickname && (
+                      <p className="text-sm text-yellow-400 italic">
+                        aka {member.user.nickname} 🍻
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Joined {new Date(member.joined_at).toLocaleDateString()}
                     </p>

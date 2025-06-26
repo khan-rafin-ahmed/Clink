@@ -16,6 +16,7 @@ import {
   getCrewPendingRequests,
   deleteCrew,
   hasCrewManagementPermissions,
+  removePendingCrewInvitation,
 } from '@/lib/crewService'
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
 import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
@@ -297,6 +298,20 @@ export function CrewDetail() {
     } catch (error: any) {
       console.error('Error deleting crew:', error)
       toast.error(error.message || 'Failed to delete crew')
+    }
+  }
+
+  const handleRemovePendingInvitation = async (userId: string, displayName: string) => {
+    if (!crewId) return
+
+    try {
+      await removePendingCrewInvitation(crewId, userId)
+      toast.success(`🗑️ Removed pending invitation for ${displayName}`)
+      // Refresh crew data to update pending requests
+      loadCrewData()
+    } catch (error: any) {
+      console.error('Error removing pending invitation:', error)
+      toast.error(error.message || 'Failed to remove invitation')
     }
   }
 
@@ -715,21 +730,38 @@ export function CrewDetail() {
                       </div>
                     </div>
 
-                    {/* Profile View Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const username = request.user?.display_name
-                          ? generateUsernameFromDisplayName(request.user.display_name)
-                          : request.user_id.slice(-8)
-                        navigate(`/profile/${username}`)
-                      }}
-                      className="ml-2 text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
-                    >
-                      View
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {/* Profile View Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const username = request.user?.display_name
+                            ? generateUsernameFromDisplayName(request.user.display_name)
+                            : request.user_id.slice(-8)
+                          navigate(`/profile/${username}`)
+                        }}
+                        className="text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
+                      >
+                        View
+                      </Button>
+
+                      {/* Remove Invitation Button - Only for crew creator */}
+                      {isCreator && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemovePendingInvitation(request.user_id, request.user?.display_name || 'Anonymous')
+                          }}
+                          className="text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
