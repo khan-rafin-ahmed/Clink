@@ -17,10 +17,13 @@ import {
 } from '@/lib/followService'
 import { respondToCrewInvitation } from '@/lib/crewService'
 import { respondToEventInvitation } from '@/lib/eventService'
+import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { Bell, Check, X, Users, Calendar, Eye } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useAuth } from '@/lib/auth-context'
+import { invalidateEventCaches, invalidateEventAttendanceCaches, CACHE_KEYS } from '@/lib/cache'
+import { cacheService } from '@/lib/cacheService'
 
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -102,6 +105,23 @@ export function NotificationCenter() {
       await respondToCrewInvitation(crewMemberId, response)
       await handleMarkAsRead(notificationId)
 
+      // Mark notification as responded to prevent reappearance
+      try {
+        const currentNotification = notifications.find(n => n.id === notificationId);
+        await supabase
+          .from('notifications')
+          .update({
+            data: {
+              ...(currentNotification?.data || {}),
+              user_response: response,
+              responded_at: new Date().toISOString()
+            }
+          })
+          .eq('id', notificationId);
+      } catch (err) {
+        console.error('Failed to update notification response:', err);
+      }
+
       if (response === 'accepted') {
         toast.success('Joined the crew! 🍺')
       } else {
@@ -129,6 +149,35 @@ export function NotificationCenter() {
 
       await respondToEventInvitation(eventMemberId, response)
       await handleMarkAsRead(notificationId)
+
+      // Mark notification as responded to prevent reappearance
+      try {
+        const currentNotification = notifications.find(n => n.id === notificationId);
+        await supabase
+          .from('notifications')
+          .update({
+            data: {
+              ...(currentNotification?.data || {}),
+              user_response: response,
+              responded_at: new Date().toISOString()
+            }
+          })
+          .eq('id', notificationId);
+      } catch (err) {
+        console.error('Failed to update notification response:', err);
+      }
+
+      // Invalidate event-related caches to ensure immediate UI updates
+      const currentNotification = notifications.find(n => n.id === notificationId);
+      if (currentNotification?.data?.event_id) {
+        const eventId = currentNotification.data.event_id;
+        // Clear event detail cache
+        cacheService.delete(CACHE_KEYS.EVENT_DETAIL(eventId));
+        // Clear event attendance cache for this user
+        invalidateEventAttendanceCaches(eventId);
+        // Clear general event caches
+        invalidateEventCaches();
+      }
 
       if (response === 'accepted') {
         toast.success('Event invitation accepted! 🍻')
@@ -206,7 +255,7 @@ export function NotificationCenter() {
                 {/* Join/Decline Buttons - Only show if not responded */}
                 {!respondedNotifications.has(notification.id) && (
                   <>
-                    {/* Join Button */}
+                    {/* Join Button - Primary styling per design system */}
                     <Button
                       size="sm"
                       onClick={() => handleCrewInvitationResponse(
@@ -214,13 +263,13 @@ export function NotificationCenter() {
                         notification.data.crew_member_id,
                         'accepted'
                       )}
-                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 min-w-0"
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-[#FFFFFF] text-[#08090A] hover:bg-[#FFFFFF]/90 h-[36px] flex-1 min-w-0"
                     >
                       <Check className="w-3 h-3" />
                       <span className="truncate">Join</span>
                     </Button>
 
-                    {/* Decline Button */}
+                    {/* Decline Button - Secondary styling per design system */}
                     <Button
                       size="sm"
                       variant="outline"
@@ -229,7 +278,7 @@ export function NotificationCenter() {
                         notification.data.crew_member_id,
                         'declined'
                       )}
-                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 min-w-0"
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-[#07080A] text-[#FFFFFF] border border-white/10 hover:bg-white/5 h-[36px] flex-1 min-w-0"
                     >
                       <X className="w-3 h-3" />
                       <span className="truncate">Decline</span>
@@ -262,7 +311,7 @@ export function NotificationCenter() {
                 {/* Join/Decline Buttons - Only show if not responded */}
                 {!respondedNotifications.has(notification.id) && (
                   <>
-                    {/* Join Button */}
+                    {/* Join Button - Primary styling per design system */}
                     <Button
                       size="sm"
                       onClick={() => handleEventInvitationResponse(
@@ -270,13 +319,13 @@ export function NotificationCenter() {
                         notification.data.event_member_id,
                         'accepted'
                       )}
-                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-white text-black hover:bg-gray-100 h-[36px] flex-1 min-w-0"
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-[#FFFFFF] text-[#08090A] hover:bg-[#FFFFFF]/90 h-[36px] flex-1 min-w-0"
                     >
                       <Check className="w-3 h-3" />
                       <span className="truncate">Join</span>
                     </Button>
 
-                    {/* Decline Button */}
+                    {/* Decline Button - Secondary styling per design system */}
                     <Button
                       size="sm"
                       variant="outline"
@@ -285,7 +334,7 @@ export function NotificationCenter() {
                         notification.data.event_member_id,
                         'declined'
                       )}
-                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition border border-red-500/30 text-red-400 hover:bg-red-500/10 h-[36px] flex-1 min-w-0"
+                      className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition bg-[#07080A] text-[#FFFFFF] border border-white/10 hover:bg-white/5 h-[36px] flex-1 min-w-0"
                     >
                       <X className="w-3 h-3" />
                       <span className="truncate">Decline</span>

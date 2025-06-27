@@ -252,6 +252,213 @@ The Thirstee app now represents a **comprehensive implementation** of the Apple 
 
 ---
 
+## 🔔 Notification System Fixes - COMPLETED ✅
+
+### 🎯 **Critical Issues Resolved:**
+
+#### **1. Notification Persistence Bug** ✅
+- **Issue**: Notifications reappeared after page reload despite being accepted/declined
+- **Root Cause**: Notifications were being deleted immediately but recreated by cached data or race conditions
+- **Solution**: Mark notifications as "responded" instead of deleting, with proper response tracking
+- **Implementation**: Added `user_response` and `responded_at` fields to notification data, updated filtering logic
+
+#### **2. Button Color Inconsistency** ✅
+- **Issue**: Notification buttons used gold colors (`#FFD37E`) instead of design system colors
+- **Root Cause**: Legacy color scheme not updated to match current design system
+- **Solution**: Updated all notification buttons to use proper design system colors
+- **Primary Buttons**: `bg-[#FFFFFF] text-[#08090A]` (--btn-primary-bg, --btn-primary-text)
+- **Secondary Buttons**: `bg-[#07080A] text-[#FFFFFF] border-white/10` (--btn-secondary-bg, --btn-border-subtle)
+
+#### **3. Hyperlink Border Color Issue** ✅
+- **Issue**: Hyperlinked elements showed gold borders (`decoration-[#FFD37E]`) instead of design system colors
+- **Root Cause**: Legacy accent colors in link styling
+- **Solution**: Updated all notification hyperlinks to use design system colors
+- **New Styling**: `decoration-white/60 hover:text-white` for consistent white/neutral appearance
+
+#### **4. Missing Bold/Linked Titles for Responses** ✅
+- **Issue**: Event invitation response notifications lacked clickable titles like invitation notifications
+- **Root Cause**: Response notification rendering logic didn't include hyperlink formatting
+- **Solution**: Added `event_invitation_response` handling to make event titles bold and clickable
+- **Implementation**: Consistent hyperlink formatting across all notification types
+
+### 🔧 **Technical Implementation:**
+
+#### **Notification Persistence Logic:**
+```javascript
+// Before (Problematic)
+await supabase.from('notifications').delete().eq('id', notificationId);
+
+// After (Fixed)
+await supabase.from('notifications').update({
+  data: {
+    ...currentNotification.data,
+    user_response: response,
+    responded_at: new Date().toISOString()
+  }
+}).eq('id', notificationId);
+```
+
+#### **Button Styling Updates:**
+```css
+/* Primary Buttons (Join/Accept) */
+.notification-primary-btn {
+  background: #FFFFFF;
+  color: #08090A;
+  border: none;
+}
+
+/* Secondary Buttons (Decline) */
+.notification-secondary-btn {
+  background: #07080A;
+  color: #FFFFFF;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+```
+
+#### **Hyperlink Styling:**
+```css
+/* Notification Links */
+.notification-link {
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.6);
+  text-underline-offset: 2px;
+}
+
+.notification-link:hover {
+  color: #FFFFFF;
+}
+```
+
+### ✅ **Files Updated:**
+- **`NotificationBell.tsx`**: Fixed persistence logic, updated button styling, added response title links
+- **`NotificationCenter.tsx`**: Applied same fixes for consistency across components
+- **`20250627_fix_notification_persistence.sql`**: Database migration for cleanup and response tracking
+- **`thirstee-design-system-updated.md`**: Documented all notification system improvements
+
+### 🎯 **User Experience Improvements:**
+- **No More Persistence Issues**: Notifications stay gone after user responds
+- **Design System Compliance**: All buttons and links follow established design patterns
+- **Consistent Interactions**: Same behavior across NotificationBell and NotificationCenter
+- **Clear Visual Hierarchy**: Proper contrast and styling for all notification elements
+- **Improved Navigation**: Clickable titles in all notification types for easy access
+
+### 🧪 **Testing Scenarios Covered:**
+- **Accept/Decline Flow**: Notifications disappear immediately and don't reappear on reload
+- **Button Styling**: All buttons use correct design system colors
+- **Link Appearance**: Hyperlinks use white/neutral colors instead of gold
+- **Cross-Component**: Fixes work in both NotificationBell and NotificationCenter
+- **Database Cleanup**: Old responded notifications are properly managed
+
+The notification system now provides a seamless, design-consistent experience that eliminates persistence bugs while maintaining the Thirstee aesthetic! 🤘
+
+---
+
+## 🔧 Crew Invitation System Fixes - COMPLETED ✅
+
+### 🎯 **Critical Issues Resolved:**
+
+#### **1. Broken Crew Join Confirmation Notification** ✅
+- **Issue**: Malformed notifications showing "You invited you to join 'your crew'" instead of proper user names
+- **Root Cause**: Notification function not properly fetching joiner's display name and falling back to generic text
+- **Solution**: Enhanced notification function to fetch user profiles with multiple fallbacks
+- **Implementation**: Updated `handle_crew_notifications()` to get display_name, email, and auth metadata
+- **Result**: Now shows "🍻 John Doe has joined your crew 'Beer Bros'" with proper user names and avatars
+
+#### **2. Generic Crew Invitation Messages** ✅
+- **Issue**: Crew invitations showing "Someone invited you to join" instead of actual inviter names/avatars
+- **Root Cause**: Invitation function falling back to 'Someone' when display_name was null
+- **Solution**: Enhanced inviter data fetching with multiple fallback sources
+- **Implementation**: Updated notification creation to fetch from user_profiles, auth.users metadata, and email
+- **Result**: Now shows "🤘 John Doe invited you to join 'Beer Bros'" with real user names and avatars
+
+#### **3. Event Join Status Delay** ✅
+- **Issue**: Event details page took time to reflect updated attendance after joining via notification
+- **Root Cause**: Missing cache invalidation after RSVP changes from notification responses
+- **Solution**: Added comprehensive cache invalidation for event-related data
+- **Implementation**: Clear event detail cache, attendance cache, and general event caches after join actions
+- **Result**: Event details page immediately shows updated attendance status after notification actions
+
+#### **4. Crew Privacy Inconsistency** ✅
+- **Issue**: Users couldn't view crew details before accepting/declining invitations due to privacy settings
+- **Root Cause**: Crew RLS policies only allowed viewing for existing members, not pending invitees
+- **Solution**: Updated crew RLS policies to allow viewing for users with pending invitations
+- **Implementation**: Added condition to allow viewing private crews when user has pending invitation
+- **Result**: Users can now view crew details via direct links to make informed decisions about joining
+
+### 🔧 **Technical Implementation:**
+
+#### **Enhanced Notification Function:**
+```sql
+-- Improved user data fetching with multiple fallbacks
+SELECT
+  COALESCE(display_name, email_display_name, 'Someone'),
+  avatar_url
+INTO inviter_name, inviter_avatar
+FROM user_profiles up
+LEFT JOIN auth.users au ON up.user_id = au.id
+WHERE up.user_id = NEW.invited_by;
+
+-- Fallback to auth.users if no profile exists
+IF inviter_name IS NULL OR inviter_name = 'Someone' THEN
+  SELECT COALESCE(
+    raw_user_meta_data->>'full_name',
+    raw_user_meta_data->>'name',
+    email,
+    'Someone'
+  ) INTO inviter_name
+  FROM auth.users WHERE id = NEW.invited_by;
+END IF;
+```
+
+#### **Updated Crew RLS Policy:**
+```sql
+CREATE POLICY "Users can view crews they have access to" ON crews
+FOR SELECT USING (
+  visibility = 'public'
+  OR created_by = auth.uid()
+  OR (visibility = 'private' AND EXISTS (
+    SELECT 1 FROM crew_members
+    WHERE crew_id = crews.id AND user_id = auth.uid()
+    AND status IN ('accepted', 'pending') -- Allow pending invitees
+  ))
+);
+```
+
+#### **Cache Invalidation Logic:**
+```javascript
+// Clear event-related caches after notification actions
+const eventId = currentNotification.data.event_id;
+cacheService.delete(CACHE_KEYS.EVENT_DETAIL(eventId));
+invalidateEventAttendanceCaches(eventId);
+invalidateEventCaches();
+```
+
+### ✅ **Files Updated:**
+- **`20250627_fix_crew_invitation_issues.sql`**: Database migration with notification and RLS fixes
+- **`NotificationBell.tsx`**: Added cache invalidation for immediate event status updates
+- **`NotificationCenter.tsx`**: Applied same cache invalidation logic for consistency
+- **`thirstee-design-system-updated.md`**: Documented all crew invitation system improvements
+
+### 🎯 **User Experience Improvements:**
+- **Real User Names**: All notifications now show actual user names instead of "Someone"
+- **Proper Avatars**: User profile pictures display correctly in all notification types
+- **Immediate Updates**: Event details pages reflect attendance changes instantly after notification actions
+- **Informed Decisions**: Users can view crew details before accepting/declining invitations
+- **Clear Messaging**: Notification messages are specific and contextual (e.g., "John has joined your crew")
+- **Consistent Behavior**: Crew invitations now match event invitation patterns for user experience
+
+### 🧪 **Testing Scenarios Covered:**
+- **Crew Invitations**: Show real inviter names and avatars instead of generic text
+- **Crew Join Confirmations**: Display proper joiner names in crew creator notifications
+- **Event Join Status**: Immediate UI updates in event details after notification responses
+- **Crew Privacy**: Pending invitees can view crew details via direct links
+- **Cross-Component**: Fixes work consistently across NotificationBell and NotificationCenter
+
+The crew invitation system now provides a professional, user-friendly experience with real user information, immediate UI updates, and consistent privacy handling that matches event invitation patterns! 🤘
+
+---
+
 ## 📱 Mobile Hamburger Menu Enhancement - COMPLETED ✅
 
 ### 🎯 **Edit Profile Visibility & Design Improvements:**
