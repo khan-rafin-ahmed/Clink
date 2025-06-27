@@ -4,8 +4,8 @@ import { toast } from 'sonner'
 export type NotificationType =
   | 'event_rsvp'
   | 'event_reminder'
-  | 'crew_invite_accepted'
   | 'crew_invitation'
+  | 'crew_invitation_response'
   | 'event_invitation'
   | 'event_invitation_response'
   | 'event_update'
@@ -152,8 +152,8 @@ class NotificationService {
     const emojis: Record<NotificationType, string> = {
       event_rsvp: '🍺',
       event_reminder: '⏰',
-      crew_invite_accepted: '🎯',
       crew_invitation: '👥',
+      crew_invitation_response: '✅',
       event_invitation: '📨',
       event_invitation_response: '💬',
       event_update: '📝',
@@ -283,20 +283,7 @@ export const notificationTriggers = {
     }
   },
 
-  /**
-   * Crew invite accepted
-   */
-  async onCrewInviteAccepted(crewId: string, crewName: string, inviterId: string, acceptedUserName: string): Promise<void> {
-    const notification = NotificationService.getInstance()
-    await notification.createNotification({
-      user_id: inviterId,
-      type: 'crew_invite_accepted',
-      title: `🎯 You've got a new clink mate`,
-      message: `${acceptedUserName} joined your "${crewName}" crew!`,
-      data: { crewId, crewName },
-      read: false
-    })
-  },
+
 
   /**
    * Co-host promotion

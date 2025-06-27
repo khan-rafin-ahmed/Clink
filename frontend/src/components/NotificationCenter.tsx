@@ -203,6 +203,8 @@ export function NotificationCenter() {
     switch (type) {
       case 'crew_invitation':
         return <Users className="w-4 h-4" />
+      case 'crew_invitation_response':
+        return <Users className="w-4 h-4" />
       case 'event_invitation':
       case 'event_update':
         return <Calendar className="w-4 h-4" />
@@ -359,7 +361,7 @@ export function NotificationCenter() {
             )}
 
             {/* Mark as read button for other notifications */}
-            {!['crew_invitation', 'event_invitation', 'event_invitation_response'].includes(notification.type) && !notification.read && (
+            {!['crew_invitation', 'event_invitation', 'event_invitation_response', 'crew_invitation_response'].includes(notification.type) && !notification.read && (
               <Button
                 size="sm"
                 variant="ghost"

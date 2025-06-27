@@ -95,9 +95,9 @@ export function NotificationBell() {
               senderId = notification.data?.inviter_id
             } else if (notification.type === 'event_invitation') {
               senderId = notification.data?.inviter_id
-            } else if (notification.type === 'crew_invite_accepted') {
-              // For crew join notifications, get the joiner's ID
-              senderId = notification.data?.joiner_id || notification.data?.user_id || notification.data?.member_id
+            } else if (notification.type === 'crew_invitation_response') {
+              // For crew invitation responses, get the responder's ID
+              senderId = notification.data?.joiner_id || notification.data?.user_id
             }
 
             if (senderId) {
@@ -396,8 +396,8 @@ export function NotificationBell() {
     const icons: Record<string, string> = {
       event_rsvp: '🍺',
       event_reminder: '⏰',
-      crew_invite_accepted: '🎯',
       crew_invitation: '👥',
+      crew_invitation_response: '✅',
       event_invitation: '🎉',
       event_invitation_response: '✅',
       event_update: '📝',
@@ -419,7 +419,12 @@ export function NotificationBell() {
 
   // Helper function to check if event invitation is expired
   const isEventInvitationExpired = (notification: ExtendedNotificationData): boolean => {
-    if (notification.type !== 'event_invitation' || !notification.data?.event_date_time) {
+    if (notification.type !== 'event_invitation') {
+      return false
+    }
+
+    // If no event timing data, don't mark as expired
+    if (!notification.data?.event_date_time) {
       return false
     }
 
@@ -427,8 +432,13 @@ export function NotificationBell() {
     const eventEndTime = notification.data.event_end_time
     const durationType = notification.data.duration_type
 
-    const status = getEventTimingStatus(eventDateTime, eventEndTime, durationType)
-    return status === 'past'
+    try {
+      const status = getEventTimingStatus(eventDateTime, eventEndTime, durationType)
+      return status === 'past'
+    } catch (error) {
+      // If timing calculation fails, don't mark as expired
+      return false
+    }
   }
 
   // Helper function to get notification state
@@ -459,21 +469,24 @@ export function NotificationBell() {
       }
     }
 
-    // Crew invitation accepted: show single join notice
-    if (notification.type === 'crew_invite_accepted') {
-      const crewName = notification.data?.crew_name || 'your crew'
+
+
+    // Crew invitation response: show response notification (match event style)
+    if (notification.type === 'crew_invitation_response') {
+      const crewName = notification.data?.crew_name || 'the crew'
       const userName =
         notification.senderName && notification.senderName !== 'Someone'
           ? notification.senderName
           : extractNameFromTitle(notification.title)
+      const response = notification.data?.response
       return {
         isExpired: false,
-        title: `🍻 ${userName} invited you to join "${crewName}"`,
-        message: notification.data?.response === 'accepted'
-          ? '✅ You accepted this invitation.'
-          : notification.data?.response === 'declined'
-            ? '❌ You declined this invitation.'
-            : '',
+        title: response === 'accepted'
+          ? `🎉 ${userName} accepted your invitation to "${crewName}"`
+          : `😔 ${userName} declined your invitation to "${crewName}"`,
+        message: response === 'accepted'
+          ? 'They\'re ready to raise hell!'
+          : 'They won\'t be able to make it this time.',
         showActions: false
       }
     }
@@ -629,13 +642,13 @@ export function NotificationBell() {
                   >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
-                      {notification.senderAvatar && (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invite_accepted') ? (
+                      {notification.senderAvatar && (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invitation_response') ? (
                         <img
                           src={notification.senderAvatar}
                           alt={notification.senderName || 'User'}
                           className="w-8 h-8 rounded-full object-cover border border-white/20"
                         />
-                      ) : (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invite_accepted') ? (
+                      ) : (notification.type === 'event_invitation_response' || notification.type === 'event_rsvp' || notification.type === 'crew_invitation' || notification.type === 'event_invitation' || notification.type === 'crew_invitation_response') ? (
                         // Show placeholder avatar for user-specific notifications without avatar data
                         <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
                           <span className="text-xs text-white/70">👤</span>
@@ -697,6 +710,20 @@ export function NotificationBell() {
                                   const html = raw.replace(
                                     quoted,
                                     `<a href="/event/${eventId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${eventTitle}</a>`
+                                  )
+                                  return <span dangerouslySetInnerHTML={{ __html: html }} />
+                                }
+                              }
+                              // Crew invitation response: hyperlink crew name in title
+                              if (notification.type === 'crew_invitation_response') {
+                                const crewName = notification.data?.crew_name
+                                const crewId = notification.data?.crew_id
+                                const raw = cleanNotificationTitle(state.title, notification.type)
+                                if (crewId && crewName) {
+                                  const quoted = `"${crewName}"`
+                                  const html = raw.replace(
+                                    quoted,
+                                    `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
                                   )
                                   return <span dangerouslySetInnerHTML={{ __html: html }} />
                                 }
