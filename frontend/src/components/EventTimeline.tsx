@@ -400,9 +400,16 @@ export function EventTimeline({
                                   {/* Location */}
                                   <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                                     <MapPin className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">
-                                      {event.place_nickname || getLocationDisplayName(event)}
-                                    </span>
+                                    <div className="truncate">
+                                      <span className="truncate">
+                                        {getLocationDisplayName(event)}
+                                      </span>
+                                      {event.place_nickname && (
+                                        <div className="text-xs text-muted-foreground/70 truncate">
+                                          {event.place_nickname}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* Guest Count & Tags - Mobile Optimized */}

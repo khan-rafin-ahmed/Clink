@@ -263,9 +263,16 @@ export function EnhancedEventCard({
               {/* Location */}
               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                 <MapPin className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">
-                  {event.place_nickname || getLocationDisplayName(event)}
-                </span>
+                <div className="truncate">
+                  <span className="truncate">
+                    {getLocationDisplayName(event)}
+                  </span>
+                  {event.place_nickname && (
+                    <div className="text-xs text-muted-foreground/70 truncate">
+                      {event.place_nickname}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Bottom Row - Attendees and Actions */}
@@ -453,9 +460,16 @@ export function EnhancedEventCard({
             {/* Location */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
-              <span className="truncate" title={event.place_nickname || getLocationDisplayName(event)}>
-                {event.place_nickname || getLocationDisplayName(event)}
-              </span>
+              <div className="truncate" title={getLocationDisplayName(event)}>
+                <span className="truncate">
+                  {getLocationDisplayName(event)}
+                </span>
+                {event.place_nickname && (
+                  <div className="text-xs text-muted-foreground/70 truncate">
+                    {event.place_nickname}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Tags - Max 2 tags */}
@@ -580,9 +594,16 @@ export function EnhancedEventCard({
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
           <MapPin className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate" title={event.place_nickname || getLocationDisplayName(event)}>
-            {event.place_nickname || getLocationDisplayName(event)}
-          </span>
+          <div className="truncate" title={getLocationDisplayName(event)}>
+            <span className="truncate">
+              {getLocationDisplayName(event)}
+            </span>
+            {event.place_nickname && (
+              <div className="text-xs text-muted-foreground/70 truncate">
+                {event.place_nickname}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Description */}

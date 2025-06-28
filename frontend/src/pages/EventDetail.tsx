@@ -911,8 +911,13 @@ export function EventDetail() {
                     <MapPin className="w-4 h-4 text-white" />
                     <div>
                       <p className="text-white text-sm">
-                        {event.place_nickname || getLocationDisplayName(event as any)}
+                        {getLocationDisplayName(event as any)}
                       </p>
+                      {event.place_nickname && (
+                        <p className="text-xs text-[#B3B3B3] truncate">
+                          {event.place_nickname}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {!event.is_public && (
@@ -1395,8 +1400,13 @@ export function EventDetail() {
                       <MapPin className="w-4 h-4 text-white" />
                       <div>
                         <p className="text-white text-sm">
-                          {event.place_nickname || getLocationDisplayName(event as any)}
+                          {getLocationDisplayName(event as any)}
                         </p>
+                        {event.place_nickname && (
+                          <p className="text-xs text-[#B3B3B3] truncate">
+                            {event.place_nickname}
+                          </p>
+                        )}
                       </div>
                     </div>
                     {!event.is_public && (

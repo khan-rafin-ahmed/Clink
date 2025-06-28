@@ -169,13 +169,13 @@ export function EventCard({ event, showHostActions = false, onEdit, onDelete }: 
               <div className="truncate max-w-[200px]">
                 <span
                   className="text-sm text-muted-foreground truncate group-hover:text-foreground"
-                  title={event.place_nickname || getLocationDisplayName(event)}
+                  title={getLocationDisplayName(event)}
                 >
-                  {event.place_nickname || getLocationDisplayName(event)}
+                  {getLocationDisplayName(event)}
                 </span>
-                {event.place_nickname && (event.place_name || event.location) && (
+                {event.place_nickname && (
                   <div className="text-xs text-muted-foreground/70 truncate">
-                    {event.place_name || event.location}
+                    {event.place_nickname}
                   </div>
                 )}
               </div>
