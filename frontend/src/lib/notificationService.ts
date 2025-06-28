@@ -258,8 +258,8 @@ export const notificationTriggers = {
     await notification.createNotification({
       user_id: hostId,
       type: 'event_rsvp',
-      title: `🍺 ${userName} joined your session`,
-      message: `${userName} has joined "${eventTitle}" and is ready to drink!`,
+      title: `${userName} accepted your invitation to ${eventTitle}`,
+      message: `They're ready to raise hell!`,
       data: { eventId, eventTitle, rsvpUserId },
       read: false
     })

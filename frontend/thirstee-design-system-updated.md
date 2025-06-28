@@ -331,8 +331,8 @@ await supabase.from('notifications').update({
 ```
 
 ### ✅ **Files Updated:**
-- **`NotificationBell.tsx`**: Fixed persistence logic, updated button styling, added response title links
-- **`NotificationCenter.tsx`**: Applied same fixes for consistency across components
+- **`NotificationBell.tsx`**: Fixed persistence logic, updated button styling, added response title links, removed emoji system
+- **`NotificationCenter.tsx`**: **REMOVED** - Dead code not being used
 - **`20250627_fix_notification_persistence.sql`**: Database migration for cleanup and response tracking
 - **`thirstee-design-system-updated.md`**: Documented all notification system improvements
 
@@ -437,7 +437,6 @@ invalidateEventCaches();
 ### ✅ **Files Updated:**
 - **`20250627_fix_crew_invitation_issues.sql`**: Database migration with notification and RLS fixes
 - **`NotificationBell.tsx`**: Added cache invalidation for immediate event status updates
-- **`NotificationCenter.tsx`**: Applied same cache invalidation logic for consistency
 - **`thirstee-design-system-updated.md`**: Documented all crew invitation system improvements
 
 ### 🎯 **User Experience Improvements:**

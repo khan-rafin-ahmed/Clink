@@ -392,30 +392,7 @@ export function NotificationBell() {
     setIsOpen(false)
   }
 
-  const getNotificationIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      event_rsvp: '🍺',
-      event_reminder: '⏰',
-      crew_invitation: '👥',
-      crew_invitation_response: '✅',
-      event_invitation: '🎉',
-      event_invitation_response: '✅',
-      event_update: '📝',
-      event_cancelled: '❌',
-      crew_promotion: '👑'
-    }
-    return icons[type] || '🔔'
-  }
-
-  // Helper to clean notification title (remove all leading emojis)
-  const cleanNotificationTitle = (title: string, type: string) => {
-    const icon = getNotificationIcon(type)
-    // Remove the icon emoji if present at the start
-    let cleaned = title.replace(new RegExp(`^${icon}\\s*`, 'g'), '')
-    // Remove any other leading emojis or non-word characters (unicode aware)
-    cleaned = cleaned.replace(/^[^\p{L}\p{N}]*/u, '')
-    return cleaned.trim()
-  }
+  // No longer using emoji icons - system now uses user avatars
 
   // Helper function to check if event invitation is expired
   const isEventInvitationExpired = (notification: ExtendedNotificationData): boolean => {
@@ -482,8 +459,8 @@ export function NotificationBell() {
       return {
         isExpired: false,
         title: response === 'accepted'
-          ? `🎉 ${userName} accepted your invitation to "${crewName}"`
-          : `😔 ${userName} declined your invitation to "${crewName}"`,
+          ? `${userName} accepted your invitation to "${crewName}"`
+          : `${userName} declined your invitation to "${crewName}"`,
         message: response === 'accepted'
           ? 'They\'re ready to raise hell!'
           : 'They won\'t be able to make it this time.',
@@ -503,7 +480,7 @@ export function NotificationBell() {
       if (response === 'accepted' || response === 'declined') {
         return {
           isExpired: false,
-          title: `🍻 ${userName} invited you to join a session "${sessionTitle}"`,
+          title: `${userName} invited you to join a session "${sessionTitle}"`,
           message: response === 'accepted'
             ? '✅ You accepted this invitation.'
             : '❌ You declined this invitation.',
@@ -513,20 +490,46 @@ export function NotificationBell() {
       // Initial invitation
       return {
         isExpired: false,
-        title: `🍻 ${userName} invited you to join a session "${sessionTitle}"`,
+        title: `${userName} invited you to join a session "${sessionTitle}"`,
         message: '',
         showActions: true
       }
     }
 
-    // Event RSVP
+    // Event RSVP (legacy - keeping for backward compatibility)
     if (notification.type === 'event_rsvp') {
-      const sessionTitle = notification.data?.eventTitle || 'a session'
+      const sessionTitle = notification.data?.eventTitle || notification.data?.event_title || 'a session'
       const userName = notification.senderName || 'Someone'
       return {
         isExpired: false,
-        title: `🍻 ${userName} joined your session "${sessionTitle}"`,
-        message: '',
+        title: `${userName} accepted your invitation to ${sessionTitle}`,
+        message: 'They\'re ready to raise hell!',
+        showActions: false
+      }
+    }
+
+    // Event invitation response (new format)
+    if (notification.type === 'event_invitation_response') {
+      const sessionTitle = notification.data?.event_title || 'a session'
+      const userName = notification.senderName || 'Someone'
+      const response = notification.data?.response || 'responded'
+      return {
+        isExpired: false,
+        title: `${userName} ${response} your invitation to ${sessionTitle}`,
+        message: response === 'accepted' ? 'They\'re ready to raise hell!' : 'They won\'t be able to make it this time.',
+        showActions: false
+      }
+    }
+
+    // Crew invitation response (new format)
+    if (notification.type === 'crew_invitation_response') {
+      const crewName = notification.data?.crew_name || 'a crew'
+      const userName = notification.senderName || 'Someone'
+      const response = notification.data?.response || 'responded'
+      return {
+        isExpired: false,
+        title: `${userName} ${response} your invitation to ${crewName}`,
+        message: response === 'accepted' ? 'They\'re ready to raise hell!' : 'They won\'t be able to make it this time.',
         showActions: false
       }
     }
@@ -540,7 +543,7 @@ export function NotificationBell() {
       if (response === 'accepted' || response === 'declined') {
         return {
           isExpired: false,
-          title: `🍻 ${userName} invited you to join "${crewName}"`,
+          title: `${userName} invited you to join "${crewName}"`,
           message: response === 'accepted'
             ? '✅ You accepted this invitation.'
             : '❌ You declined this invitation.',
@@ -654,8 +657,8 @@ export function NotificationBell() {
                           <span className="text-xs text-white/70">👤</span>
                         </div>
                       ) : (
-                        <div className="text-lg">
-                          {getNotificationIcon(notification.type)}
+                        <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                          <span className="text-xs text-white/70">🔔</span>
                         </div>
                       )}
                     </div>
@@ -675,7 +678,7 @@ export function NotificationBell() {
                                 const crewName = notification.data?.crew_name || 'the crew'
                                 const crewId = notification.data?.crew_id
                                 // Replace just the quoted crew name with a link
-                                const raw = cleanNotificationTitle(state.title, notification.type)
+                                const raw = state.title
                                 if (crewId && crewName) {
                                   // Replace the quoted name in the string with <a>
                                   const quoted = `"${crewName}"`
@@ -690,7 +693,7 @@ export function NotificationBell() {
                               if (notification.type === 'event_invitation') {
                                 const eventTitle = notification.data?.event_title || notification.data?.eventTitle
                                 const eventId = notification.data?.event_id
-                                const raw = cleanNotificationTitle(state.title, notification.type)
+                                const raw = state.title
                                 if (eventId && eventTitle) {
                                   const quoted = `"${eventTitle}"`
                                   const html = raw.replace(
@@ -704,13 +707,25 @@ export function NotificationBell() {
                               if (notification.type === 'event_invitation_response') {
                                 const eventTitle = notification.data?.event_title
                                 const eventId = notification.data?.event_id
-                                const raw = cleanNotificationTitle(state.title, notification.type)
+                                const raw = state.title
                                 if (eventId && eventTitle) {
+                                  // Handle both quoted and unquoted event titles
                                   const quoted = `"${eventTitle}"`
-                                  const html = raw.replace(
-                                    quoted,
-                                    `<a href="/event/${eventId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${eventTitle}</a>`
-                                  )
+                                  const unquoted = eventTitle
+                                  let html = raw
+
+                                  // Try quoted first, then unquoted
+                                  if (raw.includes(quoted)) {
+                                    html = raw.replace(
+                                      quoted,
+                                      `<a href="/event/${eventId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${eventTitle}</a>`
+                                    )
+                                  } else if (raw.includes(unquoted)) {
+                                    html = raw.replace(
+                                      unquoted,
+                                      `<a href="/event/${eventId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${eventTitle}</a>`
+                                    )
+                                  }
                                   return <span dangerouslySetInnerHTML={{ __html: html }} />
                                 }
                               }
@@ -718,18 +733,30 @@ export function NotificationBell() {
                               if (notification.type === 'crew_invitation_response') {
                                 const crewName = notification.data?.crew_name
                                 const crewId = notification.data?.crew_id
-                                const raw = cleanNotificationTitle(state.title, notification.type)
+                                const raw = state.title
                                 if (crewId && crewName) {
+                                  // Handle both quoted and unquoted crew names
                                   const quoted = `"${crewName}"`
-                                  const html = raw.replace(
-                                    quoted,
-                                    `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
-                                  )
+                                  const unquoted = crewName
+                                  let html = raw
+
+                                  // Try quoted first, then unquoted
+                                  if (raw.includes(quoted)) {
+                                    html = raw.replace(
+                                      quoted,
+                                      `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                    )
+                                  } else if (raw.includes(unquoted)) {
+                                    html = raw.replace(
+                                      unquoted,
+                                      `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                    )
+                                  }
                                   return <span dangerouslySetInnerHTML={{ __html: html }} />
                                 }
                               }
                               // Default: plain text
-                              return cleanNotificationTitle(state.title, notification.type)
+                              return state.title
                             })()}
                           </p>
                           {!notification.read && (
