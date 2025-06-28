@@ -14,7 +14,7 @@ import { getDefaultCoverImage } from '@/lib/coverImageUtils'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Check, Upload, X } from 'lucide-react'
-import type { Event, LocationData, UserProfile } from '@/types'
+import type { Event, LocationData } from '@/types'
 import type { Crew, CrewMember } from '@/types'
 
 interface EditEventModalProps {
@@ -34,10 +34,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
   const [loadingCrews, setLoadingCrews] = useState(false)
 
-  // New invitation management state
-  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([])
-  const [selectedCrews, setSelectedCrews] = useState<Crew[]>([])
-  const [currentTab, setCurrentTab] = useState('details')
+
 
   // Convert event date to the format needed for datetime-local input
   const eventDate = new Date(event.date_time)
@@ -274,7 +271,6 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
         cover_image_url: coverImageUrl
       }
 
-      console.log('Updating event with data:', updateData)
       await updateEvent(event.id, updateData)
 
       // Send invitations to selected crew members
@@ -329,9 +325,9 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (step < 5 && isStepValid()) {
+      if (step < 4 && isStepValid()) {
         nextStep()
-      } else if (step === 5) {
+      } else if (step === 4) {
         handleSubmit()
       }
     }
@@ -345,7 +341,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             Edit Session 🍺
           </DialogTitle>
           <div className="flex space-x-2 mt-4">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`h-2 flex-1 rounded-full ${
@@ -759,63 +755,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
-          {/* Step 5: Enhanced Invitation Management */}
-          {step === 5 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Manage Invitations</h3>
-                <p className="text-sm text-muted-foreground">
-                  View current invitations and add new members to your session
-                </p>
-              </div>
 
-              {/* Current Invitations Display */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <h4 className="text-sm font-medium text-foreground">Current Invitations</h4>
-                </div>
-
-                <div className="bg-glass border border-white/10 rounded-xl p-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Current invitations will be displayed here
-                  </p>
-                  <p className="text-xs text-muted-foreground text-center mt-1">
-                    (Feature coming soon - comprehensive invitation management)
-                  </p>
-                </div>
-              </div>
-
-              {/* Add New Invitations */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <h4 className="text-sm font-medium text-foreground">Add New Invitations</h4>
-                </div>
-
-                <div className="bg-glass border border-white/10 rounded-xl p-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    User search and crew selection will be available here
-                  </p>
-                  <p className="text-xs text-muted-foreground text-center mt-1">
-                    (Feature coming soon - individual user and crew invitations)
-                  </p>
-                </div>
-              </div>
-
-              {/* Invitation Summary */}
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  <h4 className="text-sm font-medium text-primary">Invitation Summary</h4>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Your existing invitations will be preserved when updating the event.
-                  New invitations will be sent only to newly added members.
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Navigation */}
           <div className="flex flex-col sm:flex-row gap-3">
@@ -830,14 +770,14 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </Button>
             )}
 
-            {step < 5 ? (
+            {step < 4 ? (
               <Button
                 type="button"
                 onClick={nextStep}
                 disabled={!isStepValid()}
                 className="flex-1 font-semibold order-1 sm:order-2"
               >
-                {step === 4 ? 'Review Invitations' : 'Next'}
+                Next
               </Button>
             ) : (
               <Button
