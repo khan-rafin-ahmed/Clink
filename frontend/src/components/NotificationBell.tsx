@@ -419,7 +419,7 @@ export function NotificationBell() {
   }
 
   // Helper function to get notification state
-  const getNotificationState = (notification: ExtendedNotificationData) => {
+  const getNotificationState = (notification: ExtendedNotificationData): { isExpired: boolean; title: string; message: string; showActions: boolean } | null => {
     // Hide invites immediately after user response, before DB-side propagation delay
     if ((notification.type === 'event_invitation' || notification.type === 'crew_invitation')
         && respondedNotifications.has(notification.id!)) {
@@ -521,18 +521,7 @@ export function NotificationBell() {
       }
     }
 
-    // Crew invitation response (new format)
-    if (notification.type === 'crew_invitation_response') {
-      const crewName = notification.data?.crew_name || 'a crew'
-      const userName = notification.senderName || 'Someone'
-      const response = notification.data?.response || 'responded'
-      return {
-        isExpired: false,
-        title: `${userName} ${response} your invitation to ${crewName}`,
-        message: response === 'accepted' ? 'They\'re ready to raise hell!' : 'They won\'t be able to make it this time.',
-        showActions: false
-      }
-    }
+    // This case is already handled above at line 452
 
     // Handle crew invitations
     if (notification.type === 'crew_invitation') {
