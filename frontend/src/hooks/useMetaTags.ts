@@ -33,7 +33,7 @@ export function useMetaTags(metaData?: MetaTagData) {
  */
 export function useEventMetaTags(event?: {
   title: string
-  description?: string | null
+  notes?: string | null  // Changed from description to notes to match Event type
   cover_image_url?: string | null
   vibe?: string | null
   date_time: string
@@ -43,25 +43,37 @@ export function useEventMetaTags(event?: {
 }, eventUrl?: string) {
   
   useEffect(() => {
+    console.log('🔍 useEventMetaTags called with:', { event: !!event, eventUrl, eventTitle: event?.title })
+
     if (event && eventUrl) {
       // Generate and apply meta tags
       const metaData = generateEventMetaTags(event, eventUrl)
       applyMetaTags(metaData)
-      
+
       // Generate and apply structured data
       const structuredData = generateEventStructuredData(event, eventUrl)
       applyStructuredData(structuredData)
-      
+
       console.log('🏷️ Applied event meta tags:', metaData)
       console.log('📊 Applied structured data:', structuredData)
+
+      // Verify the meta tags were actually applied
+      setTimeout(() => {
+        const titleElement = document.querySelector('title')
+        const descElement = document.querySelector('meta[name="description"]')
+        console.log('✅ Verified meta tags:', {
+          title: titleElement?.textContent,
+          description: descElement?.getAttribute('content')
+        })
+      }, 100)
     } else {
+      console.log('⚠️ No event data or URL, resetting to default meta tags')
       resetMetaTags()
     }
 
-    // Cleanup function
+    // Cleanup function - only remove structured data, don't reset meta tags
+    // as that interferes with navigation between pages
     return () => {
-      resetMetaTags()
-      
       // Remove structured data
       const existingScript = document.querySelector('script[type="application/ld+json"]')
       if (existingScript) {

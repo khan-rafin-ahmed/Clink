@@ -424,7 +424,7 @@ export function EventDetail() {
   useEventMetaTags(
     (event || cachedEvent) ? {
       title: (event || cachedEvent)!.title,
-      description: (event || cachedEvent)!.notes,
+      notes: (event || cachedEvent)!.notes,
       cover_image_url: (event || cachedEvent)!.cover_image_url,
       vibe: (event || cachedEvent)!.vibe,
       date_time: (event || cachedEvent)!.date_time,

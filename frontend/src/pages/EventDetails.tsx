@@ -75,9 +75,24 @@ export function EventDetails() {
     onError: () => toast.error('Failed to load event details')
   })
 
-  // Apply dynamic meta tags for social sharing
-  const metaEventUrl = event?.slug ? `/event/${event.slug}` : `/event/${eventId}`
-  useEventMetaTags(event, metaEventUrl)
+  // Apply dynamic meta tags for social sharing - only when event data is loaded
+  const metaEventUrl = event?.slug
+    ? `${window.location.origin}/event/${event.slug}`
+    : `${window.location.origin}/event/${eventId}`
+
+  // Transform event data to match meta tag interface - only when event is loaded
+  const eventMetaData = event && !isLoading ? {
+    title: event.title,
+    notes: event.notes,
+    cover_image_url: event.cover_image_url,
+    vibe: event.vibe,
+    date_time: event.date_time,
+    location: event.location,
+    place_nickname: event.place_nickname,
+    is_public: event.is_public
+  } : undefined
+
+  useEventMetaTags(eventMetaData, event && !isLoading ? metaEventUrl : undefined)
 
   const handleEventUpdated = useCallback(() => {
     refetch()

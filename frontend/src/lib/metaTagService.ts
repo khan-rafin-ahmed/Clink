@@ -18,7 +18,7 @@ export interface MetaTagData {
  */
 export function generateEventMetaTags(event: {
   title: string
-  description?: string | null
+  notes?: string | null  // Changed from description to notes to match Event type
   cover_image_url?: string | null
   vibe?: string | null
   date_time: string
@@ -46,10 +46,10 @@ export function generateEventMetaTags(event: {
   const privacy = event.is_public ? '' : ' (Private Event)'
   
   let description = `Join us for "${event.title}" on ${formattedDate} at ${location}.${vibe}${privacy}`
-  
+
   // Add custom description if provided
-  if (event.description?.trim()) {
-    description = `${event.description.trim()} | ${formattedDate} at ${location}${privacy}`
+  if (event.notes?.trim()) {
+    description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
   }
   
   // Ensure description is within limits (160 chars for optimal display)
@@ -263,7 +263,7 @@ export function validateSocialImage(imageUrl: string): Promise<boolean> {
  */
 export function generateEventStructuredData(event: {
   title: string
-  description?: string | null
+  notes?: string | null  // Changed from description to notes to match Event type
   date_time: string
   location?: string | null
   place_nickname?: string | null
@@ -276,7 +276,7 @@ export function generateEventStructuredData(event: {
     "@context": "https://schema.org",
     "@type": "SocialEvent",
     "name": event.title,
-    "description": event.description || `Join us for ${event.title}`,
+    "description": event.notes || `Join us for ${event.title}`,
     "startDate": startDate,
     "url": eventUrl,
     "location": {
