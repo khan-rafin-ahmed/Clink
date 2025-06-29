@@ -2,6 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/event/:eventId",
+      "destination": "/api/event/:eventId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|Googlebot|bingbot|YandexBot|DuckDuckBot|Applebot).*"
+        }
+      ]
+    },
+    {
       "source": "/((?!api|_next|_static|favicon.ico|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
