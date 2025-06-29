@@ -74,7 +74,7 @@ function generateEventHTML(event, eventUrl) {
   const vibe = event.vibe ? ` ${event.vibe.charAt(0).toUpperCase() + event.vibe.slice(1)} vibes` : ''
   const privacy = event.is_public ? '' : ' (Private Event)'
   
-  let description = `Join us for "${event.title}" on ${formattedDate} at ${location}.${vibe}${privacy}`
+  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}${privacy}`
 
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
@@ -103,8 +103,9 @@ function generateEventHTML(event, eventUrl) {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="https://www.thirstee.app/favicon.ico" />
+    <link rel="icon" type="image/png" href="https://www.thirstee.app/assets/covers/Party Mode.webp" />
     <link rel="icon" type="image/svg+xml" href="https://www.thirstee.app/thirstee-logo.svg" />
+    <link rel="shortcut icon" href="https://www.thirstee.app/assets/covers/Party Mode.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
