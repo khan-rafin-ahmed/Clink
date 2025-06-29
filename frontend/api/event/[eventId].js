@@ -82,7 +82,7 @@ function generateEventHTML(event, eventUrl) {
 
   const vibe = event.vibe ? ` ${event.vibe.charAt(0).toUpperCase() + event.vibe.slice(1)} vibes` : ''
 
-  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}`
+  let description = `Join me for ${event.title} on ${formattedDate} at ${location}`
 
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
