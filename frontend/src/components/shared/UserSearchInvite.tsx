@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { getUserCrews } from '@/lib/crewService'
 import { useAuth } from '@/lib/auth-context'
-import { Search, Plus, X, Users } from 'lucide-react'
+import { Search, Plus, X, Users, Crown, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { UserProfile, Crew } from '@/types'
 
@@ -17,6 +17,8 @@ interface UserSearchInviteProps {
   selectedCrews: Crew[]
   onRemoveUser: (userId: string) => void
   onRemoveCrew: (crewId: string) => void
+  existingAttendees?: UserProfile[]
+  loadingAttendees?: boolean
   className?: string
 }
 
@@ -27,6 +29,8 @@ export function UserSearchInvite({
   selectedCrews,
   onRemoveUser,
   onRemoveCrew,
+  existingAttendees = [],
+  loadingAttendees = false,
   className
 }: UserSearchInviteProps) {
   const { user } = useAuth()
@@ -83,9 +87,10 @@ export function UserSearchInvite({
 
       if (error) throw error
 
-      // Filter out already selected users and ensure proper typing
+      // Filter out already selected users and existing attendees
       const filteredResults = (data || []).filter(
-        result => !selectedUsers.some(selected => selected.user_id === result.user_id)
+        result => !selectedUsers.some(selected => selected.user_id === result.user_id) &&
+                  !existingAttendees.some(existing => existing.user_id === result.user_id)
       ) as UserProfile[]
 
       setSearchResults(filteredResults)
@@ -93,6 +98,7 @@ export function UserSearchInvite({
     } catch (error) {
       console.error('Error searching users:', error)
       toast.error('Failed to search users')
+    } finally {
       setIsSearching(false)
     }
   }
@@ -140,9 +146,12 @@ export function UserSearchInvite({
               placeholder="Search by username, display name, or nickname..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10 bg-glass border-white/10"
+              className="pl-10 pr-10 bg-glass border-white/10"
               onFocus={() => searchQuery && setShowResults(true)}
             />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+            )}
           </div>
 
           {/* Search Results */}
@@ -200,17 +209,16 @@ export function UserSearchInvite({
             return (
               <button
                 key={crew.id}
-                onClick={() => !isSelected && handleCrewSelect(crew)}
-                disabled={isSelected}
+                onClick={() => isSelected ? onRemoveCrew(crew.id) : handleCrewSelect(crew)}
                 className={`flex items-center justify-between p-3 rounded-xl border transition-colors text-left ${
                   isSelected
-                    ? 'bg-primary/10 border-primary/30 cursor-not-allowed'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'bg-glass border-white/10 hover:border-primary/30 hover:bg-primary/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                    <Users className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-white/10 glass-shimmer rounded-lg flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">{crew.name}</p>
@@ -220,9 +228,7 @@ export function UserSearchInvite({
                   </div>
                 </div>
                 {isSelected ? (
-                  <Badge variant="secondary" className="bg-primary/20 text-primary">
-                    Selected
-                  </Badge>
+                  <X className="w-4 h-4 text-red-400" />
                 ) : (
                   <Plus className="w-4 h-4 text-primary" />
                 )}
@@ -281,8 +287,8 @@ export function UserSearchInvite({
                 className="flex items-center justify-between p-3 bg-glass border border-white/10 rounded-xl"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                    <Users className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-white/10 glass-shimmer rounded-lg flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">{selectedCrew.name}</p>
@@ -300,6 +306,53 @@ export function UserSearchInvite({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Existing Attendees */}
+      {existingAttendees.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-foreground">
+            Already Invited/Joined ({existingAttendees.length})
+          </h4>
+          {loadingAttendees ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Loading attendees...
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {existingAttendees.map((attendee) => (
+                <div
+                  key={attendee.user_id}
+                  className="flex items-center gap-3 p-3 bg-glass/50 border border-white/5 rounded-xl opacity-75"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={attendee.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-primary text-white text-xs">
+                      {attendee.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white/80 truncate">
+                      {attendee.display_name}
+                    </p>
+                    {attendee.nickname && (
+                      <p className="text-xs text-yellow-400/60 italic truncate">
+                        aka {attendee.nickname}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 truncate">
+                      @{attendee.username}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-500/20 text-green-400 text-xs">
+                    Invited
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

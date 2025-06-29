@@ -357,6 +357,8 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
                 selectedCrews={selectedCrews}
                 onRemoveUser={handleRemoveUser}
                 onRemoveCrew={handleRemoveCrew}
+                existingAttendees={[]}
+                loadingAttendees={false}
               />
 
               {/* Send Invitations Button */}

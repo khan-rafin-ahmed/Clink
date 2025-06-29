@@ -4,18 +4,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { UserAvatar } from '@/components/UserAvatar'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
+import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { updateEvent } from '@/lib/eventService'
-import { getUserCrews, getCrewMembers } from '@/lib/crewService'
-import { bulkInviteCrewMembersToEvent } from '@/lib/memberService'
+import { bulkInviteUsers, getEventMembers } from '@/lib/memberService'
+import { sendEventInvitationsToCrew } from '@/lib/eventInvitationService'
 import { uploadEventCover } from '@/lib/fileUpload'
 import { getDefaultCoverImage } from '@/lib/coverImageUtils'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
-import { Loader2, Globe, Lock, Users, Check, Upload, X } from 'lucide-react'
-import type { Event, LocationData } from '@/types'
-import type { Crew, CrewMember } from '@/types'
+import { Loader2, Globe, Lock, Upload, X } from 'lucide-react'
+import type { Event, LocationData, UserProfile, Crew } from '@/types'
 
 interface EditEventModalProps {
   event: Event
@@ -28,17 +27,70 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([])
-  const [userCrews, setUserCrews] = useState<Crew[]>([])
-  const [selectedCrew, setSelectedCrew] = useState<string>('')
-  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
-  const [loadingCrews, setLoadingCrews] = useState(false)
+
+  // Helper function to convert UTC datetime to local datetime-local format
+  const toLocalDateTimeString = (utcDateString: string): string => {
+    const date = new Date(utcDateString)
+    // Get local time components
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  // Invitation state
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([])
+  const [selectedCrews, setSelectedCrews] = useState<Crew[]>([])
+  const [existingAttendees, setExistingAttendees] = useState<UserProfile[]>([])
+  const [loadingAttendees, setLoadingAttendees] = useState(false)
+
+  const handleUserSelect = (user: UserProfile) => {
+    if (!selectedUsers.some(selected => selected.user_id === user.user_id)) {
+      setSelectedUsers(prev => [...prev, user])
+    }
+  }
+
+  const handleCrewSelect = (crew: Crew) => {
+    if (!selectedCrews.some(selected => selected.id === crew.id)) {
+      setSelectedCrews(prev => [...prev, crew])
+    }
+  }
+
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(user => user.user_id !== userId))
+  }
+
+  const handleRemoveCrew = (crewId: string) => {
+    setSelectedCrews(prev => prev.filter(crew => crew.id !== crewId))
+  }
+
+  // Load existing event attendees
+  const loadExistingAttendees = async () => {
+    if (!event?.id) return
+
+    setLoadingAttendees(true)
+    try {
+      const eventMembers = await getEventMembers(event.id)
+
+      // Extract user profiles from event members (all statuses: pending, accepted, declined)
+      const attendeeProfiles = eventMembers
+        .filter(member => member.user && member.user_id !== user?.id) // Exclude current user
+        .map(member => member.user!)
+        .filter(Boolean) as UserProfile[]
+
+      setExistingAttendees(attendeeProfiles)
+    } catch (error) {
+      console.error('Error loading existing attendees:', error)
+      toast.error('Failed to load existing attendees')
+    } finally {
+      setLoadingAttendees(false)
+    }
+  }
 
 
-
-  // Convert event date to the format needed for datetime-local input
-  const eventDate = new Date(event.date_time)
-  const customTimeValue = eventDate.toISOString().slice(0, 16)
 
   const [formData, setFormData] = useState({
     title: event.title,
@@ -55,34 +107,25 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
     drink_type: event.drink_type || 'beer',
     vibe: event.vibe || 'casual',
     notes: event.notes || '',
-    start_time: customTimeValue,
-    end_time: event.end_time ? new Date(event.end_time).toISOString().slice(0, 16) : '',
+    start_time: toLocalDateTimeString(event.date_time),
+    end_time: event.end_time ? toLocalDateTimeString(event.end_time) : '',
     is_public: event.is_public,
     cover_image: null as File | null,
     cover_image_url: (event as any).cover_image_url || null
   })
 
-  // Load user crews when modal opens
+  // Load existing attendees when modal opens
   useEffect(() => {
-    if (open && user) {
-      loadUserCrews()
+    if (open && event?.id) {
+      loadExistingAttendees()
     }
-  }, [open, user])
-
-  // Load crew members when crew is selected
-  useEffect(() => {
-    if (selectedCrew) {
-      loadCrewMembers(selectedCrew)
-    } else {
-      setCrewMembers([])
-      setSelectedInvitees([])
-    }
-  }, [selectedCrew])
+  }, [open, event?.id])
 
   // Reset form when event changes
   useEffect(() => {
-    const eventDate = new Date(event.date_time)
-    const customTimeValue = eventDate.toISOString().slice(0, 16)
+    // Convert UTC times to local datetime-local format
+    const localStartTime = toLocalDateTimeString(event.date_time)
+    const localEndTime = event.end_time ? toLocalDateTimeString(event.end_time) : ''
 
     setFormData({
       title: event.title,
@@ -99,45 +142,19 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       drink_type: event.drink_type || 'beer',
       vibe: event.vibe || 'casual',
       notes: event.notes || '',
-      start_time: customTimeValue,
-      end_time: event.end_time ? new Date(event.end_time).toISOString().slice(0, 16) : '',
+      start_time: localStartTime,
+      end_time: localEndTime,
       is_public: event.is_public,
       cover_image: null,
       cover_image_url: (event as any).cover_image_url || null
     })
     setStep(1)
-    // Reset crew selection when event changes
-    setSelectedCrew('')
-    setSelectedInvitees([])
-    setCrewMembers([])
+    // Reset invitation selections when event changes
+    setSelectedUsers([])
+    setSelectedCrews([])
   }, [event])
 
-  const loadUserCrews = async () => {
-    if (!user?.id) return
 
-    setLoadingCrews(true)
-    try {
-      const crews = await getUserCrews(user.id)
-      setUserCrews(crews)
-    } catch (error) {
-      console.error('Error loading user crews:', error)
-      toast.error('Failed to load crews')
-    } finally {
-      setLoadingCrews(false)
-    }
-  }
-
-  const loadCrewMembers = async (crewId: string) => {
-    try {
-      const members = await getCrewMembers(crewId)
-      // Filter out the current user from crew members
-      const filteredMembers = members.filter(member => member.user_id !== user?.id)
-      setCrewMembers(filteredMembers)
-    } catch (error) {
-      console.error('Error loading crew members:', error)
-      toast.error('Failed to load crew members')
-    }
-  }
 
   const drinkTypes = [
     { value: 'beer', label: 'Beer', emoji: '🍺' },
@@ -273,16 +290,35 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
       await updateEvent(event.id, updateData)
 
-      // Send invitations to selected crew members
-      if (selectedInvitees.length > 0) {
+      // Send invitations to newly selected users and crews
+      let invitationCount = 0
+
+      // Invite individual users (only newly selected ones)
+      if (selectedUsers.length > 0) {
         try {
-          await bulkInviteCrewMembersToEvent(event.id, selectedInvitees, user!.id)
-          toast.success(`🍺 Session updated and ${selectedInvitees.length} crew members invited!`)
+          await bulkInviteUsers(event.id, selectedUsers.map(u => u.user_id), user!.id)
+          invitationCount += selectedUsers.length
         } catch (error) {
-          console.error('Error inviting crew members:', error)
-          toast.success('Session updated successfully! 🍺')
-          toast.error('Failed to invite some crew members')
+          console.error('Error inviting users:', error)
+          toast.error('Failed to invite some users')
         }
+      }
+
+      // Invite crews (only newly selected ones)
+      if (selectedCrews.length > 0) {
+        try {
+          for (const crew of selectedCrews) {
+            const result = await sendEventInvitationsToCrew(event.id, crew.id, user!.id)
+            invitationCount += result.invitedCount
+          }
+        } catch (error) {
+          console.error('Error inviting crews:', error)
+          toast.error('Failed to invite some crews')
+        }
+      }
+
+      if (invitationCount > 0) {
+        toast.success(`🍺 Session updated and ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} sent!`)
       } else {
         toast.success('Session updated successfully! 🍺')
       }
@@ -430,7 +466,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                         onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                         onKeyDown={handleKeyDown}
                         className="mt-1"
-                        min={new Date().toISOString().slice(0, 16)}
+                        min={toLocalDateTimeString(new Date().toISOString())}
                       />
                     </div>
                     <div>
@@ -441,7 +477,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                         onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                         onKeyDown={handleKeyDown}
                         className="mt-1"
-                        min={formData.start_time || new Date().toISOString().slice(0, 16)}
+                        min={formData.start_time || toLocalDateTimeString(new Date().toISOString())}
                       />
                     </div>
                   </div>
@@ -622,136 +658,26 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
-          {/* Step 4: Invite Crew Members */}
+          {/* Step 4: Invite People */}
           {step === 4 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <Label className="text-sm font-medium">Invite Crew Members (Optional)</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Select a crew to invite members to your session
+                <h3 className="text-lg font-semibold mb-2">Invite People (Optional)</h3>
+                <p className="text-sm text-muted-foreground">
+                  Invite individual users and crews to your event. Only newly selected people will receive invitations.
                 </p>
               </div>
 
-              {/* Crew Selection */}
-              <div>
-                <Label className="text-sm font-medium">Select Crew</Label>
-                {loadingCrews ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Loading crews...
-                  </div>
-                ) : userCrews.length === 0 ? (
-                  <div className="text-center p-4 text-muted-foreground">
-                    <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No crews found</p>
-                    <p className="text-xs">Create a crew first to invite members</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCrew('')}
-                      className={`p-3 rounded-lg border text-left ${
-                        selectedCrew === ''
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-sm font-medium">No crew selected</div>
-                      <div className="text-xs text-muted-foreground">Skip crew invitation</div>
-                    </button>
-                    {userCrews.map(crew => (
-                      <button
-                        key={crew.id}
-                        type="button"
-                        onClick={() => setSelectedCrew(crew.id)}
-                        className={`p-3 rounded-lg border text-left ${
-                          selectedCrew === crew.id
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">{crew.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {crew.member_count} members • {crew.visibility}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Crew Members Selection */}
-              {selectedCrew && crewMembers.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium">
-                    Select Members to Invite ({selectedInvitees.length} selected)
-                  </Label>
-                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-48 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedInvitees.length === crewMembers.length) {
-                          setSelectedInvitees([])
-                        } else {
-                          setSelectedInvitees(crewMembers.map(m => m.user_id))
-                        }
-                      }}
-                      className="p-2 rounded-lg border border-dashed border-primary/50 text-primary hover:bg-primary/5"
-                    >
-                      <div className="text-sm font-medium">
-                        {selectedInvitees.length === crewMembers.length ? 'Deselect All' : 'Select All'}
-                      </div>
-                    </button>
-                    {crewMembers.map(member => (
-                      <button
-                        key={member.user_id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedInvitees(prev =>
-                            prev.includes(member.user_id)
-                              ? prev.filter(id => id !== member.user_id)
-                              : [...prev, member.user_id]
-                          )
-                        }}
-                        className={`p-3 rounded-lg border text-left ${
-                          selectedInvitees.includes(member.user_id)
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <UserAvatar
-                            userId={member.user_id}
-                            displayName={member.user?.display_name}
-                            avatarUrl={member.user?.avatar_url}
-                            size="sm"
-                          />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">
-                              {member.user?.display_name || 'Anonymous User'}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {member.user_id === userCrews.find(c => c.id === selectedCrew)?.created_by ? '👑 Host' : '🎟️ Member'}
-                            </div>
-                          </div>
-                          {selectedInvitees.includes(member.user_id) && (
-                            <Check className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedCrew && crewMembers.length === 0 && (
-                <div className="text-center p-4 text-muted-foreground">
-                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No other members in this crew</p>
-                  <p className="text-xs">You're the only member</p>
-                </div>
-              )}
+              <UserSearchInvite
+                onUserSelect={handleUserSelect}
+                onCrewSelect={handleCrewSelect}
+                selectedUsers={selectedUsers}
+                selectedCrews={selectedCrews}
+                onRemoveUser={handleRemoveUser}
+                onRemoveCrew={handleRemoveCrew}
+                existingAttendees={existingAttendees}
+                loadingAttendees={loadingAttendees}
+              />
             </div>
           )}
 

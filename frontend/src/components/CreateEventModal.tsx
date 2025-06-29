@@ -27,8 +27,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { createEvent } from '@/lib/eventService'
-import type { CreateEventDto } from '@/types'
+import { bulkInviteUsers } from '@/lib/memberService'
+import { sendEventInvitationsToCrew } from '@/lib/eventInvitationService'
+import type { CreateEventDto, UserProfile, Crew } from '@/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -53,7 +56,32 @@ interface CreateEventModalProps {
 export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [step, setStep] = useState(1)
   const { user } = useAuth()
+
+  // Invitation state
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([])
+  const [selectedCrews, setSelectedCrews] = useState<Crew[]>([])
+
+  const handleUserSelect = (user: UserProfile) => {
+    if (!selectedUsers.some(selected => selected.user_id === user.user_id)) {
+      setSelectedUsers(prev => [...prev, user])
+    }
+  }
+
+  const handleCrewSelect = (crew: Crew) => {
+    if (!selectedCrews.some(selected => selected.id === crew.id)) {
+      setSelectedCrews(prev => [...prev, crew])
+    }
+  }
+
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(user => user.user_id !== userId))
+  }
+
+  const handleRemoveCrew = (crewId: string) => {
+    setSelectedCrews(prev => prev.filter(crew => crew.id !== crewId))
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,9 +112,46 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
         is_public: true,
         created_by: user.id
       }
-      await createEvent(eventData)
-      toast.success('Event created successfully!')
+
+      const newEvent = await createEvent(eventData)
+
+      // Send invitations if any users or crews are selected
+      let invitationCount = 0
+
+      // Invite individual users
+      if (selectedUsers.length > 0) {
+        try {
+          await bulkInviteUsers(newEvent.id, selectedUsers.map(u => u.user_id), user.id)
+          invitationCount += selectedUsers.length
+        } catch (error) {
+          console.error('Error inviting users:', error)
+          toast.error('Failed to invite some users')
+        }
+      }
+
+      // Invite crews
+      if (selectedCrews.length > 0) {
+        try {
+          for (const crew of selectedCrews) {
+            const result = await sendEventInvitationsToCrew(newEvent.id, crew.id, user.id)
+            invitationCount += result.invitedCount
+          }
+        } catch (error) {
+          console.error('Error inviting crews:', error)
+          toast.error('Failed to invite some crews')
+        }
+      }
+
+      if (invitationCount > 0) {
+        toast.success(`🍺 Event created and ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} sent!`)
+      } else {
+        toast.success('Event created successfully!')
+      }
+
       form.reset()
+      setSelectedUsers([])
+      setSelectedCrews([])
+      setStep(1)
       setOpen(false)
       onEventCreated()
     } catch (error) {
@@ -96,33 +161,65 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
     }
   }
 
+  const nextStep = () => {
+    if (step < 2) setStep(step + 1)
+  }
+
+  const prevStep = () => {
+    if (step > 1) setStep(step - 1)
+  }
+
+  const isStepValid = () => {
+    switch (step) {
+      case 1:
+        return form.formState.isValid
+      case 2:
+        return true // Invitations are optional
+      default:
+        return false
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Create New Event</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Event</DialogTitle>
           <DialogDescription>
             Create a new drinking event and invite your friends.
           </DialogDescription>
+          <div className="flex space-x-2 mt-4">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className={`h-2 flex-1 rounded-full ${
+                  i <= step ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+        {/* Step 1: Event Details */}
+        {step === 1 && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Event title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <FormField
               control={form.control}
               name="date_time"
@@ -255,20 +352,84 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
                 </FormItem>
               )}
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Event'}
-              </Button>
+            </form>
+          </Form>
+        )}
+
+        {/* Step 2: Invitations */}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Invite People (Optional)</h3>
+              <p className="text-sm text-muted-foreground">
+                Invite individual users and crews to your event. You can skip this step and invite people later.
+              </p>
             </div>
-          </form>
-        </Form>
+
+            <UserSearchInvite
+              onUserSelect={handleUserSelect}
+              onCrewSelect={handleCrewSelect}
+              selectedUsers={selectedUsers}
+              selectedCrews={selectedCrews}
+              onRemoveUser={handleRemoveUser}
+              onRemoveCrew={handleRemoveCrew}
+              existingAttendees={[]}
+              loadingAttendees={false}
+            />
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          {step > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              className="px-6 order-2 sm:order-1"
+            >
+              Back
+            </Button>
+          )}
+
+          {step === 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="px-6 order-2 sm:order-1"
+            >
+              Cancel
+            </Button>
+          )}
+
+          {step < 2 ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              disabled={!isStepValid()}
+              className="flex-1 font-semibold order-1 sm:order-2"
+            >
+              Next: Invite People
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={() => form.handleSubmit(onSubmit)()}
+              disabled={isSubmitting}
+              className="flex-1 font-semibold order-1 sm:order-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Creating...
+                </>
+              ) : (
+                'Create Event 🍺'
+              )}
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
