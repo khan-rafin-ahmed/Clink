@@ -1,25 +1,6 @@
-// Vercel Serverless Function for Event Meta Tags
+// Simple Meta Tag API for testing
 const SUPABASE_URL = 'https://arpphimkotjvnfoacquj.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMDYwNjYsImV4cCI6MjA2Mzc4MjA2Nn0.GksQ0jn0RuJCAqDcP2m2B0Z5uPP7_y-efc2EqztrL3k'
-
-const SOCIAL_BOTS = [
-  'facebookexternalhit',
-  'Twitterbot', 
-  'LinkedInBot',
-  'WhatsApp',
-  'Slackbot',
-  'Discordbot',
-  'Googlebot',
-  'bingbot',
-  'YandexBot',
-  'DuckDuckBot',
-  'Applebot'
-]
-
-function isSocialBot(userAgent) {
-  if (!userAgent) return false
-  return SOCIAL_BOTS.some(bot => userAgent.toLowerCase().includes(bot.toLowerCase()))
-}
 
 async function getEventData(eventId) {
   try {
@@ -32,7 +13,7 @@ async function getEventData(eventId) {
     })
 
     if (!response.ok) {
-      return null
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
     const data = await response.json()
@@ -50,7 +31,7 @@ function generateEventHTML(event, eventUrl) {
   const formattedDate = eventDate.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
-    day: 'numeric', 
+    day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -74,7 +55,7 @@ function generateEventHTML(event, eventUrl) {
     const vibeImages = {
       casual: '/assets/covers/Casual Hang.webp',
       party: '/assets/covers/Party Mode.webp',
-      chill: '/assets/covers/Chill Vibes.webp', 
+      chill: '/assets/covers/Chill Vibes.webp',
       wild: '/assets/covers/Wild Night.webp',
       classy: '/assets/covers/Classy Evening.webp',
       shots: '/assets/covers/Shots Night.webp'
@@ -118,56 +99,111 @@ function generateEventHTML(event, eventUrl) {
     <meta property="linkedin:description" content="${description}" />
     <meta property="linkedin:image" content="${fullImageUrl}" />
     
-    <!-- Redirect regular users to the app -->
-    <script>
-      if (!navigator.userAgent.match(/(facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|Googlebot|bingbot)/i)) {
-        window.location.href = '${eventUrl}';
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #08090A;
+        color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
       }
-    </script>
+      .container {
+        text-align: center;
+        max-width: 600px;
+        padding: 20px;
+      }
+      h1 {
+        color: #FF7747;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+      }
+      .date {
+        color: #FFD37E;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+      }
+      .location {
+        color: #CCCCCC;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+      }
+      .notes {
+        color: #FFFFFF;
+        margin-bottom: 30px;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+      .loading {
+        color: #B3B3B3;
+        font-size: 0.9rem;
+      }
+      .redirect-btn {
+        background: #FF7747;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 20px;
+        text-decoration: none;
+        display: inline-block;
+      }
+    </style>
   </head>
   <body>
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; background: #08090A; color: white;">
-      <div style="text-align: center; max-width: 600px; padding: 20px;">
-        <h1 style="color: #FF7747; margin-bottom: 20px;">${event.title}</h1>
-        <p style="color: #FFD37E; margin-bottom: 20px;">${formattedDate}</p>
-        <p style="color: #CCCCCC; margin-bottom: 30px;">${location}</p>
-        ${event.notes ? `<p style="color: #FFFFFF; margin-bottom: 30px;">${event.notes}</p>` : ''}
-        <p style="color: #B3B3B3;">Loading Thirstee...</p>
-      </div>
+    <div class="container">
+      <h1>${event.title}</h1>
+      <div class="date">${formattedDate}</div>
+      <div class="location">${location}</div>
+      ${event.notes ? `<div class="notes">${event.notes}</div>` : ''}
+      <div class="loading">Loading Thirstee...</div>
+      <a href="${eventUrl}" class="redirect-btn">Open in Thirstee</a>
     </div>
+    
+    <script>
+      // Auto-redirect after 3 seconds for regular users
+      setTimeout(() => {
+        if (!navigator.userAgent.match(/(facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|Discordbot|Googlebot|bingbot)/i)) {
+          window.location.href = '${eventUrl}';
+        }
+      }, 3000);
+    </script>
   </body>
 </html>`
 }
 
 export default async function handler(req, res) {
   const { eventId } = req.query
-  const userAgent = req.headers['user-agent'] || ''
   
-  console.log('Meta request for event:', eventId, 'User-Agent:', userAgent)
+  // Log for debugging
+  console.log('Meta API called with eventId:', eventId)
+  console.log('User-Agent:', req.headers['user-agent'])
   
-  // Check if this is a social bot
-  if (!isSocialBot(userAgent)) {
-    // Redirect regular users to the main app
-    return res.redirect(302, `https://www.thirstee.app/event/${eventId}`)
+  if (!eventId) {
+    return res.status(400).json({ error: 'Event ID is required' })
   }
   
   try {
     const event = await getEventData(eventId)
     
     if (!event) {
-      // Event not found, redirect to main app
-      return res.redirect(302, 'https://www.thirstee.app')
+      return res.status(404).json({ error: 'Event not found' })
     }
     
     const eventUrl = `https://www.thirstee.app/event/${eventId}`
     const html = generateEventHTML(event, eventUrl)
     
     res.setHeader('Content-Type', 'text/html')
-    res.setHeader('Cache-Control', 'public, max-age=3600') // Cache for 1 hour
+    res.setHeader('Cache-Control', 'public, max-age=3600')
     res.status(200).send(html)
     
   } catch (error) {
-    console.error('Error generating meta tags:', error)
-    res.redirect(302, 'https://www.thirstee.app')
+    console.error('Error in meta API:', error)
+    res.status(500).json({ error: 'Internal server error', details: error.message })
   }
 }

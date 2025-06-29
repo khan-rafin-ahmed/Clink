@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Thirstee Meta Tags</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #08090A;
+            color: white;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #1A1A1A;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #FF7747;
+        }
+        h1 {
+            color: #FF7747;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #0F0F0F;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #FFD37E;
+            margin-bottom: 15px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: #2A2A2A;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #FF7747;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #E6653D;
+        }
+        .result {
+            background: #2A2A2A;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            color: #00FFA3;
+        }
+        .error {
+            color: #FF6B6B;
+        }
+        .link {
+            color: #FFD37E;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍻 Thirstee Meta Tags Tester</h1>
+        
+        <div class="test-section">
+            <h2>1. Test Event Meta API</h2>
+            <p>Test the serverless function directly:</p>
+            <input type="text" id="eventId" placeholder="Enter Event ID (e.g., 850384e1-0f86-4579-a39f-d3c4e75923cf)" value="850384e1-0f86-4579-a39f-d3c4e75923cf">
+            <br>
+            <button onclick="testMetaAPI()">Test Meta API</button>
+            <button onclick="openMetaAPI()">Open Meta API in New Tab</button>
+            <div id="metaResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test Social Media Tools</h2>
+            <p>Test your event URL in these tools:</p>
+            <input type="text" id="eventUrl" placeholder="Full Event URL" value="https://www.thirstee.app/event/850384e1-0f86-4579-a39f-d3c4e75923cf">
+            <br>
+            <button onclick="testOpenGraph()">Test in OpenGraph.xyz</button>
+            <button onclick="testMetaTags()">Test in MetaTags.io</button>
+            <button onclick="testFacebook()">Test in Facebook Debugger</button>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Manual Testing</h2>
+            <p>Copy these URLs and test manually:</p>
+            <div style="margin: 10px 0;">
+                <strong>Meta API Direct:</strong><br>
+                <span class="link" id="metaApiUrl">https://www.thirstee.app/api/meta?eventId=850384e1-0f86-4579-a39f-d3c4e75923cf</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Event Page:</strong><br>
+                <span class="link" id="eventPageUrl">https://www.thirstee.app/event/850384e1-0f86-4579-a39f-d3c4e75923cf</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Deployment Status</h2>
+            <p>Make sure you've deployed to Vercel:</p>
+            <button onclick="checkDeployment()">Check if Meta API is Live</button>
+            <div id="deploymentResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function updateUrls() {
+            const eventId = document.getElementById('eventId').value;
+            const eventUrl = `https://www.thirstee.app/event/${eventId}`;
+            const metaApiUrl = `https://www.thirstee.app/api/meta?eventId=${eventId}`;
+            
+            document.getElementById('eventUrl').value = eventUrl;
+            document.getElementById('metaApiUrl').textContent = metaApiUrl;
+            document.getElementById('eventPageUrl').textContent = eventUrl;
+        }
+
+        document.getElementById('eventId').addEventListener('input', updateUrls);
+
+        async function testMetaAPI() {
+            const eventId = document.getElementById('eventId').value;
+            const resultDiv = document.getElementById('metaResult');
+            
+            if (!eventId) {
+                resultDiv.innerHTML = '<span class="error">Please enter an Event ID</span>';
+                resultDiv.style.display = 'block';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Testing...';
+            resultDiv.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/meta?eventId=${eventId}`);
+                const text = await response.text();
+                
+                if (response.ok) {
+                    // Extract title and description from HTML
+                    const titleMatch = text.match(/<title>(.*?)<\/title>/);
+                    const descMatch = text.match(/<meta name="description" content="(.*?)"/);
+                    const ogImageMatch = text.match(/<meta property="og:image" content="(.*?)"/);
+                    
+                    const result = `✅ SUCCESS!\n\nTitle: ${titleMatch ? titleMatch[1] : 'Not found'}\nDescription: ${descMatch ? descMatch[1] : 'Not found'}\nImage: ${ogImageMatch ? ogImageMatch[1] : 'Not found'}\n\nFull HTML length: ${text.length} characters`;
+                    
+                    resultDiv.innerHTML = `<span class="success">${result}</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ ERROR: ${response.status}\n\n${text}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ NETWORK ERROR: ${error.message}</span>`;
+            }
+        }
+
+        function openMetaAPI() {
+            const eventId = document.getElementById('eventId').value;
+            if (!eventId) {
+                alert('Please enter an Event ID');
+                return;
+            }
+            window.open(`/api/meta?eventId=${eventId}`, '_blank');
+        }
+
+        function testOpenGraph() {
+            const eventUrl = document.getElementById('eventUrl').value;
+            const testUrl = `https://www.opengraph.xyz/url/${encodeURIComponent(eventUrl)}`;
+            window.open(testUrl, '_blank');
+        }
+
+        function testMetaTags() {
+            const eventUrl = document.getElementById('eventUrl').value;
+            window.open(`https://metatags.io/?url=${encodeURIComponent(eventUrl)}`, '_blank');
+        }
+
+        function testFacebook() {
+            const eventUrl = document.getElementById('eventUrl').value;
+            window.open(`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(eventUrl)}`, '_blank');
+        }
+
+        async function checkDeployment() {
+            const resultDiv = document.getElementById('deploymentResult');
+            resultDiv.innerHTML = 'Checking deployment...';
+            resultDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/meta?eventId=test');
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<span class="success">✅ Meta API is deployed and responding (404 for test event is expected)</span>';
+                } else {
+                    resultDiv.innerHTML = `<span class="success">✅ Meta API is deployed (Status: ${response.status})</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Meta API not deployed or not accessible: ${error.message}</span>`;
+            }
+        }
+
+        // Initialize URLs
+        updateUrls();
+    </script>
+</body>
+</html>
