@@ -70,11 +70,19 @@ function generateEventHTML(event, eventUrl) {
     hour12: true
   })
   
-  const location = event.place_nickname || event.location || 'Location TBD'
+  // Prioritize actual place name from Google Maps, then nickname, then fallback
+  let location = event.place_name || event.location || 'Location TBD'
+
+  // If we have both place name and nickname, show both
+  if (event.place_name && event.place_nickname) {
+    location = `${event.place_name} (${event.place_nickname})`
+  } else if (event.place_nickname && !event.place_name) {
+    location = event.place_nickname
+  }
+
   const vibe = event.vibe ? ` ${event.vibe.charAt(0).toUpperCase() + event.vibe.slice(1)} vibes` : ''
-  const privacy = event.is_public ? '' : ' (Private Event)'
-  
-  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}${privacy}`
+
+  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}`
 
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
@@ -103,9 +111,9 @@ function generateEventHTML(event, eventUrl) {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="https://www.thirstee.app/assets/covers/Party Mode.webp" />
     <link rel="icon" type="image/svg+xml" href="https://www.thirstee.app/thirstee-logo.svg" />
-    <link rel="shortcut icon" href="https://www.thirstee.app/assets/covers/Party Mode.webp" />
+    <link rel="icon" type="image/x-icon" href="https://www.thirstee.app/favicon.ico" />
+    <link rel="shortcut icon" href="https://www.thirstee.app/thirstee-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />

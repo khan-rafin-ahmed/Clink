@@ -51,11 +51,19 @@ function generateEventHTML(event, eventUrl) {
     hour12: true
   })
   
-  const location = event.place_nickname || event.location || 'Location TBD'
+  // Prioritize actual place name from Google Maps, then nickname, then fallback
+  let location = event.place_name || event.location || 'Location TBD'
+
+  // If we have both place name and nickname, show both
+  if (event.place_name && event.place_nickname) {
+    location = `${event.place_name} (${event.place_nickname})`
+  } else if (event.place_nickname && !event.place_name) {
+    location = event.place_nickname
+  }
+
   const vibe = event.vibe ? ` ${event.vibe.charAt(0).toUpperCase() + event.vibe.slice(1)} vibes` : ''
-  const privacy = event.is_public ? '' : ' (Private Event)'
-  
-  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}${privacy}`
+
+  let description = `Join us for ${event.title} on ${formattedDate} at ${location}.${vibe}`
   
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
