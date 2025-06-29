@@ -48,6 +48,15 @@ async function getEventData(eventId) {
   }
 }
 
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function generateEventHTML(event, eventUrl) {
   const title = `${event.title} | Thirstee`
   
@@ -66,7 +75,7 @@ function generateEventHTML(event, eventUrl) {
   const privacy = event.is_public ? '' : ' (Private Event)'
   
   let description = `Join us for "${event.title}" on ${formattedDate} at ${location}.${vibe}${privacy}`
-  
+
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
   }
@@ -97,12 +106,12 @@ function generateEventHTML(event, eventUrl) {
     <link rel="icon" type="image/x-icon" href="https://www.thirstee.app/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="https://www.thirstee.app/thirstee-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
-    
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
+
     <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${eventUrl}" />
     <meta property="og:site_name" content="Thirstee" />
@@ -113,14 +122,14 @@ function generateEventHTML(event, eventUrl) {
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${fullImageUrl}" />
-    <meta name="twitter:image:alt" content="${title}" />
-    
+    <meta name="twitter:image:alt" content="${escapeHtml(title)}" />
+
     <!-- Additional Social Platform Tags -->
-    <meta property="linkedin:title" content="${title}" />
-    <meta property="linkedin:description" content="${description}" />
+    <meta property="linkedin:title" content="${escapeHtml(title)}" />
+    <meta property="linkedin:description" content="${escapeHtml(description)}" />
     <meta property="linkedin:image" content="${fullImageUrl}" />
     
     <!-- Redirect regular users to the app -->
