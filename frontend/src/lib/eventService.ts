@@ -655,6 +655,122 @@ export async function getUserAccessibleEvents() {
   }
 }
 
+/**
+ * Get events specifically related to this crew with proper attendee counts and creator info
+ */
+export async function getEventsByCrewId(crewId: string): Promise<Event[]> {
+  if (!crewId) throw new Error('Crew ID is required')
+
+  // Get crew members
+  const { data: members } = await supabase
+    .from('crew_members')
+    .select('user_id')
+    .eq('crew_id', crewId)
+    .eq('status', 'accepted')
+
+  if (!members?.length) return []
+
+  const memberIds = members.map(m => m.user_id)
+  const totalMembers = memberIds.length
+
+  // Get events where crew members were invited
+  const { data: invitations } = await supabase
+    .from('event_members')
+    .select('event_id, user_id')
+    .in('user_id', memberIds)
+
+  if (!invitations?.length) return []
+
+  // Count how many crew members were invited to each event
+  const eventInviteCounts = invitations.reduce((acc, inv) => {
+    acc[inv.event_id] = (acc[inv.event_id] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  // Only include events where at least 50% of crew members were invited
+  const relevantEventIds = Object.entries(eventInviteCounts)
+    .filter(([_, count]) => count >= Math.max(2, Math.ceil(totalMembers * 0.5)))
+    .map(([eventId]) => eventId)
+
+  if (!relevantEventIds.length) return []
+
+  // Get events with full data
+  const { data: events } = await supabase
+    .from('events')
+    .select('*')
+    .in('id', relevantEventIds)
+    .order('date_time', { ascending: false })
+
+  if (!events?.length) return []
+
+  // Batch fetch creator profiles, RSVPs, and event members (same pattern as getPublicEvents)
+  const eventIds = events.map(event => event.id)
+  const creatorIds = [...new Set(events.map(e => e.created_by))]
+
+  const [creatorsResult, rsvpsResult, eventMembersResult] = await Promise.all([
+    supabase.from('user_profiles').select('user_id, display_name, nickname, avatar_url').in('user_id', creatorIds),
+    supabase.from('rsvps').select('event_id, status, user_id').in('event_id', eventIds),
+    supabase.from('event_members').select('event_id, status, user_id, invited_by').in('event_id', eventIds)
+  ])
+
+  const creators = creatorsResult.data || []
+  const allRsvps = rsvpsResult.data || []
+  const allEventMembers = eventMembersResult.data || []
+
+  // Transform events with proper attendee counting (same logic as getPublicEvents)
+  const transformedEvents = events.map(event => {
+    const creator = creators.find(c => c.user_id === event.created_by)
+
+    // Get RSVPs with status 'going' for this event
+    const rsvpAttendees = allRsvps.filter(
+      (rsvp: any) => rsvp.event_id === event.id && rsvp.status === 'going'
+    )
+
+    // Get event members with status 'accepted' for this event
+    const eventMembers = allEventMembers.filter(
+      (member: any) => member.event_id === event.id && member.status === 'accepted'
+    )
+
+    // Calculate unique attendee count (same logic as getPublicEvents)
+    const uniqueAttendeeIds = new Set<string>()
+    const allAttendees: Array<{ user_id: string; status: string; source: 'rsvp' | 'crew' }> = []
+
+    // Add RSVP attendees first
+    rsvpAttendees.forEach(rsvp => {
+      if (!uniqueAttendeeIds.has(rsvp.user_id)) {
+        uniqueAttendeeIds.add(rsvp.user_id)
+        allAttendees.push({ ...rsvp, source: 'rsvp' })
+      }
+    })
+
+    // Add event members if they're not already in RSVPs
+    eventMembers.forEach(member => {
+      if (!uniqueAttendeeIds.has(member.user_id)) {
+        uniqueAttendeeIds.add(member.user_id)
+        allAttendees.push({ ...member, status: 'going', source: 'crew' })
+      }
+    })
+
+    // Host is always counted as attending (minimum 1)
+    const totalAttendees = allAttendees.length + (event.created_by ? 1 : 0)
+
+    return {
+      ...event,
+      creator: creator ? {
+        display_name: creator.display_name,
+        nickname: creator.nickname,
+        avatar_url: creator.avatar_url,
+        user_id: creator.user_id
+      } : undefined,
+      rsvp_count: totalAttendees,
+      rsvps: rsvpAttendees || [],
+      event_members: eventMembers || []
+    }
+  })
+
+  return transformedEvents
+}
+
 // Respond to event invitation (accept/decline)
 export async function respondToEventInvitation(eventMemberId: string, response: 'accepted' | 'declined') {
   try {

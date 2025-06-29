@@ -22,6 +22,7 @@ import {
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog'
 import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
 import { EditCrewModal } from '@/components/EditCrewModal'
+import { CrewSessionsTimeline } from '@/components/CrewSessionsTimeline'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { generateUsernameFromDisplayName } from '@/lib/utils'
@@ -839,6 +840,11 @@ export function CrewDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Sessions Timeline */}
+        <div className="slide-up" style={{ animationDelay: '0.6s' }}>
+          <CrewSessionsTimeline crewId={crewId!} />
+        </div>
         </div>
       </div>
 
