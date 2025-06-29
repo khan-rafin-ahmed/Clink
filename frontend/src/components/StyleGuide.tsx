@@ -15,7 +15,7 @@ export function StyleGuide() {
             Thirstee Design System
           </h1>
           <p className="text-lg sm:text-xl text-primary font-heading font-semibold">
-            TAP. PLAN. THIRSTEE.
+            TAP. DRINK. REPEAT.
           </p>
           <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             A comprehensive style guide showcasing our enhanced black & gold design system

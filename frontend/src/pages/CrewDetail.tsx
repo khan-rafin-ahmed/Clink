@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useScrollRestoration } from '@/hooks/useScrollToTop'
+import { useCrewMetaTags } from '@/hooks/useMetaTags'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,16 @@ export function CrewDetail() {
 
   // Ensure page scrolls to top when navigating to crew details
   useScrollRestoration()
+
+  // Apply dynamic meta tags for social sharing
+  const crewUrl = crewId ? `/crew/${crewId}` : ''
+  useCrewMetaTags(crew ? {
+    name: crew.name,
+    description: crew.description,
+    vibe: crew.vibe,
+    member_count: members.length,
+    is_public: crew.visibility === 'public'
+  } : undefined, crewUrl)
 
   useEffect(() => {
     if (!crewId) {

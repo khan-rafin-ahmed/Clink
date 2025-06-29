@@ -5,6 +5,7 @@
 ## 📱 App Description & Design System
 
 - **Thirstee** is a social drinking event app for ages 21–35, designed for spontaneous casual meetups.
+- **Tagline**: "Tap. Drink. Repeat." - Skip the planning drama. Launch a drink plan, gather your crew, and vibe in real-time. 60-second setup. Max-level chaos.
 - **Tech Stack**: React + TailwindCSS + Supabase.
 - **Design Tone**: Stone Cold Steve Austin energy with bold copy and fun drink-based identity.
 - **Theming**: Black + Gold primary palette, charcoal/amber accents, shadcn/ui components.

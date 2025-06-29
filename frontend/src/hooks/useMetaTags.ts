@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
-import { 
-  applyMetaTags, 
-  resetMetaTags, 
-  generateEventMetaTags, 
+import {
+  applyMetaTags,
+  resetMetaTags,
+  generateEventMetaTags,
+  generateCrewMetaTags,
   generateAppMetaTags,
   applyStructuredData,
   generateEventStructuredData,
-  type MetaTagData 
+  type MetaTagData
 } from '@/lib/metaTagService'
 
 /**
@@ -71,13 +72,42 @@ export function useEventMetaTags(event?: {
 }
 
 /**
+ * Hook specifically for crew meta tags
+ */
+export function useCrewMetaTags(crew?: {
+  name: string
+  description?: string | null
+  vibe?: string | null
+  member_count?: number
+  is_public: boolean
+}, crewUrl?: string) {
+
+  useEffect(() => {
+    if (crew && crewUrl) {
+      // Generate and apply meta tags
+      const metaData = generateCrewMetaTags(crew, crewUrl)
+      applyMetaTags(metaData)
+
+      console.log('🏷️ Applied crew meta tags:', metaData)
+    } else {
+      resetMetaTags()
+    }
+
+    // Cleanup function
+    return () => {
+      resetMetaTags()
+    }
+  }, [crew, crewUrl])
+}
+
+/**
  * Hook for app-level meta tags
  */
 export function useAppMetaTags() {
   useEffect(() => {
     const metaData = generateAppMetaTags()
     applyMetaTags(metaData)
-    
+
     console.log('🏷️ Applied app meta tags:', metaData)
   }, [])
 }

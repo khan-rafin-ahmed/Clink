@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate OG Images for Thirstee</title>
+    <style>
+        body {
+            font-family: 'Space Grotesk', Arial, sans-serif;
+            background: #08090A;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .og-image {
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #08090A 0%, #1A1A1A 100%);
+            border: 2px solid #FF7747;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            margin: 20px 0;
+            transform: scale(0.5);
+            transform-origin: top left;
+        }
+        .og-image::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 119, 71, 0.1);
+            border-radius: 22px;
+            backdrop-filter: blur(20px);
+        }
+        .og-content {
+            position: relative;
+            z-index: 1;
+            padding: 40px;
+        }
+        .og-title {
+            font-size: 72px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(255, 119, 71, 0.5);
+        }
+        .og-subtitle {
+            font-size: 36px;
+            color: #FFD37E;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+        .og-description {
+            font-size: 28px;
+            color: #CCCCCC;
+            max-width: 800px;
+            line-height: 1.4;
+        }
+        .logo {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: #FF7747;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+        .download-btn {
+            background: #FF7747;
+            color: #FFFFFF;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .download-btn:hover {
+            background: #E6653D;
+        }
+        .preview {
+            margin: 20px 0;
+            padding: 20px;
+            background: #1A1A1A;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍻 Thirstee OG Image Generator</h1>
+        <p>Generate Open Graph images for social media sharing</p>
+
+        <div class="preview">
+            <h2>Default Event OG Image</h2>
+            <div class="og-image" id="event-og">
+                <div class="logo">🍻</div>
+                <div class="og-content">
+                    <div class="og-title">Thirstee</div>
+                    <div class="og-subtitle">Tap. Drink. Repeat.</div>
+                    <div class="og-description">Skip the planning drama. Max-level chaos.</div>
+                </div>
+            </div>
+            <button class="download-btn" onclick="downloadImage('event-og', 'og-default-event.png')">
+                Download Event OG Image
+            </button>
+        </div>
+
+        <div class="preview">
+            <h2>Default Crew OG Image</h2>
+            <div class="og-image" id="crew-og">
+                <div class="logo">👥</div>
+                <div class="og-content">
+                    <div class="og-title">Join the Crew</div>
+                    <div class="og-subtitle">Thirstee Together</div>
+                    <div class="og-description">Your squad for unforgettable nights</div>
+                </div>
+            </div>
+            <button class="download-btn" onclick="downloadImage('crew-og', 'og-default-crew.png')">
+                Download Crew OG Image
+            </button>
+        </div>
+
+        <div class="preview">
+            <h2>Favicon (32x32)</h2>
+            <canvas id="favicon" width="32" height="32" style="border: 1px solid #FF7747; image-rendering: pixelated; width: 64px; height: 64px;"></canvas>
+            <br>
+            <button class="download-btn" onclick="downloadFavicon()">
+                Download Favicon.ico
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Generate favicon
+        function generateFavicon() {
+            const canvas = document.getElementById('favicon');
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#FF7747';
+            ctx.fillRect(0, 0, 32, 32);
+            
+            // Beer emoji-like icon
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🍻', 16, 16);
+        }
+
+        function downloadImage(elementId, filename) {
+            const element = document.getElementById(elementId);
+            
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 630;
+            const ctx = canvas.getContext('2d');
+            
+            // Convert element to canvas using html2canvas would be ideal,
+            // but for now, let's create a simple version
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            gradient.addColorStop(0, '#08090A');
+            gradient.addColorStop(1, '#1A1A1A');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // Border
+            ctx.strokeStyle = '#FF7747';
+            ctx.lineWidth = 4;
+            ctx.roundRect(10, 10, 1180, 610, 24);
+            ctx.stroke();
+            
+            // Content based on element
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 72px Arial';
+            ctx.textAlign = 'center';
+            
+            if (elementId === 'event-og') {
+                ctx.fillText('Thirstee', 600, 250);
+                ctx.fillStyle = '#FFD37E';
+                ctx.font = '36px Arial';
+                ctx.fillText('Tap. Drink. Repeat.', 600, 320);
+                ctx.fillStyle = '#CCCCCC';
+                ctx.font = '28px Arial';
+                ctx.fillText('Skip the planning drama. Max-level chaos.', 600, 400);
+            } else {
+                ctx.fillText('Join the Crew', 600, 250);
+                ctx.fillStyle = '#FFD37E';
+                ctx.font = '36px Arial';
+                ctx.fillText('Thirstee Together', 600, 320);
+                ctx.fillStyle = '#CCCCCC';
+                ctx.font = '28px Arial';
+                ctx.fillText('Your squad for unforgettable nights', 600, 400);
+            }
+            
+            // Logo
+            ctx.fillStyle = '#FF7747';
+            ctx.roundRect(1080, 40, 80, 80, 16);
+            ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(elementId === 'event-og' ? '🍻' : '👥', 1120, 95);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function downloadFavicon() {
+            const canvas = document.getElementById('favicon');
+            const link = document.createElement('a');
+            link.download = 'favicon.ico';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Initialize
+        generateFavicon();
+    </script>
+</body>
+</html>

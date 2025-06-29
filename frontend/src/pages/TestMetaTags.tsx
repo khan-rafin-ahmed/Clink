@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { generateEventMetaTags, generateAppMetaTags, applyMetaTags, resetMetaTags } from '@/lib/metaTagService'
+import { generateEventMetaTags, generateCrewMetaTags, generateAppMetaTags, applyMetaTags, resetMetaTags } from '@/lib/metaTagService'
 import { Copy, Eye, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -16,6 +16,14 @@ export function TestMetaTags() {
     date_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
     location: "Sky Bar, Downtown",
     place_nickname: "The Legendary Sky Bar",
+    is_public: true
+  })
+
+  const [testCrew] = useState({
+    name: "The Wild Ones 🔥",
+    description: "Crew for epic nights, wild adventures, and unforgettable memories. We don't just party - we create legends.",
+    vibe: "wild",
+    member_count: 12,
     is_public: true
   })
 
@@ -36,6 +44,14 @@ export function TestMetaTags() {
     applyMetaTags(eventMeta)
     setCurrentMeta({ type: 'event', data: eventMeta })
     toast.success('🏷️ Event meta tags applied!')
+  }
+
+  const testCrewMeta = () => {
+    const crewUrl = `${window.location.origin}/crew/test-wild-ones`
+    const crewMeta = generateCrewMetaTags(testCrew, crewUrl)
+    applyMetaTags(crewMeta)
+    setCurrentMeta({ type: 'crew', data: crewMeta })
+    toast.success('🏷️ Crew meta tags applied!')
   }
 
   const testAppMeta = () => {
@@ -80,6 +96,10 @@ export function TestMetaTags() {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Test Event Meta Tags
               </Button>
+              <Button onClick={testCrewMeta} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Test Crew Meta Tags
+              </Button>
               <Button onClick={copyMetaData} variant="outline">
                 <Copy className="w-4 h-4 mr-2" />
                 Copy Meta Data
@@ -99,7 +119,7 @@ export function TestMetaTags() {
               <CardTitle className="text-white flex items-center gap-2">
                 Current Meta Tags
                 <Badge variant="outline" className="text-[#FF7747] border-[#FF7747]">
-                  {currentMeta.type === 'app' ? 'App' : 'Event'}
+                  {currentMeta.type === 'app' ? 'App' : currentMeta.type === 'crew' ? 'Crew' : 'Event'}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -165,6 +185,20 @@ export function TestMetaTags() {
             <div className="bg-white/5 p-4 rounded">
               <pre className="text-[#B3B3B3] text-sm overflow-x-auto">
                 {JSON.stringify(testEvent, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Test Crew Preview */}
+        <Card className="glass-card border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Test Crew Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-white/5 p-4 rounded">
+              <pre className="text-[#B3B3B3] text-sm overflow-x-auto">
+                {JSON.stringify(testCrew, null, 2)}
               </pre>
             </div>
           </CardContent>

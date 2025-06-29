@@ -91,12 +91,66 @@ function getDefaultSocialImage(vibe?: string | null): string {
 }
 
 /**
+ * Get default crew image for social sharing
+ */
+function getDefaultCrewImage(): string {
+  const baseUrl = window.location.origin
+  // Use dedicated crew OG image
+  return `${baseUrl}/og-default-crew.webp`
+}
+
+/**
+ * Generate meta tag data for a crew
+ */
+export function generateCrewMetaTags(crew: {
+  name: string
+  description?: string | null
+  vibe?: string | null
+  member_count?: number
+  is_public: boolean
+}, crewUrl: string): MetaTagData {
+
+  // Create compelling title
+  const title = `${crew.name} | Thirstee`
+
+  // Create description
+  const memberText = crew.member_count ? `${crew.member_count} member${crew.member_count !== 1 ? 's' : ''}` : 'Crew'
+  const vibeText = crew.vibe ? ` ${crew.vibe.charAt(0).toUpperCase() + crew.vibe.slice(1)} vibes.` : ''
+  const privacy = crew.is_public ? '' : ' (Private Crew)'
+
+  let description = `${memberText} ready to raise hell together.${vibeText}${privacy}`
+
+  // Add custom description if provided
+  if (crew.description?.trim()) {
+    description = `${crew.description.trim()} | ${memberText}${privacy}`
+  }
+
+  // Ensure description is within limits (160 chars for optimal display)
+  if (description.length > 160) {
+    description = description.substring(0, 157) + '...'
+  }
+
+  // Use default crew image
+  const image = getDefaultCrewImage()
+
+  return {
+    title,
+    description,
+    image,
+    url: crewUrl,
+    type: 'article',
+    siteName: 'Thirstee',
+    twitterCard: 'summary_large_image'
+  }
+}
+
+/**
  * Generate meta tag data for the main app
  */
 export function generateAppMetaTags(): MetaTagData {
   return {
-    title: 'Thirstee - Tap. Plan. Thirstee.',
-    description: 'The ultimate social drinking app for ages 21-35. Create spontaneous drinking sessions, join your crew, and raise hell together. 60-second event creation, real-time coordination.',
+    title: 'Thirstee – Tap. Drink. Repeat.',
+    description: 'Thirstee helps you skip the planning drama. Launch a drink plan, gather your crew, and vibe in real-time. 60-second setup. Max-level chaos.',
     image: `${window.location.origin}/assets/covers/Party Mode.webp`, // Use existing party cover as main app image
     url: window.location.origin,
     type: 'website',
