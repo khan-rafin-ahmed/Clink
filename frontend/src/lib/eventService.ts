@@ -351,7 +351,6 @@ export async function createEventWithShareableLink(eventData: {
 }) {
   // Get the current user
   const user = await getCurrentUser()
-  const userError = null
   if (!user) {
     throw new Error('Not authenticated')
   }
@@ -656,7 +655,10 @@ export async function getUserAccessibleEvents() {
 }
 
 /**
- * Get events specifically related to this crew with proper attendee counts and creator info
+ * Get events where crew has significant actual participation:
+ * - 2-member crew: 100% participation (both members)
+ * - 3+ member crew: 50% participation (at least half)
+ * Counts host + RSVPs + accepted event_members (includes auto-joined crew members)
  */
 export async function getEventsByCrewId(crewId: string): Promise<Event[]> {
   if (!crewId) throw new Error('Crew ID is required')
@@ -673,28 +675,100 @@ export async function getEventsByCrewId(crewId: string): Promise<Event[]> {
   const memberIds = members.map(m => m.user_id)
   const totalMembers = memberIds.length
 
-  // Get events where crew members were invited
-  const { data: invitations } = await supabase
-    .from('event_members')
-    .select('event_id, user_id')
-    .in('user_id', memberIds)
+  // Get events created by crew, RSVPs by crew, AND accepted event_members (auto-joined crew)
+  const [{ data: createdEvents }, { data: rsvps }, { data: eventMembers }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('id, created_by')
+      .in('created_by', memberIds),
+    supabase
+      .from('rsvps')
+      .select('event_id, user_id')
+      .in('user_id', memberIds)
+      .eq('status', 'going'),
+    supabase
+      .from('event_members')
+      .select('event_id, user_id')
+      .in('user_id', memberIds)
+      .eq('status', 'accepted')
+  ])
 
-  if (!invitations?.length) return []
 
-  // Count how many crew members were invited to each event
-  const eventInviteCounts = invitations.reduce((acc, inv) => {
-    acc[inv.event_id] = (acc[inv.event_id] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
 
-  // Only include events where at least 50% of crew members were invited
-  const relevantEventIds = Object.entries(eventInviteCounts)
-    .filter(([_, count]) => count >= Math.max(2, Math.ceil(totalMembers * 0.5)))
+  // Combine all event IDs (created by crew OR crew RSVP'd OR crew auto-joined)
+  const createdEventIds = createdEvents?.map(e => e.id) || []
+  const rsvpEventIds = rsvps?.map(r => r.event_id) || []
+  const memberEventIds = eventMembers?.map(m => m.event_id) || []
+  const allEventIds = [...new Set([...createdEventIds, ...rsvpEventIds, ...memberEventIds])]
+
+  if (!allEventIds.length) return []
+
+  // Get all these events with their creators
+  const { data: allEvents } = await supabase
+    .from('events')
+    .select('id, created_by')
+    .in('id', allEventIds)
+
+
+
+  // Count crew participation per event (host + RSVPs only - actual participation)
+  const eventParticipationCounts: Record<string, Set<string>> = {}
+
+  // Add hosts (if they are crew members)
+  if (allEvents) {
+    allEvents.forEach(event => {
+      // Only count as host participation if the creator is a crew member
+      if (memberIds.includes(event.created_by)) {
+        if (!eventParticipationCounts[event.id]) {
+          eventParticipationCounts[event.id] = new Set()
+        }
+        eventParticipationCounts[event.id].add(event.created_by)
+
+      }
+    })
+  }
+
+  // Add RSVPs (crew members who manually joined events)
+  if (rsvps) {
+    rsvps.forEach(rsvp => {
+      if (!eventParticipationCounts[rsvp.event_id]) {
+        eventParticipationCounts[rsvp.event_id] = new Set()
+      }
+      eventParticipationCounts[rsvp.event_id].add(rsvp.user_id)
+
+    })
+  }
+
+  // Add event members (crew members who were auto-joined when invited as crew)
+  if (eventMembers) {
+    eventMembers.forEach(member => {
+      if (!eventParticipationCounts[member.event_id]) {
+        eventParticipationCounts[member.event_id] = new Set()
+      }
+      eventParticipationCounts[member.event_id].add(member.user_id)
+
+    })
+  }
+
+  // Filter events based on crew participation thresholds:
+  // - 2-member crew: 100% participation (both members)
+  // - 3+ member crew: 50% participation (at least half)
+  const getParticipationThreshold = (totalMembers: number): number => {
+    if (totalMembers === 2) {
+      return 2 // 100% for 2-member crew
+    }
+    return Math.ceil(totalMembers * 0.5) // 50% for 3+ member crew
+  }
+
+  const threshold = getParticipationThreshold(totalMembers)
+
+  const relevantEventIds = Object.entries(eventParticipationCounts)
+    .filter(([_, participantSet]) => participantSet.size >= threshold)
     .map(([eventId]) => eventId)
 
   if (!relevantEventIds.length) return []
 
-  // Get events with full data
+  // Get the actual events
   const { data: events } = await supabase
     .from('events')
     .select('*')
@@ -704,13 +778,13 @@ export async function getEventsByCrewId(crewId: string): Promise<Event[]> {
   if (!events?.length) return []
 
   // Batch fetch creator profiles, RSVPs, and event members (same pattern as getPublicEvents)
-  const eventIds = events.map(event => event.id)
+  const finalEventIds = events.map(event => event.id)
   const creatorIds = [...new Set(events.map(e => e.created_by))]
 
   const [creatorsResult, rsvpsResult, eventMembersResult] = await Promise.all([
     supabase.from('user_profiles').select('user_id, display_name, nickname, avatar_url').in('user_id', creatorIds),
-    supabase.from('rsvps').select('event_id, status, user_id').in('event_id', eventIds),
-    supabase.from('event_members').select('event_id, status, user_id, invited_by').in('event_id', eventIds)
+    supabase.from('rsvps').select('event_id, status, user_id').in('event_id', finalEventIds),
+    supabase.from('event_members').select('event_id, status, user_id, invited_by').in('event_id', finalEventIds)
   ])
 
   const creators = creatorsResult.data || []

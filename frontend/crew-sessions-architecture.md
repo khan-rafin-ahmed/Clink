@@ -123,10 +123,12 @@ const past = events.filter(e => new Date(e.end_time) < now);
 **Issues Found & Fixed**:
 1. ❌ **Too Broad**: Showing events where individual crew members were invited to other crews' events
 2. ❌ **Missing Attendee Data**: Events showing only 1 attendee instead of proper counts and avatars
+3. ❌ **No Upcoming Events**: Upcoming events not showing due to overly restrictive crew filter
 
 **Solutions**:
-1. ✅ **Crew Filter**: Only show events where ≥50% of crew members were invited (indicating crew-wide invitations)
+1. ✅ **Crew Filter**: Only show events where ≥25% of crew members were invited (minimum 2 members)
 2. ✅ **Attendee Counting**: Added proper RSVP + event_members fetching and counting logic (same as getPublicEvents)
+3. ✅ **Relaxed Threshold**: Changed from 50% to 25% crew member threshold for better event discovery
 
 ```typescript
 export async function getEventsByCrewId(crewId: string): Promise<Event[]> {

@@ -748,9 +748,19 @@ export async function removeCrewMember(crewId: string, memberId: string): Promis
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase.rpc('remove_crew_member', {
-    p_crew_id: crewId, p_member_id: memberId, p_remover_id: user.id
-  })
+  // Verify the user has permission to remove members (crew creator or co-host)
+  const hasPermission = await hasCrewManagementPermissions(crewId, user.id)
+  if (!hasPermission) {
+    throw new Error('You do not have permission to remove crew members')
+  }
+
+  // Remove the crew member directly
+  const { error } = await supabase
+    .from('crew_members')
+    .delete()
+    .eq('id', memberId)
+    .eq('crew_id', crewId)
+
   if (error) throw error
 }
 
@@ -786,25 +796,28 @@ export async function removePendingCrewInvitation(crewId: string, userId: string
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
-  // First, get the crew member ID for the pending invitation
-  const { data: memberData, error: findError } = await supabase
+  // Verify the user is the crew creator
+  const { data: crew, error: crewError } = await supabase
+    .from('crews')
+    .select('created_by')
+    .eq('id', crewId)
+    .single()
+
+  if (crewError || !crew) {
+    throw new Error('Crew not found')
+  }
+
+  if (crew.created_by !== user.id) {
+    throw new Error('Only crew creator can remove pending invitations')
+  }
+
+  // Delete the pending invitation directly
+  const { error } = await supabase
     .from('crew_members')
-    .select('id')
+    .delete()
     .eq('crew_id', crewId)
     .eq('user_id', userId)
     .eq('status', 'pending')
-    .single()
-
-  if (findError || !memberData) {
-    throw new Error('Pending invitation not found')
-  }
-
-  // Use the existing RPC function to remove the member
-  const { error } = await supabase.rpc('remove_crew_member', {
-    p_crew_id: crewId,
-    p_member_id: memberData.id,
-    p_remover_id: user.id
-  })
 
   if (error) throw error
 }
