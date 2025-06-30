@@ -51,9 +51,10 @@ const formSchema = z.object({
 
 interface CreateEventModalProps {
   onEventCreated: () => void
+  trigger?: React.ReactNode
 }
 
-export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
+export function CreateEventModal({ onEventCreated, trigger }: CreateEventModalProps) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
@@ -183,7 +184,7 @@ export function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create New Event</Button>
+        {trigger || <Button>Create New Event</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>

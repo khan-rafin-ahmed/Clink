@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ShareModal } from '@/components/ShareModal'
-import { UserAvatar } from '@/components/UserAvatar'
+
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
+import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { useAuth } from '@/lib/auth-context'
-import { getUserCrews } from '@/lib/crewService'
-import { getCrewMembers } from '@/lib/crewService'
+
+import { bulkInviteUsers } from '@/lib/memberService'
 import { uploadEventCover } from '@/lib/fileUpload'
 import { getDefaultCoverImage } from '@/lib/coverImageUtils'
 import { sendEventInvitationsToCrew } from '@/lib/eventInvitationService'
 import { toast } from 'sonner'
 import { Loader2, Globe, Lock, Users, Upload, X } from 'lucide-react'
-import type { Crew, CrewMember, LocationData } from '@/types'
+import type { Crew, LocationData, UserProfile } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 interface QuickEventModalProps {
@@ -30,52 +31,13 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
   const [step, setStep] = useState(1)
   const [createdEvent, setCreatedEvent] = useState<{ share_url: string; event_code: string } | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [userCrews, setUserCrews] = useState<Crew[]>([])
-  const [selectedCrew, setSelectedCrew] = useState<string>('')
-  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([])
-  const [loadingCrews, setLoadingCrews] = useState(false)
 
-  // Load user crews
-  const loadUserCrews = async () => {
-    if (!user) return
 
-    setLoadingCrews(true)
-    try {
-      const crews = await getUserCrews()
-      setUserCrews(crews)
-    } catch (error) {
-      console.error('Error loading crews:', error)
-    } finally {
-      setLoadingCrews(false)
-    }
-  }
+  // Individual user invitation state
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([])
+  const [selectedCrews, setSelectedCrews] = useState<Crew[]>([])
 
-  // Load crew members when crew is selected
-  const loadCrewMembers = async (crewId: string) => {
-    try {
-      const members = await getCrewMembers(crewId)
-      setCrewMembers(members)
-    } catch (error) {
-      console.error('Error loading crew members:', error)
-      setCrewMembers([])
-    }
-  }
 
-  // Load crews when modal opens
-  useEffect(() => {
-    if (open && user) {
-      loadUserCrews()
-    }
-  }, [open, user?.id])
-
-  // Load crew members when crew is selected
-  useEffect(() => {
-    if (selectedCrew) {
-      loadCrewMembers(selectedCrew)
-    } else {
-      setCrewMembers([])
-    }
-  }, [selectedCrew])
 
 
   const [formData, setFormData] = useState({
@@ -112,6 +74,27 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     { value: 'wild', label: 'Wild Night', emoji: '🔥' },
     { value: 'classy', label: 'Classy Evening', emoji: '🥂' }
   ]
+
+  // Individual user invitation handlers
+  const handleUserSelect = (user: UserProfile) => {
+    if (!selectedUsers.some(selected => selected.user_id === user.user_id)) {
+      setSelectedUsers(prev => [...prev, user])
+    }
+  }
+
+  const handleCrewSelect = (crew: Crew) => {
+    if (!selectedCrews.some(selected => selected.id === crew.id)) {
+      setSelectedCrews(prev => [...prev, crew])
+    }
+  }
+
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(user => user.user_id !== userId))
+  }
+
+  const handleRemoveCrew = (crewId: string) => {
+    setSelectedCrews(prev => prev.filter(crew => crew.id !== crewId))
+  }
 
   // Cover image handling
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,35 +233,49 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
 
       const createdEventId = event.id
 
-      // If crew is selected, send invitations to crew members instead of auto-adding
+      // Handle invitations
       let invitationMessage = ''
-      if (selectedCrew && crewMembers.length > 0) {
+      let totalInvited = 0
+
+      // Send individual user invitations
+      if (selectedUsers.length > 0) {
         try {
-          console.log('🧪 Sending crew invitations with correct data:', {
-            eventId: createdEventId,
-            crewId: selectedCrew,
-            crewIdType: typeof selectedCrew,
-            crewMembers: crewMembers.length
-          })
+          const userIds = selectedUsers.map(user => user.user_id)
+          await bulkInviteUsers(createdEventId, userIds, user!.id)
+          totalInvited += selectedUsers.length
 
-          const invitationResult = await sendEventInvitationsToCrew(createdEventId, selectedCrew, user!.id)
+          const userInviteMessage = selectedUsers.length === 1
+            ? `Invited ${selectedUsers[0].display_name || selectedUsers[0].username}`
+            : `Invited ${selectedUsers.length} users`
 
-          if (invitationResult.success && invitationResult.invitedCount > 0) {
-            invitationMessage = ` ${invitationResult.message}`
-          } else if (!invitationResult.success) {
-            // Log error but don't fail event creation
-            console.error('Failed to send crew invitations:', invitationResult.message)
-            invitationMessage = ' (Note: Some invitations may not have been sent)'
+          invitationMessage += ` ${userInviteMessage}`
+        } catch (userInviteError: any) {
+          console.error('Error sending user invitations:', userInviteError)
+          invitationMessage += ' (Note: Some user invitations could not be sent)'
+        }
+      }
+
+      // Send crew invitations from selectedCrews
+      if (selectedCrews.length > 0) {
+        for (const crew of selectedCrews) {
+          try {
+            const crewInvitationResult = await sendEventInvitationsToCrew(createdEventId, crew.id, user!.id)
+            if (crewInvitationResult.success && crewInvitationResult.invitedCount > 0) {
+              totalInvited += crewInvitationResult.invitedCount
+              const crewMessage = `Invited ${crew.name} crew (${crewInvitationResult.invitedCount} members)`
+              invitationMessage += invitationMessage
+                ? ` and ${crewMessage.toLowerCase()}`
+                : ` ${crewMessage}`
+            }
+          } catch (crewInviteError: any) {
+            console.error(`Error sending invitations to crew ${crew.name}:`, crewInviteError)
+            invitationMessage += ` (Note: ${crew.name} crew invitations could not be sent)`
           }
-        } catch (invitationError: any) {
-          // Log error but don't fail event creation
-          console.error('Error sending crew invitations:', invitationError)
-          invitationMessage = ' (Note: Crew invitations could not be sent)'
         }
       }
 
       // Success - close modal and notify
-      const successMessage = selectedCrew && crewMembers.length > 0
+      const successMessage = totalInvited > 0
         ? `Event created successfully!${invitationMessage}`
         : 'Event created successfully! 🍺'
 
@@ -336,9 +333,9 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
     })
     setStep(1)
     setCreatedEvent(null)
-    setSelectedCrew('')
-    setCrewMembers([])
-    setUserCrews([])
+    // Reset invitation state
+    setSelectedUsers([])
+    setSelectedCrews([])
   }
 
 
@@ -659,100 +656,27 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 />
               </div>
 
-              {/* Crew Invitations */}
+              {/* Unified Invitations */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-primary" />
-                  <Label className="text-sm font-medium">Invite Your Crew</Label>
+                  <Label className="text-sm font-medium">Invite People (Optional)</Label>
+                </div>
+                <div className="text-xs text-muted-foreground mb-3">
+                  Search and invite individual users or entire crews to your session
                 </div>
 
-                {/* Crew Selection */}
-                {loadingCrews ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    <span className="text-sm text-muted-foreground">Loading your crews...</span>
-                  </div>
-                ) : userCrews.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setSelectedCrew('') }}
-                        className={`p-3 rounded-lg border text-left ${
-                          selectedCrew === ''
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">No crew - invite individually</div>
-                        <div className="text-xs text-muted-foreground">Select specific people to invite</div>
-                      </button>
-                      {userCrews.map(crew => (
-                        <button
-                          key={crew.id}
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); setSelectedCrew(crew.id) }}
-                          className={`p-3 rounded-lg border text-left ${
-                            selectedCrew === crew.id
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          <div className="text-sm font-medium">{crew.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {crew.member_count} member{crew.member_count !== 1 ? 's' : ''} • {crew.vibe} vibe
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4 space-y-2">
-                    <div className="text-sm text-muted-foreground">
-                      No crews found
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Create a crew first to easily invite your regular drinking buddies!
-                    </div>
-                  </div>
-                )}
-
-                {/* Selected Crew Members */}
-                {selectedCrew && crewMembers.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <div className="text-xs text-muted-foreground">
-                      {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''} will receive invitations:
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                      {crewMembers.map(member => (
-                        <div
-                          key={member.user_id}
-                          className="flex items-center gap-2 p-2 rounded-lg border border-amber-500 bg-amber-500/10 text-amber-400"
-                        >
-                          <UserAvatar
-                            userId={member.user_id}
-                            displayName={member.user?.display_name}
-                            avatarUrl={member.user?.avatar_url}
-                            size="xs"
-                          />
-                          <span className="text-xs font-medium truncate">
-                            {member.user?.display_name || 'Anonymous'}
-                          </span>
-                          <span className="text-xs ml-auto">📨</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Summary */}
-                {selectedCrew && crewMembers.length > 0 && (
-                  <div className="text-center py-2">
-                    <div className="text-xs text-muted-foreground">
-                      📨 Invitations will be sent to {crewMembers.length} crew member{crewMembers.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                )}
+                <UserSearchInvite
+                  onUserSelect={handleUserSelect}
+                  onCrewSelect={handleCrewSelect}
+                  selectedUsers={selectedUsers}
+                  selectedCrews={selectedCrews}
+                  onRemoveUser={handleRemoveUser}
+                  onRemoveCrew={handleRemoveCrew}
+                  existingAttendees={[]}
+                  loadingAttendees={false}
+                  className="border border-border rounded-lg p-3"
+                />
               </div>
             </div>
           )}
