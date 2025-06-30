@@ -60,11 +60,12 @@ function escapeHtml(text) {
 function generateEventHTML(event, eventUrl) {
   const title = `${event.title} | Thirstee`
   
+  // Format the date exactly like EventInvitationCard.tsx does
   const eventDate = new Date(event.date_time)
   const formattedDate = eventDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric', 
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -80,12 +81,10 @@ function generateEventHTML(event, eventUrl) {
     location = event.place_nickname
   }
 
-  const vibe = event.vibe ? ` ${event.vibe.charAt(0).toUpperCase() + event.vibe.slice(1)} vibes` : ''
-
   let description = `Join me for ${event.title} on ${formattedDate} at ${location}`
 
   if (event.notes && event.notes.trim()) {
-    description = `${event.notes.trim()} | ${formattedDate} at ${location}${privacy}`
+    description = `${event.notes.trim()} | ${formattedDate} at ${location}`
   }
   
   if (description.length > 160) {
