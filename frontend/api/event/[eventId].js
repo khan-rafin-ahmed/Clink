@@ -61,6 +61,7 @@ function generateEventHTML(event, eventUrl) {
   const title = `${event.title} | Thirstee`
   
   // Format the date exactly like EventInvitationCard.tsx does
+  // Use +06 timezone to match your local timezone
   const eventDate = new Date(event.date_time)
   const formattedDate = eventDate.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -68,7 +69,8 @@ function generateEventHTML(event, eventUrl) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
+    timeZone: 'Asia/Dhaka' // +06 timezone
   })
   
   // Prioritize actual place name from Google Maps, then nickname, then fallback
