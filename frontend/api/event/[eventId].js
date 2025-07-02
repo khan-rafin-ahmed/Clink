@@ -83,7 +83,7 @@ function generateEventHTML(event, eventUrl) {
     location = event.place_nickname
   }
 
-  let description = `Join me for ${event.title} on ${formattedDate} at ${location}`
+  let description = `Join me on ${formattedDate} at ${location}`
 
   if (event.notes && event.notes.trim()) {
     description = `${event.notes.trim()} | ${formattedDate} at ${location}`
