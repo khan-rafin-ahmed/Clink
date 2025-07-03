@@ -140,9 +140,9 @@ export async function handlePostAuthSetup(user: any, isNewUser: boolean = false)
     }
 
     if (isNewUser) {
-      toast.success(`Welcome to Thirstee, ${displayName}! 🍻`)
+      toast.success(`Welcome to Thirstee, ${displayName}!`)
     } else {
-      toast.success(`Welcome back, ${displayName}! 🍺`)
+      toast.success(`Welcome back, ${displayName}!`)
     }
 
     return { success: true, profile }

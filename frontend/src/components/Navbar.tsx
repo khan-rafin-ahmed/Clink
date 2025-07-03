@@ -36,6 +36,32 @@ export function Navbar() {
   }, [user])
 
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User'
+
+  // Helper function to get drink emoji for display names (returns empty if no drink)
+  const getDrinkEmojiForDisplay = (drink: string | null | undefined): string => {
+    if (!drink || drink === 'none') {
+      return '' // Return empty string for display names when no drink is set
+    }
+
+    const drinkMap: Record<string, string> = {
+      beer: '🍺',
+      wine: '🍷',
+      cocktails: '🍸',
+      whiskey: '🥃',
+      vodka: '🍸',
+      rum: '🍹',
+      gin: '🍸',
+      tequila: '🥃',
+      champagne: '🥂',
+      sake: '🍶',
+      other: '🍻'
+    }
+
+    return drinkMap[drink.toLowerCase()] || '🍻'
+  }
+
+  const emoji = getDrinkEmojiForDisplay(userProfile?.favorite_drink)
+  const displayNameWithDrink = emoji ? `${displayName} ${emoji}` : displayName
   const avatarFallback = displayName.charAt(0).toUpperCase()
 
   return (
@@ -90,7 +116,7 @@ export function Navbar() {
                     <DropdownMenuLabel className="glass-effect rounded-lg p-3 mb-2">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none text-shadow">
-                          {displayName} 🍻
+                          {displayNameWithDrink}
                         </p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}

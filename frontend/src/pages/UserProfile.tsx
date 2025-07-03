@@ -16,7 +16,7 @@ import { useParams } from 'react-router-dom'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { useUserStats } from '@/hooks/useUserStats'
 import { useScrollRestoration } from '@/hooks/useScrollToTop'
-import { getUserProfile, getUserProfileByUsername } from '@/lib/userService'
+import { getUserProfileByUsername } from '@/lib/userService'
 import { Simple404 } from '@/components/Simple404'
 import { getUserCrews } from '@/lib/crewService'
 import { supabase } from '@/lib/supabase'
@@ -26,8 +26,8 @@ import { filterEventsByDate } from '@/lib/eventUtils'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
-// Helper function to get drink emoji and label
-const getDrinkInfo = (drink: string | null | undefined) => {
+// Helper function to get drink emoji and label for profile stats
+const getDrinkInfoForStats = (drink: string | null | undefined) => {
   if (!drink) {
     return {
       emoji: '🍹',
@@ -51,6 +51,10 @@ const getDrinkInfo = (drink: string | null | undefined) => {
 
   return drinkMap[drink.toLowerCase()] || { emoji: '🍻', label: drink }
 }
+
+
+
+
 
 interface EnhancedEvent extends Event {
   creator?: {
@@ -729,7 +733,7 @@ export function UserProfile() {
                 loading={!userProfile} // Show loading until profile is loaded
               />
               {(() => {
-                const drinkInfo = getDrinkInfo(userProfile?.favorite_drink)
+                const drinkInfo = getDrinkInfoForStats(userProfile?.favorite_drink)
                 return (
                   <StatCard
                     icon={drinkInfo.emoji}

@@ -15,11 +15,12 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { format, isToday, isTomorrow } from 'date-fns'
-import type { Event } from '@/types'
+import type { Event, UserProfile } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface DashboardHeroProps {
   user: any
+  userProfile?: UserProfile | null
   upcomingEvent?: Event & {
     creator?: {
       display_name: string | null
@@ -33,12 +34,13 @@ interface DashboardHeroProps {
   className?: string
 }
 
-export function DashboardHero({ 
-  user, 
-  upcomingEvent, 
-  totalEvents = 0, 
+export function DashboardHero({
+  user,
+  userProfile,
+  upcomingEvent,
+  totalEvents = 0,
   totalAttendees = 0,
-  className 
+  className
 }: DashboardHeroProps) {
   const formatEventTime = (dateTime: string) => {
     const eventDate = new Date(dateTime)
@@ -54,6 +56,33 @@ export function DashboardHero({
     return 'Good evening'
   }
 
+  // Helper function to get drink emoji for display names (returns empty if no drink)
+  const getDrinkEmojiForDisplay = (drink: string | null | undefined): string => {
+    if (!drink || drink === 'none') {
+      return '' // Return empty string for display names when no drink is set
+    }
+
+    const drinkMap: Record<string, string> = {
+      beer: '🍺',
+      wine: '🍷',
+      cocktails: '🍸',
+      whiskey: '🥃',
+      vodka: '🍸',
+      rum: '🍹',
+      gin: '🍸',
+      tequila: '🥃',
+      champagne: '🥂',
+      sake: '🍶',
+      other: '🍻'
+    }
+
+    return drinkMap[drink.toLowerCase()] || '🍻'
+  }
+
+  const displayName = userProfile?.display_name || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Thirstee'
+  const emoji = getDrinkEmojiForDisplay(userProfile?.favorite_drink)
+  const displayNameWithDrink = emoji ? `${displayName} ${emoji}` : displayName
+
   return (
     <div className={cn("space-y-6", className)}>
       {/* Main Hero Card */}
@@ -66,13 +95,13 @@ export function DashboardHero({
               <div className="flex items-center gap-3">
                 <UserAvatar
                   userId={user.id}
-                  displayName={user.user_metadata?.display_name}
-                  avatarUrl={user.user_metadata?.avatar_url}
+                  displayName={displayName}
+                  avatarUrl={userProfile?.avatar_url || user.user_metadata?.avatar_url}
                   size="lg"
                 />
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                    {getGreeting()}, {user.user_metadata?.display_name || 'Thirstee'}! 🍻
+                    {getGreeting()}, {displayNameWithDrink}!
                   </h1>
                   <p className="text-muted-foreground">
                     Ready to raise some hell today?

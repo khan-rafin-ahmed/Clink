@@ -3,18 +3,29 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { UserStats } from '@/components/UserStats'
+import { getUserProfile } from '@/lib/userService'
 import { useEffect, useState } from 'react'
+import type { UserProfile } from '@/types'
 
 export function SimpleDashboard() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
   const [statsRefresh, setStatsRefresh] = useState(0)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/login')
     }
   }, [user, loading, navigate])
+
+  useEffect(() => {
+    if (user) {
+      getUserProfile(user.id).then(setUserProfile).catch(() => {
+        // Silently handle profile loading errors
+      })
+    }
+  }, [user])
 
   const handleEventCreated = () => {
     // Trigger stats refresh when an event is created
@@ -36,6 +47,33 @@ export function SimpleDashboard() {
     return null // Will redirect to login
   }
 
+  // Helper function to get drink emoji for display names (returns empty if no drink)
+  const getDrinkEmojiForDisplay = (drink: string | null | undefined): string => {
+    if (!drink || drink === 'none') {
+      return '' // Return empty string for display names when no drink is set
+    }
+
+    const drinkMap: Record<string, string> = {
+      beer: '🍺',
+      wine: '🍷',
+      cocktails: '🍸',
+      whiskey: '🥃',
+      vodka: '🍸',
+      rum: '🍹',
+      gin: '🍸',
+      tequila: '🥃',
+      champagne: '🥂',
+      sake: '🍶',
+      other: '🍻'
+    }
+
+    return drinkMap[drink.toLowerCase()] || '🍻'
+  }
+
+  const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
+  const emoji = getDrinkEmojiForDisplay(userProfile?.favorite_drink)
+  const displayNameWithDrink = emoji ? `${displayName} ${emoji}` : displayName
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -43,7 +81,7 @@ export function SimpleDashboard() {
           {/* Welcome Section */}
           <div className="space-y-4">
             <h1 className="text-4xl font-display font-bold text-foreground">
-              Welcome back, {user.email?.split('@')[0] || 'Champion'}! 🍻
+              Welcome back, {displayNameWithDrink}!
             </h1>
             <p className="text-xl text-muted-foreground">
               Ready to raise some hell? Let's get this party started!

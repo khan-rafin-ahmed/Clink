@@ -15,6 +15,31 @@ export function ProfileInfoCard({
   avatarFallback,
   className
 }: ProfileInfoCardProps) {
+  // Helper function to get drink emoji for display names (returns empty if no drink)
+  const getDrinkEmojiForDisplay = (drink: string | null | undefined): string => {
+    if (!drink || drink === 'none') {
+      return '' // Return empty string for display names when no drink is set
+    }
+
+    const drinkMap: Record<string, string> = {
+      beer: '🍺',
+      wine: '🍷',
+      cocktails: '🍸',
+      whiskey: '🥃',
+      vodka: '🍸',
+      rum: '🍹',
+      gin: '🍸',
+      tequila: '🥃',
+      champagne: '🥂',
+      sake: '🍶',
+      other: '🍻'
+    }
+
+    return drinkMap[drink.toLowerCase()] || '🍻'
+  }
+
+  const emoji = getDrinkEmojiForDisplay(userProfile?.favorite_drink)
+  const displayNameWithDrink = emoji ? `${displayName} ${emoji}` : displayName
   return (
     <div className={cn(
       "glass-modal rounded-3xl p-6 lg:p-8 relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl",
@@ -44,7 +69,7 @@ export function ProfileInfoCard({
         {/* User Information */}
         <div className="text-center space-y-3">
           <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground text-shadow">
-            {displayName} 🍻
+            {displayNameWithDrink}
           </h1>
           
           {userProfile?.nickname && (
