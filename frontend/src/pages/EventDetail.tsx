@@ -13,6 +13,7 @@ import { ShareModal } from '@/components/ShareModal'
 import { JoinEventButton } from '@/components/JoinEventButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
+import { cn } from '@/lib/utils'
 
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
@@ -673,7 +674,7 @@ export function EventDetail() {
               {/* Options Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="p-2 backdrop-blur-sm">
+                  <Button variant="outline" size="sm" className="h-[44px] w-[44px] md:h-auto md:w-auto md:p-2 p-0 backdrop-blur-sm flex items-center justify-center">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -841,24 +842,30 @@ export function EventDetail() {
                           const isEventHost = rsvp.user_id === event.created_by
 
                           return (
-                            <div key={rsvp.user_id || index} className="relative">
+                            <div
+                              key={rsvp.user_id || index}
+                              className={cn(
+                                "relative transition-all duration-300 hover:scale-110 hover:z-20",
+                                // Proper z-index stacking for overlapping avatars
+                                index === 0 ? "z-10" : index === 1 ? "z-9" : index === 2 ? "z-8" : "z-7"
+                              )}
+                            >
                               <ClickableUserAvatar
                                 userId={rsvp.user_id}
                                 displayName={displayName}
                                 avatarUrl={profile.avatar_url ?? undefined}
                                 size="sm"
-                                className="ring-2 ring-background"
                               />
                               {isEventHost && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center border border-background">
-                                  <Crown className="w-1.5 h-1.5 text-black" />
+                                <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center border-2 border-background shadow-sm z-20">
+                                  <Crown className="w-2 h-2 text-black" />
                                 </div>
                               )}
                             </div>
                           )
                         })}
                         {allAttendees.length > 4 && (
-                          <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center border-2 border-background text-xs font-bold text-white">
+                          <div className="w-8 h-8 bg-glass backdrop-blur-sm border-2 border-background rounded-full flex items-center justify-center text-xs font-bold text-white z-5">
                             +{allAttendees.length - 4}
                           </div>
                         )}
@@ -1189,26 +1196,31 @@ export function EventDetail() {
                         const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
                         const isEventHost = rsvp.user_id === event.created_by
 
-
                         return (
-                          <div key={rsvp.user_id || index} className="relative">
+                          <div
+                            key={rsvp.user_id || index}
+                            className={cn(
+                              "relative transition-all duration-300 hover:scale-110 hover:z-20",
+                              // Proper z-index stacking for overlapping avatars
+                              index === 0 ? "z-10" : index === 1 ? "z-9" : index === 2 ? "z-8" : index === 3 ? "z-7" : "z-6"
+                            )}
+                          >
                             <ClickableUserAvatar
                               userId={rsvp.user_id}
                               displayName={displayName}
                               avatarUrl={profile.avatar_url ?? undefined}
                               size="md"
-                              className="ring-2 ring-background"
                             />
                             {isEventHost && (
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center border border-background">
-                                <Crown className="w-2 h-2 text-black" />
+                              <div className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border-2 border-background shadow-sm z-20">
+                                <Crown className="w-2.5 h-2.5 text-black" />
                               </div>
                             )}
                           </div>
                         )
                       })}
                       {allAttendees.length > 5 && (
-                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border-2 border-background text-xs font-bold text-white">
+                        <div className="w-10 h-10 bg-glass backdrop-blur-sm border-2 border-background rounded-full flex items-center justify-center text-xs font-bold text-white z-5">
                           +{allAttendees.length - 5}
                         </div>
                       )}

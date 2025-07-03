@@ -52,24 +52,24 @@ export function ActivityTabs({
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         {/* Main Activity Tabs */}
         <div className="flex justify-center">
-          <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-auto">
             <TabsTrigger
               value="sessions"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-bold ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[#1C1817] data-[state=active]:text-white data-[state=active]:shadow-sm gap-2 min-h-[36px] flex-1"
             >
-              <Calendar className="w-4 h-4 mr-2" />
-              Sessions
-              <span className="ml-2 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+              <Calendar className="w-4 h-4" />
+              <span>Sessions</span>
+              <span className="px-2 py-0.5 text-xs bg-white/10 text-white rounded-full font-medium">
                 {upcomingEvents.length + pastEvents.length}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="crews"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-bold ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[#1C1817] data-[state=active]:text-white data-[state=active]:shadow-sm gap-2 min-h-[36px] flex-1"
             >
-              <Users className="w-4 h-4 mr-2" />
-              Crews
-              <span className="ml-2 px-2 py-0.5 text-xs bg-accent-secondary/10 text-accent-secondary rounded-full">
+              <Users className="w-4 h-4" />
+              <span>Crews</span>
+              <span className="px-2 py-0.5 text-xs bg-white/10 text-white rounded-full font-medium">
                 {crews.length}
               </span>
             </TabsTrigger>

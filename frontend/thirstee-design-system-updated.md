@@ -4197,6 +4197,129 @@ The mobile menu and notification popup now share identical layout patterns, cont
 
 ---
 
+## 🔧 **UI/UX Mobile-First Responsive Design Fixes - Thirstee Design System**
+
+### 📋 **Overview:**
+Comprehensive fixes for mobile-first responsive design issues focusing on close buttons, tab consistency, and avatar stack improvements across the Thirstee app.
+
+### 🎯 **1. Close Button Standardization** ✅
+
+#### **Problem Identified:**
+- Small touch targets (< 44px minimum)
+- Inconsistent styling across modal components
+- Poor visual hierarchy and accessibility
+
+#### **Solution Implemented:**
+```jsx
+// Standardized Close Button Pattern
+<button className="absolute right-4 top-4 min-h-[44px] min-w-[44px] flex items-center justify-center bg-glass backdrop-blur-sm border border-white/10 rounded-xl p-3 opacity-70 hover:opacity-100 hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black transition-all duration-200 disabled:pointer-events-none">
+  <X className="h-4 w-4 text-white" />
+</button>
+```
+
+#### **Components Updated:** ✅
+1. **`ui/dialog.tsx`** - Dialog modal close button
+2. **`ui/sheet.tsx`** - Sheet/sidebar close button
+3. **`EditEventModal.tsx`** - Cover image remove button
+4. **`EventGallery.tsx`** - Photo modal close button
+
+#### **Key Improvements:**
+- **Touch Targets**: 44px minimum for mobile accessibility
+- **Visual Design**: Glassmorphism styling with bg-glass/backdrop-blur
+- **Positioning**: Proper 16px margin from edges
+- **Border Styling**: Rounded-xl with subtle borders
+- **Hover States**: Enhanced feedback with opacity and border changes
+
+### 🎯 **2. Tab Color Consistency** ✅
+
+#### **Problem Identified:**
+- Inconsistent active/inactive tab colors between mobile and desktop
+- Poor contrast ratios on mobile devices
+
+#### **Solution Implemented:**
+```jsx
+// Updated TabsList Component
+<TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-glass backdrop-blur-sm border border-white/10 p-1 text-muted-foreground shadow-sm" />
+
+// Updated TabsTrigger Component
+<TabsTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-white/5 hover:text-foreground min-h-[44px] min-w-[44px]" />
+```
+
+#### **Components Updated:** ✅
+1. **`ui/tabs.tsx`** - Base tab component styling
+2. **`ActivityTabs.tsx`** - Profile page activity tabs
+3. **`EventTabs.tsx`** - Event timeline tabs
+
+#### **Key Improvements:**
+- **Consistent Colors**: Active tabs use --text-primary and --btn-primary-bg
+- **Inactive States**: Muted colors with proper hover effects
+- **Glassmorphism**: bg-glass with backdrop-blur-sm
+- **Touch Targets**: 44px minimum for mobile accessibility
+
+### 🎯 **3. Avatar Stack Improvements** ✅
+
+#### **Problem Identified:**
+- Awkward avatar overlapping with poor z-index management
+- Inconsistent border weights and styling
+- Host badge positioning and readability issues
+
+#### **Solution Implemented:**
+```jsx
+// Enhanced Avatar Stack Pattern
+<div className={cn(
+  "relative transition-all duration-300 hover:scale-110 hover:z-20",
+  // Proper z-index stacking for overlapping avatars
+  index === 0 ? "z-10" : index === 1 ? "z-9" : index === 2 ? "z-8" : index === 3 ? "z-7" : "z-6"
+)}>
+  <ClickableUserAvatar
+    className="border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300"
+  />
+  {isEventHost && (
+    <div className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border-2 border-background shadow-sm z-20">
+      <Crown className="w-2.5 h-2.5 text-black" />
+    </div>
+  )}
+</div>
+```
+
+#### **Components Updated:** ✅
+1. **`EventDetail.tsx`** - Mobile and desktop avatar stacks
+2. **`AvatarStack.tsx`** - Reusable avatar stack component
+3. **Event attendee displays** - Consistent styling across app
+
+#### **Key Improvements:**
+- **Z-Index Management**: Proper stacking order for overlapping avatars
+- **Border Consistency**: 2px borders with ring effects
+- **Host Badge**: Improved positioning and contrast
+- **Responsive Sizing**: 40px mobile, 48px desktop
+- **Hover Effects**: Scale and ring animations
+- **Glassmorphism**: bg-glass backdrop-blur for count badges
+
+### 🎨 **Design System Compliance:**
+- **Touch Targets**: 44px minimum maintained across all interactive elements
+- **Glassmorphism**: Consistent bg-glass/backdrop-blur styling
+- **Color System**: Proper contrast ratios and design system colors
+- **Spacing**: 16px minimum from edges, 8pt grid system
+- **Typography**: Consistent font weights and sizing
+- **Accessibility**: WCAG AA compliant contrast and focus states
+
+### 🔧 **Technical Implementation:**
+- **Mobile-First**: All fixes prioritize mobile experience
+- **Performance**: Optimized transitions and hover effects
+- **Consistency**: Unified patterns across all components
+- **Maintainability**: Reusable styling patterns and utilities
+
+### 🎯 **User Experience Results:**
+- **Better Accessibility**: Proper touch targets for mobile users
+- **Visual Consistency**: Unified styling across all modal and tab components
+- **Improved Readability**: Better contrast and positioning for all elements
+- **Professional Appearance**: Cohesive glassmorphism design system
+- **Enhanced Usability**: Intuitive interactions with proper feedback
+
+The Thirstee app now provides a consistent, accessible, and visually polished mobile-first experience with properly sized touch targets, unified tab styling, and improved avatar stack displays! 🤘
+
+---
+
 ## 🔧 **Mobile Authentication Button Fixes - Thirstee Design System**
 
 ### 📋 **Overview:**

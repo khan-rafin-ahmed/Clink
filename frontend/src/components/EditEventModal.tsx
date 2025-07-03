@@ -562,7 +562,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                         <button
                           type="button"
                           onClick={removeCoverImage}
-                          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
+                          className="absolute top-2 right-2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 text-white rounded-xl p-3 hover:bg-black/80 hover:border-white/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30"
                         >
                           <X className="w-4 h-4" />
                         </button>

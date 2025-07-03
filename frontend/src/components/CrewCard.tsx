@@ -205,7 +205,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-[44px] w-[44px] md:h-8 md:w-8 p-0 flex items-center justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="w-4 h-4" />

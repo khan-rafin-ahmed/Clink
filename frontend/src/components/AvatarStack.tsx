@@ -11,9 +11,9 @@ interface AvatarStackProps {
 }
 
 const sizeClasses = {
-  sm: 'w-6 h-6',
-  md: 'w-8 h-8',
-  lg: 'w-10 h-10'
+  sm: 'w-8 h-8',  // Mobile: 40px equivalent
+  md: 'w-10 h-10', // Desktop: 48px equivalent
+  lg: 'w-12 h-12'
 }
 
 const textSizeClasses = {
@@ -52,7 +52,7 @@ export function AvatarStack({
             <Avatar
               className={cn(
                 sizeClasses[size],
-                "border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300"
+                "border-2 border-background ring-1 ring-white/20 hover:ring-primary/40 transition-all duration-300 bg-glass backdrop-blur-sm"
               )}
             >
               <AvatarImage src={member.user?.avatar_url || undefined} />
@@ -70,7 +70,7 @@ export function AvatarStack({
         {remainingCount > 0 && (
           <div className={cn(
             sizeClasses[size],
-            "border-2 border-background bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center text-muted-foreground font-bold relative z-5",
+            "border-2 border-background bg-glass backdrop-blur-sm rounded-full flex items-center justify-center text-white font-bold relative z-5",
             textSizeClasses[size]
           )}>
             +{remainingCount}

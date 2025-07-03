@@ -504,13 +504,13 @@ export function EventTimeline({
                                 </div>
 
                                 {/* Actions Dropdown - Top Right */}
-                                <div className="absolute top-3 right-3">
+                                <div className="absolute top-2 right-2">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm"
+                                        className="h-[44px] w-[44px] md:h-8 md:w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm flex items-center justify-center"
                                         onClick={(e) => {
                                           e.preventDefault()
                                           e.stopPropagation()

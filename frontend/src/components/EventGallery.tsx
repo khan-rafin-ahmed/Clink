@@ -221,7 +221,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-4 right-4 z-10 bg-black/50 text-white hover:bg-black/70"
+              className="absolute top-4 right-4 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 text-white rounded-xl p-3 hover:bg-black/80 hover:border-white/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30"
               onClick={() => setSelectedPhoto(null)}
             >
               <X className="h-4 w-4" />

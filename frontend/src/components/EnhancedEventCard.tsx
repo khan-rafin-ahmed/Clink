@@ -52,15 +52,17 @@ interface EnhancedEventCardProps {
   onDelete?: (event: Event) => void
   variant?: 'default' | 'featured' | 'compact' | 'timeline' | 'grid'
   className?: string
+  isUpcoming?: boolean
 }
 
-export function EnhancedEventCard({ 
-  event, 
-  showHostActions = false, 
-  onEdit, 
+export function EnhancedEventCard({
+  event,
+  showHostActions = false,
+  onEdit,
   onDelete,
   variant = 'default',
-  className
+  className,
+  isUpcoming = false
 }: EnhancedEventCardProps) {
   const { user } = useAuth()
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
@@ -214,7 +216,7 @@ export function EnhancedEventCard({
   if (variant === 'timeline') {
     return (
       <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
-        <Card className={cn("event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl cursor-pointer", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
+        <Card className={cn("event-card w-full max-w-2xl interactive-card group glass-card transition-all duration-300 hover:shadow-white-lg relative overflow-hidden backdrop-blur-sm rounded-xl cursor-pointer", isUpcoming && "border-l-2 border-l-accent-primary", className)} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
           {/* Glass shimmer overlay */}
           <div className="absolute inset-0 glass-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
@@ -242,6 +244,13 @@ export function EnhancedEventCard({
 
             {/* Event Content - Main Section */}
             <div className="flex-1 min-w-0">
+              {/* Upcoming Session Badge */}
+              {isUpcoming && (
+                <div className="text-xs uppercase font-bold text-accent-primary mb-1 flex items-center gap-1">
+                  🔥 Upcoming Session
+                </div>
+              )}
+
               {/* Time and Title Row */}
               <div className="flex items-start gap-2 mb-2">
                 <div className="flex items-center gap-1 text-xs font-medium text-accent-primary flex-shrink-0">
@@ -339,7 +348,7 @@ export function EnhancedEventCard({
                   {/* Actions Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-bg-glass-hover backdrop-blur-sm">
+                      <Button variant="ghost" size="sm" className="h-[44px] w-[44px] md:h-6 md:w-6 p-0 hover:bg-bg-glass-hover backdrop-blur-sm flex items-center justify-center">
                         <MoreVertical className="w-3 h-3" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -400,6 +409,7 @@ export function EnhancedEventCard({
       <Link to={getEventUrl().replace(window.location.origin, '')} className="block">
         <Card className={cn(
           "interactive-card group overflow-hidden glass-card border-white/10 hover:border-accent-primary/30 relative h-[420px] flex flex-col rounded-xl bg-glass shadow-md hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer",
+          isUpcoming && "border-l-2 border-l-accent-primary",
           className
         )}>
         {/* Image Section - Fixed Height */}
@@ -446,6 +456,13 @@ export function EnhancedEventCard({
 
           {/* Metadata - Grouped vertically with spacing */}
           <div className="space-y-2 mb-4 flex-1">
+            {/* Upcoming Session Badge */}
+            {isUpcoming && (
+              <div className="text-xs uppercase font-bold text-accent-primary mb-2 flex items-center gap-1">
+                🔥 Upcoming Session
+              </div>
+            )}
+
             {/* Time */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />

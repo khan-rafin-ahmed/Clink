@@ -3,7 +3,14 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, MapPin, Crown, ArrowRight, Edit } from 'lucide-react'
+import { Calendar, MapPin, Crown, ArrowRight, Edit, MoreVertical, Share2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabase'
 import { formatEventTiming, getUserJoinStatus } from '@/lib/eventUtils'
 import type { Event } from '@/types'
@@ -151,23 +158,72 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
 
   return (
     <Card className={cn(
-      "glass-card glass-halo relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl",
+      "glass-card glass-halo relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_20px_rgba(255,255,255,0.12)] hover:backdrop-blur-xl border-l-2 border-l-accent-primary",
       className
     )} style={{ border: '1px solid hsla(0,0%,100%,.06)' }}>
       {/* Parallax Background Layers */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/10 via-transparent to-accent-secondary/10 opacity-60"></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-accent-primary/5 to-transparent opacity-80"></div>
 
+      {/* Actions Dropdown - Top Right */}
+      <div className="absolute top-2 right-2 z-20">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-[44px] w-[44px] md:h-8 md:w-8 p-0 hover:bg-bg-glass-hover backdrop-blur-sm flex items-center justify-center"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="glass-modal border-border/50">
+            <DropdownMenuItem asChild>
+              <Link to={eventUrl} className="flex items-center">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                View Details
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              navigator.share?.({
+                title: nextEvent.title,
+                url: `${window.location.origin}${eventUrl}`
+              }) || navigator.clipboard.writeText(`${window.location.origin}${eventUrl}`)
+            }}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Share Event
+            </DropdownMenuItem>
+            {isHost && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to={`${eventUrl}?edit=true`} className="flex items-center">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Event
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Link to={eventUrl}>
         <CardContent className="relative z-10 p-6">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <span className="text-2xl float flex-shrink-0">🔥</span>
-              <h3 className="text-lg font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent truncate">
-                Your Upcoming Session
-              </h3>
+              <div>
+
+                <h3 className="text-lg font-bold text-foreground bg-gradient-primary bg-clip-text text-transparent truncate">
+                  Your Upcoming Session
+                </h3>
+              </div>
             </div>
-            <ArrowRight className="w-5 h-5 text-primary flex-shrink-0" />
           </div>
 
           <div className="space-y-3">
