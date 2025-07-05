@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { updateEvent } from '@/lib/eventService'
@@ -204,7 +205,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   }
 
   async function handleSubmit() {
-    if (step !== 4) return
+    if (step !== 3) return
 
     // Validate required fields
     if (!formData.title.trim()) {
@@ -334,7 +335,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   }
 
   const nextStep = () => {
-    if (step < 4) setStep(step + 1)
+    if (step < 3) setStep(step + 1)
   }
 
   const prevStep = () => {
@@ -343,27 +344,26 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
 
   const isStepValid = () => {
     switch (step) {
-      case 1:
-        return formData.title.trim().length > 0
+      case 1: {
+        const hasTitle = formData.title.trim().length > 0;
+        const hasTime = Boolean(formData.time);
+        return hasTitle && hasTime;
+      }
       case 2:
-        return formData.time && formData.drink_type
+        return Boolean(formData.drink_type) && Boolean(formData.vibe);
       case 3:
-        return true
-      case 4:
-        return true
-      case 5:
-        return true
+        return true; // Privacy and invitations are optional
       default:
-        return false
+        return false;
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (step < 4 && isStepValid()) {
+      if (step < 3 && isStepValid()) {
         nextStep()
-      } else if (step === 4) {
+      } else if (step === 3) {
         handleSubmit()
       }
     }
@@ -377,7 +377,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             Edit Session 🍺
           </DialogTitle>
           <div className="flex space-x-2 mt-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className={`h-2 flex-1 rounded-full ${
@@ -431,31 +431,34 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                   }}
                 />
               </div>
-            </div>
-          )}
 
-          {/* Step 2: Time & Drinks */}
-          {step === 2 && (
-            <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">When's the party?</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                  {timeOptions.map(option => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, time: option.value }))}
-                      className={`p-3 rounded-lg border text-center ${
-                        formData.time === option.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg">{option.emoji}</div>
-                      <div className="text-xs font-medium">{option.label}</div>
-                    </button>
-                  ))}
-                </div>
+                <Select
+                  value={formData.time}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, time: value }))}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Select timing">
+                      {formData.time && (
+                        <div className="flex items-center gap-2">
+                          <span>{timeOptions.find(opt => opt.value === formData.time)?.emoji}</span>
+                          <span>{timeOptions.find(opt => opt.value === formData.time)?.label}</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#08090A] border-white/10">
+                    {timeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value} className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <span>{option.emoji}</span>
+                          <span>{option.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formData.time === 'custom' && (
                   <div className="space-y-3 mt-3">
                     <div>
@@ -483,52 +486,68 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
                   </div>
                 )}
               </div>
-
-              <div>
-                <Label className="text-sm font-medium">What's your poison?</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                  {drinkTypes.map(drink => (
-                    <button
-                      key={drink.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, drink_type: drink.value }))}
-                      className={`p-3 rounded-lg border text-center ${
-                        formData.drink_type === drink.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg">{drink.emoji}</div>
-                      <div className="text-xs font-medium">{drink.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
-          {/* Step 3: Vibe, Privacy & Notes */}
-          {step === 3 && (
+          {/* Step 2: Drinks, Vibe, Cover & Notes */}
+          {step === 2 && (
             <div className="space-y-4">
               <div>
+                <Label className="text-sm font-medium">What's your poison?</Label>
+                <Select
+                  value={formData.drink_type}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, drink_type: value }))}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Select your drink">
+                      {formData.drink_type && (
+                        <div className="flex items-center gap-2">
+                          <span>{drinkTypes.find(d => d.value === formData.drink_type)?.emoji}</span>
+                          <span>{drinkTypes.find(d => d.value === formData.drink_type)?.label}</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#08090A] border-white/10">
+                    {drinkTypes.map(drink => (
+                      <SelectItem key={drink.value} value={drink.value} className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <span>{drink.emoji}</span>
+                          <span>{drink.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label className="text-sm font-medium">What's the vibe?</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {vibes.map(vibe => (
-                    <button
-                      key={vibe.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, vibe: vibe.value }))}
-                      className={`p-3 rounded-lg border text-center ${
-                        formData.vibe === vibe.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg">{vibe.emoji}</div>
-                      <div className="text-xs font-medium">{vibe.label}</div>
-                    </button>
-                  ))}
-                </div>
+                <Select
+                  value={formData.vibe}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, vibe: value }))}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Select the vibe">
+                      {formData.vibe && (
+                        <div className="flex items-center gap-2">
+                          <span>{vibes.find(v => v.value === formData.vibe)?.emoji}</span>
+                          <span>{vibes.find(v => v.value === formData.vibe)?.label}</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#08090A] border-white/10">
+                    {vibes.map(vibe => (
+                      <SelectItem key={vibe.value} value={vibe.value} className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <span>{vibe.emoji}</span>
+                          <span>{vibe.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Cover Image Upload */}
@@ -612,38 +631,6 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Who can see this session?</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_public: true }))}
-                    className={`p-3 rounded-lg border text-center ${
-                      formData.is_public
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="text-lg"><Globe className="w-5 h-5 mx-auto" /></div>
-                    <div className="text-xs font-medium">Public</div>
-                    <div className="text-xs text-muted-foreground">Everyone can see</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_public: false }))}
-                    className={`p-3 rounded-lg border text-center ${
-                      !formData.is_public
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="text-lg"><Lock className="w-5 h-5 mx-auto" /></div>
-                    <div className="text-xs font-medium">Private</div>
-                    <div className="text-xs text-muted-foreground">Invite only</div>
-                  </button>
-                </div>
-              </div>
-
-              <div>
                 <Label htmlFor="notes" className="text-sm font-medium">Special notes (optional)</Label>
                 <Textarea
                   id="notes"
@@ -658,29 +645,75 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
-          {/* Step 4: Invite People */}
-          {step === 4 && (
-            <div className="space-y-6">
+          {/* Step 3: Privacy, Notes & Invitations */}
+          {step === 3 && (
+            <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Invite People (Optional)</h3>
-                <p className="text-sm text-muted-foreground">
-                  Invite individual users and crews to your event. Only newly selected people will receive invitations.
-                </p>
+                <Label className="text-sm font-medium">Who can see this session?</Label>
+                <Select
+                  value={formData.is_public ? 'public' : 'private'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, is_public: value === 'public' }))}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Select visibility">
+                      <div className="flex items-center gap-2">
+                        {formData.is_public ? (
+                          <>
+                            <Globe className="w-4 h-4" />
+                            <span>Public</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4" />
+                            <span>Private</span>
+                          </>
+                        )}
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#08090A] border-white/10">
+                    <SelectItem value="public" className="text-white hover:bg-white/10">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        <div>
+                          <div className="font-medium">Public</div>
+                          <div className="text-xs text-muted-foreground">Everyone can see</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="private" className="text-white hover:bg-white/10">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        <div>
+                          <div className="font-medium">Private</div>
+                          <div className="text-xs text-muted-foreground">Invite only</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <UserSearchInvite
-                onUserSelect={handleUserSelect}
-                onCrewSelect={handleCrewSelect}
-                selectedUsers={selectedUsers}
-                selectedCrews={selectedCrews}
-                onRemoveUser={handleRemoveUser}
-                onRemoveCrew={handleRemoveCrew}
-                existingAttendees={existingAttendees}
-                loadingAttendees={loadingAttendees}
-              />
+              {/* Invite People */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Invite People (Optional)</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Invite individual users and crews to your event. Only newly selected people will receive invitations.
+                </p>
+
+                <UserSearchInvite
+                  onUserSelect={handleUserSelect}
+                  onCrewSelect={handleCrewSelect}
+                  selectedUsers={selectedUsers}
+                  selectedCrews={selectedCrews}
+                  onRemoveUser={handleRemoveUser}
+                  onRemoveCrew={handleRemoveCrew}
+                  existingAttendees={existingAttendees}
+                  loadingAttendees={loadingAttendees}
+                />
+              </div>
             </div>
           )}
-
 
 
           {/* Navigation */}
@@ -696,7 +729,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </Button>
             )}
 
-            {step < 4 ? (
+            {step < 3 ? (
               <Button
                 type="button"
                 onClick={nextStep}

@@ -75,10 +75,11 @@ interface UserSearchInviteProps {
 #### QuickEventModal Integration (Enhanced)
 **Location**: `frontend/src/components/QuickEventModal.tsx`
 
-**Implementation**: Step 3 of the creation flow (alongside vibe, privacy, notes)
+**Implementation**: Step 3 of the creation flow (alongside privacy)
 - Enhanced existing crew invitation functionality
 - Added individual user invitation capability via UserSearchInvite component
-- Preserves existing 3-step flow: Details → Time/Location → Vibe/Privacy/Invitations
+- Updated 3-step flow: Details/Time → Drinks/Vibe/Cover/Notes → Privacy/Invitations
+- **Step 1 Enhancement**: Moved "When's the party?" to Step 1 alongside basic event details
 - **Used in UserProfile**: Main session creation modal with full invitation functionality
 - **Custom Trigger Support**: Accepts optional trigger prop for flexible UI integration
 
@@ -329,6 +330,8 @@ const handleRemoveCrew = (crewId: string) => void
 - **Clean State Management**: Only `selectedUsers` and `selectedCrews` arrays needed
 - **Streamlined Logic**: Simplified form submission with unified invitation handling
 - **Better UX**: Clear, non-confusing invitation interface in Step 3
+- **Step Reorganization**: Moved "When's the party?" to Step 1 for logical grouping with basic event details
+- **Dropdown Consistency**: Implemented consistent dropdown UI across all form fields
 
 **Implementation Details**:
 - **File**: `frontend/src/components/QuickEventModal.tsx`
@@ -336,6 +339,26 @@ const handleRemoveCrew = (crewId: string) => void
 - **State Management**: `selectedUsers[]` and `selectedCrews[]` arrays only
 - **Invitation Logic**: Handles both individual users and entire crews seamlessly
 - **Reset Handling**: Clean state reset when modal closes
+
+### UI Consistency Improvements (Latest Update)
+
+#### Dropdown System Implementation
+Following the Edit Crew Modal patterns, implemented consistent dropdown interfaces across all modals:
+
+**QuickEventModal Updates**:
+- **Step 2 Enhancement**: Moved vibe selection and cover image from Step 3 to Step 2
+- **Dropdown Fields**:
+  - "When's the party?" - Select dropdown (Right Now, Pick Your Time)
+  - "What's your poison?" - Select dropdown (Beer, Wine, Whiskey, etc.)
+  - "What's the vibe?" - Select dropdown (Casual, Party, Chill, etc.)
+  - "Who can see this session?" - Select dropdown (Public, Private)
+
+**CreateCrewModal Updates**:
+- "What's your crew's vibe?" - Select dropdown with emoji and descriptions
+- "Who can see this crew?" - Select dropdown (Public, Private)
+
+**Design System Alignment**:
+All dropdowns use consistent glassmorphism styling matching the Edit Crew Modal patterns.
 
 **Before vs After**:
 - **Before**: "Invite Your Crew" + "Invite Individual People" + duplicate crew options = confusing

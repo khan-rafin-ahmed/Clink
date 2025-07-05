@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { createCrew, inviteUserToCrew, searchUsersForInvite } from '@/lib/crewService'
@@ -252,24 +253,34 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
 
                 <div>
                   <Label className="text-sm font-medium">What's your crew's vibe?</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {vibeOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setFormData((prev: CreateCrewData) => ({ ...prev, vibe: option.value as CreateCrewData['vibe'] })) }}
-                        className={`p-3 rounded-lg border text-center ${
-                          formData.vibe === option.value
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="text-lg">{option.emoji}</div>
-                        <div className="text-xs font-medium">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">{option.description}</div>
-                      </button>
-                    ))}
-                  </div>
+                  <Select
+                    value={formData.vibe}
+                    onValueChange={(value: CreateCrewData['vibe']) => setFormData(prev => ({ ...prev, vibe: value }))}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select crew vibe">
+                        {formData.vibe && (
+                          <div className="flex items-center gap-2">
+                            <span>{vibeOptions.find(opt => opt.value === formData.vibe)?.emoji}</span>
+                            <span>{vibeOptions.find(opt => opt.value === formData.vibe)?.label}</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#08090A] border-white/10">
+                      {vibeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="text-white hover:bg-white/10">
+                          <div className="flex items-center gap-2">
+                            <span>{option.emoji}</span>
+                            <div>
+                              <div className="font-medium">{option.label}</div>
+                              <div className="text-xs text-muted-foreground">{option.description}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
@@ -279,34 +290,50 @@ export function CreateCrewModal({ onCrewCreated, trigger }: CreateCrewModalProps
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium">Who can see this crew?</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setFormData((prev: CreateCrewData) => ({ ...prev, visibility: 'public' })) }}
-                      className={`p-3 rounded-lg border text-center ${
-                        formData.visibility === 'public'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg"><Globe className="w-5 h-5 mx-auto" /></div>
-                      <div className="text-xs font-medium">Public</div>
-                      <div className="text-xs text-muted-foreground">Anyone can find</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setFormData((prev: CreateCrewData) => ({ ...prev, visibility: 'private' })) }}
-                      className={`p-3 rounded-lg border text-center ${
-                        formData.visibility === 'private'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg"><Lock className="w-5 h-5 mx-auto" /></div>
-                      <div className="text-xs font-medium">Private</div>
-                      <div className="text-xs text-muted-foreground">Invite only</div>
-                    </button>
-                  </div>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value: CreateCrewData['visibility']) => setFormData(prev => ({ ...prev, visibility: value }))}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select visibility">
+                        {formData.visibility && (
+                          <div className="flex items-center gap-2">
+                            {formData.visibility === 'public' ? (
+                              <>
+                                <Globe className="w-4 h-4" />
+                                <span>Public</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-4 h-4" />
+                                <span>Private</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#08090A] border-white/10">
+                      <SelectItem value="public" className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4" />
+                          <div>
+                            <div className="font-medium">Public</div>
+                            <div className="text-xs text-muted-foreground">Anyone can find</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="private" className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-4 h-4" />
+                          <div>
+                            <div className="font-medium">Private</div>
+                            <div className="text-xs text-muted-foreground">Invite only</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
