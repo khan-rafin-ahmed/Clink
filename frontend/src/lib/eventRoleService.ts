@@ -198,8 +198,16 @@ export async function getEventMembersWithRoles(eventId: string) {
       throw membersError
     }
 
-    // Extract unique user_ids and fetch profiles
-    const userIds = Array.from(new Set((memberRows || []).map(r => r.user_id)))
+    // Ensure event creator is included in the members list
+    const memberUserIds = (memberRows || []).map(r => r.user_id)
+    const allUserIds = new Set(memberUserIds)
+
+    // Add event creator if not already in members
+    if (eventData.created_by && !allUserIds.has(eventData.created_by)) {
+      allUserIds.add(eventData.created_by)
+    }
+
+    const userIds = Array.from(allUserIds)
 
     if (userIds.length === 0) {
       return []
@@ -230,6 +238,30 @@ export async function getEventMembersWithRoles(eventId: string) {
         } : undefined
       }
     })
+
+    // Add event creator if not already in members list
+    if (eventData.created_by && !memberUserIds.includes(eventData.created_by)) {
+      const creatorProfile = profiles?.find(p => p.user_id === eventData.created_by)
+      if (creatorProfile) {
+        membersWithProfiles.push({
+          id: `creator-${eventId}`, // Temporary ID for creator
+          event_id: eventId,
+          user_id: eventData.created_by,
+          status: 'accepted' as const,
+          role: 'host' as const,
+          invited_by: eventData.created_by,
+          created_at: eventData.created_at,
+          updated_at: eventData.created_at,
+          user: {
+            user_id: creatorProfile.user_id,
+            username: creatorProfile.username,
+            display_name: creatorProfile.display_name,
+            avatar_url: creatorProfile.avatar_url,
+            nickname: creatorProfile.nickname
+          }
+        })
+      }
+    }
 
     // Sort by role (hosts first, then co_hosts, then attendees) and creation date
     const sortedMembers = membersWithProfiles.sort((a, b) => {
