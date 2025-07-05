@@ -3,10 +3,10 @@ import { ClickableUserAvatar } from '@/components/ClickableUserAvatar'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Crown, Shield, User, MoreVertical, Trash2 } from 'lucide-react'
-import type { CrewMember } from '@/types'
+import type { CrewMember, EventMember } from '@/types'
 
 interface MemberListProps {
-  members: CrewMember[]
+  members: (CrewMember | EventMember)[]
   canManage: boolean
   currentUserId?: string
   onPromote?: (userId: string) => void
@@ -30,6 +30,15 @@ const getRoleLabel = (role: string) => {
     case 'co_host': return 'Co-Host'
     case 'attendee': return 'Attendee'
     default: return 'Member'
+  }
+}
+
+const canPromoteMember = (member: CrewMember | EventMember, context: 'crew' | 'event') => {
+  const role = member.role
+  if (context === 'crew') {
+    return role === 'member' || (!role && context === 'crew')
+  } else {
+    return role === 'attendee' || (!role && context === 'event')
   }
 }
 
@@ -66,8 +75,8 @@ export function MemberList({
                 )}
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
-                {getRoleIcon(member.role)}
-                <span>{getRoleLabel(member.role)}</span>
+                {getRoleIcon(member.role || 'member')}
+                <span>{getRoleLabel(member.role || 'member')}</span>
               </div>
             </div>
           </div>
@@ -80,7 +89,7 @@ export function MemberList({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-gray-900 border-gray-700 z-[10005]">
-                {(member.role === 'member' || member.role === 'attendee') && onPromote && isCreator?.(currentUserId || '') && (
+                {canPromoteMember(member, context) && onPromote && isCreator?.(currentUserId || '') && (
                   <DropdownMenuItem
                     onClick={() => onPromote(member.user_id)}
                     className="text-white hover:bg-gray-800"
