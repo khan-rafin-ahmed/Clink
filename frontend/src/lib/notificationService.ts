@@ -65,7 +65,7 @@ class NotificationService {
   /**
    * Create a new notification
    */
-  async createNotification(notification: Omit<NotificationData, 'id' | 'created_at'>): Promise<void> {
+  async createNotification(notification: Omit<NotificationData, 'id' | 'created_at'>, options?: { skipToast?: boolean }): Promise<void> {
     try {
       // Use the create_notification function which has SECURITY DEFINER to bypass RLS
       const { error } = await supabase.rpc('create_notification', {
@@ -81,8 +81,10 @@ class NotificationService {
         throw error
       }
 
-      // Show in-app toast notification
-      this.showToastNotification(notification)
+      // Show in-app toast notification (unless skipToast is true)
+      if (!options?.skipToast) {
+        this.showToastNotification(notification)
+      }
 
       // Send push notification if enabled
       await this.sendPushNotification(notification)
@@ -293,11 +295,26 @@ export const notificationTriggers = {
     await notification.createNotification({
       user_id: promotedUserId,
       type: 'crew_promotion',
-      title: `👑 You've been promoted to co-host!`,
-      message: `You're now a co-host of "${crewName}" crew. Time to help lead the party!`,
+      title: `You've been promoted to co-host for the Crew`,
+      message: `Time to help lead the party with "${crewName}"!`,
       data: { crewId, crewName },
       read: false
-    })
+    }, { skipToast: true }) // Skip the automatic toast
+  },
+
+  /**
+   * Co-host demotion
+   */
+  async onCoHostDemotion(crewId: string, crewName: string, demotedUserId: string): Promise<void> {
+    const notification = NotificationService.getInstance()
+    await notification.createNotification({
+      user_id: demotedUserId,
+      type: 'crew_promotion', // Using same type as promotion for consistency
+      title: `You've been demoted to a member for the Crew "${crewName}"`,
+      message: ``,
+      data: { crewId, crewName },
+      read: false
+    }, { skipToast: true }) // Skip the automatic toast
   }
 }
 

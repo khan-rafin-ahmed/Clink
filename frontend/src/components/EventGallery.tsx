@@ -117,7 +117,7 @@ export function EventGallery({ eventId, canUpload, canModerate }: EventGalleryPr
   }
 
   return (
-    <Card className="bg-gradient-card border border-border hover:border-border-hover backdrop-blur-md shadow-amber">
+    <Card className="bg-gradient-card border border-border hover:border-border-hover backdrop-blur-md shadow-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 font-display">

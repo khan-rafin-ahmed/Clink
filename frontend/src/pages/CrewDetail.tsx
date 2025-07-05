@@ -35,6 +35,7 @@ import {
   PartyPopper,
   Flame,
   Crown,
+  Shield,
   Star,
   Loader2,
   ArrowLeft,
@@ -137,8 +138,11 @@ export function CrewDetail() {
           setCanManageCrew(hasPermissions)
         } catch (error) {
           console.error('Error checking permissions:', error)
-          setCanManageCrew(false)
+          // Fallback: check if user is creator
+          setCanManageCrew(crewData?.created_by === user.id)
         }
+      } else {
+        setCanManageCrew(false)
       }
     } catch (error: any) {
       console.error('Error loading crew data:', error)
@@ -812,12 +816,17 @@ export function CrewDetail() {
                           <span className="font-medium text-white">
                             {member.user?.display_name || 'Anonymous'}
                           </span>
-                          {member.user_id === crew.created_by && (
+                          {member.user_id === crew.created_by ? (
                             <Badge variant="secondary" className="text-xs bg-white/10 text-white border-white/20">
                               <Crown className="w-3 h-3 mr-1 text-[#CFCFCF]" />
                               Host
                             </Badge>
-                          )}
+                          ) : member.role === 'co_host' ? (
+                            <Badge variant="secondary" className="text-xs bg-white/10 text-blue-400 border-white/20">
+                              <Shield className="w-3 h-3 mr-1 text-blue-400" />
+                              Co-Host
+                            </Badge>
+                          ) : null}
                         </div>
                         {member.user?.nickname && (
                           <p className="text-sm text-yellow-400 italic">

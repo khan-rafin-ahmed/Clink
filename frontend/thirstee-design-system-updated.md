@@ -135,9 +135,9 @@
 - **Interactive States**: Scale and shadow transitions for better feedback
 
 ### Color System ✅
-- **Removed**: All amber (#FF7747), orange, and legacy accent colors
-- **Applied**: Pure white/gray monochromatic system throughout
-- **Updated**: CSS animations, gradients, and component styles
+- **Removed**: All amber (#FF7747), orange, and legacy accent colors from entire codebase
+- **Applied**: Pure white/gray monochromatic system throughout all components
+- **Updated**: CSS animations, gradients, component styles, and documentation
 
 ## 🔧 **Design System Inconsistencies - FIXED**
 
@@ -3353,9 +3353,10 @@ The Event Details page now provides a **polished, professional experience** that
 ```
 
 #### **Z-Index Hierarchy:**
-- **Modals & Dialogs**: `z-[10001]` (highest priority - above all UI elements)
+- **Select Dropdowns**: `z-[10002]` (highest priority - above modals)
+- **Modals & Dialogs**: `z-[10001]` (modal content)
 - **Modal Overlays**: `z-[10000]` (modal backdrops)
-- **Dropdowns & Popovers**: `z-[9999]` (interactive overlays)
+- **Other Dropdowns & Popovers**: `z-[9999]` (interactive overlays)
 - **Header/Navigation**: `z-50` (navigation elements)
 - **Right Column Sticky**: `z-40` (above content, below header)
 - **Mobile Menu**: `z-40` (same level as sticky elements)
@@ -4317,6 +4318,131 @@ Comprehensive fixes for mobile-first responsive design issues focusing on close 
 - **Enhanced Usability**: Intuitive interactions with proper feedback
 
 The Thirstee app now provides a consistent, accessible, and visually polished mobile-first experience with properly sized touch targets, unified tab styling, and improved avatar stack displays! 🤘
+
+---
+
+## 🎨 **Complete Amber/Orange Color Removal - COMPLETED** ✅
+
+### 🎯 **Comprehensive Codebase Cleanup:**
+
+#### **Files Updated to Remove Legacy Colors:**
+1. **`ui/switch.tsx`** - Updated checked state from `#FF7747` to `#FFFFFF`
+2. **`QuickEventModal.tsx`** - Changed progress indicators from `shadow-amber` to `shadow-white`
+3. **`CreateCrewModal.tsx`** - Updated progress indicators from `shadow-amber` to `shadow-white`
+4. **`EventGallery.tsx`** - Changed card shadow from `shadow-amber` to `shadow-white`
+5. **`EnhancedHero.tsx`** - Updated badge and button shadows from `shadow-amber` to `shadow-white`
+6. **`NotificationTest.tsx`** - Updated design system description to reflect monochromatic palette
+7. **`generate-og-images.html`** - Replaced all amber/orange colors with white/gray system
+8. **`ReviewsPanel.md`** - Updated star colors from `amber-400` to `white`
+9. **`LIQUID_GLASS_TRANSFORMATION_SUMMARY.md`** - Updated color palette description
+10. **`edit-crew-modal-architecture.md`** - Removed amber references from progress indicators
+
+#### **Color Replacements Applied:**
+- **`#FF7747` (Deep Amber)** → **`#FFFFFF` (White)**
+- **`#FFD37E` (Warm Gold)** → **`#B3B3B3` (Gray)**
+- **`shadow-amber`** → **`shadow-white`**
+- **`bg-gradient-primary`** → Updated to white/gray gradients
+- **Amber text shadows** → White text shadows with reduced opacity
+
+#### **Design System Compliance Achieved:**
+- ✅ **Complete Monochromatic System**: All components now use white/gray color palette
+- ✅ **Consistent Shadows**: All glow effects use white instead of amber
+- ✅ **Updated Documentation**: All references to amber colors removed from docs
+- ✅ **Progress Indicators**: Modal progress bars use white gradients
+- ✅ **Button States**: Switch components use white for active states
+- ✅ **OG Images**: Social media images use updated color scheme
+
+### 🎯 **Result:**
+The Thirstee codebase is now completely free of outdated amber/orange colors and fully compliant with the updated monochromatic white/gray design system! All components, documentation, and assets reflect the current design standards. 🤘
+
+---
+
+## 🔧 **Edit Crew Modal Redesign - COMPLETED** ✅
+
+### 🎯 **Complete Modal Architecture Overhaul:**
+
+#### **Design System Alignment Achieved:**
+- ✅ **Modal Container**: Updated from `w-[95vw] sm:max-w-[700px]` to standard `sm:max-w-[500px]`
+- ✅ **Glass Modal Styling**: Replaced `bg-black border-gray-800` with `glass-modal border-white/20`
+- ✅ **Step-Based Navigation**: Replaced tab system with 3-step progress indicators
+- ✅ **Color Compliance**: Removed hardcoded colors, implemented design system tokens
+- ✅ **Typography**: Updated to match event modal patterns with proper hierarchy
+
+#### **Step-Based Navigation System:**
+1. **Step 1: Crew Details & Members** - Name, description, vibe, visibility settings, member management
+2. **Step 2: Invite People** - User search, email invites, shareable links
+
+#### **Component Reusability:**
+- ✅ **UserSearchInvite**: Integrated existing invitation system
+- ✅ **MemberList**: Reused member display with role management
+- ✅ **InviteLinkGenerator**: Added shareable link creation
+- ✅ **Form Components**: Consistent Input, Label, Textarea, Select styling
+
+#### **Enhanced Features:**
+- ✅ **Progress Indicators**: Visual step progression with white gradients
+- ✅ **Permission-Based UI**: Role-based access control for all actions
+- ✅ **Responsive Design**: Mobile-first approach with proper touch targets
+- ✅ **Glassmorphism Effects**: Consistent with event modal aesthetics
+- ✅ **State Management**: Proper form validation and step navigation
+
+#### **Technical Improvements:**
+- ✅ **Modal Structure**: Matches EditEventModal and QuickEventModal patterns exactly
+- ✅ **Navigation Logic**: Back/Next buttons with validation (2-step flow)
+- ✅ **Form Handling**: Proper state management and error handling
+- ✅ **Invitation Integration**: Seamless user and crew invitation workflow
+- ✅ **Database Operations**: Efficient crew updates and member management
+- ✅ **Z-Index Management**: Fixed dropdown z-index hierarchy (SelectContent: z-[10002] > Dialog: z-[10001])
+
+### 🎨 **Visual Consistency Achieved:**
+- **Header**: `text-2xl font-display font-bold text-foreground text-shadow`
+- **Progress Bar**: White gradients with `shadow-white` effects
+- **Form Fields**: `bg-white/5 border-white/10` consistent styling
+- **Buttons**: Design system compliant variants (primary, outline, ghost)
+- **Select Components**: Dark backgrounds with white/10 borders
+
+### 🎯 **User Experience Improvements:**
+- **Intuitive Flow**: Clear step-by-step progression
+- **Visual Feedback**: Progress indicators and loading states
+- **Consistent Patterns**: Familiar interaction model from event modals
+- **Mobile Optimized**: Responsive layout with proper touch targets
+- **Permission Clarity**: Role-based UI controls and actions
+
+The Edit Crew modal now provides a **perfectly consistent experience** with the event modal patterns while maintaining all existing functionality and enhancing the user experience across all devices! 🤘
+
+---
+
+## 🔔 **Crew Promotion Notification Fix - COMPLETED** ✅
+
+### 🎯 **Database Constraint Issue Resolved:**
+
+#### **Problem Identified:**
+- ❌ **Error**: `new row for relation "notifications" violates check constraint "notifications_type_check"`
+- ❌ **Cause**: `crew_promotion` notification type not included in database constraint
+- ❌ **Impact**: Co-host promotions succeeded but notifications failed
+
+#### **Solution Applied:**
+- ✅ **Migration Created**: `fix_crew_promotion_notification_type.sql`
+- ✅ **Constraint Updated**: Added `crew_promotion` to allowed notification types
+- ✅ **Schema Documentation**: Updated database schema with new notification type
+
+#### **Notification Types Now Supported:**
+```sql
+CHECK (type IN (
+    'follow_request', 'follow_accepted', 'event_invitation', 'event_update',
+    'crew_invitation', 'event_rsvp', 'event_reminder', 'crew_invite_accepted',
+    'event_cancelled', 'event_rating_reminder', 'event_invitation_response',
+    'crew_promotion'  -- ✅ NEWLY ADDED
+));
+```
+
+#### **Crew Promotion Notification Features:**
+- ✅ **Title**: "👑 You've been promoted to co-host!"
+- ✅ **Message**: "You're now a co-host of '[Crew Name]' crew. Time to help lead the party!"
+- ✅ **Data**: Includes crew ID and crew name for proper linking
+- ✅ **Emoji**: Crown (👑) icon for promotion notifications
+
+### 🎯 **Result:**
+Crew member promotions now work **completely** - both the database update AND the notification are created successfully! Users will receive proper notifications when promoted to co-host status. 🤘
 
 ---
 

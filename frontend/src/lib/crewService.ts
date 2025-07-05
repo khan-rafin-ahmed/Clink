@@ -769,7 +769,19 @@ export async function hasCrewManagementPermissions(crewId: string, userId?: stri
   const checkUserId = userId || user?.id
   if (!checkUserId) return false
 
-  const { data } = await supabase
+  // First check if user is the crew creator
+  const { data: crewData } = await supabase
+    .from('crews')
+    .select('created_by')
+    .eq('id', crewId)
+    .maybeSingle()
+
+  if (crewData?.created_by === checkUserId) {
+    return true
+  }
+
+  // Then check if user is a co-host
+  const { data: memberData } = await supabase
     .from('crew_members')
     .select('role')
     .eq('crew_id', crewId)
@@ -777,7 +789,7 @@ export async function hasCrewManagementPermissions(crewId: string, userId?: stri
     .eq('status', 'accepted')
     .maybeSingle()
 
-  return data?.role === 'host' || data?.role === 'co_host'
+  return memberData?.role === 'co_host'
 }
 
 // Remove member from crew (crew creator only)

@@ -69,7 +69,7 @@ export function MemberList({
             </div>
           </div>
 
-          {canManage && member.user_id !== currentUserId && (
+          {canManage && member.user_id !== currentUserId && member.role !== 'host' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
@@ -77,7 +77,7 @@ export function MemberList({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-gray-900 border-gray-700 z-[10002]">
-                {member.role === 'member' && onPromote && (
+                {member.role === 'member' && onPromote && isCreator?.(currentUserId || '') && (
                   <DropdownMenuItem
                     onClick={() => onPromote(member.user_id)}
                     className="text-white hover:bg-gray-800"

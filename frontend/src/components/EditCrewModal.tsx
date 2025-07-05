@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { MemberList } from '@/components/shared/MemberList'
 import { InviteLinkGenerator } from '@/components/shared/InviteLinkGenerator'
@@ -13,7 +12,7 @@ import { updateCrew, getCrewMembers, inviteUserToCrew, createCrewInviteLink, pro
 import { notificationTriggers } from '@/lib/notificationService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Globe, Lock } from 'lucide-react'
 import type { Crew, CrewMember, UserProfile } from '@/types'
 
 interface EditCrewModalProps {
@@ -25,8 +24,8 @@ interface EditCrewModalProps {
 
 export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrewModalProps) {
   const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('details')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [step, setStep] = useState(1)
   const [members, setMembers] = useState<CrewMember[]>([])
   const [loadingMembers, setLoadingMembers] = useState(false)
   const [canManage, setCanManage] = useState(false)
@@ -62,6 +61,9 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     if (isOpen && crew && user) {
       loadCrewMembers()
       checkManagementPermissions()
+      setStep(1) // Reset to first step
+      setSelectedUsers([]) // Reset selections
+      setSelectedCrews([])
     }
   }, [isOpen, crew, user])
 
@@ -139,7 +141,7 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
 
     try {
       await promoteToCoHost(crew.id, userId)
-      toast.success('🍺 Member promoted to co-host!')
+      toast.success('👑 Member promoted to co-host!')
 
       // Send notification to the promoted user
       await notificationTriggers.onCoHostPromotion(crew.id, crew.name, userId)
@@ -153,9 +155,18 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
 
   const handleDemote = async (userId: string) => {
     if (!crew) return
-    await demoteCoHost(crew.id, userId)
-    toast.success('🍺 Co-host demoted to member!')
-    loadCrewMembers()
+    try {
+      await demoteCoHost(crew.id, userId)
+      toast.success('👑 Co-host demoted to member!')
+
+      // Send notification to the demoted user
+      await notificationTriggers.onCoHostDemotion(crew.id, crew.name, userId)
+
+      loadCrewMembers()
+    } catch (error) {
+      console.error('Error demoting co-host:', error)
+      toast.error('Failed to demote co-host')
+    }
   }
 
   const handleRemove = async (userId: string) => {
@@ -165,191 +176,210 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     loadCrewMembers()
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+
+
+  // Navigation functions
+  const nextStep = () => {
+    if (step < 2) setStep(step + 1)
+  }
+
+  const prevStep = () => {
+    if (step > 1) setStep(step - 1)
+  }
+
+  const isStepValid = () => {
+    switch (step) {
+      case 1:
+        return formData.name.trim().length > 0
+      case 2:
+        return true // Invitations are optional
+      default:
+        return false
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (step !== 2) return
+
     if (!formData.name.trim()) {
       toast.error('Crew name is required')
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
     try {
+      // Update crew details
       await updateCrew(crew.id, {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         vibe: formData.vibe,
         visibility: formData.visibility
       })
-      toast.success('🍺 Crew updated successfully!')
+
+      // Send invitations if any users/crews selected
+      let invitationCount = 0
+      if (selectedUsers.length > 0) {
+        for (const user of selectedUsers) {
+          await inviteUserToCrew(crew.id, user.user_id)
+          invitationCount++
+        }
+      }
+
+      if (invitationCount > 0) {
+        toast.success(`🍺 Crew updated and ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} sent!`)
+      } else {
+        toast.success('🍺 Crew updated successfully!')
+      }
+
       onCrewUpdated()
       onClose()
     } catch (error: any) {
       console.error('Error updating crew:', error)
       toast.error(error.message || 'Failed to update crew')
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:max-w-[700px] max-h-[90vh] sm:max-h-[80vh] bg-black border-gray-800 overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold">Edit Crew</DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Manage your crew details, members, and invitations.
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 glass-modal border-white/20">
+        <DialogHeader className="relative z-10">
+          <DialogTitle className="text-2xl font-display font-bold text-foreground text-shadow">
+            Edit Your Crew 🍺
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Manage your crew details, members, and invitations. Step {step} of 2.
           </DialogDescription>
+          <div className="flex space-x-2 mt-4">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className={`h-3 flex-1 rounded-full ${
+                  i <= step
+                    ? 'bg-gradient-primary shadow-white'
+                    : 'bg-white/20 glass-effect'
+                }`}
+              />
+            ))}
+          </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900 h-12 sm:h-10">
-            <TabsTrigger
-              value="details"
-              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
-            >
-              Details
-            </TabsTrigger>
-            <TabsTrigger
-              value="members"
-              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
-            >
-              Members ({members.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="invite"
-              className="text-white data-[state=active]:bg-yellow-600 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4"
-            >
-              Invite
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="max-h-[60vh] sm:max-h-[50vh] overflow-y-auto px-1">
-            <TabsContent value="details" className="space-y-6 mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Crew Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">
-              Crew Name *
-            </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter crew name..."
-              className="bg-gray-900 border-gray-700 text-white placeholder-gray-400"
-              maxLength={50}
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-white">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="What's this crew about?"
-              className="bg-gray-900 border-gray-700 text-white placeholder-gray-400 resize-none"
-              rows={3}
-              maxLength={200}
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Vibe */}
-          <div className="space-y-2">
-            <Label className="text-white">Vibe *</Label>
-            <Select
-              value={formData.vibe}
-              onValueChange={(value: Crew['vibe']) => setFormData(prev => ({ ...prev, vibe: value }))}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-                <SelectValue placeholder="Select crew vibe" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-900 border-gray-700">
-                <SelectItem value="casual" className="text-white hover:bg-gray-800">🍺 Casual</SelectItem>
-                <SelectItem value="party" className="text-white hover:bg-gray-800">🎉 Party</SelectItem>
-                <SelectItem value="chill" className="text-white hover:bg-gray-800">😎 Chill</SelectItem>
-                <SelectItem value="wild" className="text-white hover:bg-gray-800">🔥 Wild</SelectItem>
-                <SelectItem value="classy" className="text-white hover:bg-gray-800">🥂 Classy</SelectItem>
-                <SelectItem value="other" className="text-white hover:bg-gray-800">🤷 Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Visibility */}
-          <div className="space-y-2">
-            <Label className="text-white">Visibility</Label>
-            <Select
-              value={formData.visibility}
-              onValueChange={(value: 'public' | 'private') => setFormData(prev => ({ ...prev, visibility: value }))}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-900 border-gray-700">
-                <SelectItem value="private" className="text-white hover:bg-gray-800">🔒 Private</SelectItem>
-                <SelectItem value="public" className="text-white hover:bg-gray-800">🌍 Public</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                    className="flex-1 border-gray-700 text-white hover:bg-gray-800"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !formData.name.trim()}
-                    className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-semibold"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      'Update Crew'
-                    )}
-                  </Button>
+        {/* Step Content */}
+        <div className="space-y-6 mt-6">
+          {step === 1 && (
+            <div className="space-y-6">
+              {/* Crew Details */}
+              <div className="space-y-4">
+                {/* Crew Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-white">
+                    Crew Name *
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter crew name..."
+                    className="bg-white/5 border-white/10 text-white placeholder-gray-400"
+                    maxLength={50}
+                    disabled={isSubmitting}
+                  />
                 </div>
-              </form>
-            </TabsContent>
 
-            {/* Members Tab */}
-            <TabsContent value="members" className="space-y-4 mt-6">
-              {loadingMembers ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-yellow-400" />
-                  <span className="ml-2 text-gray-400">Loading members...</span>
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-white">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="What's this crew about?"
+                    className="bg-white/5 border-white/10 text-white placeholder-gray-400 resize-none"
+                    rows={3}
+                    maxLength={200}
+                    disabled={isSubmitting}
+                  />
                 </div>
-              ) : (
-                <MemberList
-                  members={members}
-                  canManage={canManage}
-                  currentUserId={user?.id}
-                  onPromote={handlePromote}
-                  onDemote={handleDemote}
-                  onRemove={handleRemove}
-                  isCreator={(userId) => crew.created_by === userId}
-                />
-              )}
-            </TabsContent>
 
-            {/* Invite Tab */}
-            <TabsContent value="invite" className="space-y-6 mt-6">
+                {/* Vibe */}
+                <div className="space-y-2">
+                  <Label className="text-white">Vibe *</Label>
+                  <Select
+                    value={formData.vibe}
+                    onValueChange={(value: Crew['vibe']) => setFormData(prev => ({ ...prev, vibe: value }))}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select crew vibe" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#08090A] border-white/10">
+                      <SelectItem value="casual" className="text-white hover:bg-white/10">🍺 Casual</SelectItem>
+                      <SelectItem value="party" className="text-white hover:bg-white/10">🎉 Party</SelectItem>
+                      <SelectItem value="chill" className="text-white hover:bg-white/10">😎 Chill</SelectItem>
+                      <SelectItem value="wild" className="text-white hover:bg-white/10">🔥 Wild</SelectItem>
+                      <SelectItem value="classy" className="text-white hover:bg-white/10">🥂 Classy</SelectItem>
+                      <SelectItem value="other" className="text-white hover:bg-white/10">🤷 Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Visibility */}
+                <div className="space-y-2">
+                  <Label className="text-white">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value: 'public' | 'private') => setFormData(prev => ({ ...prev, visibility: value }))}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#08090A] border-white/10">
+                      <SelectItem value="private" className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-4 h-4" />
+                          Private
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="public" className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4" />
+                          Public
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Members Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Crew Members</h3>
+                {loadingMembers ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    <span className="ml-2 text-muted-foreground">Loading members...</span>
+                  </div>
+                ) : (
+                  <MemberList
+                    members={members}
+                    canManage={canManage}
+                    currentUserId={user?.id}
+                    onPromote={handlePromote}
+                    onDemote={handleDemote}
+                    onRemove={handleRemove}
+                    isCreator={(userId) => crew.created_by === userId}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-6">
               <UserSearchInvite
                 onUserSelect={handleUserSelect}
                 onCrewSelect={handleCrewSelect}
@@ -371,9 +401,50 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
               )}
 
               <InviteLinkGenerator onGenerate={handleGenerateInviteLink} />
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          {step > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              className="px-6 order-2 sm:order-1"
+            >
+              Back
+            </Button>
+          )}
+
+          {step < 2 ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              disabled={!isStepValid()}
+              className="flex-1 font-semibold order-1 sm:order-2"
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex-1 font-semibold order-1 sm:order-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Crew 🍺'
+              )}
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

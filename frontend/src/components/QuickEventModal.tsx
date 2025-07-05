@@ -398,7 +398,7 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
                 key={i}
                 className={`h-3 flex-1 rounded-full ${
                   i <= step
-                    ? 'bg-gradient-primary shadow-amber'
+                    ? 'bg-gradient-primary shadow-white'
                     : 'bg-white/20 glass-effect'
                 }`}
               />

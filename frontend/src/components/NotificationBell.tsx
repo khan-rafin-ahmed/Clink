@@ -382,11 +382,13 @@ export function NotificationBell() {
       markAsRead(notification.id)
     }
 
-    // Navigate to relevant page if data contains eventId or eventCode
+    // Navigate to relevant page if data contains eventId, eventCode, or crewId
     if (notification.data?.eventCode) {
       window.location.href = `/event/${notification.data.eventCode}`
     } else if (notification.data?.eventId) {
       window.location.href = `/event/${notification.data.eventId}`
+    } else if (notification.data?.crewId) {
+      window.location.href = `/crew/${notification.data.crewId}`
     }
 
     setIsOpen(false)
@@ -645,6 +647,10 @@ export function NotificationBell() {
                         <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
                           <span className="text-xs text-white/70">👤</span>
                         </div>
+                      ) : notification.type === 'crew_promotion' ? (
+                        <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                          <span className="text-xs text-white/70">👑</span>
+                        </div>
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
                           <span className="text-xs text-white/70">🔔</span>
@@ -722,6 +728,32 @@ export function NotificationBell() {
                               if (notification.type === 'crew_invitation_response') {
                                 const crewName = notification.data?.crew_name
                                 const crewId = notification.data?.crew_id
+                                const raw = state.title
+                                if (crewId && crewName) {
+                                  // Handle both quoted and unquoted crew names
+                                  const quoted = `"${crewName}"`
+                                  const unquoted = crewName
+                                  let html = raw
+
+                                  // Try quoted first, then unquoted
+                                  if (raw.includes(quoted)) {
+                                    html = raw.replace(
+                                      quoted,
+                                      `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                    )
+                                  } else if (raw.includes(unquoted)) {
+                                    html = raw.replace(
+                                      unquoted,
+                                      `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                    )
+                                  }
+                                  return <span dangerouslySetInnerHTML={{ __html: html }} />
+                                }
+                              }
+                              // Crew promotion: hyperlink crew name in title
+                              if (notification.type === 'crew_promotion') {
+                                const crewName = notification.data?.crewName
+                                const crewId = notification.data?.crewId
                                 const raw = state.title
                                 if (crewId && crewName) {
                                   // Handle both quoted and unquoted crew names

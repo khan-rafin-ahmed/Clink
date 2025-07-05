@@ -129,7 +129,7 @@ export function EnhancedHero({ className = '' }: EnhancedHeroProps) {
 
           {/* Glass Badge with Enhanced Gradient Halo */}
           <motion.div
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/40 shadow-amber relative z-10"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-effect border border-accent-primary/40 shadow-white relative z-10"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -190,7 +190,7 @@ export function EnhancedHero({ className = '' }: EnhancedHeroProps) {
               <Link to="/login" className="w-full sm:w-auto">
                 <Button
                   size="xl"
-                  className="w-full group glass-button hover-glow ripple-effect hover-lift shadow-amber"
+                  className="w-full group glass-button hover-glow ripple-effect hover-lift shadow-white"
                 >
                   Start a Night
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />

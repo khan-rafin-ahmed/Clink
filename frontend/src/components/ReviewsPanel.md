@@ -87,7 +87,7 @@ This component replaces the previous `EventRatingDisplay` component with:
 ## Styling
 
 ### Colors
-- **Stars**: `amber-400` for filled stars (classy gold tone)
+- **Stars**: `white` for filled stars (consistent with design system)
 - **Text**: Proper contrast with gray-900/white for dark mode
 - **Borders**: Subtle gray-200/gray-700 borders
 - **Background**: White/gray-900 with rounded corners

@@ -579,6 +579,17 @@ if (errors.length > 0) {
   - Event editing automatically sends email invitations to newly added crew members
   - Live events support real-time photo sharing and commenting for attendees
 
+#### **Crew Promotion Notification Fix (2025-07-04)**
+- **Issue**: Crew promotion notifications failing with database constraint error
+- **Root Cause**: `crew_promotion` notification type not included in notifications table check constraint
+- **Solution**: Updated notifications_type_check constraint to include `crew_promotion`
+- **New Features**:
+  - Co-host promotion notifications now work properly
+  - Users receive "👑 You've been promoted to co-host!" notifications
+  - Proper notification data includes crew ID and name
+- **Database**: Added migration `fix_crew_promotion_notification_type.sql`
+- **Files Modified**: Database schema documentation updated
+
 ---
 
 ## **🎯 IMPLEMENTATION STATUS: ALL 7 PRIORITIES COMPLETED ✅**
@@ -848,7 +859,7 @@ All features are implemented, tested, and documented. The Thirstee app now has:
 |----------------|----------------------------------|-----------------------------------------------------------------------------------|
 | `id`           | `uuid`                           | PRIMARY KEY, NOT NULL, DEFAULT `gen_random_uuid()`                                |
 | `user_id`      | `uuid`                           | NOT NULL, FK → `auth.users(id)`                                                   |
-| `type`         | `text`                           | CHECK in (`follow_request`,`follow_accepted`,`event_invitation`,`event_update`,`crew_invitation`,`event_rsvp`,`event_reminder`,`crew_invite_accepted`,`event_cancelled`,`event_rating_reminder`) |
+| `type`         | `text`                           | CHECK in (`follow_request`,`follow_accepted`,`event_invitation`,`event_update`,`crew_invitation`,`event_rsvp`,`event_reminder`,`crew_invite_accepted`,`event_cancelled`,`event_rating_reminder`,`event_invitation_response`,`crew_promotion`) |
 | `title`        | `text`                           | NOT NULL                                                                          |
 | `message`      | `text`                           | NOT NULL                                                                          |
 | `data`         | `jsonb`                          | DEFAULT `{}`                                                                      |

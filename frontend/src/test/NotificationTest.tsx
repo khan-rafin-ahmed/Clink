@@ -144,11 +144,11 @@ export function NotificationTest() {
             </div>
 
             {/* Design System Info */}
-            <div className="bg-gradient-to-r from-[#FF7747]/10 to-[#00FFA3]/10 p-4 rounded-lg border border-[#00FFA3]/20">
+            <div className="bg-gradient-to-r from-white/10 to-[#00FFA3]/10 p-4 rounded-lg border border-[#00FFA3]/20">
               <h4 className="font-semibold mb-2 text-[#00FFA3]">Thirstee Design System</h4>
               <p className="text-sm text-muted-foreground">
-                These components follow Thirstee's masculine neon-inspired color palette with Deep Amber (#FF7747) primary, 
-                warm gold (#FFD37E) secondary, and Apple Liquid Glass design with frosted panels and glassmorphism effects.
+                These components follow Thirstee's updated monochromatic design system with white (#FFFFFF) primary,
+                gray (#B3B3B3) secondary, and Apple Liquid Glass design with frosted panels and glassmorphism effects.
               </p>
             </div>
           </CardContent>
