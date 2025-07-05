@@ -222,8 +222,6 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
   }
 
   const handleSubmit = async () => {
-    if (step !== 2) return
-
     if (!formData.name.trim()) {
       toast.error('Crew name is required')
       return
@@ -249,16 +247,16 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
       }
 
       if (invitationCount > 0) {
-        toast.success(`🍺 Crew updated and ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} sent!`)
+        toast.success(`🍺 Changes saved and ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} sent!`)
       } else {
-        toast.success('🍺 Crew updated successfully!')
+        toast.success('🍺 Changes saved successfully!')
       }
 
       onCrewUpdated()
       onClose()
     } catch (error: any) {
       console.error('Error updating crew:', error)
-      toast.error(error.message || 'Failed to update crew')
+      toast.error(error.message || 'Failed to save changes')
     } finally {
       setIsSubmitting(false)
     }
@@ -433,38 +431,39 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
               type="button"
               variant="outline"
               onClick={prevStep}
-              className="px-6 order-2 sm:order-1"
+              className="px-6 order-3 sm:order-1"
             >
               Back
             </Button>
           )}
 
-          {step < 2 ? (
+          {step < 2 && (
             <Button
               type="button"
+              variant="outline"
               onClick={nextStep}
               disabled={!isStepValid()}
-              className="flex-1 font-semibold order-1 sm:order-2"
+              className="px-6 font-semibold order-2 sm:order-2"
             >
               Next
             </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex-1 font-semibold order-1 sm:order-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                'Update Crew 🍺'
-              )}
-            </Button>
           )}
+
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 font-semibold order-1 sm:order-3"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
