@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
 import { MemberList } from '@/components/shared/MemberList'
-import { InviteLinkGenerator } from '@/components/shared/InviteLinkGenerator'
-import { updateCrew, getCrewMembers, inviteUserToCrew, createCrewInviteLink, promoteToCoHost, demoteCoHost, removeCrewMember, hasCrewManagementPermissions } from '@/lib/crewService'
+
+import { updateCrew, getCrewMembers, inviteUserToCrew, bulkInviteUsersToCrew, promoteToCoHost, demoteCoHost, removeCrewMember, hasCrewManagementPermissions } from '@/lib/crewService'
 import { notificationTriggers } from '@/lib/notificationService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
@@ -113,28 +113,51 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
     if (!crew) return
 
     try {
-      // Invite selected users
-      for (const user of selectedUsers) {
-        await inviteUserToCrew(crew.id, user.user_id)
+      let totalSuccessful = 0
+      let totalFailed = 0
+      const failedInvites: string[] = []
+
+      // Handle user invitations
+      if (selectedUsers.length > 0) {
+        const userIds = selectedUsers.map(user => user.user_id)
+        const userResults = await bulkInviteUsersToCrew(crew.id, userIds)
+
+        totalSuccessful += userResults.successful.length
+        totalFailed += userResults.failed.length
+
+        // Add failed user names to the list
+        userResults.failed.forEach((failure: { userId: string, error: string }) => {
+          const user = selectedUsers.find(u => u.user_id === failure.userId)
+          failedInvites.push(user?.display_name || 'Unknown user')
+        })
       }
 
-      // Note: Crew invitations would need additional logic
-      // For now, we'll focus on user invitations
+      // Note: Crew invitations are not implemented yet
+      // For now, we'll only handle user invitations
 
-      toast.success(`🍺 ${selectedUsers.length} invitation${selectedUsers.length !== 1 ? 's' : ''} sent!`)
-      setSelectedUsers([])
-      setSelectedCrews([])
-      loadCrewMembers()
+      // Show appropriate success/error messages
+      if (totalSuccessful > 0 && totalFailed === 0) {
+        toast.success(`👑 ${totalSuccessful} invitation${totalSuccessful !== 1 ? 's' : ''} sent successfully!`)
+      } else if (totalSuccessful > 0 && totalFailed > 0) {
+        toast.success(`👑 ${totalSuccessful} invitation${totalSuccessful !== 1 ? 's' : ''} sent successfully!`)
+        toast.error(`Failed to invite: ${failedInvites.join(', ')}`)
+      } else if (totalFailed > 0) {
+        toast.error(`Failed to send invitations to: ${failedInvites.join(', ')}`)
+      }
+
+      // Clear selections only if at least some invitations were successful
+      if (totalSuccessful > 0) {
+        setSelectedUsers([])
+        setSelectedCrews([])
+        loadCrewMembers()
+      }
     } catch (error) {
       console.error('Error sending invitations:', error)
-      toast.error('Failed to send some invitations')
+      toast.error('Failed to send invitations')
     }
   }
 
-  const handleGenerateInviteLink = async (): Promise<string> => {
-    if (!crew) throw new Error('No crew selected')
-    return await createCrewInviteLink(crew.id)
-  }
+
 
   const handlePromote = async (userId: string) => {
     if (!crew) return
@@ -399,8 +422,6 @@ export function EditCrewModal({ isOpen, onClose, crew, onCrewUpdated }: EditCrew
                   </Button>
                 </div>
               )}
-
-              <InviteLinkGenerator onGenerate={handleGenerateInviteLink} />
             </div>
           )}
         </div>

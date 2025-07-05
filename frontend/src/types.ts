@@ -160,6 +160,8 @@ export interface Crew {
   member_count?: number
   is_member?: boolean
   is_creator?: boolean
+  user_role?: string | null
+  can_manage?: boolean
 }
 
 export interface CrewMember {

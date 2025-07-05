@@ -295,8 +295,8 @@ export const notificationTriggers = {
     await notification.createNotification({
       user_id: promotedUserId,
       type: 'crew_promotion',
-      title: `You've been promoted to co-host for the Crew`,
-      message: `Time to help lead the party with "${crewName}"!`,
+      title: `You've been promoted to co-host for the Crew "${crewName}"`,
+      message: `Time to help lead the party!`,
       data: { crewId, crewName },
       read: false
     }, { skipToast: true }) // Skip the automatic toast

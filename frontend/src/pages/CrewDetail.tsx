@@ -101,6 +101,29 @@ export function CrewDetail() {
     loadCrewData()
   }, [crewId])
 
+  // Re-check permissions when user changes (handles auth state changes)
+  useEffect(() => {
+    if (crew && user && crewId) {
+      const recheckPermissions = async () => {
+        try {
+          const hasPermissions = await hasCrewManagementPermissions(crewId, user.id)
+          setCanManageCrew(hasPermissions)
+          console.log('🔍 Permission recheck:', {
+            crewId,
+            userId: user.id,
+            hasPermissions,
+            userRole: crew.user_role,
+            canManageFromCrew: crew.can_manage
+          })
+        } catch (error) {
+          console.error('Error rechecking permissions:', error)
+          setCanManageCrew(crew?.created_by === user.id)
+        }
+      }
+      recheckPermissions()
+    }
+  }, [user, crew, crewId])
+
   // Cleanup search timeout on unmount
   useEffect(() => {
     return () => {
@@ -131,18 +154,38 @@ export function CrewDetail() {
       setMembers(membersData)
       setPendingRequests(pendingData)
 
-      // Check management permissions
-      if (user && crewId) {
+      // Use the can_manage field from getCrewById if available, otherwise fallback to permission check
+      if (crewData?.can_manage !== undefined) {
+        setCanManageCrew(crewData.can_manage)
+        console.log('🔍 Using can_manage from crew data:', {
+          crewId,
+          canManage: crewData.can_manage,
+          userRole: crewData.user_role,
+          isCreator: crewData.is_creator
+        })
+      } else if (user && crewId) {
         try {
           const hasPermissions = await hasCrewManagementPermissions(crewId, user.id)
           setCanManageCrew(hasPermissions)
+          console.log('🔍 Permission check result:', {
+            crewId,
+            userId: user.id,
+            hasPermissions
+          })
         } catch (error) {
           console.error('Error checking permissions:', error)
           // Fallback: check if user is creator
-          setCanManageCrew(crewData?.created_by === user.id)
+          const fallbackPermission = crewData?.created_by === user.id
+          setCanManageCrew(fallbackPermission)
+          console.log('🔍 Using fallback permission:', {
+            crewId,
+            userId: user.id,
+            fallbackPermission
+          })
         }
       } else {
         setCanManageCrew(false)
+        console.log('🔍 No user or crewId, setting canManageCrew to false')
       }
     } catch (error: any) {
       console.error('Error loading crew data:', error)

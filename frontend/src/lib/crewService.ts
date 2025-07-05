@@ -20,20 +20,21 @@ const debugError = (...args: any[]) => {
 }
 
 // Get user's crews (where they are a member)
-export async function getUserCrews(userId?: string): Promise<Crew[]> {
+export async function getUserCrews(userId?: string, viewerId?: string): Promise<Crew[]> {
   try {
     const user = await getCurrentUser()
-    const currentUserId = userId || user?.id
-    if (!currentUserId) {
+    const targetUserId = userId || user?.id // The user whose crews we're fetching
+    const currentUserId = viewerId || user?.id // The user who is viewing (for permissions)
+    if (!targetUserId) {
       return []
     }
 
     // Use a more robust approach that avoids potential RLS issues
-    // First, get the crew IDs where the user is a member
+    // First, get the crew IDs where the target user is a member
     const { data: membershipData, error: membershipError } = await supabase
       .from('crew_members')
       .select('crew_id')
-      .eq('user_id', currentUserId)
+      .eq('user_id', targetUserId)
       .eq('status', 'accepted')
 
     if (membershipError) {
@@ -70,10 +71,10 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       creatorMap[crew.id] = crew.created_by
     })
 
-    // Fetch all accepted crew_members for these crews in one request
+    // Fetch all accepted crew_members for these crews in one request, including role information
     const { data: memberRows, error: membersError } = await supabase
       .from('crew_members')
-      .select('crew_id, user_id')
+      .select('crew_id, user_id, role')
       .in('crew_id', crewIds)
       .eq('status', 'accepted')
 
@@ -82,26 +83,41 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       throw membersError
     }
 
-    // Build lookup of counts and creator inclusion
-    const membershipMap: Record<string, { count: number; creatorIncluded: boolean }> = {}
+    // Build lookup of counts, creator inclusion, and user roles
+    const membershipMap: Record<string, { count: number; creatorIncluded: boolean; userRole: string | null }> = {}
     memberRows?.forEach(row => {
       if (!membershipMap[row.crew_id]) {
-        membershipMap[row.crew_id] = { count: 0, creatorIncluded: false }
+        membershipMap[row.crew_id] = { count: 0, creatorIncluded: false, userRole: null }
       }
       membershipMap[row.crew_id].count += 1
       if (row.user_id === creatorMap[row.crew_id]) {
         membershipMap[row.crew_id].creatorIncluded = true
       }
+      // Track the viewer's role in this crew (for permission calculation)
+      if (row.user_id === currentUserId) {
+        membershipMap[row.crew_id].userRole = row.role
+      }
     })
 
     const crewsWithCounts = crewsData.map((crew: any) => {
-      const info = membershipMap[crew.id] || { count: 0, creatorIncluded: false }
+      const info = membershipMap[crew.id] || { count: 0, creatorIncluded: false, userRole: null }
       const totalMembers = info.count + (info.creatorIncluded ? 0 : 1)
+
+      // Calculate permissions from the viewer's perspective (currentUserId)
+      const isCreator = crew.created_by === currentUserId
+      const viewerRole = info.userRole || (isCreator ? 'host' : null)
+      const canManage = isCreator || info.userRole === 'co_host'
+
+      // The target user is always a member of their own crews
+      const isTargetUserCreator = crew.created_by === targetUserId
+
       return {
         ...crew,
         member_count: totalMembers,
-        is_member: true,
-        is_creator: crew.created_by === currentUserId
+        is_member: true, // Target user is always a member of their crews
+        is_creator: isTargetUserCreator, // Whether the target user created this crew
+        user_role: viewerRole, // Viewer's role in this crew
+        can_manage: canManage // Whether the viewer can manage this crew
       } as Crew
     })
 
@@ -162,25 +178,32 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
   // Add 1 for creator only if they're not already counted in crew_members
   const totalMembers = (count || 0) + (creatorMembership ? 0 : 1)
 
-  // Check if current user is a member
+  // Check if current user is a member and get their role
   let isMember = false
+  let userRole: string | null = null
+  let canManage = false
+
   if (user) {
     const { data: memberData } = await supabase
       .from('crew_members')
-      .select('id')
+      .select('id, role')
       .eq('crew_id', crewId)
       .eq('user_id', user.id)
       .eq('status', 'accepted')
       .maybeSingle()
 
     isMember = !!memberData || data.created_by === user.id // Creator is always a member
+    userRole = memberData?.role || (data.created_by === user.id ? 'host' : null)
+    canManage = data.created_by === user.id || memberData?.role === 'co_host'
   }
 
   return {
     ...data,
     member_count: totalMembers,
     is_member: isMember,
-    is_creator: data.created_by === user?.id
+    is_creator: data.created_by === user?.id,
+    user_role: userRole,
+    can_manage: canManage
   }
 }
 
@@ -289,6 +312,12 @@ export async function getCrewMembers(crewId: string): Promise<CrewMember[]> {
         })
       }
     }
+
+    console.log('🔍 getCrewMembers result:', {
+      crewId,
+      memberCount: result.length,
+      roles: result.map(m => ({ userId: m.user_id, role: m.role, displayName: m.user?.display_name }))
+    })
 
     return result
   } catch (error) {
@@ -458,6 +487,62 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
+  console.log('🔍 Attempting to invite user to crew:', { crewId, userId, inviterId: user.id })
+
+  // Check if user is already a member or has a pending invitation
+  const { data: existingMember, error: checkError } = await supabase
+    .from('crew_members')
+    .select('id, status, role')
+    .eq('crew_id', crewId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (checkError) {
+    console.error('🔍 Error checking existing membership:', checkError)
+    throw checkError
+  }
+
+  if (existingMember) {
+    console.log('🔍 User already has membership record:', existingMember)
+
+    if (existingMember.status === 'accepted') {
+      throw new Error('User is already a member of this crew')
+    } else if (existingMember.status === 'pending') {
+      throw new Error('User already has a pending invitation to this crew')
+    } else if (existingMember.status === 'declined') {
+      // User previously declined, update the existing record to pending
+      console.log('🔍 User previously declined, updating to pending')
+      const { data: updatedInvitation, error: updateError } = await supabase
+        .from('crew_members')
+        .update({
+          status: 'pending',
+          invited_by: user.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingMember.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('🔍 Error updating declined invitation:', updateError)
+        throw updateError
+      }
+
+      console.log('🔍 Successfully updated declined invitation to pending')
+
+      // Send email invitation
+      try {
+        await sendCrewInvitationEmailToUser(crewId, userId, user.id, updatedInvitation.id)
+      } catch (emailError) {
+        console.error('⚠️ Failed to send crew invitation email:', emailError)
+        // Don't fail the whole operation if email fails
+      }
+      return
+    }
+  }
+
+  // No existing record, create new invitation
+  console.log('🔍 Creating new invitation record')
   const { data: invitation, error } = await supabase
     .from('crew_members')
     .insert({
@@ -469,7 +554,12 @@ export async function inviteUserToCrew(crewId: string, userId: string): Promise<
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('🔍 Error creating invitation:', error)
+    throw error
+  }
+
+  console.log('🔍 Successfully created invitation:', invitation.id)
 
   // Send email invitation with the invitation ID
   try {
@@ -527,10 +617,34 @@ export async function inviteUserWithFallback(crewId: string, identifier: string)
 }
 
 // Bulk invite multiple users to crew
-export async function bulkInviteUsersToCrew(crewId: string, userIds: string[]): Promise<void> {
-  // Use the existing inviteUserToCrew function for each user to ensure proper RLS handling
-  const invitePromises = userIds.map(userId => inviteUserToCrew(crewId, userId))
-  await Promise.all(invitePromises)
+export async function bulkInviteUsersToCrew(crewId: string, userIds: string[]): Promise<{
+  successful: string[],
+  failed: Array<{ userId: string, error: string }>
+}> {
+  console.log('🔍 Bulk inviting users to crew:', { crewId, userCount: userIds.length })
+
+  const successful: string[] = []
+  const failed: Array<{ userId: string, error: string }> = []
+
+  // Process invitations sequentially to avoid overwhelming the database
+  for (const userId of userIds) {
+    try {
+      await inviteUserToCrew(crewId, userId)
+      successful.push(userId)
+      console.log('🔍 Successfully invited user:', userId)
+    } catch (error: any) {
+      console.error('🔍 Failed to invite user:', { userId, error: error.message })
+      failed.push({ userId, error: error.message })
+    }
+  }
+
+  console.log('🔍 Bulk invitation results:', {
+    successful: successful.length,
+    failed: failed.length,
+    failedDetails: failed
+  })
+
+  return { successful, failed }
 }
 
 // Respond to crew invitation
@@ -728,20 +842,66 @@ export async function promoteToCoHost(crewId: string, memberId: string): Promise
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase.rpc('promote_crew_member_to_cohost', {
+  console.log('🔍 Promoting member to co-host:', { crewId, memberId, promoterId: user.id })
+
+  // Try RPC function first, fallback to direct update if it doesn't exist
+  const { error: rpcError } = await supabase.rpc('promote_crew_member_to_cohost', {
     p_crew_id: crewId, p_member_id: memberId, p_promoter_id: user.id
   })
-  if (error) throw error
+
+  if (rpcError) {
+    console.log('🔍 RPC function failed, trying direct update:', rpcError)
+
+    // Fallback: Direct database update
+    const { error: updateError } = await supabase
+      .from('crew_members')
+      .update({ role: 'co_host' })
+      .eq('crew_id', crewId)
+      .eq('user_id', memberId)
+      .eq('status', 'accepted')
+
+    if (updateError) {
+      console.error('🔍 Direct update also failed:', updateError)
+      throw updateError
+    }
+
+    console.log('🔍 Successfully promoted using direct update')
+  } else {
+    console.log('🔍 Successfully promoted using RPC function')
+  }
 }
 
 export async function demoteCoHost(crewId: string, memberId: string): Promise<void> {
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase.rpc('demote_crew_cohost_to_member', {
+  console.log('🔍 Demoting co-host to member:', { crewId, memberId, demoterId: user.id })
+
+  // Try RPC function first, fallback to direct update if it doesn't exist
+  const { error: rpcError } = await supabase.rpc('demote_crew_cohost_to_member', {
     p_crew_id: crewId, p_member_id: memberId, p_demoter_id: user.id
   })
-  if (error) throw error
+
+  if (rpcError) {
+    console.log('🔍 RPC function failed, trying direct update:', rpcError)
+
+    // Fallback: Direct database update
+    const { error: updateError } = await supabase
+      .from('crew_members')
+      .update({ role: 'member' })
+      .eq('crew_id', crewId)
+      .eq('user_id', memberId)
+      .eq('status', 'accepted')
+
+    if (updateError) {
+      console.error('🔍 Direct update also failed:', updateError)
+      throw updateError
+    }
+
+    console.log('🔍 Successfully demoted using direct update')
+  } else {
+    console.log('🔍 Successfully demoted using RPC function')
+  }
 }
 
 export async function removeCrewMember(crewId: string, memberId: string): Promise<void> {
@@ -767,21 +927,30 @@ export async function removeCrewMember(crewId: string, memberId: string): Promis
 export async function hasCrewManagementPermissions(crewId: string, userId?: string): Promise<boolean> {
   const user = await getCurrentUser()
   const checkUserId = userId || user?.id
-  if (!checkUserId) return false
+  if (!checkUserId) {
+    console.log('🔍 hasCrewManagementPermissions: No user ID provided')
+    return false
+  }
 
   // First check if user is the crew creator
-  const { data: crewData } = await supabase
+  const { data: crewData, error: crewError } = await supabase
     .from('crews')
     .select('created_by')
     .eq('id', crewId)
     .maybeSingle()
 
+  if (crewError) {
+    console.error('🔍 hasCrewManagementPermissions: Error fetching crew:', crewError)
+    return false
+  }
+
   if (crewData?.created_by === checkUserId) {
+    console.log('🔍 hasCrewManagementPermissions: User is crew creator', { crewId, userId: checkUserId })
     return true
   }
 
   // Then check if user is a co-host
-  const { data: memberData } = await supabase
+  const { data: memberData, error: memberError } = await supabase
     .from('crew_members')
     .select('role')
     .eq('crew_id', crewId)
@@ -789,7 +958,20 @@ export async function hasCrewManagementPermissions(crewId: string, userId?: stri
     .eq('status', 'accepted')
     .maybeSingle()
 
-  return memberData?.role === 'co_host'
+  if (memberError) {
+    console.error('🔍 hasCrewManagementPermissions: Error fetching member data:', memberError)
+    return false
+  }
+
+  const isCoHost = memberData?.role === 'co_host'
+  console.log('🔍 hasCrewManagementPermissions: Member check result', {
+    crewId,
+    userId: checkUserId,
+    memberRole: memberData?.role,
+    isCoHost
+  })
+
+  return isCoHost
 }
 
 // Remove member from crew (crew creator only)
@@ -926,13 +1108,28 @@ export async function updateCrew(crewId: string, updates: Partial<Crew>): Promis
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
 
+  console.log('🔍 Attempting to update crew:', { crewId, userId: user.id, updates })
+
+  // Check if user has management permissions (creator or co-host)
+  const hasPermission = await hasCrewManagementPermissions(crewId, user.id)
+  if (!hasPermission) {
+    console.error('🔍 User does not have permission to update crew:', { crewId, userId: user.id })
+    throw new Error('You do not have permission to edit this crew')
+  }
+
+  console.log('🔍 User has permission to update crew, proceeding with update')
+
   const { error } = await supabase
     .from('crews')
     .update(updates)
     .eq('id', crewId)
-    .eq('created_by', user.id) // Only creator can edit
 
-  if (error) throw error
+  if (error) {
+    console.error('🔍 Error updating crew:', error)
+    throw error
+  }
+
+  console.log('🔍 Successfully updated crew')
 }
 
 /**

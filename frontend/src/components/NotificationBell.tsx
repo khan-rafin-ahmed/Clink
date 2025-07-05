@@ -785,7 +785,35 @@ export function NotificationBell() {
                           )}
                         </div>
                         <p className="text-sm text-gray-300 line-clamp-2 mt-1">
-                          {state.message}
+                          {(() => {
+                            // Crew promotion: hyperlink crew name in message
+                            if (notification.type === 'crew_promotion') {
+                              const crewName = notification.data?.crewName
+                              const crewId = notification.data?.crewId
+                              const raw = state.message
+                              if (crewId && crewName && raw) {
+                                // Handle both quoted and unquoted crew names
+                                const quoted = `"${crewName}"`
+                                const unquoted = crewName
+                                let html = raw
+
+                                // Try quoted first, then unquoted
+                                if (raw.includes(quoted)) {
+                                  html = raw.replace(
+                                    quoted,
+                                    `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                  )
+                                } else if (raw.includes(unquoted)) {
+                                  html = raw.replace(
+                                    unquoted,
+                                    `<a href="/crew/${crewId}" class="font-bold underline decoration-white/60 underline-offset-2 hover:text-white">${crewName}</a>`
+                                  )
+                                }
+                                return <span dangerouslySetInnerHTML={{ __html: html }} />
+                              }
+                            }
+                            return state.message
+                          })()}
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
                           {notification.created_at && formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}

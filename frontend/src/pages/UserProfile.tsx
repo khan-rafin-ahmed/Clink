@@ -130,12 +130,19 @@ export function UserProfile() {
   // Fetch user crews
   const fetchUserCrews = async () => {
     try {
-      // Use profile owner's ID when viewing others, logged-in user's ID for own profile
+      // Use profile owner's ID for whose crews to fetch
       const targetUserId = userProfile?.user_id || user?.id
       if (!targetUserId) return
 
-      const crews = await getUserCrews(targetUserId)
+      // Pass the current authenticated user as the viewer for permission calculation
+      const crews = await getUserCrews(targetUserId, user?.id)
       setUserCrews(crews)
+      console.log('🔍 Fetched crews for profile:', {
+        targetUserId,
+        viewerId: user?.id,
+        crewCount: crews.length,
+        crewsWithManagePermission: crews.filter(c => c.can_manage).length
+      })
     } catch (error) {
       console.error('❌ Error fetching user crews:', error)
     }

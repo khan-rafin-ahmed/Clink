@@ -219,7 +219,7 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                   <Users className="w-4 h-4 mr-2" />
                   View Members
                 </DropdownMenuItem>
-                {crew.is_creator && (
+                {crew.can_manage && (
                   <>
                     <DropdownMenuItem onClick={(e) => {
                       e.stopPropagation()
@@ -235,17 +235,21 @@ export function CrewCard({ crew, onCrewUpdated }: CrewCardProps) {
                       <Share2 className="w-4 h-4 mr-2" />
                       Create Invite Link
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowDeleteDialog(true)
-                      }}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Crew
-                    </DropdownMenuItem>
+                    {crew.is_creator && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShowDeleteDialog(true)
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Crew
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </>
                 )}
                 {!crew.is_creator && (

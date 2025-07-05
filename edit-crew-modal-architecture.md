@@ -95,13 +95,21 @@ This document outlines the comprehensive architecture for redesigning the Edit C
 | role          | text                             | CHECK IN (member, co_host, host), DEFAULT member |
 | invited_by    | uuid                             | FK → auth.users(id)                          |
 | joined_at     | timestamp with time zone         | DEFAULT now()                                 |
+| created_at    | timestamp with time zone         | DEFAULT now()                                 |
+| updated_at    | timestamp with time zone         | DEFAULT now()                                 |
 ```
 
+**Important Constraints:**
+- `UNIQUE(crew_id, user_id)` - Prevents duplicate memberships
+- Status values: `pending`, `accepted`, `declined`
+- Role hierarchy: `host` > `co_host` > `member`
+
 ### Required Database Operations
-1. **Update Crew Details**: `updateCrew(crewId, formData)`
+1. **Update Crew Details**: `updateCrew(crewId, formData)` - Enhanced with co-host permissions
 2. **Member Management**: `getCrewMembers(crewId)`, `promoteToCoHost()`, `demoteCoHost()`, `removeCrewMember()`
-3. **Invitation System**: `inviteUserToCrew()`, `createCrewInviteLink()`
-4. **Permission Checks**: `hasCrewManagementPermissions(crewId, userId)`
+3. **Invitation System**: `inviteUserToCrew()`, `bulkInviteUsersToCrew()`, `createCrewInviteLink()`
+4. **Permission Checks**: `hasCrewManagementPermissions(crewId, userId)` - Enhanced for co-hosts
+5. **Duplicate Prevention**: Enhanced invitation logic to handle existing memberships
 
 ## 🏗️ Proposed Architecture
 
@@ -341,6 +349,65 @@ The Edit Crew modal has been **successfully redesigned and implemented** accordi
 - **`edit-crew-modal-architecture.md`** - Architecture documentation (this file)
 
 The Edit Crew modal now provides a **perfectly consistent experience** with Thirstee's event modal patterns while maintaining all existing functionality and enhancing the user experience across all devices! 🤘
+
+## 🔧 **Recent Enhancements (Latest Updates)**
+
+### **Invitation System Improvements**
+
+#### **Issue Resolution: Duplicate Key Constraint Violation**
+- **Problem**: `duplicate key value violates unique constraint "crew_members_crew_id_user_id_key"`
+- **Root Cause**: `inviteUserToCrew()` function didn't check for existing memberships before inserting
+- **Solution**: Enhanced invitation logic with comprehensive duplicate prevention
+
+#### **Enhanced `inviteUserToCrew()` Function**
+```typescript
+// New logic handles all membership states:
+// 1. Check for existing membership record
+// 2. Handle 'accepted' status: throw error (already member)
+// 3. Handle 'pending' status: throw error (already invited)
+// 4. Handle 'declined' status: update to pending (re-invite)
+// 5. No existing record: create new invitation
+```
+
+#### **Improved `bulkInviteUsersToCrew()` Function**
+```typescript
+// Returns detailed results:
+{
+  successful: string[],           // Successfully invited user IDs
+  failed: Array<{                // Failed invitations with reasons
+    userId: string,
+    error: string
+  }>
+}
+```
+
+#### **Enhanced User Feedback**
+- **Success Messages**: Shows count of successful invitations
+- **Error Handling**: Displays specific user names that failed to invite
+- **Partial Success**: Handles mixed success/failure scenarios gracefully
+- **Clear Selections**: Only clears selections when at least some invitations succeed
+
+### **Co-Host Permission System**
+
+#### **Database Functions Created**
+- `promote_crew_member_to_cohost()` - Promotes members to co-host role
+- `demote_crew_cohost_to_member()` - Demotes co-hosts to regular members
+- `remove_crew_member()` - Removes members from crew
+
+#### **Enhanced Permission Checking**
+- **`updateCrew()`**: Now allows both creators and co-hosts to edit crew details
+- **RLS Policies**: Updated to support co-host permissions for crew updates
+- **Permission Validation**: Comprehensive checks before allowing operations
+
+#### **UI Improvements**
+- **Co-Host Badges**: Blue shield icons displayed consistently across components
+- **Edit Crew Button**: Visible for both hosts and co-hosts in all navigation paths
+- **Role Management**: Proper promote/demote functionality with permission checks
+
+### **Notification System Updates**
+- **Crown Emoji**: Replaced bell icons with 👑 for crew promotion notifications
+- **Hyperlinked Crew Names**: Bold and clickable crew names in notification messages
+- **Toast Optimization**: Removed duplicate toasts, showing only relevant messages
 
 ---
 
