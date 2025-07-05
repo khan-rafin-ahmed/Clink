@@ -26,6 +26,7 @@ import { EventRatingModal } from '@/components/EventRatingModal'
 import { ToastRecap } from '@/components/ToastRecap'
 import { toast } from 'sonner'
 import { getEventCoverImage, getVibeFallbackGradient } from '@/lib/coverImageUtils'
+import { getUserEventRole } from '@/lib/eventRoleService'
 import {
   MapPin,
   Users,
@@ -37,7 +38,8 @@ import {
   Trash2,
   Crown,
   MoreVertical,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Shield
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -82,6 +84,7 @@ export function EventDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
+  const [userEventRole, setUserEventRole] = useState<string>('none')
   const [userRating, setUserRating] = useState<any>(null)
   const [canRate, setCanRate] = useState(false)
 
@@ -156,10 +159,10 @@ export function EventDetail() {
 
     eventData.rsvps = rsvpError ? [] : rsvpData || []
 
-    // Load event members (crew)
+    // Load event members (crew) with roles
     const { data: memberData, error: memberError } = await supabase
       .from('event_members')
-      .select('id, status, user_id')
+      .select('id, status, user_id, role')
       .eq('event_id', eventData.id)
       .eq('status', 'accepted')
 
@@ -371,6 +374,25 @@ export function EventDetail() {
     setIsJoined(computeIsJoined(event, user || null))
   }, [user, event])
 
+  // Load user's role in the event
+  useEffect(() => {
+    const loadUserRole = async () => {
+      if (event?.id && user?.id) {
+        try {
+          const role = await getUserEventRole(event.id, user.id)
+          setUserEventRole(role)
+        } catch (error) {
+          console.error('Error loading user event role:', error)
+          setUserEventRole('none')
+        }
+      } else {
+        setUserEventRole('none')
+      }
+    }
+
+    loadUserRole()
+  }, [event?.id, user?.id])
+
   // Load user rating data for past events
   useEffect(() => {
     const loadUserRatingData = async () => {
@@ -518,12 +540,104 @@ export function EventDetail() {
   const goingCount = calculateAttendeeCount(event as any)
   const maybeCount = event.rsvps.filter(r => r.status === 'maybe').length
   const isHost = user && event.created_by === user.id
+  const canEdit = isHost || userEventRole === 'co_host'
 
   // Get appropriate tense text based on event status
   const tenseText = getEventTenseText(event.date_time, event.end_time, event.duration_type)
 
   const rsvpAttendees = event.rsvps.filter(r => r.status === 'going')
   const eventMembers = event.event_members?.filter(m => m.status === 'accepted') || []
+
+  // Helper function to get user role from event members
+  const getUserRole = (userId: string): string => {
+    if (userId === event.created_by) return 'host'
+    const member = (event.event_members as any[])?.find((m: any) => m.user_id === userId && m.status === 'accepted')
+    return member?.role || 'attendee'
+  }
+
+  // Get all hosts and co-hosts for the "Hosted By" card
+  const getEventManagers = () => {
+    const managers: Array<{
+      user_id: string
+      role: 'host' | 'co_host'
+      profile: any
+    }> = []
+
+    // Always include the event creator as host
+    if (event.created_by) {
+      managers.push({
+        user_id: event.created_by,
+        role: 'host',
+        profile: participantProfiles[event.created_by] || {}
+      })
+    }
+
+    // Add co-hosts from event_members (using any to bypass TypeScript issue)
+    const coHosts = (event.event_members as any[])?.filter((m: any) =>
+      m.status === 'accepted' &&
+      m.role === 'co_host' &&
+      m.user_id !== event.created_by // Don't duplicate the creator
+    ) || []
+
+    coHosts.forEach((coHost: any) => {
+      managers.push({
+        user_id: coHost.user_id,
+        role: 'co_host',
+        profile: participantProfiles[coHost.user_id] || {}
+      })
+    })
+
+    return managers
+  }
+
+  // HostedBy Card Component
+  const HostedByCard = () => {
+    const managers = getEventManagers()
+
+    return (
+      <div className="glass-card rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <span className="text-xl">👑</span>
+          Hosted By
+        </h2>
+        <div className="space-y-3">
+          {managers.map((manager) => {
+            const isCurrentUser = user && manager.user_id === user.id
+            const displayName = manager.profile.nickname || manager.profile.display_name || `User ${manager.user_id.slice(-4)}`
+            const isHost = manager.role === 'host'
+
+            return (
+              <div key={manager.user_id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ClickableUserAvatar
+                    userId={manager.user_id}
+                    displayName={displayName}
+                    avatarUrl={manager.profile.avatar_url}
+                    size="md" // Same as "Who's Coming" section
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-medium text-sm">
+                      {isCurrentUser ? 'You' : displayName}
+                    </span>
+                    <span className="text-[#B3B3B3] text-sm">
+                      ({isHost ? 'Host' : 'Co-host'})
+                    </span>
+                    {isHost ? (
+                      <Crown className="w-3 h-3 text-yellow-400" />
+                    ) : (
+                      <Shield className="w-3 h-3 text-blue-400" />
+                    )}
+                  </div>
+                </div>
+
+
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   // Merge RSVPs + crew members + host into a deduplicated attendees list
   const uniqueIds = new Set<string>()
@@ -532,6 +646,7 @@ export function EventDetail() {
     user_id: string
     status: string
     source: 'rsvp' | 'crew' | 'host'
+    role?: string
   }> = []
 
   // Always include the host as an attendee
@@ -541,20 +656,21 @@ export function EventDetail() {
       id: `host-${event.created_by}`,
       user_id: event.created_by,
       status: 'going',
-      source: 'host'
+      source: 'host',
+      role: 'host'
     })
   }
 
   rsvpAttendees.forEach(r => {
     if (!uniqueIds.has(r.user_id)) {
       uniqueIds.add(r.user_id)
-      allAttendees.push({ ...r, source: 'rsvp' })
+      allAttendees.push({ ...r, source: 'rsvp', role: getUserRole(r.user_id) })
     }
   })
   eventMembers.forEach(m => {
     if (!uniqueIds.has(m.user_id)) {
       uniqueIds.add(m.user_id)
-      allAttendees.push({ ...m, status: 'going', source: 'crew' })
+      allAttendees.push({ ...m, status: 'going', source: 'crew', role: getUserRole(m.user_id) })
     }
   })
 
@@ -628,7 +744,7 @@ export function EventDetail() {
             Back
           </Button>
           <div className="flex items-center gap-3">
-            {isHost && (
+            {canEdit && (
               <>
                 <Button
                   variant="outline"
@@ -683,7 +799,7 @@ export function EventDetail() {
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Event
                   </DropdownMenuItem>
-                  {isHost && (
+                  {canEdit && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
@@ -719,15 +835,10 @@ export function EventDetail() {
             )}
           </div>
 
-          {/* Hosting Status Banner */}
-          {isHost && (
-            <div className="mx-4 mt-3 mb-1">
-              <div className="bg-white/10 rounded-lg px-3 py-2 flex items-center gap-2">
-                <Crown className="w-4 h-4 text-white" />
-                <span className="text-sm font-medium text-white">You're hosting this session!</span>
-              </div>
-            </div>
-          )}
+          {/* Hosted By Card - Mobile */}
+          <div className="mx-4 mt-3 mb-1">
+            <HostedByCard />
+          </div>
         </div>
 
         {/* Balanced 2-Column Layout: Left Column (Primary Content) + Right Column (Actions & Meta) */}
@@ -840,6 +951,7 @@ export function EventDetail() {
                           const profile = participantProfiles[rsvp.user_id] || {}
                           const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
                           const isEventHost = rsvp.user_id === event.created_by
+                          const isCoHost = rsvp.role === 'co_host'
 
                           return (
                             <div
@@ -861,6 +973,11 @@ export function EventDetail() {
                                   <Crown className="w-2 h-2 text-black" />
                                 </div>
                               )}
+                              {isCoHost && !isEventHost && (
+                                <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-background shadow-sm z-20">
+                                  <Shield className="w-2 h-2 text-white" />
+                                </div>
+                              )}
                             </div>
                           )
                         })}
@@ -879,12 +996,14 @@ export function EventDetail() {
                             const profile = participantProfiles[rsvp.user_id] || {}
                             const isEventHost = rsvp.user_id === event.created_by
                             const isCurrentUser = user && rsvp.user_id === user.id
+                            const isCoHost = rsvp.role === 'co_host'
                             const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
 
                             return (
                               <span key={rsvp.user_id || index} className="text-xs text-[#B3B3B3]">
                                 {isCurrentUser ? 'You' : displayName}
                                 {isEventHost && ' (Host)'}
+                                {isCoHost && !isEventHost && ' (Co-Host)'}
                                 {index < Math.min(allAttendees.length, 2) - 1 && ', '}
                               </span>
                             )
@@ -1195,6 +1314,7 @@ export function EventDetail() {
                         const profile = participantProfiles[rsvp.user_id] || {}
                         const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
                         const isEventHost = rsvp.user_id === event.created_by
+                        const isCoHost = rsvp.role === 'co_host'
 
                         return (
                           <div
@@ -1216,6 +1336,11 @@ export function EventDetail() {
                                 <Crown className="w-2.5 h-2.5 text-black" />
                               </div>
                             )}
+                            {isCoHost && !isEventHost && (
+                              <div className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-background shadow-sm z-20">
+                                <Shield className="w-2.5 h-2.5 text-white" />
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -1234,12 +1359,14 @@ export function EventDetail() {
                           const profile = participantProfiles[rsvp.user_id] || {}
                           const isEventHost = rsvp.user_id === event.created_by
                           const isCurrentUser = user && rsvp.user_id === user.id
+                          const isCoHost = rsvp.role === 'co_host'
                           const displayName = profile.nickname || profile.display_name || `User ${rsvp.user_id.slice(-4)}`
 
                           return (
                             <span key={rsvp.user_id || index} className="text-xs text-[#B3B3B3]">
                               {isCurrentUser ? 'You' : displayName}
                               {isEventHost && ' (Host)'}
+                              {isCoHost && !isEventHost && ' (Co-Host)'}
                               {index < Math.min(allAttendees.length, 3) - 1 && ', '}
                             </span>
                           )
@@ -1367,18 +1494,8 @@ export function EventDetail() {
                   </div>
                 )}
 
-                {/* Host Status Message */}
-                {isHost && (
-                  <div className="glass-card rounded-xl p-4 shadow-sm text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-lg">👑</span>
-                      <span className="font-bold text-white">You're hosting this session!</span>
-                    </div>
-                    <p className="text-[#B3B3B3] text-sm">
-                      Share the event link to invite more legends 🎉
-                    </p>
-                  </div>
-                )}
+                {/* Hosted By Card - Desktop */}
+                <HostedByCard />
 
                 {/* Past Event Status */}
                 {isPastEvent && !userAttended && (

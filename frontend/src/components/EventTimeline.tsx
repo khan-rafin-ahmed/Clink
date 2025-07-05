@@ -32,6 +32,7 @@ import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { LiveBadge } from '@/components/LiveBadge'
+import { getUserEventRole } from '@/lib/eventRoleService'
 import type { Event } from '@/types'
 
 interface EventTimelineProps {
@@ -69,6 +70,7 @@ export function EventTimeline({
   const [currentPage, setCurrentPage] = useState(1)
   const [shareModalEvent, setShareModalEvent] = useState<TimelineEvent | null>(null)
   const [attendeeProfiles, setAttendeeProfiles] = useState<Record<string, any>>({})
+  const [userEventRoles, setUserEventRoles] = useState<Record<string, string>>({})
 
   // Fetch attendee profiles for better avatar display
   useEffect(() => {
@@ -117,6 +119,32 @@ export function EventTimeline({
 
     fetchAttendeeProfiles()
   }, [events])
+
+  // Load user roles for all events
+  useEffect(() => {
+    const loadUserRoles = async () => {
+      if (!user?.id || events.length === 0) return
+
+      const rolePromises = events.map(async (event) => {
+        try {
+          const role = await getUserEventRole(event.id, user.id)
+          return { eventId: event.id, role }
+        } catch (error) {
+          console.error(`Error loading role for event ${event.id}:`, error)
+          return { eventId: event.id, role: 'none' }
+        }
+      })
+
+      const roleResults = await Promise.all(rolePromises)
+      const roleMap: Record<string, string> = {}
+      roleResults.forEach(({ eventId, role }) => {
+        roleMap[eventId] = role
+      })
+      setUserEventRoles(roleMap)
+    }
+
+    loadUserRoles()
+  }, [events, user?.id])
 
   // Group events by date for timeline organization FIRST
   const groupEventsByDate = (events: Event[]) => {
@@ -312,6 +340,8 @@ export function EventTimeline({
                     {eventGroups[dateKey].map((event, eventIndex) => {
                       const timelineEvent = event as TimelineEvent
                       const isHost = user && event.created_by === user.id
+                      const userRole = userEventRoles[event.id] || 'none'
+                      const canEdit = isHost || userRole === 'co_host'
 
                       // Calculate actual attendee count from available data
                       const getActualAttendeeCount = () => {
@@ -539,7 +569,7 @@ export function EventTimeline({
                                         <Share2 className="w-4 h-4 mr-2" />
                                         Share Event
                                       </DropdownMenuItem>
-                                      {showEditActions && isHost && (
+                                      {showEditActions && canEdit && (
                                         <>
                                           <DropdownMenuSeparator />
                                           {onEdit && (
@@ -552,7 +582,7 @@ export function EventTimeline({
                                               Edit Event
                                             </DropdownMenuItem>
                                           )}
-                                          {onDelete && (
+                                          {onDelete && isHost && (
                                             <DropdownMenuItem
                                               onClick={(e) => {
                                                 e.preventDefault()

@@ -200,7 +200,7 @@ export function UserProfile() {
           .select(`
             *,
             rsvps(user_id, status),
-            event_members(user_id, status)
+            event_members(user_id, status, role)
           `)
           .eq('created_by', targetUserId)
           .order('date_time', { ascending: true }),
@@ -211,7 +211,7 @@ export function UserProfile() {
           .select(`
             *,
             rsvps!inner(user_id, status),
-            event_members(user_id, status)
+            event_members(user_id, status, role)
           `)
           .eq('rsvps.user_id', targetUserId)
           .eq('rsvps.status', 'going')
@@ -223,7 +223,7 @@ export function UserProfile() {
           .from('events')
           .select(`
             *,
-            event_members!inner(user_id, status),
+            event_members!inner(user_id, status, role),
             rsvps(user_id, status)
           `)
           .eq('event_members.user_id', targetUserId)
@@ -237,7 +237,7 @@ export function UserProfile() {
           .select(`
             *,
             rsvps(user_id, status),
-            event_members(user_id, status)
+            event_members(user_id, status, role)
           `)
           .in('crew_id', userCrewIds)
           .neq('created_by', targetUserId)

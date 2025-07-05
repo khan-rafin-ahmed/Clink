@@ -13,6 +13,7 @@ interface MemberListProps {
   onDemote?: (userId: string) => void
   onRemove?: (userId: string) => void
   isCreator?: (userId: string) => boolean
+  context?: 'crew' | 'event' // Add context to differentiate between crew and event usage
 }
 
 const getRoleIcon = (role: string) => {
@@ -27,18 +28,20 @@ const getRoleLabel = (role: string) => {
   switch (role) {
     case 'host': return 'Host'
     case 'co_host': return 'Co-Host'
+    case 'attendee': return 'Attendee'
     default: return 'Member'
   }
 }
 
-export function MemberList({ 
-  members, 
-  canManage, 
-  currentUserId, 
-  onPromote, 
-  onDemote, 
-  onRemove, 
-  isCreator 
+export function MemberList({
+  members,
+  canManage,
+  currentUserId,
+  onPromote,
+  onDemote,
+  onRemove,
+  isCreator,
+  context = 'crew' // Default to crew for backward compatibility
 }: MemberListProps) {
   return (
     <div className="space-y-3">
@@ -76,8 +79,8 @@ export function MemberList({
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-gray-900 border-gray-700 z-[10002]">
-                {member.role === 'member' && onPromote && isCreator?.(currentUserId || '') && (
+              <DropdownMenuContent className="bg-gray-900 border-gray-700 z-[10005]">
+                {(member.role === 'member' || member.role === 'attendee') && onPromote && isCreator?.(currentUserId || '') && (
                   <DropdownMenuItem
                     onClick={() => onPromote(member.user_id)}
                     className="text-white hover:bg-gray-800"
@@ -92,7 +95,7 @@ export function MemberList({
                     className="text-white hover:bg-gray-800"
                   >
                     <User className="w-4 h-4 mr-2" />
-                    Demote to Member
+                    {context === 'event' ? 'Demote Co-host' : 'Demote to Member'}
                   </DropdownMenuItem>
                 )}
                 {onRemove && (

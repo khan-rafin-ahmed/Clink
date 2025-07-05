@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LocationAutocomplete } from '@/components/LocationAutocomplete'
 import { UserSearchInvite } from '@/components/shared/UserSearchInvite'
+import { EventAttendeeManagement } from '@/components/EventAttendeeManagement'
 import { updateEvent } from '@/lib/eventService'
 import { bulkInviteUsers, getEventMembers } from '@/lib/memberService'
 import { sendEventInvitationsToCrew } from '@/lib/eventInvitationService'
@@ -205,7 +206,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   }
 
   async function handleSubmit() {
-    if (step !== 3) return
+    if (step !== 4) return
 
     // Validate required fields
     if (!formData.title.trim()) {
@@ -335,7 +336,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   }
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1)
+    if (step < 4) setStep(step + 1)
   }
 
   const prevStep = () => {
@@ -350,8 +351,10 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
         return hasTitle && hasTime;
       }
       case 2:
-        return Boolean(formData.drink_type) && Boolean(formData.vibe);
+        return true; // Attendee management is optional
       case 3:
+        return Boolean(formData.drink_type) && Boolean(formData.vibe);
+      case 4:
         return true; // Privacy and invitations are optional
       default:
         return false;
@@ -361,9 +364,9 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (step < 3 && isStepValid()) {
+      if (step < 4 && isStepValid()) {
         nextStep()
-      } else if (step === 3) {
+      } else if (step === 4) {
         handleSubmit()
       }
     }
@@ -374,10 +377,10 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle className="text-2xl font-display font-bold text-foreground">
-            Edit Session 🍺
+            Edit Session 🍺 (Step {step}/4)
           </DialogTitle>
           <div className="flex space-x-2 mt-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`h-2 flex-1 rounded-full ${
@@ -489,8 +492,23 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
-          {/* Step 2: Drinks, Vibe, Cover & Notes */}
+          {/* Step 2: Attendee Management */}
           {step === 2 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white mb-4">Manage Attendees</h3>
+              <EventAttendeeManagement
+                eventId={event.id}
+                eventCreatedBy={event.created_by}
+                onMembersUpdate={() => {
+                  // Refresh event data if needed
+                  console.log('Members updated')
+                }}
+              />
+            </div>
+          )}
+
+          {/* Step 3: Drinks, Vibe, Cover & Notes */}
+          {step === 3 && (
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">What's your poison?</Label>
@@ -645,8 +663,8 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
             </div>
           )}
 
-          {/* Step 3: Privacy, Notes & Invitations */}
-          {step === 3 && (
+          {/* Step 4: Privacy, Notes & Invitations */}
+          {step === 4 && (
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Who can see this session?</Label>
@@ -729,7 +747,7 @@ export function EditEventModal({ event, open, onOpenChange, onEventUpdated }: Ed
               </Button>
             )}
 
-            {step < 3 ? (
+            {step < 4 ? (
               <Button
                 type="button"
                 onClick={nextStep}

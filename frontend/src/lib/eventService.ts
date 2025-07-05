@@ -876,6 +876,27 @@ export async function respondToEventInvitation(eventMemberId: string, response: 
 }
 
 export async function updateEvent(id: string, event: Partial<Event>) {
+  // Check if current user has permission to edit this event
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    throw new Error('User not authenticated')
+  }
+
+  // Verify user can edit this event (host or co-host)
+  const { data: canEdit, error: permissionError } = await supabase.rpc('can_user_edit_event', {
+    p_event_id: id,
+    p_user_id: user.id
+  })
+
+  if (permissionError) {
+    console.error('Error checking edit permissions:', permissionError)
+    throw new Error('Failed to verify edit permissions')
+  }
+
+  if (!canEdit) {
+    throw new Error('You do not have permission to edit this event')
+  }
+
   const { data, error } = await supabase
     .from('events')
     .update(event)

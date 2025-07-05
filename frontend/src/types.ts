@@ -33,6 +33,7 @@ export interface EventMember {
   user_id: string
   invited_by: string
   status: MemberStatus
+  role?: 'attendee' | 'co_host' | 'host'
   created_at: string
   updated_at: string
   user?: UserProfile

@@ -11,6 +11,7 @@ export type NotificationType =
   | 'event_update'
   | 'event_cancelled'
   | 'crew_promotion'
+  | 'event_promotion'
 
 export interface NotificationData {
   id?: string
@@ -160,7 +161,8 @@ class NotificationService {
       event_invitation_response: '💬',
       event_update: '📝',
       event_cancelled: '❌',
-      crew_promotion: '👑'
+      crew_promotion: '👑',
+      event_promotion: '👑'
     }
     return emojis[type] || '🔔'
   }
@@ -315,6 +317,36 @@ export const notificationTriggers = {
       data: { crewId, crewName },
       read: false
     }, { skipToast: true }) // Skip the automatic toast
+  },
+
+  /**
+   * Event co-host promotion
+   */
+  async onEventCoHostPromotion(eventId: string, eventTitle: string, promotedUserId: string): Promise<void> {
+    const notification = NotificationService.getInstance()
+    await notification.createNotification({
+      user_id: promotedUserId,
+      type: 'event_promotion',
+      title: `You've been added as a co-host to an event!`,
+      message: `Time to help lead the "${eventTitle}" event.`,
+      data: { eventId, eventTitle, role: 'co_host' },
+      read: false
+    }, { skipToast: true }) // Skip the automatic toast since database function already creates notification
+  },
+
+  /**
+   * Event co-host demotion
+   */
+  async onEventCoHostDemotion(eventId: string, eventTitle: string, demotedUserId: string): Promise<void> {
+    const notification = NotificationService.getInstance()
+    await notification.createNotification({
+      user_id: demotedUserId,
+      type: 'event_promotion',
+      title: `Your Co-host role has been removed.`,
+      message: `You have been demoted to attendee for the "${eventTitle}" event.`,
+      data: { eventId, eventTitle, role: 'attendee' },
+      read: false
+    }, { skipToast: true }) // Skip the automatic toast since database function already creates notification
   }
 }
 

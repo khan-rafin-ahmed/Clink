@@ -7,8 +7,10 @@ export interface EventPermissions {
   canDelete: boolean
   canInvite: boolean
   isHost: boolean
+  isCoHost: boolean
   isJoined: boolean
-  joinStatus: 'not_joined' | 'joined_rsvp' | 'joined_crew' | 'host'
+  joinStatus: 'not_joined' | 'joined_rsvp' | 'joined_crew' | 'host' | 'co_host'
+  userRole: 'none' | 'attendee' | 'co_host' | 'host'
   accessReason?: 'public' | 'host' | 'invited' | 'crew_member' | 'rsvp'
 }
 
@@ -26,8 +28,10 @@ export function getEventPermissions(
     canDelete: false,
     canInvite: false,
     isHost: false,
+    isCoHost: false,
     isJoined: false,
-    joinStatus: 'not_joined'
+    joinStatus: 'not_joined',
+    userRole: 'none'
   }
 
   if (!event) {
@@ -41,14 +45,32 @@ export function getEventPermissions(
   const userRsvp = event.rsvps?.find(rsvp => rsvp.user_id === user?.id)
   const hasRsvpJoined = userRsvp?.status === 'going'
 
-  // Check if user is an event member (crew member)
+  // Check if user is an event member and get their role
   const userEventMember = event.event_members?.find(member => member.user_id === user?.id)
   const hasCrewJoined = userEventMember?.status === 'accepted'
+  const memberRole = userEventMember?.role || 'attendee'
+
+  // Determine user role (prioritize event_members role over created_by)
+  let userRole: EventPermissions['userRole'] = 'none'
+  if (isHost && memberRole === 'host') {
+    userRole = 'host'
+  } else if (memberRole === 'co_host') {
+    userRole = 'co_host'
+  } else if (isHost) {
+    userRole = 'host' // Fallback for events created before co-host system
+  } else if (hasCrewJoined) {
+    userRole = 'attendee'
+  }
+
+  const isCoHost = userRole === 'co_host'
+  const isActualHost = userRole === 'host'
 
   // Determine join status
   let joinStatus: EventPermissions['joinStatus'] = 'not_joined'
-  if (isHost) {
+  if (isActualHost) {
     joinStatus = 'host'
+  } else if (isCoHost) {
+    joinStatus = 'co_host'
   } else if (hasRsvpJoined) {
     joinStatus = 'joined_rsvp'
   } else if (hasCrewJoined) {
@@ -88,10 +110,10 @@ export function getEventPermissions(
   }
 
   // Determine other permissions
-  const canJoin = canView && !isHost && !isJoined && user !== null
-  const canEdit = isHost
-  const canDelete = isHost
-  const canInvite = isHost
+  const canJoin = canView && !isActualHost && !isCoHost && !isJoined && user !== null
+  const canEdit = isActualHost || isCoHost // Both hosts and co-hosts can edit
+  const canDelete = isActualHost // Only hosts can delete
+  const canInvite = isActualHost || isCoHost // Both hosts and co-hosts can invite
 
   return {
     canView,
@@ -99,9 +121,11 @@ export function getEventPermissions(
     canEdit,
     canDelete,
     canInvite,
-    isHost,
+    isHost: isActualHost,
+    isCoHost,
     isJoined,
     joinStatus,
+    userRole,
     accessReason
   }
 }
