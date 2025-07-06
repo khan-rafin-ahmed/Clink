@@ -82,6 +82,11 @@ function App() {
                   <LoginPage />
                 </AuthRedirect>
               } />
+              <Route path="/auth" element={
+                <AuthRedirect>
+                  <LoginPage />
+                </AuthRedirect>
+              } />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
               <Route path="/profile" element={<SimpleProfileRedirect />} />

@@ -140,8 +140,10 @@ export function InvitationAction({}: InvitationActionProps) {
         // Handle specific error cases
         if (result.data?.requires_auth) {
           toast.error('Please log in to respond to this invitation')
-          // Redirect to login with return URL
-          navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)
+          // Store redirect URL in sessionStorage for auth system
+          sessionStorage.setItem('redirectAfterLogin', window.location.pathname)
+          // Redirect to login
+          navigate('/login')
         } else {
           toast.error(result.message || 'Failed to process invitation')
         }

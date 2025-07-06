@@ -16,10 +16,19 @@ export function LoginPage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check for error in URL params and handle user redirect
+  // Check for error and redirect in URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const errorParam = urlParams.get('error')
+    const redirectParam = urlParams.get('redirect')
+
+    // Handle redirect parameter (store for after login)
+    if (redirectParam) {
+      const decodedRedirect = decodeURIComponent(redirectParam)
+      sessionStorage.setItem('redirectAfterLogin', decodedRedirect)
+    }
+
+    // Handle error parameter
     if (errorParam) {
       const decodedError = decodeURIComponent(errorParam)
 
