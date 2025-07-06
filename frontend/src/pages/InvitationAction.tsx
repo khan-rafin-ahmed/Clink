@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
-  Calendar, 
-  Users, 
+import { processEmailInvitationToken } from '@/lib/eventInvitationService'
+import {
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Calendar,
+  Users,
   ArrowRight,
   Loader2
 } from 'lucide-react'
@@ -80,73 +80,70 @@ export function InvitationAction({}: InvitationActionProps) {
     try {
       setLoading(true)
 
-      // If type and action are provided in URL, use the specific function
-      // Otherwise, determine from token prefix
-      let functionName: string
-      let tokenType: string
+      // Determine invitation type and action
+      let invitationType: 'event' | 'crew'
+      let invitationAction: 'accept' | 'decline'
 
       if (type && action) {
         // URL structure: /invitation/:type/:action/:token
-        if (type === 'event') {
-          functionName = 'process_event_invitation_token'
-          tokenType = 'event'
-        } else if (type === 'crew') {
-          functionName = 'process_crew_invitation_token'
-          tokenType = 'crew'
-        } else {
-          throw new Error('Invalid invitation type')
-        }
+        invitationType = type as 'event' | 'crew'
+        invitationAction = action as 'accept' | 'decline'
       } else {
-        // URL structure: /invitation/:token - determine type from token prefix
-        if (token?.startsWith('event_')) {
-          functionName = 'process_event_invitation_token'
-          tokenType = 'event'
-        } else if (token?.startsWith('crew_')) {
-          functionName = 'process_crew_invitation_token'
-          tokenType = 'crew'
+        // URL structure: /invitation/:token - determine from token prefix
+        if (token?.startsWith('event_accept_')) {
+          invitationType = 'event'
+          invitationAction = 'accept'
+        } else if (token?.startsWith('event_decline_')) {
+          invitationType = 'event'
+          invitationAction = 'decline'
+        } else if (token?.startsWith('crew_accept_')) {
+          invitationType = 'crew'
+          invitationAction = 'accept'
+        } else if (token?.startsWith('crew_decline_')) {
+          invitationType = 'crew'
+          invitationAction = 'decline'
         } else {
           throw new Error('Unable to determine invitation type from token')
         }
       }
 
-      const { data, error } = await supabase.rpc(functionName, {
-        p_token: token,
-        p_user_id: user?.id || null
+      // Use our unified service for processing
+      const result = await processEmailInvitationToken(
+        token!,
+        invitationType,
+        invitationAction,
+        user?.id
+      )
+
+      setResult({
+        success: result.success,
+        message: result.message,
+        action: result.data?.action,
+        event_title: result.data?.event_title,
+        event_id: result.data?.event_id,
+        redirect_url: result.data?.redirect_url,
+        requires_auth: result.data?.requires_auth,
+        error: result.success ? undefined : result.message
       })
 
-      if (error) {
-        throw error
-      }
-
-      setResult(data)
-
       // Show success/error toast
-      if (data.success) {
-        toast.success(data.message)
+      if (result.success) {
+        toast.success(result.message)
 
         // Auto-redirect after successful action
-        if (data.redirect_url) {
+        if (result.data?.redirect_url) {
           setTimeout(() => {
-            navigate(data.redirect_url)
+            navigate(result.data.redirect_url)
           }, 2000) // 2 second delay to show success message
         }
       } else {
         // Handle specific error cases
-        if (data.requires_auth) {
-          // Store the invitation details for after login
-          if (data.event_title) {
-            localStorage.setItem('pending_invitation', JSON.stringify({
-              token,
-              event_title: data.event_title,
-              invitation_id: data.invitation_id
-            }))
-          }
-
+        if (result.data?.requires_auth) {
           toast.error('Please log in to respond to this invitation')
           // Redirect to login with return URL
           navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)
         } else {
-          toast.error(data.error || 'Failed to process invitation')
+          toast.error(result.message || 'Failed to process invitation')
         }
       }
 

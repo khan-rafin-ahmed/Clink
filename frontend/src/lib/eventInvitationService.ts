@@ -335,24 +335,26 @@ export async function sendEventInvitationsToCrew(
 }
 
 /**
- * Respond to an event invitation
+ * SINGLE SOURCE OF TRUTH: Process invitation response from any source
+ * Handles both email and in-app responses with unified logic
  */
-export async function respondToEventInvitation(
+export async function processInvitationResponse(
   invitationId: string,
-  response: InvitationResponse,
-  currentUserId: string
-): Promise<{ success: boolean; message: string }> {
+  response: 'accepted' | 'declined',
+  source: 'email' | 'app',
+  currentUserId: string,
+  comment?: string
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
-
-    console.log('📝 Responding to event invitation:', { invitationId, response })
+    console.log('📝 Processing invitation response:', { invitationId, response, source })
 
     // Use RPC function to respond to invitation
     const { data, error } = await supabase
       .rpc('respond_to_event_invitation', {
         p_invitation_id: invitationId,
         p_user_id: currentUserId,
-        p_response: response.response,
-        p_comment: response.comment || null
+        p_response: response,
+        p_comment: comment || null
       })
 
     if (error) {
@@ -360,27 +362,199 @@ export async function respondToEventInvitation(
       throw error
     }
 
-    console.log('✅ Invitation response sent')
+    console.log('✅ Invitation response processed successfully')
 
-    const message = response.response === 'accepted'
+    // Update notification state in real-time for both email and app responses
+    await updateNotificationState(invitationId, response, currentUserId)
+
+    const message = response === 'accepted'
       ? '🎉 You\'re in! See you at the session!'
       : '👍 Response sent. Maybe next time!'
 
-    // Show success toast
-    toast.success(message)
+    // Show success toast (only for app responses, email responses show their own UI)
+    if (source === 'app') {
+      toast.success(message)
+    }
 
     return {
       success: true,
-      message
+      message,
+      data
     }
 
   } catch (error: any) {
-    console.error('❌ Failed to respond to invitation:', error)
+    console.error('❌ Failed to process invitation response:', error)
     return {
       success: false,
       message: error.message || 'Failed to respond to invitation'
     }
   }
+}
+
+/**
+ * Update notification state to reflect response
+ * This ensures email responses update your notification UI
+ */
+async function updateNotificationState(
+  invitationId: string,
+  response: 'accepted' | 'declined',
+  userId: string
+): Promise<void> {
+  try {
+    console.log('🔄 Updating notification state:', { invitationId, response })
+
+    // Update the original invitation notification with response status
+    const { error } = await supabase
+      .from('notifications')
+      .update({
+        data: {
+          user_response: response,
+          responded_at: new Date().toISOString()
+        }
+      })
+      .eq('user_id', userId)
+      .eq('type', 'event_invitation')
+      .contains('data', { invitation_id: invitationId })
+
+    if (error) {
+      console.error('❌ Failed to update notification state:', error)
+      // Don't throw - this is not critical for the main flow
+    } else {
+      console.log('✅ Notification state updated')
+    }
+  } catch (error) {
+    console.error('❌ Error updating notification state:', error)
+    // Don't throw - this is not critical for the main flow
+  }
+}
+
+/**
+ * Process email invitation token - unified approach
+ * Handles token validation and calls the unified response processor
+ */
+export async function processEmailInvitationToken(
+  token: string,
+  type: 'event' | 'crew',
+  action: 'accept' | 'decline',
+  userId?: string
+): Promise<{ success: boolean; message: string; data?: any }> {
+  try {
+    console.log('📧 Processing email invitation token:', { token, type, action })
+
+    // First validate the token and get invitation details
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('invitation_tokens')
+      .select(`
+        *,
+        invitation_id
+      `)
+      .eq('token', token)
+      .eq('invitation_type', type)
+      .eq('action', action)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (tokenError || !tokenData) {
+      return {
+        success: false,
+        message: 'Invalid or expired invitation token'
+      }
+    }
+
+    // Check if user is authenticated
+    if (!userId) {
+      return {
+        success: false,
+        message: 'Please log in to respond to this invitation',
+        data: { requires_auth: true }
+      }
+    }
+
+    // Verify the token belongs to this user
+    if (tokenData.user_id !== userId) {
+      return {
+        success: false,
+        message: 'This invitation is not for your account'
+      }
+    }
+
+    // Process the response using our unified function
+    const response = action === 'accept' ? 'accepted' : 'declined'
+    const result = await processInvitationResponse(
+      tokenData.invitation_id,
+      response,
+      'email',
+      userId
+    )
+
+    if (!result.success) {
+      return result
+    }
+
+    // Mark token as used
+    await supabase
+      .from('invitation_tokens')
+      .update({ used: true, updated_at: new Date().toISOString() })
+      .eq('token', token)
+
+    // Get event details for redirect
+    if (type === 'event') {
+      const { data: eventMember } = await supabase
+        .from('event_members')
+        .select(`
+          event_id,
+          events!inner(title, public_slug, private_slug, event_code)
+        `)
+        .eq('id', tokenData.invitation_id)
+        .single()
+
+      if (eventMember?.events) {
+        const event = eventMember.events as any
+        return {
+          success: true,
+          message: result.message,
+          data: {
+            action,
+            event_title: event.title,
+            event_id: eventMember.event_id,
+            redirect_url: `/event/${event.public_slug || event.private_slug || event.event_code}`
+          }
+        }
+      }
+    }
+
+    return {
+      success: true,
+      message: result.message,
+      data: { action }
+    }
+
+  } catch (error: any) {
+    console.error('❌ Failed to process email invitation token:', error)
+    return {
+      success: false,
+      message: error.message || 'Failed to process invitation'
+    }
+  }
+}
+
+/**
+ * Legacy function - now uses the unified processor
+ * Kept for backward compatibility
+ */
+export async function respondToEventInvitation(
+  invitationId: string,
+  response: InvitationResponse,
+  currentUserId: string
+): Promise<{ success: boolean; message: string }> {
+  return processInvitationResponse(
+    invitationId,
+    response.response,
+    'app',
+    currentUserId,
+    response.comment
+  )
 }
 
 /**

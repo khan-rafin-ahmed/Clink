@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-  respondToEventInvitation,
+  processInvitationResponse,
   showInvitationResponseToast,
   type EventInvitation
 } from '@/lib/eventInvitationService'
@@ -48,10 +48,13 @@ export function EventInvitationCard({ invitation, onResponse, showToast = true }
     setIsResponding(true)
 
     try {
-      const result = await respondToEventInvitation(invitation.invitation_id, {
+      const result = await processInvitationResponse(
+        invitation.invitation_id,
         response,
-        comment: comment.trim() || undefined
-      }, user!.id)
+        'app',
+        user!.id,
+        comment.trim() || undefined
+      )
 
       if (result.success) {
         // Only show toast if showToast prop is true

@@ -26,6 +26,77 @@
   - `'accept'` → `'accepted'`
   - `'decline'` → `'declined'`
 
+### 2. Notification Personalization Fix
+
+**File**: `fix_email_notification_personalization.sql`
+
+**Issue**: Generic notifications showing "Someone accepted your invitation" instead of actual user names
+
+**Changes**:
+- Updated `process_event_invitation_token()` to fetch actual user names
+- Implemented personalized notification pattern: `${userName} accepted your invitation to ${eventTitle}`
+- Added user name to notification data for consistency
+- Follows established notification architecture patterns
+
+### 3. Notification Update Fix
+
+**Issue**: Notifications still showing Accept/Decline buttons after responding via email
+
+**Root Cause**: Email token processing functions weren't updating the original invitation notifications with response status
+
+**Changes**:
+- Added notification update logic to mark invitations as responded
+- Updates notification data with `user_response` and `responded_at` fields
+- Prevents notifications from showing action buttons after email response
+- Matches existing in-app response behavior from NotificationBell.tsx
+- Applied to both event and crew invitation token processing functions
+
+### 4. Column Reference Fix
+
+**Issue**: `column "used_at" of relation "invitation_tokens" does not exist`
+
+**Root Cause**: Functions were trying to set `used_at` column that doesn't exist in the table schema
+
+**Changes**:
+- Fixed all functions to use `updated_at` instead of `used_at` when marking tokens as used
+- Aligns with actual table schema from architecture documentation
+- Applied to all invitation token processing functions
+
+### 5. Event Slug Reference Fix
+
+**Issue**: `column e.slug does not exist`
+
+**Root Cause**: Functions were trying to access `v_event_record.slug` which doesn't exist in the events table
+
+**Changes**:
+- Fixed all functions to use proper slug logic: `COALESCE(public_slug, private_slug, event_code)`
+- Updated both notification data and return statements
+- Ensures correct redirect URLs for accepted invitations
+- Applied to all event invitation token processing functions
+
+### 6. Notifications Updated_At Column Fix
+
+**Issue**: `column "updated_at" of relation "notifications" does not exist`
+
+**Root Cause**: Functions were trying to set `updated_at` on notifications table which only has `created_at`
+
+**Changes**:
+- Removed all `updated_at` references from notification UPDATE statements
+- Notifications table schema only includes: id, user_id, type, title, message, data, read, created_at
+- Applied to all notification update operations in token processing functions
+
+### 7. Users Table Reference Fix
+
+**Issue**: `relation "users" does not exist`
+
+**Root Cause**: Functions were trying to query `FROM users` but user data is stored in `user_profiles` table
+
+**Changes**:
+- Fixed all user queries to use `user_profiles` table instead of `users`
+- Updated WHERE clause to use `user_id` instead of `id` (matching user_profiles schema)
+- Enhanced user name resolution: `COALESCE(nickname, username, display_name, email)`
+- Applied to all personalized notification creation in token processing functions
+
 ### 2. Current Architecture Confirmed
 
 **Existing Flow**: Frontend calls database functions directly via RPC (`supabase.rpc()`)

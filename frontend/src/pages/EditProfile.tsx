@@ -194,7 +194,6 @@ export function EditProfile() {
             </div>
             <div className="space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-              <p className="text-lg text-muted-foreground font-medium">Loading your profile...</p>
             </div>
           </div>
         </div>

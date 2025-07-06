@@ -512,13 +512,18 @@ export function UserProfile() {
     }
   }, [user?.id, userProfile, sessionsRefresh]) // Remove fetchEnhancedSessions from dependencies to prevent infinite loop
 
+  // Handle loading and error states first
   if (loading) {
     return <UserProfilePageSkeleton />
   }
 
+  // ALWAYS show Simple404 if profileError is true
+  if (profileError) {
+    return <Simple404 username={username} />
+  }
+
   // Allow public profiles to be viewable by unauthenticated users
   if (!user && username) {
-    if (profileError) return <Simple404 username={username} />
     if (!userProfile) return null // Still loading profile
     if (userProfile.profile_visibility === 'private')
       return <Simple404 username={username} />
@@ -526,8 +531,6 @@ export function UserProfile() {
 
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'Champion'
   const avatarFallback = displayName.charAt(0).toUpperCase()
-
-
 
   const renderCrewsContent = () => {
     return (
@@ -566,20 +569,6 @@ export function UserProfile() {
         )}
       </div>
     )
-  }
-
-  console.log('🎯 UserProfile render:', { loading, profileError, userProfile: !!userProfile, username })
-
-  // ALWAYS show Simple404 if profileError is true
-  if (profileError) {
-    console.log('🚨 Rendering Simple404 due to profileError')
-    return <Simple404 username={username} />
-  }
-
-  // Handle loading and error states
-  if (loading) {
-    console.log('⏳ Rendering loading state')
-    return <UserProfilePageSkeleton />
   }
 
   if (!userProfile) {

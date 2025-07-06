@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuth } from '@/lib/auth-context'
 import NotificationService, { type NotificationData } from '@/lib/notificationService'
 import { respondToCrewInvitation } from '@/lib/crewService'
-import { respondToEventInvitation } from '@/lib/eventInvitationService'
+import { processInvitationResponse } from '@/lib/eventInvitationService'
 import { supabase } from '@/lib/supabase'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -169,7 +169,7 @@ export function NotificationBell() {
         return
       }
 
-      const result = await respondToEventInvitation(invitationId, { response }, user!.id)
+      const result = await processInvitationResponse(invitationId, response, 'app', user!.id)
 
       if (result.success) {
         // Mark as read in service
