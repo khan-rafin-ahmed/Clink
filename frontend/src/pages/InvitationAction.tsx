@@ -67,14 +67,16 @@ export function InvitationAction({}: InvitationActionProps) {
     processInvitationToken()
   }, [token]) // Remove user dependency to avoid re-running when auth loads
 
-  // Handle user authentication changes (when user logs in)
+  // Handle case where user is already logged in but invitation processing failed
   useEffect(() => {
-    if (user && result?.requires_auth) {
-      // User just logged in and we have a pending auth-required result
-      // Retry processing the token
+    if (user && !loading && result?.requires_auth) {
+      // User is now authenticated, retry processing
+      console.log('🔄 User authenticated, retrying invitation processing')
       processInvitationToken()
     }
-  }, [user, result?.requires_auth])
+  }, [user, loading, result?.requires_auth])
+
+
 
   const processInvitationToken = async () => {
     try {

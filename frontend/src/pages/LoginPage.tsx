@@ -48,7 +48,14 @@ export function LoginPage() {
   // Handle user redirect in useEffect
   useEffect(() => {
     if (!loading && user) {
-      navigate('/profile')
+      // Check for stored redirect first
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+      if (redirectPath) {
+        sessionStorage.removeItem('redirectAfterLogin')
+        navigate(redirectPath, { replace: true })
+      } else {
+        navigate('/profile')
+      }
     }
   }, [user, loading, navigate])
 
