@@ -6,7 +6,7 @@ import { useSmartNavigation, useActionNavigation } from '@/hooks/useSmartNavigat
 import { getEventDetails, updateRsvp } from '@/lib/eventService'
 import { useAuthDependentData } from '@/hooks/useAuthState'
 import { useEventMetaTags } from '@/hooks/useMetaTags'
-import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
+import { EventDetailSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import { EditEventModal } from '@/components/EditEventModal'
 import { DeleteEventDialog } from '@/components/DeleteEventDialog'
 import type { RsvpStatus } from '@/types'
@@ -122,7 +122,7 @@ export function EventDetails() {
 
   // Show loading skeleton while auth or data is loading
   if (isLoading) {
-    return <FullPageSkeleton />
+    return <EventDetailSkeleton />
   }
 
   // Show error fallback if there's an error

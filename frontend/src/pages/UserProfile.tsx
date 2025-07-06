@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
 import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
 import { filterEventsByDate } from '@/lib/eventUtils'
+import { UserProfilePageSkeleton } from '@/components/SkeletonLoaders'
 
 import type { UserProfile, Event, Crew } from '@/types'
 
@@ -512,21 +513,7 @@ export function UserProfile() {
   }, [user?.id, userProfile, sessionsRefresh]) // Remove fetchEnhancedSessions from dependencies to prevent infinite loop
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-bg-base">
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-center space-y-6 fade-in">
-            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-gold animate-pulse">
-              <span className="text-3xl">👤</span>
-            </div>
-            <div className="space-y-3">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
-              <p className="text-lg text-muted-foreground font-medium">Loading your profile...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <UserProfilePageSkeleton />
   }
 
   // Allow public profiles to be viewable by unauthenticated users
@@ -592,19 +579,7 @@ export function UserProfile() {
   // Handle loading and error states
   if (loading) {
     console.log('⏳ Rendering loading state')
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-base">
-        <div className="text-center space-y-4">
-          <img
-            src="/thirstee-logo.svg"
-            alt="Thirstee"
-            className="h-16 w-auto mx-auto mb-4"
-          />
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    )
+    return <UserProfilePageSkeleton />
   }
 
   if (!userProfile) {

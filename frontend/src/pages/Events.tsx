@@ -6,7 +6,7 @@ import { getUserAccessibleEvents } from '@/lib/eventService'
 import { Button } from '@/components/ui/button'
 import { EnhancedEventCard } from '@/components/EnhancedEventCard'
 import { toast } from 'sonner'
-import { FullPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
+import { DiscoverPageSkeleton, ErrorFallback } from '@/components/SkeletonLoaders'
 import type { Event } from '@/types'
 
 // Data loading function (outside component for stability)
@@ -63,7 +63,7 @@ function EventsContent() {
 
   // Handle loading state
   if (isLoading) {
-    return <FullPageSkeleton />
+    return <DiscoverPageSkeleton viewMode="grid" />
   }
 
   // Handle error state

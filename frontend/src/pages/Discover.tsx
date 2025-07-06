@@ -10,7 +10,7 @@ import { EventTimeline } from '@/components/EventTimeline'
 import { FilterModal } from '@/components/FilterModal'
 // import { CommandMenu, CommandMenuTrigger, useCommandMenu } from '@/components/CommandMenu'
 import {
-  FullPageSkeleton,
+  DiscoverPageSkeleton,
   ErrorFallback
 } from '@/components/SkeletonLoaders'
 import {
@@ -339,7 +339,7 @@ function DiscoverContent() {
 
   // Handle loading state
   if (isLoading) {
-    return <FullPageSkeleton />
+    return <DiscoverPageSkeleton viewMode={viewMode} />
   }
 
   // Handle error state

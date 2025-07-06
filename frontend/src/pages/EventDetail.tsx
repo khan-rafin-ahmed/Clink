@@ -54,7 +54,7 @@ import { getEventRatingStats, getUserEventRating, canUserRateEvent, hasEventConc
 import { getEventDetails, getEventBySlug } from '@/lib/eventService'
 import { useEventMetaTags } from '@/hooks/useMetaTags'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
-import { FullPageSkeleton } from '@/components/SkeletonLoaders'
+import { EventDetailSkeleton } from '@/components/SkeletonLoaders'
 
 
 
@@ -483,7 +483,7 @@ export function EventDetail() {
 
   // If auth isn't ready or we're loading the event, show skeleton
   if (!isAuthReady || loading) {
-    return <FullPageSkeleton />
+    return <EventDetailSkeleton />
   }
 
   // If we set an error in state, show it

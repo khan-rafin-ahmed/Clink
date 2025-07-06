@@ -55,6 +55,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { CrewDetailPageSkeleton } from '@/components/SkeletonLoaders'
 import type { Crew, CrewMember } from '@/types'
 
 export function CrewDetail() {
@@ -379,24 +380,7 @@ export function CrewDetail() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--primary-muted)_0%,_transparent_50%)] opacity-20"></div>
-
-        <div className="relative flex h-screen items-center justify-center">
-          <div className="text-center space-y-6 fade-in">
-            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-white animate-pulse">
-              <Users className="h-10 w-10 text-primary-foreground" />
-            </div>
-            <div className="space-y-3">
-              <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-              <p className="text-lg text-muted-foreground font-medium">Loading crew...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <CrewDetailPageSkeleton />
   }
 
   if (!crew) {
