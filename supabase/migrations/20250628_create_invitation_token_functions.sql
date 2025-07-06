@@ -18,6 +18,7 @@ DECLARE
     v_event_record RECORD;
     v_current_user_id UUID;
     v_action TEXT;
+    v_response_success BOOLEAN;
 BEGIN
     -- Get current user ID (from auth or parameter)
     v_current_user_id := COALESCE(p_user_id, auth.uid());
@@ -88,41 +89,28 @@ BEGIN
     -- Get action from token
     v_action := v_token_record.action;
     
-    -- Update invitation status
-    UPDATE event_members
-    SET 
-        status = v_action || 'ed', -- 'accept' -> 'accepted', 'decline' -> 'declined'
-        invitation_responded_at = NOW(),
-        updated_at = NOW()
-    WHERE id = v_invitation_record.id;
-    
+    -- Use the unified response function (single source of truth)
+    SELECT respond_to_event_invitation(
+        v_invitation_record.id,
+        v_current_user_id,
+        v_action || 'ed', -- 'accept' -> 'accepted', 'decline' -> 'declined'
+        NULL  -- No comment from email responses
+    ) INTO v_response_success;
+
+    -- Check if the response was successful
+    IF NOT v_response_success THEN
+        RETURN json_build_object(
+            'success', false,
+            'message', 'Failed to process invitation response'
+        );
+    END IF;
+
     -- Mark token as used
     UPDATE invitation_tokens
-    SET 
+    SET
         used = true,
         used_at = NOW()
     WHERE token = p_token;
-    
-    -- Create success notification for event host (if accepting)
-    IF v_action = 'accept' THEN
-        INSERT INTO notifications (
-            user_id,
-            type,
-            title,
-            message,
-            data
-        ) VALUES (
-            v_event_record.created_by,
-            'event_rsvp',
-            '🎉 Someone joined your session!',
-            'A crew member accepted your invitation to ' || v_event_record.title,
-            jsonb_build_object(
-                'event_id', v_event_record.id,
-                'event_slug', v_event_record.slug,
-                'user_id', v_current_user_id
-            )
-        );
-    END IF;
     
     -- Return success response
     RETURN json_build_object(

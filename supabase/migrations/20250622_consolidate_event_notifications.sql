@@ -46,12 +46,12 @@ BEGIN
   WHERE id = p_invitation_id;
   
   -- Get user profiles for notification
-  SELECT display_name INTO inviter_profile 
-  FROM user_profiles 
+  SELECT display_name INTO inviter_profile
+  FROM user_profiles
   WHERE user_id = invitation_record.invited_by;
-  
-  SELECT display_name INTO invitee_profile 
-  FROM user_profiles 
+
+  SELECT COALESCE(nickname, username, display_name, email) INTO invitee_profile
+  FROM user_profiles
   WHERE user_id = p_user_id;
   
   -- Notify the inviter about the response (consolidated notification with event title)
@@ -64,9 +64,9 @@ BEGIN
   ) VALUES (
     invitation_record.invited_by,
     'event_invitation_response',
-    CASE 
-      WHEN p_response = 'accepted' THEN '🎉 ' || COALESCE(invitee_profile.display_name, 'Someone') || ' accepted your invitation to "' || invitation_record.event_title || '"'
-      ELSE '😔 ' || COALESCE(invitee_profile.display_name, 'Someone') || ' declined your invitation to "' || invitation_record.event_title || '"'
+    CASE
+      WHEN p_response = 'accepted' THEN '🎉 ' || invitee_profile || ' accepted your invitation to "' || invitation_record.event_title || '"'
+      ELSE '😔 ' || invitee_profile || ' declined your invitation to "' || invitation_record.event_title || '"'
     END,
     CASE 
       WHEN p_response = 'accepted' THEN 'They''re ready to raise hell!'
@@ -81,7 +81,18 @@ BEGIN
       'show_view_event_button', true
     )
   );
-  
+
+  -- Update the original invitation notification with response status
+  UPDATE notifications
+  SET
+    data = data || jsonb_build_object(
+      'user_response', p_response,
+      'responded_at', NOW()::text
+    )
+  WHERE user_id = p_user_id
+    AND type = 'event_invitation'
+    AND data->>'invitation_id' = p_invitation_id::text;
+
   RETURN TRUE;
 END;
 $$;

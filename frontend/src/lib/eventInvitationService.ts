@@ -403,28 +403,42 @@ async function updateNotificationState(
   try {
     console.log('🔄 Updating notification state:', { invitationId, response })
 
-    // Update the original invitation notification with response status
+    // Get the current notification data first
+    const { data: currentNotification, error: fetchError } = await supabase
+      .from('notifications')
+      .select('data')
+      .eq('user_id', userId)
+      .eq('type', 'event_invitation')
+      .contains('data', { invitation_id: invitationId })
+      .single()
+
+    if (fetchError) {
+      console.error('❌ Failed to fetch notification:', fetchError)
+      return
+    }
+
+    // Merge the response data with existing data
+    const updatedData = {
+      ...currentNotification.data,
+      user_response: response,
+      responded_at: new Date().toISOString()
+    }
+
+    // Update the notification with merged data
     const { error } = await supabase
       .from('notifications')
-      .update({
-        data: {
-          user_response: response,
-          responded_at: new Date().toISOString()
-        }
-      })
+      .update({ data: updatedData })
       .eq('user_id', userId)
       .eq('type', 'event_invitation')
       .contains('data', { invitation_id: invitationId })
 
     if (error) {
       console.error('❌ Failed to update notification state:', error)
-      // Don't throw - this is not critical for the main flow
     } else {
-      console.log('✅ Notification state updated')
+      console.log('✅ Notification state updated successfully')
     }
   } catch (error) {
     console.error('❌ Error updating notification state:', error)
-    // Don't throw - this is not critical for the main flow
   }
 }
 
@@ -511,6 +525,7 @@ export async function processEmailInvitationToken(
 
       if (eventMember?.events) {
         const event = eventMember.events as any
+        const eventSlug = event.public_slug || event.private_slug || event.event_code
         return {
           success: true,
           message: result.message,
@@ -518,7 +533,8 @@ export async function processEmailInvitationToken(
             action,
             event_title: event.title,
             event_id: eventMember.event_id,
-            redirect_url: `/event/${event.public_slug || event.private_slug || event.event_code}`
+            redirect_url: `/event/${eventSlug}`,
+            requires_auth: false
           }
         }
       }
