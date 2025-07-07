@@ -19,6 +19,22 @@ const debugError = (...args: any[]) => {
   }
 }
 
+// Helper function to generate username from display name
+function generateUsernameFromDisplayName(displayName: string, userId: string): string {
+  // Clean the display name to create a username
+  let username = displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '') // Remove special characters except underscore
+    .substring(0, 20) // Limit length
+
+  // Ensure minimum length
+  if (username.length < 3) {
+    username = username + '_' + userId.substring(0, 8)
+  }
+
+  return username
+}
+
 // User Profile Functions
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   // STRONGEST GUARD: Validate input parameters
@@ -90,6 +106,20 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 }
 
 export async function updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+  // Generate username if not provided and display_name is being updated
+  if (updates.display_name && !updates.username) {
+    // Get current profile to check if username exists
+    const currentProfile = await getUserProfile(userId)
+    if (!currentProfile?.username) {
+      updates.username = generateUsernameFromDisplayName(updates.display_name, userId)
+    }
+  }
+
+  // Ensure username is not empty string
+  if (updates.username === '') {
+    delete updates.username
+  }
+
   // First try to update
   const { data, error } = await supabase
     .from('user_profiles')
@@ -115,6 +145,13 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 }
 
 export async function createUserProfile(userId: string, profile: Partial<UserProfile>) {
+  // Ensure username is provided
+  if (!profile.username && profile.display_name) {
+    profile.username = generateUsernameFromDisplayName(profile.display_name, userId)
+  } else if (!profile.username) {
+    profile.username = generateUsernameFromDisplayName('user', userId)
+  }
+
   const { data, error } = await supabase
     .from('user_profiles')
     .insert({ user_id: userId, ...profile })
@@ -221,7 +258,7 @@ export async function ensureUserProfileExists(user: any, maxRetries = 3): Promis
         .insert({
           user_id: user.id,
           display_name: displayName,
-          username: displayName // Set username to same as display_name initially
+          username: generateUsernameFromDisplayName(displayName, user.id)
         })
         .select('id, user_id, display_name, username')
         .single()

@@ -138,8 +138,8 @@ export function EditProfile() {
     e.preventDefault()
     if (!user || !profile) return
 
-    const updateData = {
-      username: formData.username.trim() || undefined,
+    // Prepare update data with proper username handling
+    const updateData: any = {
       display_name: formData.display_name.trim() || null,
       nickname: formData.nickname.trim() || null,
       bio: formData.bio.trim() || null,
@@ -150,6 +150,12 @@ export function EditProfile() {
       show_crews_publicly: formData.show_crews_publicly
     }
 
+    // Only include username if it's provided and valid
+    const trimmedUsername = formData.username.trim()
+    if (trimmedUsername && trimmedUsername.length >= 3) {
+      updateData.username = trimmedUsername
+    }
+
     setSaving(true)
     try {
       await updateUserProfile(user.id, updateData)
@@ -157,7 +163,11 @@ export function EditProfile() {
       handleUpdateSuccess()
     } catch (error: any) {
       console.error('Error updating profile:', error)
-      toast.error('Failed to update profile')
+      if (error.message?.includes('username') || error.message?.includes('not-null')) {
+        toast.error('Username is required and must be at least 3 characters')
+      } else {
+        toast.error('Failed to update profile')
+      }
     } finally {
       setSaving(false)
     }
@@ -266,11 +276,21 @@ export function EditProfile() {
                   type="text"
                   placeholder="your-username"
                   value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                    handleInputChange('username', value)
+                  }}
+                  minLength={3}
+                  maxLength={30}
                 />
                 <p className="text-xs text-muted-foreground">
                   Your profile URL: thirstee.app/profile/{formData.username || 'username'}
                 </p>
+                {formData.username && formData.username.length < 3 && (
+                  <p className="text-xs text-red-400">
+                    Username must be at least 3 characters long
+                  </p>
+                )}
               </div>
 
               {/* Display Name */}
