@@ -476,13 +476,18 @@ export async function processEmailInvitationToken(
       }
     }
 
-    // Check if user is authenticated
+    // Check if user is authenticated (wait for auth to load)
     if (!userId) {
-      return {
-        success: false,
-        message: 'Please log in to respond to this invitation',
-        data: { requires_auth: true }
+      // Try to get current user from Supabase auth
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        return {
+          success: false,
+          message: 'Please log in to respond to this invitation',
+          data: { requires_auth: true }
+        }
       }
+      userId = user.id
     }
 
     // Verify the token belongs to this user
