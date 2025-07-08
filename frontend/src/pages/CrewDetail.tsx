@@ -26,7 +26,7 @@ import { EditCrewModal } from '@/components/EditCrewModal'
 import { CrewSessionsTimeline } from '@/components/CrewSessionsTimeline'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
-import { generateUsernameFromDisplayName } from '@/lib/utils'
+import { getUserProfile } from '@/lib/userService'
 import {
   Users,
   Globe,
@@ -782,12 +782,18 @@ export function CrewDetail() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation()
-                          const username = request.user?.display_name
-                            ? generateUsernameFromDisplayName(request.user.display_name)
-                            : request.user_id.slice(-8)
-                          navigate(`/profile/${username}`)
+                          try {
+                            const profile = await getUserProfile(request.user_id)
+                            if (profile?.username) {
+                              navigate(`/profile/${profile.username}`)
+                            } else {
+                              console.warn('No username found for user:', request.user_id)
+                            }
+                          } catch (error) {
+                            console.error('Error fetching user profile:', error)
+                          }
                         }}
                         className="text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
                       >
@@ -870,12 +876,18 @@ export function CrewDetail() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation()
-                        const username = member.user?.display_name
-                          ? generateUsernameFromDisplayName(member.user.display_name)
-                          : member.user_id.slice(-8)
-                        navigate(`/profile/${username}`)
+                        try {
+                          const profile = await getUserProfile(member.user_id)
+                          if (profile?.username) {
+                            navigate(`/profile/${profile.username}`)
+                          } else {
+                            console.warn('No username found for user:', member.user_id)
+                          }
+                        } catch (error) {
+                          console.error('Error fetching user profile:', error)
+                        }
                       }}
                       className="ml-2 text-xs border-white/20 text-[#B3B3B3] hover:text-white hover:bg-white/10 hover:border-white/40 transition-colors"
                     >

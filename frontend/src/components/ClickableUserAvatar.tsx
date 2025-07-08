@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { UserAvatar } from './UserAvatar'
 import { getUserProfile } from '@/lib/userService'
 import { useAuth } from '@/lib/auth-context'
-import { cn, generateUsernameFromDisplayName } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 // Simple cache for usernames to avoid repeated API calls
 const usernameCache = new Map<string, string | null>()
@@ -58,25 +58,16 @@ export function ClickableUserAvatar({
         const profile = await getUserProfile(userId)
         let fetchedUsername = profile?.username || null
 
-        // Fallback: if no username, generate one from display_name
-        if (!fetchedUsername && profile?.display_name) {
-          fetchedUsername = generateUsernameFromDisplayName(profile.display_name)
-        }
+        // No fallback generation - use only actual database username
 
         // Cache the result
         usernameCache.set(userId, fetchedUsername)
         setUsername(fetchedUsername)
       } catch (error) {
         console.error('Error fetching username for avatar click:', error)
-        // Try fallback with display name if available
-        if (displayName) {
-          const fallbackUsername = generateUsernameFromDisplayName(displayName)
-          usernameCache.set(userId, fallbackUsername)
-          setUsername(fallbackUsername)
-        } else {
-          usernameCache.set(userId, null)
-          setUsername(null)
-        }
+        // No fallback generation - cache null result
+        usernameCache.set(userId, null)
+        setUsername(null)
       } finally {
         setIsLoading(false)
       }
@@ -92,19 +83,14 @@ export function ClickableUserAvatar({
 
     if (disabled || !userId || isLoading) return
 
-    // If we have a username, use it; otherwise try to create one from display name
-    let targetUsername = username
-    if (!targetUsername && displayName) {
-      targetUsername = generateUsernameFromDisplayName(displayName)
-    }
-
-    if (!targetUsername) {
-      console.warn('ClickableUserAvatar: No username available for navigation', { userId, displayName })
+    // Always use the actual username from database, never generate fallback
+    if (!username) {
+      console.warn('ClickableUserAvatar: No username available for navigation', { userId, displayName, username })
       return
     }
 
     // Navigate to user profile and ensure scroll to top (same as CrewDetail View buttons)
-    navigate(`/profile/${targetUsername}`)
+    navigate(`/profile/${username}`)
     // Force scroll to top immediately after navigation
     setTimeout(() => window.scrollTo(0, 0), 0)
   }
