@@ -403,17 +403,53 @@ async function updateNotificationState(
   try {
     console.log('🔄 Updating notification state:', { invitationId, response })
 
-    // Get the current notification data first
-    const { data: currentNotification, error: fetchError } = await supabase
+    // Try multiple approaches to find the notification
+    // Approach 1: Look for exact invitation_id match
+    let { data: currentNotification, error: fetchError } = await supabase
       .from('notifications')
-      .select('data')
+      .select('id, data')
       .eq('user_id', userId)
       .eq('type', 'event_invitation')
       .contains('data', { invitation_id: invitationId })
-      .single()
+      .maybeSingle()
 
-    if (fetchError) {
-      console.error('❌ Failed to fetch notification:', fetchError)
+    // Approach 2: If not found, look for string version of invitation_id
+    if (!currentNotification && !fetchError) {
+      const { data: altNotification } = await supabase
+        .from('notifications')
+        .select('id, data')
+        .eq('user_id', userId)
+        .eq('type', 'event_invitation')
+        .contains('data', { invitation_id: invitationId.toString() })
+        .maybeSingle()
+
+      currentNotification = altNotification
+    }
+
+    // Approach 3: If still not found, search by event_id from the invitation
+    if (!currentNotification) {
+      // Get event_id from the invitation
+      const { data: invitation } = await supabase
+        .from('event_members')
+        .select('event_id')
+        .eq('id', invitationId)
+        .single()
+
+      if (invitation) {
+        const { data: eventNotification } = await supabase
+          .from('notifications')
+          .select('id, data')
+          .eq('user_id', userId)
+          .eq('type', 'event_invitation')
+          .contains('data', { event_id: invitation.event_id })
+          .maybeSingle()
+
+        currentNotification = eventNotification
+      }
+    }
+
+    if (!currentNotification) {
+      console.log('⚠️ No notification found to update - this might be expected for some flows')
       return
     }
 
@@ -428,9 +464,7 @@ async function updateNotificationState(
     const { error } = await supabase
       .from('notifications')
       .update({ data: updatedData })
-      .eq('user_id', userId)
-      .eq('type', 'event_invitation')
-      .contains('data', { invitation_id: invitationId })
+      .eq('id', currentNotification.id)
 
     if (error) {
       console.error('❌ Failed to update notification state:', error)
@@ -498,57 +532,60 @@ export async function processEmailInvitationToken(
       }
     }
 
-    // Process the response using our unified function
-    const response = action === 'accept' ? 'accepted' : 'declined'
-    const result = await processInvitationResponse(
-      tokenData.invitation_id,
-      response,
-      'email',
-      userId
-    )
-
-    if (!result.success) {
-      return result
-    }
-
-    // Mark token as used
-    await supabase
-      .from('invitation_tokens')
-      .update({ used: true, updated_at: new Date().toISOString() })
-      .eq('token', token)
-
-    // Get event details for redirect
+    // For email responses, use the database function directly for better integration
     if (type === 'event') {
-      const { data: eventMember } = await supabase
-        .from('event_members')
-        .select(`
-          event_id,
-          events!inner(title, public_slug, private_slug, event_code)
-        `)
-        .eq('id', tokenData.invitation_id)
-        .single()
+      // Use the database function that handles everything including redirect URLs
+      const { data: dbResult, error: dbError } = await supabase
+        .rpc('process_event_invitation_token', {
+          p_token: token,
+          p_user_id: userId
+        })
 
-      if (eventMember?.events) {
-        const event = eventMember.events as any
-        const eventSlug = event.public_slug || event.private_slug || event.event_code
+      if (dbError) {
+        console.error('❌ Database function error:', dbError)
         return {
-          success: true,
-          message: result.message,
-          data: {
-            action,
-            event_title: event.title,
-            event_id: eventMember.event_id,
-            redirect_url: `/event/${eventSlug}`,
-            requires_auth: false
-          }
+          success: false,
+          message: dbError.message || 'Failed to process invitation'
         }
       }
-    }
 
-    return {
-      success: true,
-      message: result.message,
-      data: { action }
+      // The database function returns all the data we need
+      return {
+        success: dbResult.success,
+        message: dbResult.message,
+        data: {
+          action: dbResult.action,
+          event_title: dbResult.event_title,
+          event_id: dbResult.event_id,
+          redirect_url: dbResult.redirect_url,
+          requires_auth: false
+        }
+      }
+    } else {
+      // For crew invitations, use the frontend flow
+      const response = action === 'accept' ? 'accepted' : 'declined'
+      const result = await processInvitationResponse(
+        tokenData.invitation_id,
+        response,
+        'email',
+        userId
+      )
+
+      if (!result.success) {
+        return result
+      }
+
+      // Mark token as used
+      await supabase
+        .from('invitation_tokens')
+        .update({ used: true, updated_at: new Date().toISOString() })
+        .eq('token', token)
+
+      return {
+        success: true,
+        message: result.message,
+        data: { action }
+      }
     }
 
   } catch (error: any) {
