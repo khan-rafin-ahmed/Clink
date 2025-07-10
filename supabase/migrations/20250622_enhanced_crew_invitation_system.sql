@@ -22,13 +22,23 @@ CHECK (status IN ('pending', 'accepted', 'declined'));
 CREATE INDEX IF NOT EXISTS idx_event_members_status_pending ON event_members (status) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_event_members_invitation_sent ON event_members (invitation_sent_at);
 
--- Add notification types for event invitations
+-- Add notification types for event invitations (removed unused follow types)
 ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
 ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
 CHECK (type IN (
-    'follow_request', 'follow_accepted', 'event_invitation', 'event_update', 
-    'crew_invitation', 'event_rsvp', 'event_reminder', 'crew_invite_accepted', 
-    'event_cancelled', 'event_rating_reminder', 'event_invitation_response'
+    'event_invitation',
+    'event_invitation_response',
+    'event_update',
+    'event_rsvp',
+    'event_reminder',
+    'event_cancelled',
+    'event_rating_reminder',
+    'crew_invitation',
+    'crew_invitation_response',
+    'crew_invite_accepted',
+    'crew_promotion',
+    'event_promotion',
+    'crew_join'
 ));
 
 -- Function to send event invitations to crew members
@@ -145,13 +155,13 @@ BEGIN
     invitation_responded_at = NOW()
   WHERE id = p_invitation_id;
   
-  -- Get user profiles for notification
-  SELECT display_name INTO inviter_profile 
-  FROM user_profiles 
+  -- Get user profiles for notification with better fallback
+  SELECT display_name, username INTO inviter_profile
+  FROM user_profiles
   WHERE user_id = invitation_record.invited_by;
-  
-  SELECT display_name INTO invitee_profile 
-  FROM user_profiles 
+
+  SELECT display_name, username INTO invitee_profile
+  FROM user_profiles
   WHERE user_id = p_user_id;
   
   -- Notify the inviter about the response (consolidated notification with event title)
@@ -165,8 +175,8 @@ BEGIN
     invitation_record.invited_by,
     'event_invitation_response',
     CASE
-      WHEN p_response = 'accepted' THEN '🎉 ' || COALESCE(invitee_profile.display_name, 'Someone') || ' accepted your invitation to "' || invitation_record.event_title || '"'
-      ELSE '😔 ' || COALESCE(invitee_profile.display_name, 'Someone') || ' declined your invitation to "' || invitation_record.event_title || '"'
+      WHEN p_response = 'accepted' THEN '🎉 ' || COALESCE(invitee_profile.display_name, invitee_profile.username, 'A user') || ' accepted your invitation to "' || invitation_record.event_title || '"'
+      ELSE '😔 ' || COALESCE(invitee_profile.display_name, invitee_profile.username, 'A user') || ' declined your invitation to "' || invitation_record.event_title || '"'
     END,
     CASE
       WHEN p_response = 'accepted' THEN 'They''re ready to raise hell!'

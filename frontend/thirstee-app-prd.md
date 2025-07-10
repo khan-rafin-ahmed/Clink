@@ -616,6 +616,23 @@ if (errors.length > 0) {
 - **Files Modified**: `RSVPButton.tsx`, `SessionCard.tsx`, `eventInvitationService.ts`
 - **Database**: Added migration `20250708_remove_database_notification_auto_updates.sql`
 
+#### **Follow System Cleanup and Notification Constraint Fix (2025-07-08)**
+- **Issue**: Legacy follow notifications causing constraint violations and unused follow system cluttering database
+- **Root Cause**: Old `follow_request` and `follow_accepted` notifications (19 total) from unused follow feature
+- **Solution**: Implemented Option B - Complete cleanup of follow system remnants
+- **Changes Made**:
+  - Deleted all legacy follow notifications (10 follow_request + 9 follow_accepted)
+  - Updated notification constraint to exclude unused follow types
+  - Fixed "Someone" notification fallback with comprehensive user name resolution
+  - Cleaned up database schema documentation
+- **Technical Implementation**:
+  - Removed `follow_request` and `follow_accepted` from notifications_type_check constraint
+  - Updated `respond_to_event_invitation` function with better fallback: `display_name → username → email → 'A user'`
+  - Eliminated all "Someone" notifications across the system
+- **Final Notification Types**: `event_invitation`, `event_invitation_response`, `event_update`, `event_rsvp`, `event_reminder`, `event_cancelled`, `event_rating_reminder`, `crew_invitation`, `crew_invitation_response`, `crew_invite_accepted`, `crew_promotion`, `event_promotion`, `crew_join`
+- **Files Modified**: `database-schema.md`, `thirstee-app-prd.md`
+- **Database**: Added migrations `20250708_fix_constraint_with_existing_data.sql`, `20250708_fix_someone_notifications_clean.sql`, `20250708_cleanup_follow_notifications.sql`
+
 #### **Dynamic Email Invitation Action Buttons (2025-06-24)**
 - **Issue**: Email invitations required users to manually navigate to app and find invitations to respond
 - **Root Cause**: Static email templates with basic links instead of direct action buttons
