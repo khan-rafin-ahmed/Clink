@@ -82,16 +82,8 @@ BEGIN
     )
   );
 
-  -- Update the original invitation notification with response status
-  UPDATE notifications
-  SET
-    data = data || jsonb_build_object(
-      'user_response', p_response,
-      'responded_at', NOW()::text
-    )
-  WHERE user_id = p_user_id
-    AND type = 'event_invitation'
-    AND data->>'invitation_id' = p_invitation_id::text;
+  -- NOTE: Notification updates are now handled by frontend updateNotificationState function
+  -- This ensures single-source response handling and avoids duplicate updates
 
   RETURN TRUE;
 END;

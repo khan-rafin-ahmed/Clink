@@ -240,22 +240,31 @@ BEGIN
 
     -- Create success notification for crew creator (if accepting)
     IF v_action = 'accept' THEN
-        INSERT INTO notifications (
-            user_id,
-            type,
-            title,
-            message,
-            data
-        ) VALUES (
-            v_crew_record.created_by,
-            'crew_join',
-            '🤘 New crew member!',
-            'Someone joined your crew ' || v_crew_record.name,
-            jsonb_build_object(
-                'crew_id', v_crew_record.id,
-                'user_id', v_current_user_id
-            )
-        );
+        DECLARE
+            v_user_name TEXT;
+        BEGIN
+            -- Get user's display name with better fallback
+            SELECT COALESCE(display_name, username, 'A user') INTO v_user_name
+            FROM user_profiles
+            WHERE user_id = v_current_user_id;
+
+            INSERT INTO notifications (
+                user_id,
+                type,
+                title,
+                message,
+                data
+            ) VALUES (
+                v_crew_record.created_by,
+                'crew_join',
+                '🤘 New crew member!',
+                v_user_name || ' joined your crew ' || v_crew_record.name,
+                jsonb_build_object(
+                    'crew_id', v_crew_record.id,
+                    'user_id', v_current_user_id
+                )
+            );
+        END;
     END IF;
 
     -- Return success response

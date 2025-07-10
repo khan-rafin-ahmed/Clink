@@ -228,6 +228,8 @@ export function SessionCard({
           )}
           <RSVPButton
             eventId={event.id}
+            eventTitle={event.title}
+            eventHostId={event.created_by}
             initialAttendees={event.attendees}
           />
           <Link to={`/events/${event.id}`}>

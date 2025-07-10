@@ -599,6 +599,23 @@ if (errors.length > 0) {
 - **Files Modified**: `notificationService.ts`, notification trigger functions, RLS policies
 - **Database**: Added migration `fix_rsvp_notifications_and_profile_events.sql`
 
+#### **Frontend-Only Notification Updates Fix (2025-07-08)**
+- **Issue**: Duplicate notification updates from both database functions and frontend code
+- **Root Cause**: Database functions were auto-updating notifications, conflicting with frontend `updateNotificationState`
+- **Solution**: Implemented Option A - Remove database auto-updates, keep frontend as single source of truth
+- **New Features**:
+  - Single-source response handling for all invitation notifications
+  - Frontend-only RSVP notifications when users join events
+  - Fixed "Someone" fallback notifications with better user name resolution
+  - Eliminated duplicate notification updates between email and app responses
+- **Technical Implementation**:
+  - Updated `respond_to_event_invitation` function to remove auto-notification updates
+  - Added RSVP notification trigger to `RSVPButton.tsx` component
+  - Fixed crew notification fallback from "Someone" to proper user names
+  - Enhanced `process_crew_invitation_token` with better name resolution
+- **Files Modified**: `RSVPButton.tsx`, `SessionCard.tsx`, `eventInvitationService.ts`
+- **Database**: Added migration `20250708_remove_database_notification_auto_updates.sql`
+
 #### **Dynamic Email Invitation Action Buttons (2025-06-24)**
 - **Issue**: Email invitations required users to manually navigate to app and find invitations to respond
 - **Root Cause**: Static email templates with basic links instead of direct action buttons

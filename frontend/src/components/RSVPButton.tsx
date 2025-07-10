@@ -9,9 +9,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { notificationTriggers } from '@/lib/notificationService'
 
 interface RSVPButtonProps {
   eventId: string
+  eventTitle: string
+  eventHostId: string
   initialAttendees?: Array<{
     id: string
     name: string
@@ -19,7 +22,7 @@ interface RSVPButtonProps {
   }>
 }
 
-export function RSVPButton({ eventId, initialAttendees = [] }: RSVPButtonProps) {
+export function RSVPButton({ eventId, eventTitle, eventHostId, initialAttendees = [] }: RSVPButtonProps) {
   const { user } = useAuth()
   const [isAttending, setIsAttending] = useState(false)
   const [attendees, setAttendees] = useState(initialAttendees)
@@ -66,6 +69,23 @@ export function RSVPButton({ eventId, initialAttendees = [] }: RSVPButtonProps) 
           ])
 
         if (error) throw error
+
+        // 🆕 Notify event host (only if not the host themselves)
+        if (eventHostId !== user.id) {
+          try {
+            const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A user'
+            await notificationTriggers.onEventRSVP(
+              eventId,
+              eventTitle,
+              eventHostId,
+              user.id,
+              userName
+            )
+          } catch (notificationError) {
+            console.error('Failed to send RSVP notification:', notificationError)
+            // Don't fail the RSVP if notification fails
+          }
+        }
 
         // Add user to attendees list
         setAttendees(prev => [...prev, {
