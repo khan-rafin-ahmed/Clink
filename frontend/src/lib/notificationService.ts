@@ -67,6 +67,15 @@ class NotificationService {
    * Create a new notification
    */
   async createNotification(notification: Omit<NotificationData, 'id' | 'created_at'>, options?: { skipToast?: boolean }): Promise<void> {
+    console.log('📧 [NotificationService] Creating notification:', {
+      user_id: notification.user_id,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      data: notification.data,
+      skipToast: options?.skipToast
+    })
+
     try {
       // Use the create_notification function which has SECURITY DEFINER to bypass RLS
       const { error } = await supabase.rpc('create_notification', {
@@ -78,19 +87,22 @@ class NotificationService {
       })
 
       if (error) {
-        console.error('❌ Error creating notification:', error)
+        console.error('❌ [NotificationService] Error creating notification:', error)
         throw error
       }
 
+      console.log('✅ [NotificationService] Notification created successfully')
+
       // Show in-app toast notification (unless skipToast is true)
       if (!options?.skipToast) {
+        console.log('🍞 [NotificationService] Showing toast notification')
         this.showToastNotification(notification)
       }
 
       // Send push notification if enabled
       await this.sendPushNotification(notification)
     } catch (error) {
-      console.error('❌ Error in createNotification:', error)
+      console.error('❌ [NotificationService] Error in createNotification:', error)
       throw error
     }
   }
@@ -171,6 +183,8 @@ class NotificationService {
    * Get user's notifications
    */
   async getUserNotifications(userId: string, limit = 20): Promise<NotificationData[]> {
+    console.log('📥 [NotificationService] Fetching notifications for user:', userId, 'limit:', limit)
+
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -180,13 +194,14 @@ class NotificationService {
         .limit(limit)
 
       if (error) {
-        console.error('Failed to fetch notifications:', error)
+        console.error('❌ [NotificationService] Failed to fetch notifications:', error)
         return []
       }
 
+      console.log('✅ [NotificationService] Fetched notifications:', data?.length || 0, data)
       return data || []
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      console.error('❌ [NotificationService] Error fetching notifications:', error)
       return []
     }
   }
@@ -232,6 +247,8 @@ class NotificationService {
    * Get unread notification count
    */
   async getUnreadCount(userId: string): Promise<number> {
+    console.log('🔢 [NotificationService] Getting unread count for user:', userId)
+
     try {
       const { count, error } = await supabase
         .from('notifications')
@@ -240,11 +257,14 @@ class NotificationService {
         .eq('read', false)
 
       if (error) {
+        console.error('❌ [NotificationService] Error getting unread count:', error)
         return 0
       }
 
+      console.log('✅ [NotificationService] Unread count:', count || 0)
       return count || 0
     } catch (error) {
+      console.error('❌ [NotificationService] Error getting unread count:', error)
       return 0
     }
   }

@@ -345,10 +345,17 @@ export async function processInvitationResponse(
   currentUserId: string,
   comment?: string
 ): Promise<{ success: boolean; message: string; data?: any }> {
-  try {
-    console.log('📝 Processing invitation response:', { invitationId, response, source })
+  console.log('📝 [EventInvitationService] Processing invitation response:', {
+    invitationId,
+    response,
+    source,
+    currentUserId,
+    comment
+  })
 
+  try {
     // Use RPC function to respond to invitation
+    console.log('📤 [EventInvitationService] Calling respond_to_event_invitation RPC')
     const { data, error } = await supabase
       .rpc('respond_to_event_invitation', {
         p_invitation_id: invitationId,
@@ -357,15 +364,19 @@ export async function processInvitationResponse(
         p_comment: comment || null
       })
 
+    console.log('📥 [EventInvitationService] RPC response:', { data, error })
+
     if (error) {
-      console.error('❌ Error responding to invitation:', error)
+      console.error('❌ [EventInvitationService] Error responding to invitation:', error)
       throw error
     }
 
-    console.log('✅ Invitation response processed successfully')
+    console.log('✅ [EventInvitationService] Invitation response processed successfully')
 
     // Update notification state in real-time for both email and app responses
+    console.log('🔄 [EventInvitationService] Updating notification state')
     await updateNotificationState(invitationId, response, currentUserId)
+    console.log('✅ [EventInvitationService] Notification state updated')
 
     const message = response === 'accepted'
       ? '🎉 You\'re in! See you at the session!'
@@ -373,6 +384,7 @@ export async function processInvitationResponse(
 
     // Show success toast (only for app responses, email responses show their own UI)
     if (source === 'app') {
+      console.log('🍞 [EventInvitationService] Showing success toast for app response')
       toast.success(message)
     }
 
@@ -383,7 +395,7 @@ export async function processInvitationResponse(
     }
 
   } catch (error: any) {
-    console.error('❌ Failed to process invitation response:', error)
+    console.error('❌ [EventInvitationService] Failed to process invitation response:', error)
     return {
       success: false,
       message: error.message || 'Failed to respond to invitation'
@@ -400,11 +412,16 @@ async function updateNotificationState(
   response: 'accepted' | 'declined',
   userId: string
 ): Promise<void> {
-  try {
-    console.log('🔄 Updating notification state:', { invitationId, response })
+  console.log('🔄 [EventInvitationService] Updating notification state:', {
+    invitationId,
+    response,
+    userId
+  })
 
+  try {
     // Try multiple approaches to find the notification
     // Approach 1: Look for exact invitation_id match
+    console.log('🔍 [EventInvitationService] Approach 1: Looking for exact invitation_id match')
     let { data: currentNotification, error: fetchError } = await supabase
       .from('notifications')
       .select('id, data')
@@ -413,8 +430,11 @@ async function updateNotificationState(
       .contains('data', { invitation_id: invitationId })
       .maybeSingle()
 
+    console.log('📥 [EventInvitationService] Approach 1 result:', { currentNotification, fetchError })
+
     // Approach 2: If not found, look for string version of invitation_id
     if (!currentNotification && !fetchError) {
+      console.log('🔍 [EventInvitationService] Approach 2: Looking for string version of invitation_id')
       const { data: altNotification } = await supabase
         .from('notifications')
         .select('id, data')
@@ -423,11 +443,13 @@ async function updateNotificationState(
         .contains('data', { invitation_id: invitationId.toString() })
         .maybeSingle()
 
+      console.log('📥 [EventInvitationService] Approach 2 result:', { altNotification })
       currentNotification = altNotification
     }
 
     // Approach 3: If still not found, search by event_id from the invitation
     if (!currentNotification) {
+      console.log('🔍 [EventInvitationService] Approach 3: Looking up event_id from invitation')
       // Get event_id from the invitation
       const { data: invitation } = await supabase
         .from('event_members')
@@ -435,7 +457,10 @@ async function updateNotificationState(
         .eq('id', invitationId)
         .single()
 
+      console.log('📥 [EventInvitationService] Invitation lookup result:', { invitation })
+
       if (invitation) {
+        console.log('🔍 [EventInvitationService] Searching notifications by event_id:', invitation.event_id)
         const { data: eventNotification } = await supabase
           .from('notifications')
           .select('id, data')
@@ -444,14 +469,17 @@ async function updateNotificationState(
           .contains('data', { event_id: invitation.event_id })
           .maybeSingle()
 
+        console.log('📥 [EventInvitationService] Event notification result:', { eventNotification })
         currentNotification = eventNotification
       }
     }
 
     if (!currentNotification) {
-      console.log('⚠️ No notification found to update - this might be expected for some flows')
+      console.log('⚠️ [EventInvitationService] No notification found to update - this might be expected for some flows')
       return
     }
+
+    console.log('✅ [EventInvitationService] Found notification to update:', currentNotification)
 
     // Merge the response data with existing data
     const updatedData = {
@@ -460,6 +488,12 @@ async function updateNotificationState(
       responded_at: new Date().toISOString()
     }
 
+    console.log('📝 [EventInvitationService] Updating notification with data:', {
+      notificationId: currentNotification.id,
+      originalData: currentNotification.data,
+      updatedData
+    })
+
     // Update the notification with merged data
     const { error } = await supabase
       .from('notifications')
@@ -467,12 +501,12 @@ async function updateNotificationState(
       .eq('id', currentNotification.id)
 
     if (error) {
-      console.error('❌ Failed to update notification state:', error)
+      console.error('❌ [EventInvitationService] Failed to update notification state:', error)
     } else {
-      console.log('✅ Notification state updated successfully')
+      console.log('✅ [EventInvitationService] Notification state updated successfully')
     }
   } catch (error) {
-    console.error('❌ Error updating notification state:', error)
+    console.error('❌ [EventInvitationService] Error updating notification state:', error)
   }
 }
 

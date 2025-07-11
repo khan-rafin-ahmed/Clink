@@ -71,13 +71,17 @@ export function NotificationBell() {
   const loadNotifications = async () => {
     if (!user?.id) return
 
+    console.log('🔔 [NotificationBell] Loading notifications for user:', user.id)
     setIsLoading(true)
     try {
       const cacheKey = getNotificationsCacheKey(user.id)
       let data = cacheService.get<ExtendedNotificationData[]>(cacheKey)
+
       if (!data) {
+        console.log('🔔 [NotificationBell] Cache miss, fetching from service')
         // Fetch notifications with sender profile information
         const baseNotifications = await notificationService.getUserNotifications(user.id)
+        console.log('🔔 [NotificationBell] Fetched base notifications:', baseNotifications.length, baseNotifications)
 
         // Enhance notifications with sender profile data
         const enhancedNotifications = await Promise.all(
@@ -100,6 +104,13 @@ export function NotificationBell() {
               senderId = notification.data?.joiner_id || notification.data?.user_id
             }
 
+            console.log('🔔 [NotificationBell] Processing notification:', {
+              id: notification.id,
+              type: notification.type,
+              senderId,
+              data: notification.data
+            })
+
             if (senderId) {
               try {
                 const { data: profile } = await supabase
@@ -111,8 +122,12 @@ export function NotificationBell() {
                 if (profile) {
                   senderName = profile.display_name || 'Someone'
                   senderAvatar = profile.avatar_url
+                  console.log('🔔 [NotificationBell] Found sender profile:', { senderId, senderName, senderAvatar })
+                } else {
+                  console.log('🔔 [NotificationBell] No profile found for sender:', senderId)
                 }
               } catch (error) {
+                console.log('🔔 [NotificationBell] Error fetching sender profile:', error)
                 // Fallback to 'Someone' if profile fetch fails
               }
             }
@@ -127,10 +142,15 @@ export function NotificationBell() {
 
         data = enhancedNotifications
         cacheService.set(cacheKey, data, CACHE_TTL)
+        console.log('🔔 [NotificationBell] Enhanced notifications cached:', data.length)
+      } else {
+        console.log('🔔 [NotificationBell] Cache hit, using cached data:', data.length)
       }
+
       setNotifications(data)
+      console.log('🔔 [NotificationBell] Notifications set in state:', data.length)
     } catch (error) {
-      console.error('❌ Error loading notifications:', error)
+      console.error('❌ [NotificationBell] Error loading notifications:', error)
       toast.error('Failed to load notifications')
     } finally {
       setIsLoading(false)
@@ -154,11 +174,19 @@ export function NotificationBell() {
   }
 
   const handleEventInvitationResponse = async (notificationId: string, invitationId: string | null, response: 'accepted' | 'declined') => {
+    console.log('🎯 [NotificationBell] Handling event invitation response:', {
+      notificationId,
+      invitationId,
+      response,
+      userId: user?.id
+    })
+
     try {
       // Immediately mark as responded to hide buttons
       setRespondedNotifications(prev => new Set(prev).add(notificationId))
 
       if (!invitationId) {
+        console.error('❌ [NotificationBell] No invitation ID provided')
         // Remove from responded set if failed
         setRespondedNotifications(prev => {
           const newSet = new Set(prev)
@@ -169,15 +197,25 @@ export function NotificationBell() {
         return
       }
 
+      console.log('📤 [NotificationBell] Processing invitation response via service')
       const result = await processInvitationResponse(invitationId, response, 'app', user!.id)
+      console.log('📥 [NotificationBell] Invitation response result:', result)
 
       if (result.success) {
+        console.log('✅ [NotificationBell] Invitation response successful, updating UI')
+
         // Mark as read in service
         await markAsRead(notificationId);
 
         // Mark notification as responded to prevent reappearance
         try {
           const currentNotification = notifications.find(n => n.id === notificationId);
+          console.log('📝 [NotificationBell] Updating notification data:', {
+            notificationId,
+            currentData: currentNotification?.data,
+            response
+          })
+
           await supabase
             .from('notifications')
             .update({
@@ -188,22 +226,27 @@ export function NotificationBell() {
               }
             })
             .eq('id', notificationId);
+
+          console.log('✅ [NotificationBell] Notification data updated successfully')
         } catch (err) {
-          console.error('Failed to update notification response:', err);
+          console.error('❌ [NotificationBell] Failed to update notification response:', err);
         }
 
         // Remove from local state immediately
         setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        console.log('🗑️ [NotificationBell] Removed notification from local state')
 
         // Clear cache so other components reflect changes
         if (user?.id) {
           cacheService.delete(getNotificationsCacheKey(user.id));
+          console.log('🧹 [NotificationBell] Cleared notification cache')
         }
 
         // Invalidate event-related caches to ensure immediate UI updates
         const currentNotification = notifications.find(n => n.id === notificationId);
         if (currentNotification?.data?.event_id) {
           const eventId = currentNotification.data.event_id;
+          console.log('🧹 [NotificationBell] Invalidating event caches for:', eventId)
           // Clear event detail cache
           cacheService.delete(CACHE_KEYS.EVENT_DETAIL(eventId));
           // Clear event attendance cache for this user
@@ -215,6 +258,7 @@ export function NotificationBell() {
         // Show success toast (optional)
         toast.success(response === 'accepted' ? 'Invitation accepted!' : 'Invitation declined.');
       } else {
+        console.error('❌ [NotificationBell] Invitation response failed:', result.message)
         // Remove from responded set if failed
         setRespondedNotifications(prev => {
           const newSet = new Set(prev)
@@ -224,13 +268,13 @@ export function NotificationBell() {
         toast.error(result.message)
       }
     } catch (error: any) {
+      console.error('❌ [NotificationBell] Error responding to event invitation:', error)
       // Remove from responded set if failed
       setRespondedNotifications(prev => {
         const newSet = new Set(prev)
         newSet.delete(notificationId)
         return newSet
       })
-      console.error('Error responding to event invitation:', error)
       toast.error('Failed to respond to invitation')
     }
   }
@@ -279,6 +323,14 @@ export function NotificationBell() {
   }
 
   const handleCrewInvitationResponse = async (notificationId: string, crewMemberId: string | null, crewId: string | null, response: 'accepted' | 'declined') => {
+    console.log('👥 [NotificationBell] Handling crew invitation response:', {
+      notificationId,
+      crewMemberId,
+      crewId,
+      response,
+      userId: user?.id
+    })
+
     try {
       // Immediately mark as responded to hide buttons
       setRespondedNotifications(prev => new Set(prev).add(notificationId))
@@ -287,6 +339,7 @@ export function NotificationBell() {
 
       // If crew_member_id is missing, try to find it using crew_id
       if (!memberIdToUse && crewId && user?.id) {
+        console.log('🔍 [NotificationBell] Looking up crew member ID by crew_id:', crewId)
         const { data: member, error } = await supabase
           .from('crew_members')
           .select('id')
@@ -297,11 +350,15 @@ export function NotificationBell() {
 
         if (!error && member) {
           memberIdToUse = member.id
+          console.log('✅ [NotificationBell] Found crew member ID:', memberIdToUse)
+        } else {
+          console.log('❌ [NotificationBell] No crew member found by crew_id:', error)
         }
       }
 
       // If still no crew_member_id, try to find any pending invitation for this user
       if (!memberIdToUse && user?.id) {
+        console.log('🔍 [NotificationBell] Looking up any pending crew invitation for user')
         const { data: member, error } = await supabase
           .from('crew_members')
           .select('id, crew_id')
@@ -313,10 +370,14 @@ export function NotificationBell() {
 
         if (!error && member) {
           memberIdToUse = member.id
+          console.log('✅ [NotificationBell] Found pending crew member ID:', memberIdToUse)
+        } else {
+          console.log('❌ [NotificationBell] No pending crew invitations found:', error)
         }
       }
 
       if (!memberIdToUse) {
+        console.error('❌ [NotificationBell] No crew member ID found, cannot process invitation')
         // Remove from responded set if failed
         setRespondedNotifications(prev => {
           const newSet = new Set(prev)
@@ -327,12 +388,21 @@ export function NotificationBell() {
         return
       }
 
+      console.log('📤 [NotificationBell] Processing crew invitation response via service')
       await respondToCrewInvitation(memberIdToUse, response)
+      console.log('✅ [NotificationBell] Crew invitation response processed successfully')
+
       await markAsRead(notificationId);
 
       // Mark notification as responded to prevent reappearance
       try {
         const currentNotification = notifications.find(n => n.id === notificationId);
+        console.log('📝 [NotificationBell] Updating crew notification data:', {
+          notificationId,
+          currentData: currentNotification?.data,
+          response
+        })
+
         await supabase
           .from('notifications')
           .update({
@@ -343,16 +413,20 @@ export function NotificationBell() {
             }
           })
           .eq('id', notificationId);
+
+        console.log('✅ [NotificationBell] Crew notification data updated successfully')
       } catch (err) {
-        console.error('Failed to update notification response:', err);
+        console.error('❌ [NotificationBell] Failed to update crew notification response:', err);
       }
 
       // Remove from local state immediately
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      console.log('🗑️ [NotificationBell] Removed crew notification from local state')
 
       // Clear cache so other components reflect changes
       if (user?.id) {
         cacheService.delete(getNotificationsCacheKey(user.id));
+        console.log('🧹 [NotificationBell] Cleared notification cache')
       }
 
       // Show success toast (optional)
@@ -362,6 +436,7 @@ export function NotificationBell() {
         toast.success('Crew invitation declined')
       }
     } catch (error) {
+      console.error('❌ [NotificationBell] Error responding to crew invitation:', error)
       // Remove from responded set if failed
       setRespondedNotifications(prev => {
         const newSet = new Set(prev)

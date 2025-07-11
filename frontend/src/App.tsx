@@ -33,6 +33,7 @@ import { TestJoinButton } from './pages/TestJoinButton'
 import { LiveBadgeDemo } from './components/LiveBadgeDemo'
 import { InvitationAction } from './pages/InvitationAction'
 import { TestInvitationTokens } from './pages/TestInvitationTokens'
+import NotificationSystemTest from './pages/NotificationSystemTest'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -149,6 +150,8 @@ function App() {
               {/* Test route for invitation tokens */}
               <Route path="/test-invitation-tokens" element={<TestInvitationTokens />} />
 
+              {/* Comprehensive notification system test */}
+              <Route path="/test-notification-system" element={<NotificationSystemTest />} />
 
             </Routes>
           </main>

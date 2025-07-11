@@ -34,9 +34,16 @@ async function sendEmail(
   type: 'event_invitation' | 'event_reminder' | 'crew_invitation',
   data?: any
 ): Promise<EmailResponse> {
-  try {
-    console.log('📧 Sending email:', { to, subject, type })
+  console.log('📧 [EmailService] Sending email:', {
+    to,
+    subject,
+    type,
+    htmlLength: html?.length || 0,
+    textLength: text?.length || 0,
+    data
+  })
 
+  try {
     const { data: response, error } = await supabase.functions.invoke('send-email', {
       body: {
         to,
@@ -49,7 +56,7 @@ async function sendEmail(
     })
 
     if (error) {
-      console.error('❌ Email function error:', error)
+      console.error('❌ [EmailService] Email function error:', error)
       return {
         success: false,
         message: 'Failed to send email',
@@ -57,7 +64,7 @@ async function sendEmail(
       }
     }
 
-    console.log('✅ Email sent successfully:', response)
+    console.log('✅ [EmailService] Email sent successfully:', response)
 
     return {
       success: true,
@@ -66,7 +73,7 @@ async function sendEmail(
     }
 
   } catch (error: any) {
-    console.error('❌ Email service error:', error)
+    console.error('❌ [EmailService] Email service error:', error)
     return {
       success: false,
       message: 'Email service error',
