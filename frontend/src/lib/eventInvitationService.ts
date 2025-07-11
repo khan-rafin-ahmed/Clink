@@ -259,24 +259,39 @@ export async function sendEventInvitationsToCrew(
 ): Promise<{ success: boolean; invitedCount: number; message: string }> {
   try {
 
-    console.log('🔔 Sending event invitations to crew:', {
+    console.log('🔔 [EventInvitationService] Sending event invitations to crew:', {
       eventId,
       crewId,
+      currentUserId,
       crewIdType: typeof crewId,
       crewIdLength: crewId.length,
       isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(crewId)
     })
 
-    // Use RPC function to send invitations
+    // Use RPC function to send invitations (using p_invited_by parameter)
+    console.log('📤 [EventInvitationService] Calling send_event_invitations_to_crew RPC with parameters:', {
+      p_event_id: eventId,
+      p_crew_id: crewId,
+      p_invited_by: currentUserId
+    })
+
     const { data, error } = await supabase
       .rpc('send_event_invitations_to_crew', {
         p_event_id: eventId,
         p_crew_id: crewId,
-        p_inviter_id: currentUserId
+        p_invited_by: currentUserId
       })
 
+    console.log('📥 [EventInvitationService] RPC response:', { data, error })
+
     if (error) {
-      console.error('❌ Error sending crew invitations:', error)
+      console.error('❌ [EventInvitationService] Error sending crew invitations:', error)
+      console.error('❌ [EventInvitationService] Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
       throw error
     }
 

@@ -158,7 +158,7 @@ export function EmailDebugPage() {
         .rpc('send_event_invitations_to_crew', {
           p_event_id: event.id,
           p_crew_id: crew.id,
-          p_inviter_id: user.id
+          p_invited_by: user.id
         })
 
       if (rpcError) {
