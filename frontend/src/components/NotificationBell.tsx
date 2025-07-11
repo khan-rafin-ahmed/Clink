@@ -115,20 +115,31 @@ export function NotificationBell() {
               try {
                 const { data: profile } = await supabase
                   .from('user_profiles')
-                  .select('display_name, avatar_url')
+                  .select('display_name, avatar_url, username')
                   .eq('user_id', senderId)
                   .single()
 
                 if (profile) {
-                  senderName = profile.display_name || 'Someone'
+                  // Use comprehensive fallback chain (NO MORE "Someone"!)
+                  senderName = profile.display_name || profile.username || 'A user'
                   senderAvatar = profile.avatar_url
                   console.log('🔔 [NotificationBell] Found sender profile:', { senderId, senderName, senderAvatar })
                 } else {
                   console.log('🔔 [NotificationBell] No profile found for sender:', senderId)
+                  // Try to get email prefix as fallback
+                  try {
+                    const { data: authUser } = await supabase.auth.admin.getUserById(senderId)
+                    if (authUser?.user?.email) {
+                      senderName = authUser.user.email.split('@')[0] || 'A user'
+                    }
+                  } catch (authError) {
+                    console.log('🔔 [NotificationBell] Could not get auth user:', authError)
+                  }
                 }
               } catch (error) {
                 console.log('🔔 [NotificationBell] Error fetching sender profile:', error)
-                // Fallback to 'Someone' if profile fetch fails
+                // Final fallback - never use "Someone"
+                senderName = 'A user'
               }
             }
 
@@ -232,9 +243,21 @@ export function NotificationBell() {
           console.error('❌ [NotificationBell] Failed to update notification response:', err);
         }
 
-        // Remove from local state immediately
-        setNotifications(prev => prev.filter(n => n.id !== notificationId));
-        console.log('🗑️ [NotificationBell] Removed notification from local state')
+        // Instead of removing, update the notification to show response state
+        setNotifications(prev => prev.map(n =>
+          n.id === notificationId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  user_response: response,
+                  responded_at: new Date().toISOString()
+                },
+                read: true
+              }
+            : n
+        ));
+        console.log('✅ [NotificationBell] Updated notification to show response state')
 
         // Clear cache so other components reflect changes
         if (user?.id) {
@@ -419,9 +442,21 @@ export function NotificationBell() {
         console.error('❌ [NotificationBell] Failed to update crew notification response:', err);
       }
 
-      // Remove from local state immediately
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      console.log('🗑️ [NotificationBell] Removed crew notification from local state')
+      // Instead of removing, update the notification to show response state
+      setNotifications(prev => prev.map(n =>
+        n.id === notificationId
+          ? {
+              ...n,
+              data: {
+                ...n.data,
+                user_response: response,
+                responded_at: new Date().toISOString()
+              },
+              read: true
+            }
+          : n
+      ));
+      console.log('✅ [NotificationBell] Updated crew notification to show response state')
 
       // Clear cache so other components reflect changes
       if (user?.id) {
@@ -551,8 +586,8 @@ export function NotificationBell() {
       const userName =
         notification.senderName && notification.senderName !== 'Someone'
           ? notification.senderName
-          : extractNameFromTitle(notification.title)
-      const response = notification.data?.response
+          : extractNameFromTitle(notification.title) || 'A user'
+      const response = notification.data?.user_response || notification.data?.response
       // After response: show invite + subtext
       if (response === 'accepted' || response === 'declined') {
         return {
@@ -576,7 +611,9 @@ export function NotificationBell() {
     // Event RSVP (legacy - keeping for backward compatibility)
     if (notification.type === 'event_rsvp') {
       const sessionTitle = notification.data?.eventTitle || notification.data?.event_title || 'a session'
-      const userName = notification.senderName || 'Someone'
+      const userName = notification.senderName && notification.senderName !== 'Someone'
+        ? notification.senderName
+        : extractNameFromTitle(notification.title) || 'A user'
       return {
         isExpired: false,
         title: `${userName} accepted your invitation to ${sessionTitle}`,
@@ -603,8 +640,10 @@ export function NotificationBell() {
     // Handle crew invitations
     if (notification.type === 'crew_invitation') {
       const crewName = notification.data?.crew_name || 'the crew'
-      const userName = notification.senderName || 'Someone'
-      const response = notification.data?.response
+      const userName = notification.senderName && notification.senderName !== 'Someone'
+        ? notification.senderName
+        : extractNameFromTitle(notification.title) || 'A user'
+      const response = notification.data?.user_response || notification.data?.response
       // After response: show invite + subtext
       if (response === 'accepted' || response === 'declined') {
         return {
@@ -896,7 +935,7 @@ export function NotificationBell() {
                       </>
 
                       {/* Crew invitation actions */}
-                      {notification.type === 'crew_invitation' && !notification.data?.response && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
+                      {notification.type === 'crew_invitation' && !notification.data?.user_response && !notification.data?.response && (notification.data?.crew_member_id || notification.data?.crew_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           {/* Line 2: Accept and Decline buttons (side by side) */}
                           {!respondedNotifications.has(notification.id!) && (
@@ -942,7 +981,7 @@ export function NotificationBell() {
 
 
                       {/* Event invitation actions */}
-                      {notification.type === 'event_invitation' && !notification.data?.response && !isEventInvitationExpired(notification) && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
+                      {notification.type === 'event_invitation' && !notification.data?.user_response && !notification.data?.response && !isEventInvitationExpired(notification) && (notification.data?.invitation_id || notification.data?.event_member_id) && notification.id && (
                         <div className="mt-3 space-y-2">
                           <div className="flex gap-2">
                             {/* Accept Button - matches crew invitation styling */}
