@@ -17,6 +17,19 @@ export async function inviteUserToEvent(eventId: string, userId: string, current
 
   if (error) throw error
 
+  // Create notification using the new function for consistency
+  try {
+    await supabase.rpc('create_event_invitation_notification', {
+      p_event_id: eventId,
+      p_user_id: userId,
+      p_invited_by: currentUserId,
+      p_invitation_id: data.id
+    })
+  } catch (notificationError) {
+    console.error('Failed to create notification for user:', userId, notificationError)
+    // Don't fail the whole operation for notification errors
+  }
+
   // Get user profile separately
   const { data: userProfile } = await supabase
     .from('user_profiles')
@@ -110,6 +123,22 @@ export async function bulkInviteUsers(eventId: string, userIds: string[], curren
   if (error) throw error
 
   if (!data || data.length === 0) return []
+
+  // Create notifications for each invited user using the new function
+  // This ensures consistent notification format and eliminates duplicates
+  for (const member of data) {
+    try {
+      await supabase.rpc('create_event_invitation_notification', {
+        p_event_id: eventId,
+        p_user_id: member.user_id,
+        p_invited_by: currentUserId,
+        p_invitation_id: member.id
+      })
+    } catch (notificationError) {
+      console.error('Failed to create notification for user:', member.user_id, notificationError)
+      // Don't fail the whole operation for notification errors
+    }
+  }
 
   // Get user profiles for all invited users
   const { data: userProfiles } = await supabase

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Notification Fix</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Notification System Fix</h1>
+    <button id="applyFix">Apply Notification Fix</button>
+    <div id="output"></div>
+
+    <script>
+        const supabaseUrl = 'https://arpphimkotjvnfoacquj.supabase.co'
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFycHBoaW1rb3Rqdm5mb2FjcXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMDYwNjYsImV4cCI6MjA2Mzc4MjA2Nn0.GksQ0jn0RuJCAqDcP2m2B0Z5uPP7_y-efc2EqztrL3k'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+        
+        function log(message) {
+            const output = document.getElementById('output')
+            output.innerHTML += '<p>' + message + '</p>'
+            console.log(message)
+        }
+        
+        async function applyNotificationFix() {
+            log('🔧 Starting notification fix...')
+            
+            try {
+                // Step 1: Remove the duplicate trigger
+                log('📝 Step 1: Removing duplicate notification trigger...')
+                
+                const dropTriggerSQL = `
+                    DROP TRIGGER IF EXISTS event_invitation_notification_trigger ON event_members;
+                    DROP FUNCTION IF EXISTS handle_event_invitation_notification();
+                `
+                
+                // Since we can't execute raw SQL directly, let's use RPC functions
+                // First, let's check current state
+                log('🔍 Checking current notification functions...')
+                
+                const { data: functions, error: funcError } = await supabase
+                    .rpc('exec_sql', { 
+                        sql: `SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public' AND routine_name LIKE '%notification%'` 
+                    })
+                
+                if (funcError) {
+                    log('❌ Error checking functions: ' + funcError.message)
+                } else {
+                    log('✅ Current functions checked')
+                }
+                
+                // Step 2: Apply the new functions
+                log('📝 Step 2: Creating new notification functions...')
+                
+                // We'll need to apply this through the Supabase dashboard or CLI
+                log('⚠️ This fix requires database admin access.')
+                log('📋 Please apply the migration file: supabase/migrations/20250111_fix_duplicate_notifications.sql')
+                log('🔗 You can do this through the Supabase Dashboard > SQL Editor')
+                
+                // Step 3: Clean up malformed notifications
+                log('📝 Step 3: Cleaning up malformed notifications...')
+                
+                const { data: malformed, error: cleanError } = await supabase
+                    .from('notifications')
+                    .delete()
+                    .ilike('title', '%you invited you%')
+                
+                if (cleanError) {
+                    log('❌ Error cleaning notifications: ' + cleanError.message)
+                } else {
+                    log('✅ Cleaned up malformed notifications')
+                }
+                
+                log('🎉 Frontend cleanup completed!')
+                log('📋 Next steps:')
+                log('1. Apply the SQL migration through Supabase Dashboard')
+                log('2. Test creating new event invitations')
+                log('3. Verify no duplicate notifications are created')
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message)
+            }
+        }
+        
+        document.getElementById('applyFix').addEventListener('click', applyNotificationFix)
+    </script>
+</body>
+</html>

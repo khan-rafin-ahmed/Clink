@@ -94,10 +94,12 @@ export function NotificationBell() {
             if (notification.type === 'event_rsvp') {
               senderId = notification.data?.rsvpUserId
             } else if (notification.type === 'event_invitation_response') {
-              senderId = notification.data?.inviter_id || notification.data?.user_id
+              // For RSVP responses, the sender is the person who responded (user_id in data)
+              senderId = notification.data?.user_id
             } else if (notification.type === 'crew_invitation') {
               senderId = notification.data?.inviter_id
             } else if (notification.type === 'event_invitation') {
+              // For event invitations, the sender is the inviter
               senderId = notification.data?.inviter_id
             } else if (notification.type === 'crew_invitation_response') {
               // For crew invitation responses, get the responder's ID

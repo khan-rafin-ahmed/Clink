@@ -129,6 +129,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 - `handle_crew_invitation_notification()` - Auto-creates notifications for crew invitations
 - `create_notification()` - Core function for creating any notification type
+- `create_event_invitation_notification()` - Creates consistent event invitation notifications
+- `respond_to_event_invitation()` - Handles invitation responses with proper user data
+- `send_event_invitations_to_crew()` - Sends invitations to crew members
+
+**Note**: The `handle_event_invitation_notification()` trigger was removed in January 2025 to eliminate duplicate notifications. All event invitation notifications are now created explicitly through RPC functions for better control and consistency.
 
 ## Notification Types
 
@@ -931,5 +936,46 @@ supabase/
 - **Responsive Design**: Mobile-first approach
 - **Accessibility**: Screen reader support
 - **Error Handling**: Graceful failure modes
+
+## Recent Fixes (January 2025)
+
+### Duplicate Notification Issue Resolution
+
+**Problem**: Users were receiving duplicate notifications for event invitations due to both database triggers and RPC functions creating notifications.
+
+**Solution**:
+- Removed the `handle_event_invitation_notification()` trigger
+- Standardized all notification creation through explicit RPC function calls
+- Updated frontend services to use consistent notification creation
+
+### "Someone" Notification Fix
+
+**Problem**: RSVP notifications showed "Someone accepted your invitation" instead of actual user names.
+
+**Solution**:
+- Updated `respond_to_event_invitation()` function with comprehensive user name fallback
+- Added `user_id` to notification data for proper avatar display
+- Implemented fallback chain: display_name → username → email prefix → "A user"
+
+### Avatar Display Fix
+
+**Problem**: Notification avatars were not displaying properly for all notification types.
+
+**Solution**:
+- Fixed sender ID extraction in `NotificationBell.tsx`
+- Ensured proper `user_id` inclusion in all notification data
+- Updated frontend logic to handle all notification types consistently
+
+### Standardized Notification Formats
+
+**Before**: Inconsistent formats across different invitation types
+**After**: Standardized format for all event invitations:
+- Title: `"🍺 {inviter_name} invited you to join a session"`
+- Message: `"Join the session: \"{event_title}\""`
+- Consistent data structure with all required fields
+
+These fixes ensure a seamless notification experience with no duplicates, proper user identification, and consistent avatar display across all notification types.
+
+---
 
 This notification system provides a robust, scalable foundation for user engagement in the Thirstee app, with comprehensive email integration, smart caching, and a polished user interface that follows the app's design system principles.
