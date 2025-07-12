@@ -500,7 +500,8 @@ async function updateNotificationState(
     const updatedData = {
       ...currentNotification.data,
       user_response: response,
-      responded_at: new Date().toISOString()
+      responded_at: new Date().toISOString(),
+      response_method: 'in_app'
     }
 
     console.log('📝 [EventInvitationService] Updating notification with data:', {

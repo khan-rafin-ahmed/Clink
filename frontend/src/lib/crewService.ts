@@ -655,6 +655,35 @@ export async function respondToCrewInvitation(crewMemberId: string, status: 'acc
     .eq('id', crewMemberId)
 
   if (error) throw error
+
+  // Update the corresponding notification to reflect the response
+  // This ensures consistency between in-app and email responses
+  const { data: currentUser } = await supabase.auth.getUser()
+  if (currentUser?.user?.id) {
+    // First get the current notification data
+    const { data: notification } = await supabase
+      .from('notifications')
+      .select('id, data')
+      .eq('user_id', currentUser.user.id)
+      .eq('type', 'crew_invitation')
+      .contains('data', { crew_member_id: crewMemberId })
+      .maybeSingle()
+
+    if (notification) {
+      // Update with merged data
+      await supabase
+        .from('notifications')
+        .update({
+          data: {
+            ...notification.data,
+            user_response: status,
+            responded_at: new Date().toISOString(),
+            response_method: 'in_app'
+          }
+        })
+        .eq('id', notification.id)
+    }
+  }
 }
 
 // Get pending crew invitations for current user

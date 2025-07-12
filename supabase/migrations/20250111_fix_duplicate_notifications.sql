@@ -89,7 +89,24 @@ BEGIN
       'show_view_event_button', true
     )
   );
-  
+
+  -- CRITICAL: Update the original invitation notification to reflect the response
+  -- This ensures email-notification synchronization
+  UPDATE notifications
+  SET
+    data = data || jsonb_build_object(
+      'user_response', p_response,
+      'responded_at', NOW()::text,
+      'response_method', 'email_or_app'
+    )
+  WHERE
+    user_id = p_user_id
+    AND type = 'event_invitation'
+    AND (
+      data->>'invitation_id' = p_invitation_id::text
+      OR data->>'event_id' = invitation_record.event_id::text
+    );
+
   RETURN TRUE;
 END;
 $$;
