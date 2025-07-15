@@ -23,9 +23,8 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
     event_date_time,
     event_location,
     event_id,
-    invitation_id,
-    accept_token,
-    decline_token
+    invitation_id
+    // accept_token, decline_token removed - buttons no longer used in email templates
   } = data
 
   const eventDate = new Date(event_date_time).toLocaleDateString('en-US', {
@@ -37,8 +36,7 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
     minute: '2-digit'
   })
 
-  const acceptUrl = accept_token ? `https://thirstee.app/invitation/event/accept/${accept_token}` : `https://thirstee.app/notifications`
-  const declineUrl = decline_token ? `https://thirstee.app/invitation/event/decline/${decline_token}` : `https://thirstee.app/notifications`
+  // Accept/Decline URLs removed - buttons no longer used in email templates
 
   const html = `
     <!DOCTYPE html>
@@ -266,12 +264,7 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
                     ${event_location ? `<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> ${event_location}</div>` : '<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> To be announced</div>'}
                   </div>
 
-                  <!-- COMMENTED OUT: Accept/Decline buttons (not working properly - will be fixed in future)
-                  <div style="text-align: center; margin: 32px 0;">
-                    <a href="${acceptUrl}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; text-align: center;">🍺 Accept Invitation</a>
-                    <a href="${declineUrl}" class="btn-secondary" style="display: inline-block; background-color: #07080A !important; color: #FFFFFF !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">😔 Can't Make It</a>
-                  </div>
-                  -->
+
 
                   <div style="text-align: center; margin: 32px 0;">
                     <a href="https://thirstee.app/event/${event_id}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 16px 32px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 16px; margin: 8px; border: none; text-align: center;">📱 View Full Event Details</a>
@@ -322,9 +315,8 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
     crewName,
     inviterName,
     crewDescription,
-    memberCount,
-    acceptUrl,
-    declineUrl
+    memberCount
+    // acceptUrl, declineUrl removed - buttons no longer used in email templates
   } = data
 
   const memberCountText = memberCount === 0
@@ -552,12 +544,7 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
             ` : ''}
           </div>
 
-          <!-- COMMENTED OUT: Accept/Decline buttons (not working properly - will be fixed in future)
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${acceptUrl}" class="btn-primary">🤘 Join Crew</a>
-            <a href="${declineUrl}" class="btn-secondary">😔 Not Interested</a>
-          </div>
-          -->
+
 
           <div style="text-align: center; margin: 32px 0;">
             <a href="https://thirstee.app/notifications" class="btn-primary">📱 View Full Crew Details</a>

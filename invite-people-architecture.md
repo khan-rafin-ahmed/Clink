@@ -979,7 +979,7 @@ RETURNS TABLE (invited_count INTEGER, invitation_ids UUID[])
 ## 📧 **EMAIL TEMPLATE BUTTON UPDATE** ✅
 
 ### **Change Implemented:**
-Commented out Accept/Decline buttons in email templates and replaced with "View Full Event Details" button.
+Completely removed Accept/Decline buttons from email templates and replaced with "View Full Event Details" button.
 
 ### **Reason:**
 The Accept/Decline buttons in emails were not working properly and causing user confusion.
@@ -988,12 +988,12 @@ The Accept/Decline buttons in emails were not working properly and causing user 
 **File**: `supabase/functions/send-email/index.ts`
 
 #### **Event Invitation Emails:**
-- ❌ **Commented Out**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
+- ❌ **Removed**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
 - ✅ **Added**: `📱 View Full Event Details` button linking to event page
 - ✅ **Updated Text**: "Open the Thirstee app to respond to this invitation and see all event details."
 
 #### **Crew Invitation Emails:**
-- ❌ **Commented Out**: `🤘 Join Crew` and `😔 Not Interested` buttons
+- ❌ **Removed**: `🤘 Join Crew` and `😔 Not Interested` buttons
 - ✅ **Added**: `📱 View Full Crew Details` button linking to notifications page
 - ✅ **Updated Text**: "Open the Thirstee app to respond to this crew invitation and see all details."
 
@@ -1001,10 +1001,14 @@ The Accept/Decline buttons in emails were not working properly and causing user 
 - ✅ **Event Emails**: Removed Accept/Decline URLs, added "View Full Event Details" link
 - ✅ **Crew Emails**: Removed Join/Decline URLs, added "View Full Crew Details" link
 
+#### **Code Cleanup:**
+- ✅ **Removed unused variables**: `acceptUrl`, `declineUrl`, `accept_token`, `decline_token`
+- ✅ **Cleaner code**: No commented-out code blocks, completely removed non-functional elements
+
 ### **Benefits:**
 - ✅ **Eliminates Confusion**: Users no longer see non-functional buttons
 - ✅ **Clear Direction**: Users know to open the app for responses
-- ✅ **Future-Ready**: Buttons are commented out, not deleted, for easy restoration when fixed
+- ✅ **Cleaner Code**: No dead code or unused variables
 - ✅ **Consistent UX**: All email invitations now have the same interaction pattern
 
 ### **User Flow:**

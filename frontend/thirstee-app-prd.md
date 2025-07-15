@@ -1339,12 +1339,12 @@ Individual user invitations now work consistently with crew invitations, ensurin
 ### **Changes Made**:
 
 #### **Event Invitation Emails**:
-- ❌ **Commented Out**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
+- ❌ **Completely Removed**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
 - ✅ **Replaced With**: `📱 View Full Event Details` button (links to event page)
 - ✅ **Updated Message**: "Open the Thirstee app to respond to this invitation and see all event details."
 
 #### **Crew Invitation Emails**:
-- ❌ **Commented Out**: `🤘 Join Crew` and `😔 Not Interested` buttons
+- ❌ **Completely Removed**: `🤘 Join Crew` and `😔 Not Interested` buttons
 - ✅ **Replaced With**: `📱 View Full Crew Details` button (links to notifications page)
 - ✅ **Updated Message**: "Open the Thirstee app to respond to this crew invitation and see all details."
 
@@ -1353,10 +1353,14 @@ Individual user invitations now work consistently with crew invitations, ensurin
 - ✅ Added "View Full Details" links
 - ✅ Updated messaging for clarity
 
+#### **Code Cleanup**:
+- ✅ **Removed unused variables**: `acceptUrl`, `declineUrl`, `accept_token`, `decline_token`
+- ✅ **Cleaner codebase**: No commented-out code blocks or dead code
+
 ### **Benefits**:
 - **Eliminates User Confusion**: No more broken buttons in emails
 - **Clear User Direction**: Users know to open the app for responses
-- **Future-Ready**: Buttons are commented out (not deleted) for easy restoration when fixed
+- **Cleaner Code**: Removed all unused variables and dead code
 - **Consistent UX**: All email invitations now follow the same pattern
 
 ### **User Flow**:
