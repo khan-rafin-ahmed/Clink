@@ -266,13 +266,19 @@ function generateEventInvitationEmail(data: any): { html: string; text: string }
                     ${event_location ? `<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> ${event_location}</div>` : '<div class="card-detail" style="margin: 12px 0; color: #B3B3B3 !important; font-size: 15px; line-height: 1.6;"><strong style="color: #FFFFFF !important;">📍 Location:</strong> To be announced</div>'}
                   </div>
 
+                  <!-- COMMENTED OUT: Accept/Decline buttons (not working properly - will be fixed in future)
                   <div style="text-align: center; margin: 32px 0;">
                     <a href="${acceptUrl}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 15px; margin: 8px; border: none; text-align: center;">🍺 Accept Invitation</a>
                     <a href="${declineUrl}" class="btn-secondary" style="display: inline-block; background-color: #07080A !important; color: #FFFFFF !important; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: 500; font-size: 15px; margin: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">😔 Can't Make It</a>
                   </div>
+                  -->
 
-                  <p style="font-size: 14px; color: #B3B3B3 !important; text-align: center;">
-                    <a href="https://thirstee.app/event/${event_id}" style="color: #00FFA3 !important; text-decoration: underline;">View full event details</a>
+                  <div style="text-align: center; margin: 32px 0;">
+                    <a href="https://thirstee.app/event/${event_id}" class="btn-primary" style="display: inline-block; background-color: #FFFFFF !important; color: #08090A !important; padding: 16px 32px; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 16px; margin: 8px; border: none; text-align: center;">📱 View Full Event Details</a>
+                  </div>
+
+                  <p style="font-size: 14px; color: #B3B3B3 !important; text-align: center; margin-top: 24px;">
+                    Open the Thirstee app to respond to this invitation and see all event details.
                   </p>
                 </td>
               </tr>
@@ -301,9 +307,9 @@ ${inviter_name} invited you to a Session: "${event_title}"
 📅 Date: ${eventDate}
 📍 Location: ${event_location || 'To be announced'}
 
-Accept: ${acceptUrl}
-Decline: ${declineUrl}
-View Details: https://thirstee.app/event/${event_id}
+📱 View Full Event Details: https://thirstee.app/event/${event_id}
+
+Open the Thirstee app to respond to this invitation and see all event details.
 
 © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `
@@ -546,13 +552,19 @@ function generateCrewInvitationEmail(data: any): { html: string; text: string } 
             ` : ''}
           </div>
 
+          <!-- COMMENTED OUT: Accept/Decline buttons (not working properly - will be fixed in future)
           <div style="text-align: center; margin: 32px 0;">
             <a href="${acceptUrl}" class="btn-primary">🤘 Join Crew</a>
             <a href="${declineUrl}" class="btn-secondary">😔 Not Interested</a>
           </div>
+          -->
 
-          <p style="font-size: 14px; color: #B3B3B3; text-align: center;">
-            If button doesn't work: <a href="${acceptUrl}" style="color: #00FFA3; text-decoration: underline;">View in browser</a>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://thirstee.app/notifications" class="btn-primary">📱 View Full Crew Details</a>
+          </div>
+
+          <p style="font-size: 14px; color: #B3B3B3; text-align: center; margin-top: 24px;">
+            Open the Thirstee app to respond to this crew invitation and see all details.
           </p>
         </div>
 
@@ -573,8 +585,9 @@ ${inviterName} has invited you to join "${crewName}"
 ${memberCountText}
 ${crewDescription ? `📝 Description: ${crewDescription}` : ''}
 
-🤘 Join Crew: ${acceptUrl}
-😔 Not Interested: ${declineUrl}
+📱 View Full Crew Details: https://thirstee.app/notifications
+
+Open the Thirstee app to respond to this crew invitation and see all details.
 
 © 2025 Thirstee. Built with 🍻 & 🤘 by Roughin
   `

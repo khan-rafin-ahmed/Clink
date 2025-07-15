@@ -152,20 +152,30 @@ createCrewInviteLink(crewId: string, expiryDays?: number): Promise<string>
 #### eventInvitationService.ts
 **Location**: `frontend/src/lib/eventInvitationService.ts`
 
-**Primary Function**:
+**Primary Functions**:
 ```typescript
+// Crew invitations (existing)
 sendEventInvitationsToCrew(
-  eventId: string, 
-  crewId: string, 
+  eventId: string,
+  crewId: string,
+  currentUserId: string
+): Promise<{ success: boolean; invitedCount: number; message: string }>
+
+// Individual user invitations (NEWLY IMPLEMENTED)
+sendEventInvitationsToUsers(
+  eventId: string,
+  userIds: string[],
   currentUserId: string
 ): Promise<{ success: boolean; invitedCount: number; message: string }>
 ```
 
-**Process Flow**:
-1. Calls Supabase RPC function `send_event_invitations_to_crew`
+**Process Flow** (Both Functions):
+1. Calls appropriate Supabase RPC function (`send_event_invitations_to_crew` or `send_event_invitations_to_users`)
 2. Receives invitation count from database
 3. Triggers email notifications if invitations were sent
 4. Returns structured response with success status
+
+**Key Improvement**: Individual user invitations now follow the same pattern as crew invitations, ensuring consistent notification creation and email delivery.
 
 ### 5. Email & Notification System
 
@@ -201,12 +211,17 @@ sendCrewInvitationEmail(recipientEmail: string, invitationData: CrewInvitationDa
 -- Send invitations to crew members
 send_event_invitations_to_crew(p_event_id, p_crew_id, p_inviter_id)
 
--- Send invitations to individual users
+-- Send invitations to individual users (FIXED - Now implemented)
 send_event_invitations_to_users(p_event_id, p_user_ids, p_inviter_id)
 
--- Create notifications
-create_notification(p_user_id, p_type, p_title, p_message, p_data)
+-- Create notifications (Legacy - replaced by unified approach)
+create_event_invitation_notification(p_event_id, p_user_id, p_invited_by, p_invitation_id)
 ```
+
+**Implementation Status**:
+- ✅ `send_event_invitations_to_crew` - Working (crew invitations)
+- ✅ `send_event_invitations_to_users` - **NEWLY IMPLEMENTED** (individual user invitations)
+- ⚠️ `create_event_invitation_notification` - Legacy function, replaced by unified RPC approach
 
 **Email Integration**:
 - Database functions call Supabase Edge Functions
@@ -896,3 +911,105 @@ Key strengths of this architecture:
 - **Security**: Proper authentication and privacy controls
 - **Scalability**: Efficient database operations and email handling
 - **Maintainability**: Clean separation of concerns and comprehensive error handling
+
+---
+
+## 🔧 **INDIVIDUAL USER INVITATION FIX** ✅
+
+### **Problem Identified:**
+Individual users were not receiving notifications when invited to events during session creation or editing, while crew invitations worked correctly.
+
+### **Root Cause:**
+- Missing `send_event_invitations_to_users` database function
+- Individual invitation logic was inconsistent with crew invitation patterns
+- Frontend services were using deprecated notification creation methods
+
+### **Solution Implemented:**
+
+#### **1. Database Function Created**
+**File**: `supabase/migrations/20250714_fix_individual_user_invitations.sql`
+
+```sql
+CREATE OR REPLACE FUNCTION send_event_invitations_to_users(
+  p_event_id UUID,
+  p_user_ids UUID[],
+  p_invited_by UUID
+)
+RETURNS TABLE (invited_count INTEGER, invitation_ids UUID[])
+```
+
+**Features**:
+- Consistent with crew invitation logic
+- Proper notification creation with inviter name resolution
+- Duplicate invitation prevention
+- Email integration support
+
+#### **2. Frontend Service Updated**
+**File**: `frontend/src/lib/eventInvitationService.ts`
+
+**New Function**: `sendEventInvitationsToUsers()`
+- Mirrors crew invitation functionality
+- Uses unified RPC approach
+- Consistent error handling and logging
+
+#### **3. Member Service Refactored**
+**File**: `frontend/src/lib/memberService.ts`
+
+**Updated Functions**:
+- `inviteUserToEvent()` - Now uses unified service
+- `bulkInviteUsers()` - Now uses unified service
+- `bulkInviteCrewMembersToEvent()` - Now uses unified service
+
+#### **4. Debug Tools Added**
+**File**: `frontend/src/pages/debug/individual-invitations.tsx`
+
+**Features**:
+- Real-time testing of RPC functions
+- Notification verification
+- End-to-end invitation flow testing
+
+### **Result:**
+✅ Individual user invitations now work consistently with crew invitations
+✅ Proper notifications are created for all invitation types
+✅ Email invitations work for both individual and crew invitations
+✅ Unified architecture reduces code duplication and maintenance overhead
+
+---
+
+## 📧 **EMAIL TEMPLATE BUTTON UPDATE** ✅
+
+### **Change Implemented:**
+Commented out Accept/Decline buttons in email templates and replaced with "View Full Event Details" button.
+
+### **Reason:**
+The Accept/Decline buttons in emails were not working properly and causing user confusion.
+
+### **Files Modified:**
+**File**: `supabase/functions/send-email/index.ts`
+
+#### **Event Invitation Emails:**
+- ❌ **Commented Out**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
+- ✅ **Added**: `📱 View Full Event Details` button linking to event page
+- ✅ **Updated Text**: "Open the Thirstee app to respond to this invitation and see all event details."
+
+#### **Crew Invitation Emails:**
+- ❌ **Commented Out**: `🤘 Join Crew` and `😔 Not Interested` buttons
+- ✅ **Added**: `📱 View Full Crew Details` button linking to notifications page
+- ✅ **Updated Text**: "Open the Thirstee app to respond to this crew invitation and see all details."
+
+#### **Text Email Versions:**
+- ✅ **Event Emails**: Removed Accept/Decline URLs, added "View Full Event Details" link
+- ✅ **Crew Emails**: Removed Join/Decline URLs, added "View Full Crew Details" link
+
+### **Benefits:**
+- ✅ **Eliminates Confusion**: Users no longer see non-functional buttons
+- ✅ **Clear Direction**: Users know to open the app for responses
+- ✅ **Future-Ready**: Buttons are commented out, not deleted, for easy restoration when fixed
+- ✅ **Consistent UX**: All email invitations now have the same interaction pattern
+
+### **User Flow:**
+1. User receives email invitation
+2. Clicks "View Full Event/Crew Details" button
+3. Opens Thirstee app (web or mobile)
+4. Responds to invitation through in-app notifications
+5. Gets proper feedback and confirmation

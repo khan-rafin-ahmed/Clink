@@ -1,3 +1,19 @@
+/**
+ * EditEventModal Component
+ *
+ * CRITICAL DEPENDENCY: This component requires specific database functions to work properly.
+ * If you encounter "You do not have permission to edit this event" errors, see:
+ * - TROUBLESHOOTING-EVENT-EDIT.md
+ * - edit-session-architecture.md (Troubleshooting section)
+ *
+ * Required database functions:
+ * - can_user_edit_event(p_event_id UUID, p_user_id UUID) RETURNS BOOLEAN
+ * - get_user_event_role(p_event_id UUID, p_user_id UUID) RETURNS TEXT
+ *
+ * Migration: supabase/migrations/20250712_add_event_edit_permissions.sql
+ * Fallback logic: eventService.ts includes graceful degradation
+ */
+
 import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

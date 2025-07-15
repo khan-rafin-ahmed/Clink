@@ -241,6 +241,11 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
       // Send individual user invitations
       if (selectedUsers.length > 0) {
         try {
+          console.log('📤 [QuickEventModal] Sending individual user invitations:', {
+            selectedUsers: selectedUsers.map(u => ({ id: u.user_id, name: u.display_name })),
+            eventId: createdEventId
+          })
+
           const userIds = selectedUsers.map(user => user.user_id)
           await bulkInviteUsers(createdEventId, userIds, user!.id)
           totalInvited += selectedUsers.length
@@ -250,9 +255,16 @@ export function QuickEventModal({ onEventCreated, trigger }: QuickEventModalProp
             : `Invited ${selectedUsers.length} users`
 
           invitationMessage += ` ${userInviteMessage}`
+          console.log('✅ [QuickEventModal] Individual user invitations sent successfully')
         } catch (userInviteError: any) {
-          console.error('Error sending user invitations:', userInviteError)
+          console.error('❌ [QuickEventModal] Error sending user invitations:', userInviteError)
+          console.error('❌ [QuickEventModal] Error details:', {
+            error: userInviteError,
+            selectedUsers: selectedUsers.map(u => ({ id: u.user_id, name: u.display_name })),
+            eventId: createdEventId
+          })
           invitationMessage += ' (Note: Some user invitations could not be sent)'
+          toast.error('Failed to send some user invitations')
         }
       }
 

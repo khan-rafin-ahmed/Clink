@@ -635,6 +635,62 @@ const EventPermissionGuard: React.FC<EventPermissionGuardProps> = ({
 
 ### **Final Implementation Summary:**
 
+## 🚨 CRITICAL: Database Functions Required for Event Editing
+
+**IMPORTANT**: The following database functions are **REQUIRED** for event editing to work. If these are missing, users will get "You do not have permission to edit this event" errors.
+
+### Required Database Functions
+
+#### 1. `can_user_edit_event(p_event_id UUID, p_user_id UUID) RETURNS BOOLEAN`
+- **Purpose**: Checks if a user can edit an event (hosts and co-hosts only)
+- **Location**: `supabase/migrations/20250712_add_event_edit_permissions.sql`
+- **Fallback**: Frontend checks `events.created_by = user.id` if function missing
+
+#### 2. `get_user_event_role(p_event_id UUID, p_user_id UUID) RETURNS TEXT`
+- **Purpose**: Returns user's role in event ('host', 'co_host', 'attendee', 'none')
+- **Location**: `supabase/migrations/20250712_add_event_edit_permissions.sql`
+- **Fallback**: Frontend checks events table and event_members table directly
+
+#### 3. Co-Host Management Functions
+- `promote_event_member_to_cohost(p_event_id UUID, p_user_id UUID, p_promoted_by UUID) RETURNS JSON`
+- `demote_event_cohost(p_event_id UUID, p_user_id UUID, p_demoted_by UUID) RETURNS JSON`
+
+### Database Schema Requirements
+
+#### `event_members` Table Must Have:
+```sql
+ALTER TABLE event_members
+ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'attendee'
+CHECK (role IN ('attendee', 'co_host', 'host'));
+```
+
+#### RLS Policy Required:
+```sql
+CREATE POLICY "event_hosts_and_cohosts_can_update" ON events
+  FOR UPDATE USING (
+    created_by = auth.uid()
+    OR
+    id IN (
+      SELECT event_id FROM event_members
+      WHERE user_id = auth.uid()
+      AND role = 'co_host'
+      AND status = 'accepted'
+    )
+  );
+```
+
+### Deployment Checklist
+
+Before deploying event edit functionality:
+
+1. ✅ **Run Migration**: `npx supabase db push` to apply `20250712_add_event_edit_permissions.sql`
+2. ✅ **Verify Functions Exist**: Check Supabase dashboard > Database > Functions
+3. ✅ **Test Fallback Logic**: Ensure `eventService.ts` and `eventRoleService.ts` have fallback logic
+4. ✅ **Verify RLS Policies**: Check that co-hosts can update events
+5. ✅ **Test Event Editing**: Create event and test edit functionality
+
+---
+
 The Event Co-Host system has been **successfully implemented** according to this architecture document. The new system achieves:
 
 #### **Database Schema Enhancement:**
@@ -643,6 +699,80 @@ The Event Co-Host system has been **successfully implemented** according to this
 - ✅ **RLS Policies**: Updated to allow co-hosts to edit events alongside hosts
 - ✅ **Notification Support**: Added `event_promotion` notification type
 - ✅ **Helper Functions**: Created `can_user_edit_event()` and `get_user_event_role()` utilities
+- ✅ **Fallback Logic**: Added graceful degradation when database functions are missing
+
+## 🔧 Troubleshooting Event Edit Issues
+
+### Common Error: "You do not have permission to edit this event"
+
+**Root Cause**: Missing database functions or incorrect RLS policies
+
+**Diagnostic Steps**:
+
+1. **Check Database Functions**:
+```sql
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_name IN (
+    'get_user_event_role',
+    'can_user_edit_event',
+    'promote_event_member_to_cohost',
+    'demote_event_cohost'
+);
+```
+
+2. **Check event_members Table Schema**:
+```sql
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_name = 'event_members'
+AND column_name = 'role';
+```
+
+3. **Check RLS Policies**:
+```sql
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+FROM pg_policies
+WHERE tablename = 'events'
+AND policyname LIKE '%update%';
+```
+
+4. **Test User Permissions**:
+```sql
+-- Replace with actual event_id and user_id
+SELECT can_user_edit_event('your-event-id', 'your-user-id');
+SELECT get_user_event_role('your-event-id', 'your-user-id');
+```
+
+### Quick Fixes
+
+**If Functions Missing**:
+```bash
+# Run the migration
+npx supabase db push
+
+# Or apply manually in Supabase SQL Editor
+-- Copy contents of supabase/migrations/20250712_add_event_edit_permissions.sql
+```
+
+**If Still Failing**:
+- Check browser console for "RPC function not available" warnings
+- Verify fallback logic is working in `eventService.ts`
+- Ensure user is authenticated and is the event creator
+
+### Frontend Fallback Logic
+
+The frontend includes fallback logic in case database functions are missing:
+
+**In `eventService.ts`**:
+- Falls back to checking `events.created_by = user.id`
+- Logs warnings when RPC functions fail
+
+**In `eventRoleService.ts`**:
+- Falls back to direct table queries
+- Gracefully handles missing functions
+
+This ensures event editing works even if database functions are not deployed.
 
 #### **Service Layer Implementation:**
 - ✅ **eventRoleService.ts**: Complete role management service with permissions

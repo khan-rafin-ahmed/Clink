@@ -731,7 +731,7 @@ if (errors.length > 0) {
   - Created `promote_crew_member_to_cohost()` function for role management
   - Created `demote_crew_cohost_to_member()` function with permission checks
   - Created `remove_crew_member()` function with role-based permissions
-  - Created `send_event_invitations_to_users()` function for bulk email invitations
+  - Created `send_event_invitations_to_users()` function for bulk email invitations ✅ **FIXED**
   - Updated RLS policies to support co-host permissions
 - **Frontend Enhancements**:
   - Enhanced `EditCrewModal.tsx` with tabbed interface and member management
@@ -918,6 +918,24 @@ The Event Co-Host system enables collaborative event management by allowing even
 - **Helper Functions**: `can_user_edit_event()`, `get_user_event_role()`
 - **RLS Policies**: Updated to allow co-hosts to edit events
 - **Notifications**: Added `event_promotion` notification type
+
+### **🚨 CRITICAL: Event Edit Dependencies**
+
+**Required Migration**: `supabase/migrations/20250712_add_event_edit_permissions.sql`
+
+**Essential Database Functions for Event Editing**:
+1. `can_user_edit_event(p_event_id UUID, p_user_id UUID) RETURNS BOOLEAN`
+2. `get_user_event_role(p_event_id UUID, p_user_id UUID) RETURNS TEXT`
+3. `promote_event_member_to_cohost(p_event_id UUID, p_user_id UUID, p_promoted_by UUID) RETURNS JSON`
+4. `demote_event_cohost(p_event_id UUID, p_user_id UUID, p_demoted_by UUID) RETURNS JSON`
+
+**Fallback Logic**: Frontend gracefully handles missing functions by checking `events.created_by` directly.
+
+**Deployment Checklist**:
+- ✅ Run `npx supabase db push` to apply migration
+- ✅ Verify functions exist in Supabase dashboard
+- ✅ Test event editing functionality
+- ✅ Check browser console for RPC warnings
 
 ### **UI/UX Implementation**
 - **EditEventModal**: Enhanced with 4-step process including attendee management
@@ -1250,3 +1268,100 @@ The Event Co-Host system is fully implemented, tested, and ready for production 
 - **Background**: #08090A - Main dark background
 - **Glass Effects**: Frosted panels with backdrop-blur
 - **Text**: White (#FFFFFF) for primary text, muted variants for secondary
+
+---
+
+## 🔧 **INDIVIDUAL USER INVITATION NOTIFICATION FIX** ✅
+
+### **Issue Resolved**: Individual users were not receiving notifications when invited to events
+
+**Date**: 2025-01-14
+**Migration**: `20250714_fix_individual_user_invitations.sql`
+
+### **Problem**:
+- Individual user invitations to events were not creating notifications
+- Crew invitations worked correctly, but individual invitations failed silently
+- Missing database function `send_event_invitations_to_users`
+- Inconsistent invitation logic between crew and individual users
+
+### **Root Cause**:
+1. **Missing Database Function**: `send_event_invitations_to_users` was referenced in code but never implemented
+2. **Inconsistent Architecture**: Individual invitations used deprecated `create_event_invitation_notification` approach
+3. **Trigger Conflicts**: Database triggers and RPC functions were conflicting
+
+### **Solution Implemented**:
+
+#### **Database Changes**:
+- ✅ Created `send_event_invitations_to_users(p_event_id, p_user_ids[], p_invited_by)` function
+- ✅ Unified notification creation logic with crew invitations
+- ✅ Proper inviter name resolution (no more "Someone" notifications)
+- ✅ Duplicate invitation prevention
+
+#### **Frontend Changes**:
+- ✅ Added `sendEventInvitationsToUsers()` to `eventInvitationService.ts`
+- ✅ Refactored `memberService.ts` functions to use unified approach:
+  - `inviteUserToEvent()` - Now uses RPC function
+  - `bulkInviteUsers()` - Now uses RPC function
+  - `bulkInviteCrewMembersToEvent()` - Now uses RPC function
+- ✅ Added debug page at `/debug/individual-invitations` for testing
+
+#### **Architecture Improvements**:
+- ✅ Unified invitation flow for both crew and individual users
+- ✅ Consistent error handling and logging
+- ✅ Reduced code duplication
+- ✅ Better maintainability
+
+### **Files Modified**:
+- `supabase/migrations/20250714_fix_individual_user_invitations.sql` - New database function
+- `frontend/src/lib/eventInvitationService.ts` - Added individual user invitation service
+- `frontend/src/lib/memberService.ts` - Refactored to use unified approach
+- `frontend/src/pages/debug/individual-invitations.tsx` - New debug page
+- `invite-people-architecture.md` - Updated documentation
+
+### **Testing**:
+- ✅ Debug page created for real-time testing
+- ✅ RPC function validation
+- ✅ Notification creation verification
+- ✅ Email integration testing
+
+### **Result**:
+Individual user invitations now work consistently with crew invitations, ensuring all users receive proper notifications when invited to events.
+
+---
+
+## 📧 **EMAIL TEMPLATE BUTTON UPDATE** ✅
+
+### **Issue**: Accept/Decline buttons in email invitations were not working properly
+
+**Date**: 2025-01-14
+**File Modified**: `supabase/functions/send-email/index.ts`
+
+### **Changes Made**:
+
+#### **Event Invitation Emails**:
+- ❌ **Commented Out**: `🍺 Accept Invitation` and `😔 Can't Make It` buttons
+- ✅ **Replaced With**: `📱 View Full Event Details` button (links to event page)
+- ✅ **Updated Message**: "Open the Thirstee app to respond to this invitation and see all event details."
+
+#### **Crew Invitation Emails**:
+- ❌ **Commented Out**: `🤘 Join Crew` and `😔 Not Interested` buttons
+- ✅ **Replaced With**: `📱 View Full Crew Details` button (links to notifications page)
+- ✅ **Updated Message**: "Open the Thirstee app to respond to this crew invitation and see all details."
+
+#### **Text Email Versions**:
+- ✅ Removed non-functional Accept/Decline URLs
+- ✅ Added "View Full Details" links
+- ✅ Updated messaging for clarity
+
+### **Benefits**:
+- **Eliminates User Confusion**: No more broken buttons in emails
+- **Clear User Direction**: Users know to open the app for responses
+- **Future-Ready**: Buttons are commented out (not deleted) for easy restoration when fixed
+- **Consistent UX**: All email invitations now follow the same pattern
+
+### **User Flow**:
+1. User receives email invitation
+2. Clicks "View Full Event/Crew Details" button
+3. Opens Thirstee app
+4. Responds through in-app notifications
+5. Gets proper feedback and confirmation

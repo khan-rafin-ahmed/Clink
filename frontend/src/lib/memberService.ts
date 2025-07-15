@@ -1,34 +1,27 @@
 import { supabase } from './supabase'
+import { sendEventInvitationsToUsers } from './eventInvitationService'
 import type { EventMember, MemberStatus } from '@/types'
 
 // Event Member Functions
 export async function inviteUserToEvent(eventId: string, userId: string, currentUserId: string) {
+  // Use the new unified invitation service for consistency
+  const result = await sendEventInvitationsToUsers(eventId, [userId], currentUserId)
 
+  if (!result.success) {
+    throw new Error(result.message)
+  }
+
+  // Return the invitation data (for backward compatibility)
   const { data, error } = await supabase
     .from('event_members')
-    .insert({
-      event_id: eventId,
-      user_id: userId,
-      invited_by: currentUserId,
-      status: 'pending'
-    })
-    .select()
+    .select('*')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+    .eq('invited_by', currentUserId)
+    .eq('status', 'pending')
     .single()
 
   if (error) throw error
-
-  // Create notification using the new function for consistency
-  try {
-    await supabase.rpc('create_event_invitation_notification', {
-      p_event_id: eventId,
-      p_user_id: userId,
-      p_invited_by: currentUserId,
-      p_invitation_id: data.id
-    })
-  } catch (notificationError) {
-    console.error('Failed to create notification for user:', userId, notificationError)
-    // Don't fail the whole operation for notification errors
-  }
 
   // Get user profile separately
   const { data: userProfile } = await supabase
@@ -107,38 +100,30 @@ export async function getUserEventInvitations(currentUserId: string): Promise<Ev
 }
 
 export async function bulkInviteUsers(eventId: string, userIds: string[], currentUserId: string) {
+  console.log('📝 [MemberService] bulkInviteUsers called with:', { eventId, userIds, currentUserId })
 
-  const invitations = userIds.map(userId => ({
-    event_id: eventId,
-    user_id: userId,
-    invited_by: currentUserId,
-    status: 'pending' as MemberStatus
-  }))
+  // Use the new unified invitation service for consistency
+  const result = await sendEventInvitationsToUsers(eventId, userIds, currentUserId)
 
+  console.log('📝 [MemberService] sendEventInvitationsToUsers result:', result)
+
+  if (!result.success) {
+    console.error('❌ [MemberService] Invitation service failed:', result.message)
+    throw new Error(result.message)
+  }
+
+  // Return the invitation data (for backward compatibility)
   const { data, error } = await supabase
     .from('event_members')
-    .insert(invitations)
-    .select()
+    .select('*')
+    .eq('event_id', eventId)
+    .eq('invited_by', currentUserId)
+    .eq('status', 'pending')
+    .in('user_id', userIds)
 
   if (error) throw error
 
   if (!data || data.length === 0) return []
-
-  // Create notifications for each invited user using the new function
-  // This ensures consistent notification format and eliminates duplicates
-  for (const member of data) {
-    try {
-      await supabase.rpc('create_event_invitation_notification', {
-        p_event_id: eventId,
-        p_user_id: member.user_id,
-        p_invited_by: currentUserId,
-        p_invitation_id: member.id
-      })
-    } catch (notificationError) {
-      console.error('Failed to create notification for user:', member.user_id, notificationError)
-      // Don't fail the whole operation for notification errors
-    }
-  }
 
   // Get user profiles for all invited users
   const { data: userProfiles } = await supabase
@@ -187,29 +172,22 @@ export async function bulkAddCrewMembersToEvent(eventId: string, userIds: string
 
 // Bulk invite crew members to event with email notifications (simplified)
 export async function bulkInviteCrewMembersToEvent(eventId: string, userIds: string[], currentUserId: string) {
-  // Insert invitations
-  const { data, error } = await supabase
-    .from('event_members')
-    .insert(userIds.map(userId => ({
-      event_id: eventId,
-      user_id: userId,
-      invited_by: currentUserId,
-      status: 'pending' as MemberStatus
-    })))
-    .select()
+  // Use the new unified invitation service for consistency
+  const result = await sendEventInvitationsToUsers(eventId, userIds, currentUserId)
 
-  if (error) throw error
-
-  // Send notifications (simplified - no complex error handling)
-  try {
-    await supabase.rpc('send_event_invitations_to_users', {
-      p_event_id: eventId,
-      p_user_ids: userIds,
-      p_invited_by: currentUserId
-    })
-  } catch (error) {
-    console.error('Error sending event invitations:', error)
+  if (!result.success) {
+    throw new Error(result.message)
   }
 
+  // Return the invitation data (for backward compatibility)
+  const { data, error } = await supabase
+    .from('event_members')
+    .select('*')
+    .eq('event_id', eventId)
+    .eq('invited_by', currentUserId)
+    .eq('status', 'pending')
+    .in('user_id', userIds)
+
+  if (error) throw error
   return data || []
 }

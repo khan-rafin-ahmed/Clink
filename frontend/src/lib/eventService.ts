@@ -875,6 +875,13 @@ export async function respondToEventInvitation(eventMemberId: string, response: 
   }
 }
 
+/**
+ * Update an event
+ *
+ * IMPORTANT: This function requires the can_user_edit_event database function.
+ * If missing, it falls back to checking events.created_by for basic permission.
+ * See TROUBLESHOOTING-EVENT-EDIT.md if you encounter permission errors.
+ */
 export async function updateEvent(id: string, event: Partial<Event>) {
   // Check if current user has permission to edit this event
   const { data: { user } } = await supabase.auth.getUser()
@@ -883,14 +890,46 @@ export async function updateEvent(id: string, event: Partial<Event>) {
   }
 
   // Verify user can edit this event (host or co-host)
-  const { data: canEdit, error: permissionError } = await supabase.rpc('can_user_edit_event', {
-    p_event_id: id,
-    p_user_id: user.id
-  })
+  // Includes fallback logic for missing database functions
+  let canEdit = false
 
-  if (permissionError) {
-    console.error('Error checking edit permissions:', permissionError)
-    throw new Error('Failed to verify edit permissions')
+  try {
+    const { data, error: permissionError } = await supabase.rpc('can_user_edit_event', {
+      p_event_id: id,
+      p_user_id: user.id
+    })
+
+    if (permissionError) {
+      console.warn('RPC function not available, falling back to basic permission check:', permissionError)
+      // Fallback: Check if user is the event creator
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('created_by')
+        .eq('id', id)
+        .single()
+
+      if (eventError) {
+        throw new Error('Failed to verify event ownership')
+      }
+
+      canEdit = eventData.created_by === user.id
+    } else {
+      canEdit = data || false
+    }
+  } catch (error) {
+    console.warn('Permission check failed, using fallback:', error)
+    // Fallback: Check if user is the event creator
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('created_by')
+      .eq('id', id)
+      .single()
+
+    if (eventError) {
+      throw new Error('Failed to verify event ownership')
+    }
+
+    canEdit = eventData.created_by === user.id
   }
 
   if (!canEdit) {

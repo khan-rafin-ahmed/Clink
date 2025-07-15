@@ -249,6 +249,131 @@ export interface InvitationResponse {
 }
 
 /**
+ * Send event invitations to individual users
+ * Uses the new send_event_invitations_to_users RPC function for consistency
+ */
+export async function sendEventInvitationsToUsers(
+  eventId: string,
+  userIds: string[],
+  currentUserId: string
+): Promise<{ success: boolean; invitedCount: number; message: string }> {
+  try {
+    console.log('🔔 [EventInvitationService] Sending event invitations to users:', {
+      eventId,
+      userIds,
+      currentUserId,
+      userCount: userIds.length
+    })
+
+    // Validate inputs
+    if (!eventId || !userIds || userIds.length === 0 || !currentUserId) {
+      console.error('❌ [EventInvitationService] Invalid parameters:', { eventId, userIds, currentUserId })
+      throw new Error('Invalid parameters for user invitations')
+    }
+
+    // Use RPC function to send invitations (consistent with crew invitations)
+    console.log('📤 [EventInvitationService] Calling send_event_invitations_to_users RPC with parameters:', {
+      p_event_id: eventId,
+      p_user_ids: userIds,
+      p_invited_by: currentUserId
+    })
+
+    const { data, error } = await supabase
+      .rpc('send_event_invitations_to_users', {
+        p_event_id: eventId,
+        p_user_ids: userIds,
+        p_invited_by: currentUserId
+      })
+
+    console.log('📥 [EventInvitationService] RPC response:', { data, error })
+
+    if (error) {
+      console.error('❌ [EventInvitationService] Error sending user invitations:', error)
+      console.error('❌ [EventInvitationService] Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+
+      // Show user-friendly error
+      toast.error(`Failed to send invitations: ${error.message}`)
+      throw error
+    }
+
+    const invitedCount = data?.[0]?.invited_count || 0
+    console.log('✅ [EventInvitationService] Successfully invited users:', { invitedCount })
+
+    // Additional debugging: Check if notifications were actually created
+    if (invitedCount > 0) {
+      console.log('🔍 [EventInvitationService] Verifying notifications were created...')
+
+      try {
+        const { data: notifications, error: notifError } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('type', 'event_invitation')
+          .in('user_id', userIds)
+          .order('created_at', { ascending: false })
+          .limit(userIds.length)
+
+        console.log('📋 [EventInvitationService] Recent notifications:', { notifications, notifError })
+
+        if (notifError) {
+          console.error('❌ [EventInvitationService] Error checking notifications:', notifError)
+        } else {
+          console.log(`✅ [EventInvitationService] Found ${notifications?.length || 0} notifications for ${userIds.length} invited users`)
+        }
+      } catch (notifCheckError) {
+        console.error('❌ [EventInvitationService] Exception checking notifications:', notifCheckError)
+      }
+    }
+
+    // Send email invitations if any users were invited
+    if (invitedCount > 0) {
+      try {
+        console.log('📧 Attempting to send email invitations...')
+        console.log('📧 Calling sendEventInvitationEmails with:', { eventId, inviterId: currentUserId })
+
+        // Send emails immediately without delay
+        await sendEventInvitationEmails(eventId, currentUserId)
+        console.log('✅ Email invitations sent successfully')
+
+        // Force a small delay to ensure notifications are processed
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+      } catch (emailError: any) {
+        console.error('❌ Email invitation error:', emailError)
+        // Don't fail the whole operation but log the error clearly
+        console.error('❌ Email error details:', {
+          eventId,
+          userId: currentUserId,
+          invitedCount,
+          error: emailError,
+          errorStack: emailError?.stack
+        })
+      }
+    }
+
+    return {
+      success: true,
+      invitedCount,
+      message: invitedCount > 0
+        ? `Successfully invited ${invitedCount} user${invitedCount > 1 ? 's' : ''} to the event`
+        : 'No new users were invited (they may already be invited or joined)'
+    }
+
+  } catch (error: any) {
+    console.error('❌ [EventInvitationService] Failed to send user invitations:', error)
+    return {
+      success: false,
+      invitedCount: 0,
+      message: error.message || 'Failed to send invitations'
+    }
+  }
+}
+
+/**
  * Send event invitations to crew members
  * This replaces the old auto-add functionality
  */

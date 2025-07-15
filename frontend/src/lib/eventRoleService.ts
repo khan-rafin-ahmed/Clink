@@ -53,41 +53,49 @@ export async function getUserEventRole(eventId: string, userId: string): Promise
     })
 
     if (error) {
-      console.error('Error getting user event role:', error)
-
-      // Fallback: check directly from events table if user is creator
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('created_by')
-        .eq('id', eventId)
-        .single()
-
-      if (!eventError && eventData?.created_by === userId) {
-        return 'host'
-      }
-
-      return 'none'
+      console.warn('RPC function not available, using fallback role check:', error)
+      return await fallbackGetUserEventRole(eventId, userId)
     }
 
     return data || 'none'
   } catch (error) {
-    console.error('Error getting user event role:', error)
+    console.warn('Error getting user event role, using fallback:', error)
+    return await fallbackGetUserEventRole(eventId, userId)
+  }
+}
 
-    // Fallback: check directly from events table if user is creator
-    try {
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('created_by')
-        .eq('id', eventId)
-        .single()
+/**
+ * Fallback function to get user's role when RPC is not available
+ */
+async function fallbackGetUserEventRole(eventId: string, userId: string): Promise<string> {
+  try {
+    // Check if user is the event creator (host)
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('created_by')
+      .eq('id', eventId)
+      .single()
 
-      if (!eventError && eventData?.created_by === userId) {
-        return 'host'
-      }
-    } catch (fallbackError) {
-      console.error('Fallback check failed:', fallbackError)
+    if (!eventError && eventData?.created_by === userId) {
+      return 'host'
     }
 
+    // Check if user has a role in event_members table
+    const { data: memberData, error: memberError } = await supabase
+      .from('event_members')
+      .select('role')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
+      .single()
+
+    if (!memberError && memberData?.role) {
+      return memberData.role
+    }
+
+    return 'none'
+  } catch (fallbackError) {
+    console.error('Fallback role check failed:', fallbackError)
     return 'none'
   }
 }
@@ -103,14 +111,18 @@ export async function canUserEditEvent(eventId: string, userId: string): Promise
     })
 
     if (error) {
-      console.error('Error checking edit permissions:', error)
-      return false
+      console.warn('RPC function not available, using fallback permission check:', error)
+      // Fallback: Check user role
+      const userRole = await getUserEventRole(eventId, userId)
+      return userRole === 'host' || userRole === 'co_host'
     }
 
     return data || false
   } catch (error) {
-    console.error('Error checking edit permissions:', error)
-    return false
+    console.warn('Error checking edit permissions, using fallback:', error)
+    // Fallback: Check user role
+    const userRole = await getUserEventRole(eventId, userId)
+    return userRole === 'host' || userRole === 'co_host'
   }
 }
 

@@ -34,6 +34,8 @@ import { LiveBadgeDemo } from './components/LiveBadgeDemo'
 import { InvitationAction } from './pages/InvitationAction'
 import { TestInvitationTokens } from './pages/TestInvitationTokens'
 import NotificationSystemTest from './pages/NotificationSystemTest'
+import NotificationDebugPage from './pages/debug/notifications'
+import IndividualInvitationsDebug from './pages/debug/individual-invitations'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -152,6 +154,12 @@ function App() {
 
               {/* Comprehensive notification system test */}
               <Route path="/test-notification-system" element={<NotificationSystemTest />} />
+
+              {/* Debug page for notification system and email invitations */}
+              <Route path="/debug/notifications" element={<NotificationDebugPage />} />
+
+              {/* Debug page for individual user invitations */}
+              <Route path="/debug/individual-invitations" element={<IndividualInvitationsDebug />} />
 
             </Routes>
           </main>
