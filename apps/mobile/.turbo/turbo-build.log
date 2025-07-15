@@ -1,0 +1,14 @@
+
+
+> mobile@1.0.0 build
+> expo build
+
+[1G[0KInvalid project root: /Users/wpdevrafin/Clink/apps/mobile/build
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/wpdevrafin/Clink/apps/mobile
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m mobile@1.0.0
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/wpdevrafin/Clink/apps/mobile
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c expo build
+[1G[0K⠙[1G[0K

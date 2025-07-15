@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["../../packages/shared/src/*"],
+      "@config/*": ["../../packages/config/*"]
+    },
+    "types": ["react-native"]
+  },
+  "include": [
+    "src/**/*",
+    "App.tsx",
+    "metro.config.js",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ]
+}
