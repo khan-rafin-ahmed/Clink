@@ -56,15 +56,7 @@ export function FilterModal({ isOpen, onClose, onApplyFilters, currentFilters }:
     setDrinkFilter('all')
   }
 
-  const handleReset = () => {
-    handleClear()
-    onApplyFilters({
-      sortBy: 'newest',
-      filterBy: 'all',
-      drinkFilter: 'all'
-    })
-    onClose()
-  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

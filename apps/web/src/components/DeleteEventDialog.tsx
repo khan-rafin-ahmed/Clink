@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
+
 import { deleteEvent } from '@/lib/eventService'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'

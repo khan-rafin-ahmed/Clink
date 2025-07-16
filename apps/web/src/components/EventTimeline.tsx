@@ -5,14 +5,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ShareModal } from '@/components/ShareModal'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Link } from 'react-router-dom'
-import { format, isToday, isTomorrow, isThisWeek, isSameDay, parseISO } from 'date-fns'
+import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns'
 import {
   Calendar,
   ChevronLeft,
   ChevronRight,
   Clock,
   MapPin,
-  Users,
+
   Edit,
   Trash2,
   ArrowRight,
@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { getEventCoverImage, getVibeEmoji } from '@/lib/coverImageUtils'
-import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
+import { getLocationDisplayName } from '@/lib/eventUtils'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { LiveBadge } from '@/components/LiveBadge'

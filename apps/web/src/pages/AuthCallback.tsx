@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { handleAuthCallback } from '@/lib/authService'
+
 import {
   hasAuthTokensInUrl,
   clearAuthTokensFromUrl,

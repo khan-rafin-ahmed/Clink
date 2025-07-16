@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
-import { User, LogOut, Settings, Edit, Menu, Search, X } from 'lucide-react'
+import { User, LogOut, Settings, Edit, Menu, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getUserProfile } from '@/lib/userService'
 import { NotificationBell } from './NotificationBell'

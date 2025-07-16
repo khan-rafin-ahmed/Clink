@@ -24,14 +24,13 @@ interface GyroData {
 export function GyroGlassCard({
   children,
   className,
-  intensity = 1,
   enableGyro = true,
   fallbackToMouse = true,
   glassEffect = 'normal'
 }: GyroGlassCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 })
-  const [isGyroSupported, setIsGyroSupported] = useState(false)
+  const [, setIsGyroSupported] = useState(false)
   const [isGyroEnabled, setIsGyroEnabled] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [isHovered, setIsHovered] = useState(false)
@@ -99,30 +98,7 @@ export function GyroGlassCard({
     return () => document.removeEventListener('mousemove', handleMouseMove)
   }, [fallbackToMouse, isGyroEnabled, enableGyro, isHovered])
 
-  // Calculate transform based on gyro or mouse data
-  const getTransform = () => {
-    let rotateX = 0
-    let rotateY = 0
-    let rotateZ = 0
 
-    if (isGyroEnabled && enableGyro) {
-      // Use gyroscope data
-      rotateX = (gyroData.beta - 90) * intensity * 0.1
-      rotateY = gyroData.gamma * intensity * 0.1
-      rotateZ = gyroData.alpha * intensity * 0.05
-    } else if (fallbackToMouse && isHovered) {
-      // Use mouse position
-      rotateX = mousePosition.y * intensity * 10
-      rotateY = mousePosition.x * intensity * -10
-    }
-
-    // Clamp values to prevent extreme rotations
-    rotateX = Math.max(-15, Math.min(15, rotateX))
-    rotateY = Math.max(-15, Math.min(15, rotateY))
-    rotateZ = Math.max(-5, Math.min(5, rotateZ))
-
-    return `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`
-  }
 
   // Get glass effect intensity
   const getGlassIntensity = () => {

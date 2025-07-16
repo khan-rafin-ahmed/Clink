@@ -5,7 +5,7 @@ interface Simple404Props {
   username?: string
 }
 
-export function Simple404({ username }: Simple404Props) {
+export function Simple404({}: Simple404Props) {
   const navigate = useNavigate()
 
   return (

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { Users, Mail, Clock, CheckCircle, XCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
-import type { UserProfile } from '@/types'
+
 
 interface InvitationMember {
   user_id: string

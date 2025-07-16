@@ -137,7 +137,7 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         console.log(`⚠️ No email in user_profiles for invitation ${invitation.id}, trying fallback...`)
 
         try {
-          const { data: secureData, error: secureError } = await supabase
+          const { data: secureData } = await supabase
             .rpc('get_user_email_for_invitation', { p_user_id: invitation.user_id })
             .single()
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { QuickEventModal } from '@/components/QuickEventModal'
 import { useAuth } from '@/lib/auth-context'
-import { ArrowRight, Sparkles, Users, Clock } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface EnhancedHeroProps {

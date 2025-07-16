@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { MemberList } from '@/components/shared/MemberList'
 import type { CrewMember } from '@/types'
 

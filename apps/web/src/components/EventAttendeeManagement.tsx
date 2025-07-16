@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { MemberList } from '@/components/shared/MemberList'
 import { getEventMembersWithRoles, handleRoleChange, getUserEventRole } from '@/lib/eventRoleService'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { User, Loader2 } from 'lucide-react'
-import type { EventMember } from '@/types'
 
 interface EventAttendeeManagementProps {
   eventId: string

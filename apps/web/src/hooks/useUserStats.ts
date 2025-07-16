@@ -72,7 +72,7 @@ export function useUserStats(refreshTrigger?: number, userId?: string): UseUserS
     setError(null)
 
     try {
-      const now = new Date().toISOString()
+
 
       // SIMPLIFIED: Get all event IDs the user is associated with
       const [

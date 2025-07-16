@@ -13,7 +13,7 @@ import {
 } from '@/lib/debugUserSearch'
 import { searchUsersForInvite } from '@/lib/crewService'
 import { useAuth } from '@/lib/auth-context'
-import { ArrowLeft, Search, Bug, User, Mail, Calendar } from 'lucide-react'
+import { ArrowLeft, Search, Bug } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export function DebugUserSearch() {

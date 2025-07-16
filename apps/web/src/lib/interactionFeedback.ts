@@ -3,8 +3,8 @@
  * Combines sound effects and haptic feedback for immersive liquid glass interactions
  */
 
-import { soundEffects, useSoundEffects } from './soundEffects'
-import { hapticFeedback, useHapticFeedback } from './hapticFeedback'
+import { soundEffects } from './soundEffects'
+import { hapticFeedback } from './hapticFeedback'
 
 export interface InteractionConfig {
   sound: boolean
@@ -71,7 +71,6 @@ class InteractionFeedbackManager {
   }
 
   glassHover(element?: HTMLElement) {
-    const intensity = this.getIntensityMultiplier() * 0.5 // Lighter for hover
     
     if (this.config.sound) {
       soundEffects.glassHover()
@@ -151,7 +150,6 @@ class InteractionFeedbackManager {
   }
 
   glassShatter(element?: HTMLElement) {
-    const intensity = this.getIntensityMultiplier()
     
     if (this.config.sound) {
       soundEffects.error() // Use error sound for shatter

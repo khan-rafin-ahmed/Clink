@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
 import { ClickableUserAvatar } from './ClickableUserAvatar'
 import { Textarea } from '@/components/ui/textarea'
 import { MessageCircle, Send } from 'lucide-react'

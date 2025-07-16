@@ -135,7 +135,7 @@ export async function promoteEventMemberToCohost(
   promotedBy: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.rpc('promote_event_member_to_cohost', {
+    const { error } = await supabase.rpc('promote_event_member_to_cohost', {
       p_event_id: eventId,
       p_user_id: userId,
       p_promoted_by: promotedBy
@@ -162,7 +162,7 @@ export async function demoteEventCohost(
   demotedBy: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.rpc('demote_event_cohost', {
+    const { error } = await supabase.rpc('demote_event_cohost', {
       p_event_id: eventId,
       p_user_id: userId,
       p_demoted_by: demotedBy

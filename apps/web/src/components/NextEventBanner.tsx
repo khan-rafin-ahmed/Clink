@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { format, isToday, isTomorrow, isThisWeek, isPast } from 'date-fns'
+import { format, isToday, isTomorrow, isThisWeek } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,8 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabase'
-import { getUserJoinStatus, calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
-import { getEventCoverImage, getVibeFallbackGradient, getVibeEmoji } from '@/lib/coverImageUtils'
+import { calculateAttendeeCount, getLocationDisplayName } from '@/lib/eventUtils'
+import { getEventCoverImage, getVibeEmoji } from '@/lib/coverImageUtils'
 import type { Event } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -29,12 +29,12 @@ interface NextEventBannerProps {
 }
 
 export function NextEventBanner({ userId, className }: NextEventBannerProps) {
-  const { user } = useAuth()
+  const {} = useAuth()
   const [nextEvent, setNextEvent] = useState<Event | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isHost, setIsHost] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const [, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
   // Format event time - same as EnhancedEventCard
@@ -57,43 +57,9 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
     return `${baseUrl}/event/${event.event_code || event.id}`
   }
 
-  // Get status badge - same as EnhancedEventCard
-  const getStatusBadge = () => {
-    if (!nextEvent) return { text: 'Upcoming', variant: 'outline' as const }
-    const eventDate = new Date(nextEvent.date_time)
-    const isPastEvent = isPast(eventDate)
 
-    if (isPastEvent) return { text: 'Past', variant: 'secondary' as const }
-    if (isToday(eventDate)) return { text: 'Today', variant: 'default' as const }
-    if (isTomorrow(eventDate)) return { text: 'Tomorrow', variant: 'accent' as const }
-    return { text: 'Upcoming', variant: 'outline' as const }
-  }
 
-  // Generate placeholder image based on event vibe - same as EnhancedEventCard
-  const getPlaceholderImage = () => {
-    if (!nextEvent) return null
-    const gradient = getVibeFallbackGradient(nextEvent.vibe)
-    const vibeEmoji = getVibeEmoji(nextEvent.vibe)
 
-    return (
-      <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-        <div className="text-center space-y-2">
-          <div className="text-4xl opacity-80">
-            {vibeEmoji}
-          </div>
-          <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-            {nextEvent.vibe || 'Event'}
-          </div>
-        </div>
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="w-full h-full" style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`
-          }} />
-        </div>
-      </div>
-    )
-  }
 
   useEffect(() => {
     loadNextEvent()
@@ -222,11 +188,8 @@ export function NextEventBanner({ userId, className }: NextEventBannerProps) {
     return null // Don't show banner if no upcoming events
   }
 
-  const joinStatus = getUserJoinStatus(nextEvent, userId)
   const eventUrl = getEventUrl(nextEvent).replace(window.location.origin, '')
   const displayCount = calculateAttendeeCount(nextEvent)
-  const statusBadge = getStatusBadge()
-  const isHostUser = user && nextEvent.created_by === user.id
 
   return (
     <Link to={eventUrl} className="block">

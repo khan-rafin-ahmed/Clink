@@ -85,9 +85,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       onMouseEnter?.(e)
     }
 
-    const Comp = asChild ? Slot : "button"
+    if (asChild) {
+      return (
+        <Slot
+          className={cn(buttonVariants({ variant, size, className }))}
+          {...(props as any)}
+        />
+      )
+    }
+
     return (
-      <Comp
+      <button
         className={cn(buttonVariants({ variant, size, className }))}
         ref={buttonRef}
         onClick={handleClick}

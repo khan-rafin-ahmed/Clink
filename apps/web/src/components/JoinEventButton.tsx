@@ -22,7 +22,6 @@ export function JoinEventButton({
   onJoinChange,
   className = '',
   size = 'default',
-  variant = 'default',
   showLoginPrompt = true,
   isHost = false
 }: JoinEventButtonProps) {
