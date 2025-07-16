@@ -50,10 +50,10 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       return []
     }
 
-    // Get member counts for each crew
+    // Get member counts for each crew (including user_id to check for creators)
     const { data: memberCounts, error: countError } = await supabase
       .from('crew_members')
-      .select('crew_id')
+      .select('crew_id, user_id')
       .in('crew_id', crewIds)
       .eq('status', 'accepted')
 
@@ -61,17 +61,33 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       console.warn('Error fetching member counts:', countError)
     }
 
-    // Count members per crew
+    // Count members per crew and track creator memberships
     const memberCountMap: Record<string, number> = {}
+    const creatorMembershipMap: Record<string, boolean> = {}
+
+    // Initialize maps
+    crewsData.forEach(crew => {
+      memberCountMap[crew.id] = 0
+      creatorMembershipMap[crew.id] = false
+    })
+
+    // Process member counts and check for creator memberships
     memberCounts?.forEach(member => {
       memberCountMap[member.crew_id] = (memberCountMap[member.crew_id] || 0) + 1
+
+      // Check if this member is the creator of their crew
+      const crew = crewsData.find(c => c.id === member.crew_id)
+      if (crew && member.user_id === crew.created_by) {
+        creatorMembershipMap[crew.id] = true
+      }
     })
 
     // Add member counts and user info to crews
     const crewsWithCounts = crewsData.map((crew: any) => {
       const memberCount = memberCountMap[crew.id] || 0
-      // Add 1 for creator (creator is always counted as a member)
-      const totalMembers = memberCount + 1
+      const creatorAlreadyCounted = creatorMembershipMap[crew.id] || false
+      // Add 1 for creator only if they're not already counted in crew_members
+      const totalMembers = memberCount + (creatorAlreadyCounted ? 0 : 1)
 
       return {
         ...crew,
@@ -122,8 +138,18 @@ export async function getCrewById(crewId: string): Promise<Crew | null> {
     }
 
     const memberCount = memberData?.length || 0
-    // Add 1 for creator (creator is always counted as a member)
-    const totalMembers = memberCount + 1
+
+    // Check if creator is already in crew_members table to avoid double counting
+    const { data: creatorMembership } = await supabase
+      .from('crew_members')
+      .select('id')
+      .eq('crew_id', crewId)
+      .eq('user_id', data.created_by)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    // Add 1 for creator only if they're not already counted in crew_members
+    const totalMembers = memberCount + (creatorMembership ? 0 : 1)
 
     // Check if current user is a member
     let isMember = false
@@ -198,19 +224,34 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
     const uniqueMemberIds = new Set<string>()
     const allMembers = []
 
-    // Always include the creator as a member (same as web app)
-    if (creatorProfile) {
+    // Check if creator is already in crew_members table
+    const creatorInMembers = members?.find(m => m.user_id === crewData.created_by)
+
+    if (creatorInMembers) {
+      // Creator is already in crew_members table, use that entry but mark as creator
       uniqueMemberIds.add(crewData.created_by)
+      const userProfile = userProfiles?.find(p => p.user_id === crewData.created_by)
       allMembers.push({
-        id: `creator-${crewData.created_by}`,
-        crew_id: crewId,
-        user_id: crewData.created_by,
-        role: 'host',
-        status: 'accepted',
-        joined_at: crewData.created_at,
-        user_profiles: creatorProfile,
+        ...creatorInMembers,
+        user_profiles: userProfile,
         is_creator: true,
+        role: 'host', // Override role to host for creator
       })
+    } else {
+      // Creator is NOT in crew_members table, add them manually
+      if (creatorProfile) {
+        uniqueMemberIds.add(crewData.created_by)
+        allMembers.push({
+          id: `creator-${crewData.created_by}`,
+          crew_id: crewId,
+          user_id: crewData.created_by,
+          role: 'host',
+          status: 'accepted',
+          joined_at: crewData.created_at,
+          user_profiles: creatorProfile,
+          is_creator: true,
+        })
+      }
     }
 
     // Add other members with their profiles (skip if already added as creator)

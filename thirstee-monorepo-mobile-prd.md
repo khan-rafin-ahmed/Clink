@@ -376,8 +376,11 @@ npm run lint             # ✅ Code linting
 2. **Fixed Crew Service:** Updated `packages/shared/src/lib/crewService.ts`
    - Fixed `getCrewMembers` with separate queries for member data and user profiles
    - Added proper deduplication logic to prevent counting creator twice
-   - **Fixed member count calculation**: Creator always counted as +1 regardless of viewer
-   - Fixed inconsistent counting logic in `getUserCrews` function
+   - **CRITICAL FIX - Double Counting**: Fixed issue where creator was counted twice when they exist in both `crews.created_by` AND `crew_members` table
+   - **Fixed `getCrewById`**: Added logic to check if creator is already in `crew_members` table before adding +1 (used by CrewDetailScreen)
+   - **Fixed `getUserCrews`**: Added same logic to prevent double counting in Profile screen crew section
+   - Fixed `getCrewMembers` to handle creator being in `crew_members` table vs. not
+   - **Ensured consistency**: Both ProfileScreen and CrewDetailScreen now show same member counts
    - Maintained creator/host identification logic
 
 3. **Added UserAvatar Component:** Created `apps/mobile/src/components/UserAvatar.tsx`

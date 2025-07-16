@@ -239,11 +239,67 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
 }
 ```
 
-#### **Fixed Member Count Calculation:**
+#### **Fixed Member Count Calculation (Critical Fix):**
+
+**Fixed in `getCrewById` (used by CrewDetailScreen):**
 ```typescript
-// ✅ Fixed getUserCrews and getCrewById functions
-// OLD (incorrect): memberCount + (crew.created_by === targetUserId ? 0 : 1)
-// NEW (correct): memberCount + 1  // Creator always counted
+// ✅ Fixed double counting issue in getCrewById
+// Check if creator is already in crew_members table to avoid double counting
+const { data: creatorMembership } = await supabase
+  .from('crew_members')
+  .select('id')
+  .eq('crew_id', crewId)
+  .eq('user_id', data.created_by)
+  .eq('status', 'accepted')
+  .maybeSingle()
+
+// Add 1 for creator only if they're not already counted in crew_members
+const totalMembers = memberCount + (creatorMembership ? 0 : 1)
+```
+
+**Fixed in `getUserCrews` (used by ProfileScreen):**
+```typescript
+// ✅ Fixed double counting issue in getUserCrews
+// Get member data including user_id to check for creator memberships
+const { data: memberCounts } = await supabase
+  .from('crew_members')
+  .select('crew_id, user_id')  // Added user_id to detect creators
+  .in('crew_id', crewIds)
+  .eq('status', 'accepted')
+
+// Track which crews have their creators in crew_members table
+const creatorMembershipMap: Record<string, boolean> = {}
+memberCounts?.forEach(member => {
+  const crew = crewsData.find(c => c.id === member.crew_id)
+  if (crew && member.user_id === crew.created_by) {
+    creatorMembershipMap[crew.id] = true
+  }
+})
+
+// Add 1 for creator only if they're not already counted
+const totalMembers = memberCount + (creatorAlreadyCounted ? 0 : 1)
+```
+
+#### **Fixed getCrewMembers Deduplication:**
+```typescript
+// ✅ Handle case where creator might be in crew_members table
+const creatorInMembers = members?.find(m => m.user_id === crewData.created_by)
+
+if (creatorInMembers) {
+  // Creator is already in crew_members table, use that entry but mark as creator
+  allMembers.push({
+    ...creatorInMembers,
+    is_creator: true,
+    role: 'host' // Override role to host for creator
+  })
+} else {
+  // Creator is NOT in crew_members table, add them manually
+  allMembers.push({
+    user_id: crewData.created_by,
+    role: 'host',
+    is_creator: true
+  })
+}
 ```
 
 ### **3. Enhanced Mobile UI**
@@ -323,9 +379,11 @@ node test-mobile-event-fix.js
 - [ ] Open any crew → CrewDetailScreen shows members
 - [ ] Verify crew host shows with 👑 crown icon (counted once, not duplicated)
 - [ ] Check real member avatars display instead of generic person icons
-- [ ] **Verify crew member count matches between stats and member list**
-- [ ] **Check that creator is always counted in member count (+1)**
-- [ ] Verify crew member count is correct across all screens (Profile, CrewDetail, etc.)
+- [ ] **CRITICAL: Verify crew member count matches between CrewDetailScreen and ProfileScreen**
+- [ ] **Check ProfileScreen crew section shows same count as CrewDetailScreen**
+- [ ] **Verify no double counting when creator is in crew_members table**
+- [ ] Test crews where creator is NOT in crew_members table (should add +1)
+- [ ] Test crews where creator IS in crew_members table (should NOT add +1)
 
 ## 🎯 **Impact**
 
