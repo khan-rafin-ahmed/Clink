@@ -33,7 +33,7 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
       return []
     }
 
-    const crewIds = membershipData.map(m => m.crew_id)
+    const crewIds = membershipData.map((m: any) => m.crew_id)
 
     // Get crew details
     const { data: crewsData, error: crewsError } = await supabase
@@ -66,17 +66,17 @@ export async function getUserCrews(userId?: string): Promise<Crew[]> {
     const creatorMembershipMap: Record<string, boolean> = {}
 
     // Initialize maps
-    crewsData.forEach(crew => {
+    crewsData.forEach((crew: any) => {
       memberCountMap[crew.id] = 0
       creatorMembershipMap[crew.id] = false
     })
 
     // Process member counts and check for creator memberships
-    memberCounts?.forEach(member => {
+    memberCounts?.forEach((member: any) => {
       memberCountMap[member.crew_id] = (memberCountMap[member.crew_id] || 0) + 1
 
       // Check if this member is the creator of their crew
-      const crew = crewsData.find(c => c.id === member.crew_id)
+      const crew = crewsData.find((c: any) => c.id === member.crew_id)
       if (crew && member.user_id === crew.created_by) {
         creatorMembershipMap[crew.id] = true
       }
@@ -204,7 +204,7 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
     }
 
     // Get user profiles separately to avoid foreign key issues
-    const memberUserIds = members?.map(m => m.user_id) || []
+    const memberUserIds = members?.map((m: any) => m.user_id) || []
     const allUserIds = [...memberUserIds, crewData.created_by]
 
     const { data: userProfiles, error: profilesError } = await supabase
@@ -217,7 +217,7 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
     }
 
     // Find creator profile
-    const creatorProfile = userProfiles?.find(p => p.user_id === crewData.created_by)
+    const creatorProfile = userProfiles?.find((p: any) => p.user_id === crewData.created_by)
 
     // Combine creator and members using the same logic as web app
     // Create a Set to track unique user IDs to avoid duplicates (same as web app)
@@ -225,12 +225,12 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
     const allMembers = []
 
     // Check if creator is already in crew_members table
-    const creatorInMembers = members?.find(m => m.user_id === crewData.created_by)
+    const creatorInMembers = members?.find((m: any) => m.user_id === crewData.created_by)
 
     if (creatorInMembers) {
       // Creator is already in crew_members table, use that entry but mark as creator
       uniqueMemberIds.add(crewData.created_by)
-      const userProfile = userProfiles?.find(p => p.user_id === crewData.created_by)
+      const userProfile = userProfiles?.find((p: any) => p.user_id === crewData.created_by)
       allMembers.push({
         ...creatorInMembers,
         user_profiles: userProfile,
@@ -256,10 +256,10 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
 
     // Add other members with their profiles (skip if already added as creator)
     if (members) {
-      members.forEach(member => {
+      members.forEach((member: any) => {
         if (!uniqueMemberIds.has(member.user_id)) {
           uniqueMemberIds.add(member.user_id)
-          const userProfile = userProfiles?.find(p => p.user_id === member.user_id)
+          const userProfile = userProfiles?.find((p: any) => p.user_id === member.user_id)
           allMembers.push({
             ...member,
             user_profiles: userProfile,
@@ -279,7 +279,7 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
 /**
  * Get crew by invite code
  */
-export async function getCrewByInviteCode(inviteCode: string): Promise<Crew | null> {
+export async function getCrewByInviteCode(_inviteCode: string): Promise<Crew | null> {
   try {
     // This would typically query a crew_invitations table
     // For now, we'll return null to indicate the function needs implementation
@@ -294,7 +294,7 @@ export async function getCrewByInviteCode(inviteCode: string): Promise<Crew | nu
 /**
  * Join crew by invite code
  */
-export async function joinCrewByInviteCode(inviteCode: string, userId: string): Promise<{ success: boolean; error?: string }> {
+export async function joinCrewByInviteCode(_inviteCode: string, _userId: string): Promise<{ success: boolean; error?: string }> {
   try {
     // This would typically handle joining a crew via invite code
     // For now, we'll return a success response for development

@@ -180,7 +180,7 @@ export async function getUserEvents(userId?: string): Promise<{
       .eq('user_id', targetUserId)
       .eq('status', 'accepted')
 
-    const userCrewIds = userCrewMemberships?.map(cm => cm.crew_id) || []
+    const userCrewIds = userCrewMemberships?.map((cm: any) => cm.crew_id) || []
 
     // Get all events from different sources
     const [

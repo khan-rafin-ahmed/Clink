@@ -316,8 +316,8 @@ export async function getEventMembers(eventId: string): Promise<any[]> {
     }
 
     // Collect all user IDs
-    const memberUserIds = members?.map(m => m.user_id) || []
-    const rsvpUserIds = rsvps?.map(r => r.user_id) || []
+    const memberUserIds = members?.map((m: any) => m.user_id) || []
+    const rsvpUserIds = rsvps?.map((r: any) => r.user_id) || []
     const allUserIds = [...new Set([...memberUserIds, ...rsvpUserIds, eventData.created_by])]
 
     // Get user profiles separately to avoid foreign key issues
@@ -347,7 +347,7 @@ export async function getEventMembers(eventId: string): Promise<any[]> {
 
     // Always include the host as an attendee (same as web app)
     if (eventData.created_by) {
-      const creatorProfile = userProfiles?.find(p => p.user_id === eventData.created_by)
+      const creatorProfile = userProfiles?.find((p: any) => p.user_id === eventData.created_by)
       uniqueAttendeeIds.add(eventData.created_by)
       allAttendees.push({
         id: `host-${eventData.created_by}`,
@@ -364,10 +364,10 @@ export async function getEventMembers(eventId: string): Promise<any[]> {
 
     // Add RSVP attendees (same as web app - RSVPs first)
     if (rsvps) {
-      rsvps.forEach(rsvp => {
+      rsvps.forEach((rsvp: any) => {
         if (!uniqueAttendeeIds.has(rsvp.user_id)) {
           uniqueAttendeeIds.add(rsvp.user_id)
-          const userProfile = userProfiles?.find(p => p.user_id === rsvp.user_id)
+          const userProfile = userProfiles?.find((p: any) => p.user_id === rsvp.user_id)
           allAttendees.push({
             id: `rsvp-${rsvp.id}`,
             user_id: rsvp.user_id,
@@ -385,10 +385,10 @@ export async function getEventMembers(eventId: string): Promise<any[]> {
 
     // Add event members (crew members) if they're not already in RSVPs (same as web app)
     if (members) {
-      members.forEach(member => {
+      members.forEach((member: any) => {
         if (!uniqueAttendeeIds.has(member.user_id)) {
           uniqueAttendeeIds.add(member.user_id)
-          const userProfile = userProfiles?.find(p => p.user_id === member.user_id)
+          const userProfile = userProfiles?.find((p: any) => p.user_id === member.user_id)
           allAttendees.push({
             id: member.id,
             user_id: member.user_id,
@@ -535,7 +535,7 @@ async function processEventInvitations(eventId: string, usernames: string[], inv
     }
 
     // Create event member invitations
-    const invitations = userProfiles.map(profile => ({
+    const invitations = userProfiles.map((profile: any) => ({
       event_id: eventId,
       user_id: profile.user_id,
       invited_by: invitedBy,
