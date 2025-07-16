@@ -12,7 +12,7 @@
       },
       "cache": {
         "disabled": false,
-        "key": "cache-v1",
+        "key": "cache-v2",
         "paths": [
           "node_modules",
           "ios/Pods",
