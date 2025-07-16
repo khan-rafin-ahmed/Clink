@@ -75,11 +75,11 @@ export const fontSize = {
 }
 
 export const fontWeight = {
-  normal: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-  extrabold: '800',
+  normal: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
+  extrabold: '800' as const,
 }
 
 // Enhanced glass effect variants
@@ -212,6 +212,11 @@ export const commonStyles = StyleSheet.create({
   heading2: {
     color: colors.textPrimary,
     fontSize: fontSize['2xl'],
+    fontWeight: fontWeight.semibold,
+  },
+  heading3: {
+    color: colors.textPrimary,
+    fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
   },
   accentText: {

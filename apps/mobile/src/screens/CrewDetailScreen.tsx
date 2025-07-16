@@ -37,7 +37,7 @@ export function CrewDetailScreen() {
         setInviteUsername('')
         setShowInviteModal(false)
         // Refresh crew data to show updated member count
-        membersRefetch && membersRefetch()
+        // TODO: Add proper refetch functionality
       } else {
         Alert.alert('Error', result.error || 'Failed to send invitation')
       }

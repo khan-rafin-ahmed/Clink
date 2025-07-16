@@ -6,7 +6,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { NavigationContainer } from '@react-navigation/native'
 import { View, Text, ActivityIndicator } from 'react-native'
-import * as Linking from 'expo-linking'
 
 import { AuthProvider } from './src/lib/AuthContext'
 import { AppNavigator } from './src/navigation/AppNavigator'
@@ -83,14 +82,7 @@ export default function App() {
         },
 
         // Main app navigation
-        Main: {
-          screens: {
-            // Tab navigation
-            Profile: 'profile',
-            Discover: 'discover',
-            Notifications: 'notifications',
-          },
-        },
+        Main: 'main',
 
         // Event deep links
         EventDetail: {

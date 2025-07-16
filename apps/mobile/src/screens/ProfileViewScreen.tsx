@@ -185,7 +185,7 @@ export function ProfileViewScreen() {
                 <Text style={commonStyles.textMuted}>Crews</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={commonStyles.heading3}>{userStats.totalRsvps}</Text>
+                <Text style={commonStyles.heading3}>{userStats.totalRSVPs}</Text>
                 <Text style={commonStyles.textMuted}>RSVPs</Text>
               </View>
             </View>
@@ -194,12 +194,12 @@ export function ProfileViewScreen() {
       )}
 
       {/* Recent Events */}
-      {userEvents && userEvents.length > 0 && (
+      {userEvents && Array.isArray(userEvents) && userEvents.length > 0 && (
         <View style={styles.section}>
           <Text style={[commonStyles.heading2, styles.sectionTitle]}>
             Recent Events
           </Text>
-          {userEvents.slice(0, 3).map((event) => (
+          {userEvents.slice(0, 3).map((event: any) => (
             <GlassCard
               key={event.id}
               variant="interactive"

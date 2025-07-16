@@ -145,7 +145,7 @@ export function CreateCrewScreen() {
                 padding="md"
                 style={[
                   styles.vibeCard,
-                  formData.vibe === vibe.id && styles.vibeCardSelected
+                  formData.vibe === vibe.id ? styles.vibeCardSelected : null
                 ]}
                 onPress={() => updateFormData('vibe', vibe.id)}
               >
@@ -177,7 +177,7 @@ export function CreateCrewScreen() {
             <GlassCard
               variant="interactive"
               padding="md"
-              style={[styles.visibilityOption, formData.visibility === 'private' && styles.visibilityOptionSelected]}
+              style={[styles.visibilityOption, formData.visibility === 'private' ? styles.visibilityOptionSelected : null]}
               onPress={() => updateFormData('visibility', 'private')}
             >
               <View style={styles.visibilityContent}>
@@ -199,7 +199,7 @@ export function CreateCrewScreen() {
             <GlassCard
               variant="interactive"
               padding="md"
-              style={[styles.visibilityOption, formData.visibility === 'public' && styles.visibilityOptionSelected]}
+              style={[styles.visibilityOption, formData.visibility === 'public' ? styles.visibilityOptionSelected : null]}
               onPress={() => updateFormData('visibility', 'public')}
             >
               <View style={styles.visibilityContent}>

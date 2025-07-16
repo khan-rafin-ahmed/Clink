@@ -22,8 +22,8 @@ export function ProfileScreen() {
   const { colors, commonStyles } = useTheme()
   const navigation = useNavigation<ProfileScreenNavigationProp>()
   const [userStats, setUserStats] = useState({ totalEvents: 0, totalRSVPs: 0, totalCrews: 0, upcomingEvents: 0, pastEvents: 0 })
-  const [userEvents, setUserEvents] = useState({ upcoming: [], past: [] })
-  const [userCrews, setUserCrews] = useState([])
+  const [userEvents, setUserEvents] = useState<{ upcoming: any[], past: any[] }>({ upcoming: [], past: [] })
+  const [userCrews, setUserCrews] = useState<any[]>([])
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [statsLoading, setStatsLoading] = useState(true)
 
