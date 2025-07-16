@@ -1,57 +1,85 @@
-import React from 'react'
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import React, { useCallback } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+
+import { useTheme } from '../hooks/useTheme'
+import { useDataFetching } from '@shared/hooks/useDataFetching'
+import { getPublicEvents } from '@shared/lib/eventService'
+import type { RootStackParamList } from '../navigation/AppNavigator'
+import type { EventWithCreator } from '@shared/lib/eventService'
+
+type DiscoverScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export function DiscoverScreen() {
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const navigation = useNavigation<DiscoverScreenNavigationProp>()
+  const { colors, commonStyles } = useTheme()
+
+  // Stabilize the fetch function to prevent infinite loops
+  const fetchEvents = useCallback(async () => {
+    return await getPublicEvents()
+  }, [])
+
+  const {
+    data: events,
+    isLoading,
+    refetch
+  } = useDataFetching(fetchEvents, {
+    onError: (error) => {
+      console.error('Failed to load events:', error)
+    }
+  })
+
+  const handleEventPress = (event: EventWithCreator) => {
+    navigation.navigate('EventDetail', { eventId: event.id })
+  }
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
-    // TODO: Implement refresh logic
-    setTimeout(() => setIsRefreshing(false), 1000)
+    await refetch()
   }
 
   return (
-    <ScrollView 
-      className="flex-1 bg-bg-base"
+    <ScrollView
+      style={commonStyles.container}
       refreshControl={
         <RefreshControl
-          refreshing={isRefreshing}
+          refreshing={isLoading}
           onRefresh={handleRefresh}
-          tintColor="#00FFA3"
+          tintColor={colors.accentPrimary}
         />
       }
     >
       {/* Header */}
-      <View className="px-6 pt-6 pb-4">
-        <Text className="text-2xl font-bold text-text-primary">
+      <View style={styles.header}>
+        <Text style={commonStyles.heading2}>
           Discover Events
         </Text>
-        <Text className="text-text-secondary mt-1">
+        <Text style={[commonStyles.textSecondary, styles.subtitle]}>
           Find amazing events happening around you
         </Text>
       </View>
 
       {/* Search Bar */}
-      <View className="px-6 mb-6">
-        <TouchableOpacity className="bg-bg-glass rounded-xl p-4 flex-row items-center border border-border-default">
-          <Ionicons name="search-outline" size={20} color="#71717A" />
-          <Text className="text-text-muted ml-3 flex-1">
+      <View style={styles.section}>
+        <TouchableOpacity style={[commonStyles.glassCard, styles.searchBar]}>
+          <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+          <Text style={[commonStyles.textMuted, styles.searchText]}>
             Search events, locations, or vibes...
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Filter Chips */}
-      <View className="px-6 mb-6">
+      <View style={styles.section}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row space-x-3">
-            {['All', 'Tonight', 'This Weekend', 'Casual', 'Party', 'Chill'].map((filter) => (
+          <View style={styles.filterRow}>
+            {['All', 'Tonight', 'This Weekend', 'Casual', 'Party', 'Chill'].map((filter, index) => (
               <TouchableOpacity
                 key={filter}
-                className="bg-bg-glass rounded-full px-4 py-2 border border-border-default"
+                style={[styles.filterChip, index > 0 && styles.filterChipSpacing]}
               >
-                <Text className="text-text-secondary text-sm">
+                <Text style={[commonStyles.textSecondary, styles.filterText]}>
                   {filter}
                 </Text>
               </TouchableOpacity>
@@ -61,45 +89,179 @@ export function DiscoverScreen() {
       </View>
 
       {/* Events List */}
-      <View className="px-6 mb-6">
-        <Text className="text-lg font-semibold text-text-primary mb-4">
+      <View style={styles.section}>
+        <Text style={[commonStyles.heading2, styles.sectionTitle]}>
           Events Near You
         </Text>
-        
-        <View className="bg-bg-glass rounded-xl p-6 border border-border-default">
-          <View className="items-center">
-            <Ionicons name="location-outline" size={48} color="#71717A" />
-            <Text className="text-text-secondary text-center mt-3">
-              No events found
-            </Text>
-            <Text className="text-text-muted text-center mt-1 text-sm">
-              Be the first to create an event in your area!
-            </Text>
+
+        {events && events.length > 0 ? (
+          events.map((event) => (
+            <TouchableOpacity
+              key={event.id}
+              style={[commonStyles.glassCard, styles.eventCard]}
+              onPress={() => handleEventPress(event)}
+            >
+              <View style={styles.eventHeader}>
+                <Text style={[commonStyles.textPrimary, styles.eventTitle]} numberOfLines={1}>
+                  {event.title}
+                </Text>
+                <Text style={[commonStyles.textMuted, styles.eventTime]}>
+                  {new Date(event.date_time).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </Text>
+              </View>
+
+              <View style={styles.eventDetails}>
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="location-outline" size={16} color={colors.textMuted} />
+                  <Text style={[commonStyles.textMuted, styles.eventLocation]} numberOfLines={1}>
+                    {event.place_nickname || event.location}
+                  </Text>
+                </View>
+
+                {event.creator && (
+                  <View style={styles.eventDetailRow}>
+                    <Ionicons name="person-outline" size={16} color={colors.textMuted} />
+                    <Text style={[commonStyles.textMuted, styles.eventHost]}>
+                      Hosted by {event.creator.display_name || 'Anonymous'}
+                    </Text>
+                  </View>
+                )}
+
+                {event.vibe && (
+                  <View style={styles.eventDetailRow}>
+                    <Ionicons name="happy-outline" size={16} color={colors.textMuted} />
+                    <Text style={[commonStyles.textMuted, styles.eventVibe]}>
+                      {event.vibe}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={[commonStyles.glassCard, styles.emptyCard]}>
+            <View style={styles.emptyState}>
+              <Ionicons name="location-outline" size={48} color={colors.textMuted} />
+              <Text style={[commonStyles.textSecondary, styles.emptyTitle]}>
+                No events found
+              </Text>
+              <Text style={[commonStyles.textMuted, styles.emptySubtitle]}>
+                Be the first to create an event in your area!
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </View>
 
-      {/* Popular Events */}
-      <View className="px-6 mb-6">
-        <Text className="text-lg font-semibold text-text-primary mb-4">
-          Popular This Week
-        </Text>
-        
-        <View className="bg-bg-glass rounded-xl p-6 border border-border-default">
-          <View className="items-center">
-            <Ionicons name="trending-up-outline" size={48} color="#71717A" />
-            <Text className="text-text-secondary text-center mt-3">
-              No popular events yet
-            </Text>
-            <Text className="text-text-muted text-center mt-1 text-sm">
-              Popular events will appear here
-            </Text>
-          </View>
-        </View>
-      </View>
+
 
       {/* Bottom Spacing */}
-      <View className="h-20" />
+      <View style={styles.bottomSpacing} />
     </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  section: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  filterRow: {
+    flexDirection: 'row',
+  },
+  filterChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  filterChipSpacing: {
+    marginLeft: 12,
+  },
+  filterText: {
+    fontSize: 14,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+  },
+  eventCard: {
+    marginBottom: 16,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  eventTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 12,
+  },
+  eventTime: {
+    fontSize: 14,
+  },
+  eventDetails: {
+    gap: 6,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventLocation: {
+    flex: 1,
+    fontSize: 14,
+  },
+  eventHost: {
+    flex: 1,
+    fontSize: 14,
+  },
+  eventVibe: {
+    fontSize: 14,
+    textTransform: 'capitalize',
+  },
+  emptyCard: {
+    alignItems: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  bottomSpacing: {
+    height: 80,
+  },
+})

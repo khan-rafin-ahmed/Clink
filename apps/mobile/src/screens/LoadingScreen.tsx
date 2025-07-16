@@ -1,14 +1,17 @@
 import React from 'react'
 import { View, Text, ActivityIndicator } from 'react-native'
+import { useTheme } from '../hooks/useTheme'
 
 export function LoadingScreen() {
+  const { colors, commonStyles } = useTheme()
+
   return (
-    <View className="flex-1 bg-bg-base justify-center items-center">
-      <ActivityIndicator size="large" color="#00FFA3" />
-      <Text className="text-text-primary text-lg mt-4 font-semibold">
+    <View style={commonStyles.centerContainer}>
+      <ActivityIndicator size="large" color={colors.accentPrimary} />
+      <Text style={[commonStyles.heading2, { marginTop: 16 }]}>
         Thirstee
       </Text>
-      <Text className="text-text-secondary text-sm mt-2">
+      <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
         Loading your experience...
       </Text>
     </View>

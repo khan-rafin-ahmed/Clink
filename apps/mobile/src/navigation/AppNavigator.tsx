@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
 
 import { useAuth } from '../lib/AuthContext'
+import { useTheme } from '../hooks/useTheme'
 import { LoadingScreen } from '../screens/LoadingScreen'
 import { LoginScreen } from '../screens/LoginScreen'
 import { HomeScreen } from '../screens/HomeScreen'
@@ -11,67 +12,73 @@ import { DiscoverScreen } from '../screens/DiscoverScreen'
 import { CreateEventScreen } from '../screens/CreateEventScreen'
 import { ProfileScreen } from '../screens/ProfileScreen'
 import { EventDetailScreen } from '../screens/EventDetailScreen'
+import { CrewDetailScreen } from '../screens/CrewDetailScreen'
+import { NotificationsScreen } from '../screens/NotificationsScreen'
 
 export type RootStackParamList = {
   Main: undefined
   EventDetail: { eventId: string }
+  CrewDetail: { crewId: string }
   CreateEvent: undefined
   Login: undefined
 }
 
 export type TabParamList = {
-  Home: undefined
-  Discover: undefined
   Profile: undefined
+  Discover: undefined
+  Notifications: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator<TabParamList>()
 
 function TabNavigator() {
+  const { colors } = useTheme()
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap
 
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline'
+          if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline'
           } else if (route.name === 'Discover') {
             iconName = focused ? 'search' : 'search-outline'
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline'
+          } else if (route.name === 'Notifications') {
+            iconName = focused ? 'notifications' : 'notifications-outline'
           } else {
             iconName = 'help-outline'
           }
 
           return <Ionicons name={iconName} size={size} color={color} />
         },
-        tabBarActiveTintColor: '#00FFA3',
-        tabBarInactiveTintColor: '#71717A',
+        tabBarActiveTintColor: colors.accentPrimary,      // WHITE for active tabs
+        tabBarInactiveTintColor: colors.textMuted,       // Gray for inactive tabs
         tabBarStyle: {
-          backgroundColor: '#1C1817',
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: colors.bgBase,                // Dark background
+          borderTopColor: colors.borderDefault,         // Subtle border
           borderTopWidth: 1,
         },
         headerStyle: {
-          backgroundColor: '#08090A',
+          backgroundColor: colors.bgBase,                // Dark header
         },
-        headerTintColor: '#FFFFFF',
+        headerTintColor: colors.textPrimary,             // White text
         headerTitleStyle: {
           fontWeight: 'bold',
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Discover" component={DiscoverScreen} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} />
     </Tab.Navigator>
   )
 }
 
 export function AppNavigator() {
   const { isLoading, isAuthenticated, isInitialized } = useAuth()
+  const { colors } = useTheme()
 
   if (!isInitialized || isLoading) {
     return <LoadingScreen />
@@ -81,9 +88,9 @@ export function AppNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#08090A',
+          backgroundColor: colors.bgBase,              // Dark header
         },
-        headerTintColor: '#FFFFFF',
+        headerTintColor: colors.textPrimary,          // White text
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -96,13 +103,18 @@ export function AppNavigator() {
             component={TabNavigator} 
             options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="EventDetail" 
+          <Stack.Screen
+            name="EventDetail"
             component={EventDetailScreen}
             options={{ title: 'Event Details' }}
           />
-          <Stack.Screen 
-            name="CreateEvent" 
+          <Stack.Screen
+            name="CrewDetail"
+            component={CrewDetailScreen}
+            options={{ title: 'Crew Details' }}
+          />
+          <Stack.Screen
+            name="CreateEvent"
             component={CreateEventScreen}
             options={{ title: 'Create Event' }}
           />

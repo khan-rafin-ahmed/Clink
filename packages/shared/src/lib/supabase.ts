@@ -18,7 +18,7 @@ function getStorage() {
   // React Native - try to import AsyncStorage with better error handling
   try {
     // Check if we're in React Native environment
-    if (typeof global !== 'undefined' && global.HermesInternal) {
+    if (typeof global !== 'undefined' && (global as any).HermesInternal) {
       const AsyncStorage = require('@react-native-async-storage/async-storage').default
       return AsyncStorage
     }

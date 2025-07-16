@@ -45,10 +45,18 @@ export function useDataFetching<T>(
   const [data, setData] = useState<T | null>(null)
   const [state, setState] = useState<DataFetchingState>('idle')
   const [error, setError] = useState<Error | null>(null)
-  
+
   const mountedRef = useRef(true)
   const fetchingRef = useRef(false)
   const retryCountRef = useRef(0)
+  const fetchFunctionRef = useRef(fetchFunction)
+  const onSuccessRef = useRef(onSuccess)
+  const onErrorRef = useRef(onError)
+
+  // Update refs when props change
+  fetchFunctionRef.current = fetchFunction
+  onSuccessRef.current = onSuccess
+  onErrorRef.current = onError
 
   useEffect(() => {
     mountedRef.current = true
@@ -65,17 +73,17 @@ export function useDataFetching<T>(
     setError(null)
 
     try {
-      const result = await fetchFunction()
-      
+      const result = await fetchFunctionRef.current()
+
       if (mountedRef.current) {
         setData(result)
         setState('success')
         retryCountRef.current = 0
-        onSuccess?.(result)
+        onSuccessRef.current?.(result)
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error')
-      
+
       if (mountedRef.current) {
         if (attempt < retryCount) {
           // Retry after delay
@@ -89,14 +97,14 @@ export function useDataFetching<T>(
 
         setError(error)
         setState('error')
-        onError?.(error)
+        onErrorRef.current?.(error)
       }
     } finally {
       if (mountedRef.current) {
         fetchingRef.current = false
       }
     }
-  }, [fetchFunction, enabled, retryCount, retryDelay, onSuccess, onError])
+  }, [enabled, retryCount, retryDelay])
 
   const refetch = useCallback(async () => {
     retryCountRef.current = 0

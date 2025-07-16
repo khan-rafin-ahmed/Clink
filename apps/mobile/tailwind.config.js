@@ -7,9 +7,7 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}"
   ],
   presets: [require("nativewind/preset")],
-  ...baseConfig,
   theme: {
-    ...baseConfig.theme,
     extend: {
       ...baseConfig.theme.extend,
       // Mobile-specific theme extensions

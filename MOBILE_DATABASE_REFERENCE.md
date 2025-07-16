@@ -76,18 +76,35 @@ events {
 
 **Mobile Usage:**
 ```typescript
-// Get events near user location (mobile-specific)
-const { data: nearbyEvents } = await supabase
+// Get events near user location (mobile-specific) - FIXED VERSION
+const { data: events } = await supabase
   .from('events')
-  .select(`
-    *,
-    user_profiles!events_created_by_fkey(display_name, avatar_url),
-    event_members(count)
-  `)
+  .select('*')
   .eq('is_public', true)
   .gte('start_time', new Date().toISOString())
   .order('start_time', { ascending: true })
   .limit(20)
+
+// Get creator profiles separately
+const creatorIds = events?.map(e => e.created_by).filter(Boolean) || []
+const { data: creators } = await supabase
+  .from('user_profiles')
+  .select('user_id, display_name, avatar_url')
+  .in('user_id', creatorIds)
+
+// Get event member counts
+const eventIds = events?.map(e => e.id) || []
+const { data: memberCounts } = await supabase
+  .from('event_members')
+  .select('event_id')
+  .in('event_id', eventIds)
+
+// Combine the data
+const nearbyEvents = events?.map(event => ({
+  ...event,
+  creator: creators?.find(c => c.user_id === event.created_by),
+  member_count: memberCounts?.filter(m => m.event_id === event.id).length || 0
+}))
 
 // Create event with location data
 const { data: newEvent } = await supabase
@@ -136,19 +153,32 @@ const { error } = await supabase
     invitation_responded_at: new Date().toISOString()
   })
 
-// Get user's upcoming events
-const { data: userEvents } = await supabase
+// Get user's upcoming events (FIXED - no problematic foreign key join)
+const { data: eventMembers } = await supabase
   .from('event_members')
   .select(`
     *,
-    events(
-      id, title, location, start_time, vibe,
-      user_profiles!events_created_by_fkey(display_name)
-    )
+    events(id, title, location, start_time, vibe, created_by)
   `)
   .eq('user_id', user.id)
   .eq('status', 'going')
   .gte('events.start_time', new Date().toISOString())
+
+// Get creator profiles separately
+const creatorIds = eventMembers?.map(em => em.events.created_by).filter(Boolean) || []
+const { data: creators } = await supabase
+  .from('user_profiles')
+  .select('user_id, display_name, avatar_url')
+  .in('user_id', creatorIds)
+
+// Combine the data
+const userEvents = eventMembers?.map(em => ({
+  ...em,
+  events: {
+    ...em.events,
+    creator: creators?.find(c => c.user_id === em.events.created_by)
+  }
+}))
 ```
 
 ---
@@ -336,20 +366,129 @@ const getEventPreview = async (eventId: string) => {
 }
 
 const getEventDetails = async (eventId: string) => {
-  return supabase
+  // ⚠️ IMPORTANT: Direct foreign key joins between events and user_profiles don't work
+  // because events.created_by references auth.users(id), not user_profiles
+  // Use separate queries instead:
+
+  // Get event data first
+  const { data: eventData, error: eventError } = await supabase
     .from('events')
-    .select(`
-      *,
-      user_profiles!events_created_by_fkey(display_name, avatar_url, username),
-      event_members(
-        id, status, role,
-        user_profiles!event_members_user_id_fkey(display_name, avatar_url)
-      )
-    `)
+    .select('*')
     .eq('id', eventId)
     .single()
+
+  if (eventError) throw eventError
+
+  // Get creator profile separately
+  let creator = null
+  if (eventData.created_by) {
+    const { data: creatorData, error: creatorError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url, username')
+      .eq('user_id', eventData.created_by)
+      .single()
+
+    creator = creatorError ? null : creatorData
+  }
+
+  // Get event members separately
+  const { data: eventMembers } = await supabase
+    .from('event_members')
+    .select(`
+      id, status, role, user_id,
+      user_profiles!event_members_user_id_fkey(display_name, avatar_url)
+    `)
+    .eq('event_id', eventId)
+
+  return {
+    data: {
+      ...eventData,
+      creator,
+      event_members: eventMembers || []
+    },
+    error: null
+  }
 }
 ```
+
+### **⚠️ Database Relationship Fixes - COMPLETED ✅**
+
+**Problems Fixed**: The mobile app was getting `PGRST200` foreign key relationship errors in multiple places:
+
+1. **Events**: `getEventById` trying to join `events` with `user_profiles` using `events_created_by_fkey`
+2. **Crew Members**: `getCrewMembers` trying to join `crew_members` with `user_profiles` using `user_profiles!inner(...)`
+
+**Root Cause**:
+- `events.created_by` → `auth.users(id)` ✅
+- `crew_members.user_id` → `auth.users(id)` ✅
+- `user_profiles.user_id` → `auth.users(id)` ✅
+- `events` → `user_profiles` ❌ (No direct foreign key)
+- `crew_members` → `user_profiles` ❌ (No direct foreign key)
+
+**Solutions Applied**:
+
+#### **1. Fixed Event Service**
+```typescript
+// ❌ OLD - Caused PGRST200 error
+const { data } = await supabase
+  .from('events')
+  .select(`
+    *,
+    creator:user_profiles!events_created_by_fkey(display_name, avatar_url)
+  `)
+
+// ✅ NEW - Separate queries work correctly
+const { data: eventData } = await supabase
+  .from('events')
+  .select('*')
+  .eq('id', eventId)
+  .single()
+
+const { data: creatorData } = await supabase
+  .from('user_profiles')
+  .select('user_id, display_name, avatar_url')
+  .eq('user_id', eventData.created_by)
+  .single()
+
+const event = { ...eventData, creator: creatorData }
+```
+
+#### **2. Fixed Crew Service**
+```typescript
+// ❌ OLD - Caused PGRST200 error
+const { data: members } = await supabase
+  .from('crew_members')
+  .select(`
+    *,
+    user_profiles!inner(display_name, avatar_url)
+  `)
+
+// ✅ NEW - Separate queries work correctly
+const { data: members } = await supabase
+  .from('crew_members')
+  .select('*')
+  .eq('crew_id', crewId)
+
+const userIds = members?.map(m => m.user_id) || []
+const { data: userProfiles } = await supabase
+  .from('user_profiles')
+  .select('user_id, display_name, avatar_url')
+  .in('user_id', userIds)
+
+const membersWithProfiles = members?.map(member => ({
+  ...member,
+  user_profiles: userProfiles?.find(p => p.user_id === member.user_id)
+}))
+```
+
+#### **3. Added Event Members Function**
+New `getEventMembers()` function to properly fetch hosts, co-hosts, and attendees for events.
+
+**Files Fixed**:
+- `packages/shared/src/lib/eventService.ts` - Fixed `getEventById`, added `getEventMembers`
+- `packages/shared/src/lib/crewService.ts` - Fixed `getCrewMembers`
+- `apps/mobile/src/screens/EventDetailScreen.tsx` - Added attendees display
+- `apps/mobile/src/screens/CrewDetailScreen.tsx` - Already working with fixed service
 
 ### **Caching Strategy**
 ```typescript

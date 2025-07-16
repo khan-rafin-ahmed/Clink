@@ -1,12 +1,12 @@
 import 'react-native-url-polyfill/auto'
 import 'react-native-get-random-values'
-import './global.css'
 import React, { useState, useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { NavigationContainer } from '@react-navigation/native'
 import { View, Text, ActivityIndicator } from 'react-native'
+import * as Linking from 'expo-linking'
 
 import { AuthProvider } from './src/lib/AuthContext'
 import { AppNavigator } from './src/navigation/AppNavigator'
@@ -66,12 +66,22 @@ export default function App() {
     return <LoadingScreen />
   }
 
+  // Configure deep linking
+  const linking = {
+    prefixes: ['thirstee://'],
+    config: {
+      screens: {
+        Login: 'auth/callback',
+      },
+    },
+  }
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <NavigationContainer>
+            <NavigationContainer linking={linking}>
               <AppNavigator />
             </NavigationContainer>
           </AuthProvider>

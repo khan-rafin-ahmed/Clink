@@ -1,27 +1,105 @@
-import React from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import React, { useCallback, useState, useEffect } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, RefreshControl } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import { useAuth } from '../lib/AuthContext'
 import { useAuthDataFetching } from '@shared/hooks/useDataFetching'
 import { getUserProfile } from '@shared/lib/userService'
-import { signOut } from '@shared/lib/authService'
+import { getUserStats, getUserEvents } from '@shared/lib/userStatsService'
+import { getUserCrews } from '@shared/lib/crewService'
+import { signOut } from '../lib/authService'
+import { useTheme } from '../hooks/useTheme'
+import type { RootStackParamList } from '../navigation/AppNavigator'
+
+type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export function ProfileScreen() {
   const { user } = useAuth()
+  const { colors, commonStyles } = useTheme()
+  const navigation = useNavigation<ProfileScreenNavigationProp>()
+  const [userStats, setUserStats] = useState({ totalEvents: 0, totalRSVPs: 0, totalCrews: 0, upcomingEvents: 0, pastEvents: 0 })
+  const [userEvents, setUserEvents] = useState({ upcoming: [], past: [] })
+  const [userCrews, setUserCrews] = useState([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  // Stabilize the fetch function to prevent infinite loops
+  const fetchUserProfile = useCallback(async (currentUser: any) => {
+    if (!currentUser?.id) throw new Error('User not authenticated')
+    return await getUserProfile(currentUser.id)
+  }, [])
 
   const {
     data: userProfile,
     isLoading,
     refetch
   } = useAuthDataFetching(
-    (user) => getUserProfile(user.id),
+    fetchUserProfile,
     {
       requireAuth: true,
       user,
       isAuthReady: true
     }
   )
+
+  // Fetch user statistics
+  const fetchUserStats = useCallback(async () => {
+    if (!user?.id) return
+
+    try {
+      setStatsLoading(true)
+      const [stats, events, crews] = await Promise.all([
+        getUserStats(user.id),
+        getUserEvents(user.id),
+        getUserCrews(user.id)
+      ])
+
+      console.log('📊 User Stats:', stats)
+      console.log('📅 User Events:', { upcoming: events.upcoming.length, past: events.past.length })
+      console.log('👥 User Crews:', crews.length)
+
+      setUserStats(stats)
+      setUserEvents(events)
+      setUserCrews(crews)
+    } catch (error) {
+      console.error('❌ Error fetching user data:', error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [user?.id])
+
+  // Fetch data when user is available
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserStats()
+    }
+  }, [user?.id, fetchUserStats])
+
+  // Pull to refresh
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([
+        refetch(),
+        fetchUserStats()
+      ])
+    } catch (error) {
+      console.error('❌ Error refreshing profile:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [refetch, fetchUserStats])
+
+  // Navigation handlers
+  const handleEventPress = useCallback((eventId: string) => {
+    navigation.navigate('EventDetail', { eventId })
+  }, [navigation])
+
+  const handleCrewPress = useCallback((crewId: string) => {
+    navigation.navigate('CrewDetail', { crewId })
+  }, [navigation])
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -46,38 +124,47 @@ export function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-bg-base justify-center items-center">
-        <Text className="text-text-secondary">Loading profile...</Text>
+      <View style={commonStyles.centerContainer}>
+        <Text style={commonStyles.textSecondary}>Loading profile...</Text>
       </View>
     )
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg-base">
+    <ScrollView
+      style={commonStyles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.accentPrimary}
+        />
+      }
+    >
       {/* Profile Header */}
-      <View className="px-6 pt-6 pb-4">
-        <View className="items-center">
+      <View style={styles.header}>
+        <View style={styles.profileInfo}>
           {/* Avatar Placeholder */}
-          <View className="w-24 h-24 bg-bg-glass rounded-full items-center justify-center border border-border-default mb-4">
-            <Ionicons name="person-outline" size={40} color="#71717A" />
+          <View style={[commonStyles.glassCard, styles.avatar]}>
+            <Ionicons name="person-outline" size={40} color={colors.textMuted} />
           </View>
-          
-          <Text className="text-2xl font-bold text-text-primary">
+
+          <Text style={[commonStyles.heading2, styles.displayName]}>
             {userProfile?.display_name || 'User'}
           </Text>
-          
+
           {userProfile?.nickname && (
-            <Text className="text-neon-green italic text-lg mt-1">
+            <Text style={[styles.nickname, { color: colors.accentPrimary }]}>
               "{userProfile.nickname}"
             </Text>
           )}
-          
-          <Text className="text-text-secondary mt-2">
+
+          <Text style={[commonStyles.textSecondary, styles.username]}>
             @{userProfile?.username || 'username'}
           </Text>
-          
+
           {userProfile?.bio && (
-            <Text className="text-text-secondary text-center mt-3 px-4">
+            <Text style={[commonStyles.textSecondary, styles.bio]}>
               {userProfile.bio}
             </Text>
           )}
@@ -85,64 +172,322 @@ export function ProfileScreen() {
       </View>
 
       {/* Stats */}
-      <View className="px-6 mb-6">
-        <View className="bg-bg-glass rounded-xl p-4 border border-border-default">
-          <View className="flex-row justify-around">
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-text-primary">0</Text>
-              <Text className="text-text-secondary text-sm">Events</Text>
+      <View style={styles.section}>
+        <View style={[commonStyles.glassCard, styles.statsCard]}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[commonStyles.heading2, styles.statNumber]}>
+                {statsLoading ? '—' : userStats.totalEvents}
+              </Text>
+              <Text style={[commonStyles.textSecondary, styles.statLabel]}>Events</Text>
             </View>
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-text-primary">0</Text>
-              <Text className="text-text-secondary text-sm">Crews</Text>
+            <View style={styles.statItem}>
+              <Text style={[commonStyles.heading2, styles.statNumber]}>
+                {statsLoading ? '—' : userStats.totalCrews}
+              </Text>
+              <Text style={[commonStyles.textSecondary, styles.statLabel]}>Crews</Text>
             </View>
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-text-primary">0</Text>
-              <Text className="text-text-secondary text-sm">RSVPs</Text>
+            <View style={styles.statItem}>
+              <Text style={[commonStyles.heading2, styles.statNumber]}>
+                {statsLoading ? '—' : userStats.totalRSVPs}
+              </Text>
+              <Text style={[commonStyles.textSecondary, styles.statLabel]}>RSVPs</Text>
             </View>
           </View>
         </View>
       </View>
 
       {/* Menu Items */}
-      <View className="px-6 mb-6">
-        <View className="bg-bg-glass rounded-xl border border-border-default overflow-hidden">
-          <TouchableOpacity className="flex-row items-center p-4 border-b border-border-default">
-            <Ionicons name="person-outline" size={24} color="#71717A" />
-            <Text className="text-text-primary ml-3 flex-1">Edit Profile</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#71717A" />
+      <View style={styles.section}>
+        <View style={[commonStyles.glassCard, styles.menuCard]}>
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemBorder]}>
+            <Ionicons name="person-outline" size={24} color={colors.textMuted} />
+            <Text style={[commonStyles.textPrimary, styles.menuText]}>Edit Profile</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
           </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center p-4 border-b border-border-default">
-            <Ionicons name="notifications-outline" size={24} color="#71717A" />
-            <Text className="text-text-primary ml-3 flex-1">Notifications</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#71717A" />
+
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemBorder]}>
+            <Ionicons name="notifications-outline" size={24} color={colors.textMuted} />
+            <Text style={[commonStyles.textPrimary, styles.menuText]}>Notifications</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
           </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center p-4 border-b border-border-default">
-            <Ionicons name="settings-outline" size={24} color="#71717A" />
-            <Text className="text-text-primary ml-3 flex-1">Settings</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#71717A" />
+
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemBorder]}>
+            <Ionicons name="settings-outline" size={24} color={colors.textMuted} />
+            <Text style={[commonStyles.textPrimary, styles.menuText]}>Settings</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
           </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center p-4 border-b border-border-default">
-            <Ionicons name="help-circle-outline" size={24} color="#71717A" />
-            <Text className="text-text-primary ml-3 flex-1">Help & Support</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#71717A" />
+
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemBorder]}>
+            <Ionicons name="help-circle-outline" size={24} color={colors.textMuted} />
+            <Text style={[commonStyles.textPrimary, styles.menuText]}>Help & Support</Text>
+            <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={handleSignOut}
-            className="flex-row items-center p-4"
+            style={styles.menuItem}
           >
-            <Ionicons name="log-out-outline" size={24} color="#FF5F2E" />
-            <Text className="text-red-400 ml-3 flex-1">Sign Out</Text>
+            <Ionicons name="log-out-outline" size={24} color={colors.error} />
+            <Text style={[styles.menuText, { color: colors.error }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Events Section */}
+      {(userEvents.upcoming.length > 0 || userEvents.past.length > 0) && (
+        <View style={styles.section}>
+          <Text style={[commonStyles.heading2, styles.sectionTitle]}>Events</Text>
+
+          {/* Upcoming Events */}
+          {userEvents.upcoming.length > 0 && (
+            <View style={styles.subsection}>
+              <Text style={[commonStyles.textSecondary, styles.subsectionTitle]}>
+                Upcoming ({userEvents.upcoming.length})
+              </Text>
+              <View style={[commonStyles.glassCard, styles.eventsCard]}>
+                {userEvents.upcoming.slice(0, 3).map((event: any, index: number) => (
+                  <TouchableOpacity
+                    key={event.id}
+                    style={[styles.eventItem, index < 2 && styles.eventItemBorder]}
+                    onPress={() => handleEventPress(event.id)}
+                  >
+                    <View style={styles.eventInfo}>
+                      <Text style={[commonStyles.textPrimary, styles.eventTitle]} numberOfLines={1}>
+                        {event.title}
+                      </Text>
+                      <Text style={[commonStyles.textSecondary, styles.eventDate]}>
+                        {new Date(event.date_time).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+                {userEvents.upcoming.length > 3 && (
+                  <View style={styles.eventItem}>
+                    <Text style={[commonStyles.textSecondary, styles.moreText]}>
+                      +{userEvents.upcoming.length - 3} more upcoming events
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Past Events */}
+          {userEvents.past.length > 0 && (
+            <View style={styles.subsection}>
+              <Text style={[commonStyles.textSecondary, styles.subsectionTitle]}>
+                Past ({userEvents.past.length})
+              </Text>
+              <View style={[commonStyles.glassCard, styles.eventsCard]}>
+                {userEvents.past.slice(0, 3).map((event: any, index: number) => (
+                  <TouchableOpacity
+                    key={event.id}
+                    style={[styles.eventItem, index < 2 && styles.eventItemBorder]}
+                    onPress={() => handleEventPress(event.id)}
+                  >
+                    <View style={styles.eventInfo}>
+                      <Text style={[commonStyles.textPrimary, styles.eventTitle]} numberOfLines={1}>
+                        {event.title}
+                      </Text>
+                      <Text style={[commonStyles.textSecondary, styles.eventDate]}>
+                        {new Date(event.date_time).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+                {userEvents.past.length > 3 && (
+                  <View style={styles.eventItem}>
+                    <Text style={[commonStyles.textSecondary, styles.moreText]}>
+                      +{userEvents.past.length - 3} more past events
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Crews Section */}
+      {userCrews.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[commonStyles.heading2, styles.sectionTitle]}>Crews ({userCrews.length})</Text>
+          <View style={[commonStyles.glassCard, styles.crewsCard]}>
+            {userCrews.slice(0, 3).map((crew: any, index: number) => (
+              <TouchableOpacity
+                key={crew.id}
+                style={[styles.crewItem, index < Math.min(userCrews.length - 1, 2) && styles.crewItemBorder]}
+                onPress={() => handleCrewPress(crew.id)}
+              >
+                <View style={styles.crewInfo}>
+                  <Text style={[commonStyles.textPrimary, styles.crewName]} numberOfLines={1}>
+                    {crew.name}
+                  </Text>
+                  <Text style={[commonStyles.textSecondary, styles.crewMembers]}>
+                    {crew.member_count} member{crew.member_count !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward-outline" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+            {userCrews.length > 3 && (
+              <View style={styles.crewItem}>
+                <Text style={[commonStyles.textSecondary, styles.moreText]}>
+                  +{userCrews.length - 3} more crews
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* Bottom Spacing */}
-      <View className="h-20" />
+      <View style={styles.bottomSpacing} />
     </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  profileInfo: {
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  displayName: {
+    marginBottom: 4,
+  },
+  nickname: {
+    fontStyle: 'italic',
+    fontSize: 18,
+    marginTop: 4,
+  },
+  username: {
+    marginTop: 8,
+  },
+  bio: {
+    textAlign: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    lineHeight: 20,
+  },
+  section: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  statsCard: {
+    paddingVertical: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+  },
+  menuCard: {
+    overflow: 'hidden',
+    paddingVertical: 0,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  menuText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  bottomSpacing: {
+    height: 80,
+  },
+  sectionTitle: {
+    marginBottom: 12,
+  },
+  subsection: {
+    marginBottom: 16,
+  },
+  subsectionTitle: {
+    fontSize: 14,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  eventsCard: {
+    paddingVertical: 0,
+    overflow: 'hidden',
+  },
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  eventItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  eventDate: {
+    fontSize: 14,
+  },
+  crewsCard: {
+    paddingVertical: 0,
+    overflow: 'hidden',
+  },
+  crewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  crewItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  crewInfo: {
+    flex: 1,
+  },
+  crewName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  crewMembers: {
+    fontSize: 14,
+  },
+  moreText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+})
