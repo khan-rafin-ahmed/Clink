@@ -16,21 +16,43 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.thirstee.mobile"
+      "bundleIdentifier": "com.thirstee.mobile",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to upload event photos.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload event photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#08090A"
       },
-      "package": "com.thirstee.mobile"
+      "package": "com.thirstee.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "scheme": "thirstee",
     "plugins": [
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-image-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "26304313-d50d-48e1-9164-27c47259eef4"
+      }
+    },
+    "owner": "rafin"
   }
 }

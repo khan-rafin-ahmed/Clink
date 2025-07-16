@@ -151,6 +151,626 @@ npm run lint             # ✅ Code linting
 
 ---
 
+## � Mobile App Deployment Infrastructure
+
+### 📋 Deployment Strategy Overview
+
+**Platform Choice: Expo Application Services (EAS)**
+- **EAS Build**: Cloud-based build service for iOS and Android
+- **EAS Submit**: Automated app store submission
+- **EAS Update**: Over-the-air (OTA) updates for JavaScript/TypeScript changes
+- **EAS CLI**: Command-line interface for deployment management
+
+**Key Benefits:**
+- ✅ Seamless integration with existing Expo SDK 53 setup
+- ✅ Automated code signing and certificate management
+- ✅ Multi-environment support (development, staging, production)
+- ✅ OTA updates without app store review process
+- ✅ Build caching and optimization
+- ✅ Integration with monorepo structure
+
+**Alignment with Web App Deployment:**
+- Consistent environment variable management (Supabase integration)
+- Similar CI/CD patterns (build → test → deploy)
+- Shared backend services and API endpoints
+- Unified monitoring and error tracking approach
+
+---
+
+### 🏗️ Environment Configuration
+
+#### **Development Environment**
+```json
+{
+  "development": {
+    "extends": "base",
+    "distribution": "internal",
+    "android": {
+      "buildType": "apk",
+      "gradleCommand": ":app:assembleDebug"
+    },
+    "ios": {
+      "buildConfiguration": "Debug"
+    },
+    "env": {
+      "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "EXPO_PUBLIC_ENVIRONMENT": "development",
+      "EXPO_PUBLIC_MAPBOX_TOKEN": "$EXPO_PUBLIC_MAPBOX_TOKEN"
+    }
+  }
+}
+```
+
+#### **Staging Environment**
+```json
+{
+  "staging": {
+    "extends": "base",
+    "distribution": "internal",
+    "android": {
+      "buildType": "apk"
+    },
+    "ios": {
+      "buildConfiguration": "Release"
+    },
+    "env": {
+      "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "EXPO_PUBLIC_ENVIRONMENT": "staging",
+      "EXPO_PUBLIC_MAPBOX_TOKEN": "$EXPO_PUBLIC_MAPBOX_TOKEN"
+    }
+  }
+}
+```
+
+#### **Production Environment**
+```json
+{
+  "production": {
+    "extends": "base",
+    "distribution": "store",
+    "android": {
+      "buildType": "aab"
+    },
+    "ios": {
+      "buildConfiguration": "Release"
+    },
+    "env": {
+      "EXPO_PUBLIC_SUPABASE_URL": "$EXPO_PUBLIC_SUPABASE_URL",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "$EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "EXPO_PUBLIC_ENVIRONMENT": "production",
+      "EXPO_PUBLIC_MAPBOX_TOKEN": "$EXPO_PUBLIC_MAPBOX_TOKEN"
+    }
+  }
+}
+```
+
+---
+
+### 🔐 Environment Variable Security
+
+#### **⚠️ CRITICAL SECURITY NOTE**
+**Never commit actual API keys, tokens, or secrets to version control!**
+
+#### **Environment Variable Management**
+EAS uses environment variables that should be set locally or in CI/CD:
+
+```bash
+# Set environment variables for EAS builds
+export EXPO_PUBLIC_SUPABASE_URL="https://arpphimkotjvnfoacquj.supabase.co"
+export EXPO_PUBLIC_SUPABASE_ANON_KEY="your_actual_supabase_anon_key"
+export EXPO_PUBLIC_MAPBOX_TOKEN="your_actual_mapbox_token"
+```
+
+#### **EAS Secrets Management**
+```bash
+# Set secrets for EAS builds (recommended)
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your_actual_key"
+eas secret:create --scope project --name EXPO_PUBLIC_MAPBOX_TOKEN --value "your_actual_token"
+
+# List secrets
+eas secret:list
+
+# Delete secrets
+eas secret:delete --name EXPO_PUBLIC_SUPABASE_ANON_KEY
+```
+
+#### **Local Development Setup**
+Create `.env.local` files (add to `.gitignore`):
+
+```bash
+# apps/mobile/.env.local
+EXPO_PUBLIC_SUPABASE_URL=https://arpphimkotjvnfoacquj.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_actual_supabase_anon_key
+EXPO_PUBLIC_MAPBOX_TOKEN=your_actual_mapbox_token
+```
+
+---
+
+### 📱 App Store Deployment Pipeline
+
+#### **iOS App Store Configuration**
+```json
+{
+  "ios": {
+    "bundleIdentifier": "com.thirstee.mobile",
+    "buildConfiguration": "Release",
+    "enterpriseProvisioning": "universal",
+    "autoIncrement": "buildNumber",
+    "image": "latest",
+    "simulator": false,
+    "cache": {
+      "disabled": false,
+      "key": "ios-cache-v1"
+    }
+  }
+}
+```
+
+#### **Google Play Store Configuration**
+```json
+{
+  "android": {
+    "package": "com.thirstee.mobile",
+    "buildType": "aab",
+    "autoIncrement": "versionCode",
+    "image": "latest",
+    "cache": {
+      "disabled": false,
+      "key": "android-cache-v1"
+    }
+  }
+}
+```
+
+#### **App Store Metadata Requirements**
+- **App Name**: "Thirstee – Tap. Drink. Repeat."
+- **Category**: Social Networking
+- **Age Rating**: 17+ (Alcohol-related content)
+- **Keywords**: social, drinking, events, meetups, nightlife
+- **Privacy Policy**: Required for app store submission
+- **Terms of Service**: Required for app store submission
+
+---
+
+### ⚙️ Build Configuration Requirements
+
+#### **EAS Configuration File (`apps/mobile/eas.json`)**
+```json
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "requireCommit": true
+  },
+  "build": {
+    "base": {
+      "node": "20.18.0",
+      "yarn": "1.22.19",
+      "env": {
+        "EXPO_USE_FAST_RESOLVER": "1"
+      },
+      "cache": {
+        "disabled": false
+      }
+    },
+    "development": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "buildConfiguration": "Debug",
+        "simulator": true
+      }
+    },
+    "staging": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "extends": "base",
+      "distribution": "store",
+      "android": {
+        "buildType": "aab"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "[APPLE_ID]",
+        "ascAppId": "[ASC_APP_ID]",
+        "appleTeamId": "[APPLE_TEAM_ID]"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      }
+    }
+  },
+  "updates": {
+    "production": {
+      "channel": "production"
+    },
+    "staging": {
+      "channel": "staging"
+    }
+  }
+}
+```
+
+#### **Enhanced App Configuration (`apps/mobile/app.json`)**
+```json
+{
+  "expo": {
+    "name": "Thirstee",
+    "slug": "thirstee-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#08090A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thirstee.mobile",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to upload event photos.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload event photos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#08090A"
+      },
+      "package": "com.thirstee.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "thirstee",
+    "plugins": [
+      "expo-secure-store",
+      "expo-image-picker"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/[PROJECT_ID]"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "[EAS_PROJECT_ID]"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 🔐 Code Signing & Certificate Management
+
+#### **iOS Code Signing**
+```bash
+# Automatic certificate management (recommended)
+eas credentials:configure --platform ios
+
+# Manual certificate management
+eas credentials:configure --platform ios --clear-credentials
+```
+
+**Certificate Types:**
+- **Development**: For internal testing and development builds
+- **Ad Hoc**: For limited distribution to specific devices
+- **App Store**: For production app store distribution
+
+#### **Android Code Signing**
+```bash
+# Generate keystore for Android
+eas credentials:configure --platform android
+
+# Upload existing keystore
+eas credentials:configure --platform android --clear-credentials
+```
+
+**Keystore Management:**
+- **Development**: Debug keystore for development builds
+- **Production**: Release keystore for production builds
+- **Backup**: Secure backup of production keystore
+
+---
+
+### 📊 Version Management & Release Workflow
+
+#### **Semantic Versioning Strategy**
+```
+MAJOR.MINOR.PATCH (e.g., 1.2.3)
+- MAJOR: Breaking changes or major feature releases
+- MINOR: New features, backward compatible
+- PATCH: Bug fixes, backward compatible
+```
+
+#### **Build Number Management**
+- **iOS**: `buildNumber` auto-incremented by EAS
+- **Android**: `versionCode` auto-incremented by EAS
+- **Sync**: Version numbers synchronized across platforms
+
+#### **Release Workflow**
+```bash
+# 1. Update version in package.json
+npm version patch  # or minor/major
+
+# 2. Build for staging
+eas build --platform all --profile staging
+
+# 3. Test staging builds
+# Internal testing and QA
+
+# 4. Build for production
+eas build --platform all --profile production
+
+# 5. Submit to app stores
+eas submit --platform all --profile production
+
+# 6. Create OTA update (if needed)
+eas update --branch production --message "Bug fixes and improvements"
+```
+
+---
+
+### 🏢 Turborepo Monorepo Integration
+
+#### **Deployment Scripts Integration**
+```json
+{
+  "scripts": {
+    "mobile:build:dev": "turbo build --filter=mobile -- --profile development",
+    "mobile:build:staging": "turbo build --filter=mobile -- --profile staging",
+    "mobile:build:prod": "turbo build --filter=mobile -- --profile production",
+    "mobile:submit:prod": "turbo submit --filter=mobile -- --profile production",
+    "mobile:update:prod": "turbo update --filter=mobile -- --branch production"
+  }
+}
+```
+
+#### **Shared Package Dependencies**
+- **@thirstee/shared**: Business logic, services, hooks, types
+- **@thirstee/config**: Shared configuration (Tailwind, TypeScript, ESLint)
+- **Environment Variables**: Consistent across web and mobile
+- **Type Safety**: Shared TypeScript definitions
+
+#### **Build Pipeline Consistency**
+```bash
+# Unified development workflow
+npm run dev                    # Both web and mobile
+npm run mobile:dev            # Mobile only
+npm run web:dev               # Web only
+
+# Consistent build commands
+npm run build                 # Both platforms
+npm run mobile:build:prod     # Mobile production build
+npm run web:build             # Web production build
+
+# Unified testing and linting
+npm run test                  # All packages
+npm run lint                  # All packages
+npm run type-check           # All packages
+```
+
+#### **Deployment Environment Alignment**
+- **Development**: Local development with shared Supabase instance
+- **Staging**: Internal testing environment (web: Vercel preview, mobile: EAS internal)
+- **Production**: Live environment (web: Vercel production, mobile: App stores)
+
+---
+
+### 🔄 Over-the-Air (OTA) Updates
+
+#### **OTA Update Strategy**
+- **JavaScript/TypeScript Changes**: Can be deployed via OTA without app store review
+- **Native Code Changes**: Require new app store builds
+- **Asset Updates**: Images, fonts can be updated via OTA
+- **Configuration Changes**: Environment variables, feature flags via OTA
+
+#### **OTA Update Commands**
+```bash
+# Create update for production
+eas update --branch production --message "Bug fixes and performance improvements"
+
+# Create update for staging
+eas update --branch staging --message "New feature testing"
+
+# View update history
+eas update:list --branch production
+
+# Rollback to previous update
+eas update:rollback --branch production
+```
+
+#### **Update Channels**
+- **Production Channel**: Live app users
+- **Staging Channel**: Internal testing
+- **Development Channel**: Developer testing
+
+---
+
+### 🏗️ Build Caching & Optimization
+
+#### **Build Cache Configuration**
+```json
+{
+  "cache": {
+    "disabled": false,
+    "key": "cache-v1",
+    "paths": [
+      "node_modules",
+      "ios/Pods",
+      "android/.gradle"
+    ]
+  }
+}
+```
+
+#### **Optimization Strategies**
+- **Dependency Caching**: Cache node_modules and native dependencies
+- **Build Artifacts**: Cache compiled assets and intermediate files
+- **Image Optimization**: Compress and optimize app assets
+- **Bundle Splitting**: Optimize JavaScript bundle size
+
+---
+
+### 📊 Deployment Monitoring & Rollback
+
+#### **Monitoring Setup**
+- **Build Status**: Monitor EAS build success/failure rates
+- **App Store Status**: Track app store review and approval status
+- **Update Adoption**: Monitor OTA update installation rates
+- **Error Tracking**: Integrate with Sentry or similar service
+
+#### **Rollback Procedures**
+```bash
+# Rollback OTA update
+eas update:rollback --branch production
+
+# Revert to previous app store version
+# (Manual process through app store consoles)
+
+# Emergency rollback checklist
+# 1. Identify issue and impact
+# 2. Execute rollback command
+# 3. Verify rollback success
+# 4. Communicate to stakeholders
+# 5. Investigate root cause
+```
+
+---
+
+### 📋 Deployment Tasks Checklist
+
+#### **EAS CLI Setup & Project Initialization**
+- [ ] Install EAS CLI globally: `npm install -g @expo/eas-cli`
+- [ ] Login to Expo account: `eas login`
+- [ ] Initialize EAS project: `eas build:configure`
+- [ ] Create EAS project: `eas project:init`
+- [ ] Configure build profiles in `eas.json`
+
+#### **Environment Variable Configuration**
+- [ ] **SECURITY**: Create `.env.local` files (never commit to git)
+- [ ] Set up EAS secrets for production: `eas secret:create`
+- [ ] Configure development environment variables locally
+- [ ] Configure staging environment variables in EAS
+- [ ] Set production environment variables in EAS secrets
+- [ ] Test environment variable loading in each build profile
+- [ ] Verify `.gitignore` excludes all `.env*` files
+- [ ] **CRITICAL**: Never commit actual API keys to version control
+
+#### **Build Profiles Configuration**
+- [ ] Configure development build profile (APK, Debug)
+- [ ] Configure staging build profile (APK, Release)
+- [ ] Configure production build profile (AAB/IPA, Release)
+- [ ] Test each build profile locally
+- [ ] Verify build artifacts and functionality
+
+#### **App Store Metadata & Assets Preparation**
+- [ ] Prepare app store screenshots (iOS: 6.7", 6.5", 5.5", iPad; Android: Phone, Tablet)
+- [ ] Create app store descriptions and keywords
+- [ ] Prepare privacy policy and terms of service
+- [ ] Set up app store developer accounts (Apple, Google)
+- [ ] Configure app store metadata and ratings
+
+#### **Automated Deployment Pipeline Setup**
+- [ ] Configure iOS code signing and certificates
+- [ ] Set up Android keystore and signing
+- [ ] Test automated builds for all platforms
+- [ ] Configure app store submission automation
+- [ ] Set up OTA update channels
+
+#### **Testing Strategy for Different Build Types**
+- [ ] Development builds: Internal team testing
+- [ ] Staging builds: QA and stakeholder testing
+- [ ] Production builds: Final validation before store submission
+- [ ] OTA updates: Gradual rollout and monitoring
+
+---
+
+## ✅ Deployment Infrastructure Implementation Summary
+
+### **Completed Configuration Files**
+- ✅ **`apps/mobile/eas.json`**: Complete EAS configuration with development, staging, and production profiles
+- ✅ **`apps/mobile/app.json`**: Enhanced app configuration with EAS integration, permissions, and metadata
+- ✅ **`apps/mobile/package.json`**: Updated with EAS build scripts and CLI dependency
+- ✅ **Root `package.json`**: Added mobile deployment scripts for monorepo integration
+
+### **Deployment Strategy Established**
+- ✅ **EAS Build**: Cloud-based build service for iOS and Android
+- ✅ **Multi-Environment Support**: Development, staging, and production configurations
+- ✅ **OTA Updates**: Over-the-air update capability for JavaScript/TypeScript changes
+- ✅ **App Store Integration**: Automated submission to iOS App Store and Google Play Store
+- ✅ **Monorepo Alignment**: Consistent with web app deployment approach
+
+### **Environment Configuration**
+- ✅ **Supabase Integration**: Environment variables configured for all build profiles
+- ✅ **Mapbox Integration**: Token configured for location services
+- ✅ **Build Profiles**: Development (APK/Debug), Staging (APK/Release), Production (AAB/IPA/Release)
+- ✅ **Code Signing**: Automated certificate management setup
+
+### **Next Steps for Implementation**
+1. **EAS CLI Setup**: Install and configure EAS CLI (`npm install -g @expo/eas-cli`)
+2. **Project Initialization**: Run `eas project:init` to create EAS project
+3. **Credentials Configuration**: Set up iOS certificates and Android keystore
+4. **Environment Variables**: Replace placeholder values with actual keys
+5. **First Build**: Test development build with `npm run mobile:build:dev`
+6. **App Store Setup**: Configure Apple Developer and Google Play Console accounts
+
+### **Deployment Commands Ready**
+```bash
+# Development builds
+npm run mobile:build:dev
+
+# Staging builds
+npm run mobile:build:staging
+
+# Production builds
+npm run mobile:build:prod
+
+# App store submission
+npm run mobile:submit
+
+# OTA updates
+npm run mobile:update:prod
+```
+
+---
+
 ## 🔧 Troubleshooting & Fixes Applied
 
 ### **React Native C++ Exception Crash - RESOLVED ✅**
