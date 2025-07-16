@@ -1,12 +1,13 @@
-import React from 'react'
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, TextInput, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRoute, RouteProp } from '@react-navigation/native'
 
 import { useTheme } from '../hooks/useTheme'
 import { useDataFetching } from '@shared/hooks/useDataFetching'
-import { getCrewById, getCrewMembers } from '@shared/lib/crewService'
+import { getCrewById, getCrewMembers, inviteUserToCrew } from '@shared/lib/crewService'
 import { UserAvatar } from '../components/UserAvatar'
+import { GlassCard, GlassButton } from '../components/ui'
 import type { RootStackParamList } from '../navigation/AppNavigator'
 
 type CrewDetailRouteProp = RouteProp<RootStackParamList, 'CrewDetail'>
@@ -15,6 +16,37 @@ export function CrewDetailScreen() {
   const route = useRoute<CrewDetailRouteProp>()
   const { crewId } = route.params
   const { colors, commonStyles } = useTheme()
+
+  // Invitation modal state
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteUsername, setInviteUsername] = useState('')
+  const [isInviting, setIsInviting] = useState(false)
+
+  const handleInviteUser = async () => {
+    if (!inviteUsername.trim()) {
+      Alert.alert('Error', 'Please enter a username')
+      return
+    }
+
+    setIsInviting(true)
+    try {
+      const result = await inviteUserToCrew(crewId, inviteUsername.trim())
+
+      if (result.success) {
+        Alert.alert('Success!', 'Invitation sent successfully')
+        setInviteUsername('')
+        setShowInviteModal(false)
+        // Refresh crew data to show updated member count
+        membersRefetch && membersRefetch()
+      } else {
+        Alert.alert('Error', result.error || 'Failed to send invitation')
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to send invitation')
+    } finally {
+      setIsInviting(false)
+    }
+  }
 
   const {
     data: crew,
@@ -57,18 +89,19 @@ export function CrewDetailScreen() {
   }
 
   return (
-    <ScrollView style={commonStyles.container}>
-      {/* Crew Header */}
-      <View style={styles.header}>
-        <Text style={[commonStyles.heading1, styles.crewName]}>
-          {crew.name}
-        </Text>
-        {crew.description && (
-          <Text style={[commonStyles.textSecondary, styles.description]}>
-            {crew.description}
+    <>
+      <ScrollView style={commonStyles.container}>
+        {/* Crew Header */}
+        <View style={styles.header}>
+          <Text style={[commonStyles.heading1, styles.crewName]}>
+            {crew.name}
           </Text>
-        )}
-      </View>
+          {crew.description && (
+            <Text style={[commonStyles.textSecondary, styles.description]}>
+              {crew.description}
+            </Text>
+          )}
+        </View>
 
       {/* Crew Stats */}
       <View style={styles.section}>
@@ -84,7 +117,7 @@ export function CrewDetailScreen() {
             </View>
             <View style={styles.statItem}>
               <Text style={[commonStyles.heading2, styles.statNumber]}>
-                {crew.is_public ? 'Public' : 'Private'}
+                {crew.visibility === 'public' ? 'Public' : 'Private'}
               </Text>
               <Text style={[commonStyles.textSecondary, styles.statLabel]}>
                 Visibility
@@ -96,9 +129,20 @@ export function CrewDetailScreen() {
 
       {/* Members Section */}
       <View style={styles.section}>
-        <Text style={[commonStyles.heading2, styles.sectionTitle]}>
-          Members ({members?.length || 0})
-        </Text>
+        <View style={styles.sectionHeader}>
+          <Text style={[commonStyles.heading2, styles.sectionTitle]}>
+            Members ({members?.length || 0})
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowInviteModal(true)}
+            style={styles.inviteButton}
+          >
+            <Ionicons name="person-add-outline" size={20} color={colors.accentPrimary} />
+            <Text style={[commonStyles.textPrimary, styles.inviteButtonText]}>
+              Invite
+            </Text>
+          </TouchableOpacity>
+        </View>
         
         {membersLoading ? (
           <View style={[commonStyles.glassCard, styles.loadingCard]}>
@@ -148,9 +192,79 @@ export function CrewDetailScreen() {
         )}
       </View>
 
-      {/* Bottom Spacing */}
-      <View style={styles.bottomSpacing} />
-    </ScrollView>
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      {/* Invite Modal */}
+    <Modal
+      visible={showInviteModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowInviteModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <GlassCard variant="enhanced" padding="lg">
+            <View style={styles.modalHeader}>
+              <Text style={[commonStyles.heading2, styles.modalTitle]}>
+                Invite Member
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowInviteModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close-outline" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalContent}>
+              <Text style={[commonStyles.textSecondary, styles.modalDescription]}>
+                Enter the username of the person you'd like to invite to this crew.
+              </Text>
+
+              <View style={styles.inputContainer}>
+                <Text style={[commonStyles.textPrimary, styles.inputLabel]}>
+                  Username
+                </Text>
+                <GlassCard variant="subtle" padding="none">
+                  <TextInput
+                    value={inviteUsername}
+                    onChangeText={setInviteUsername}
+                    placeholder="Enter username..."
+                    placeholderTextColor={colors.textMuted}
+                    style={[commonStyles.textPrimary, styles.textInput]}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </GlassCard>
+              </View>
+
+              <View style={styles.modalActions}>
+                <GlassButton
+                  variant="secondary"
+                  size="md"
+                  onPress={() => setShowInviteModal(false)}
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </GlassButton>
+                <GlassButton
+                  variant="primary"
+                  size="md"
+                  loading={isInviting}
+                  onPress={handleInviteUser}
+                  style={styles.inviteActionButton}
+                >
+                  {isInviting ? 'Sending...' : 'Send Invite'}
+                </GlassButton>
+              </View>
+            </View>
+          </GlassCard>
+        </View>
+      </View>
+    </Modal>
+    </>
   )
 }
 
@@ -172,8 +286,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
-    marginBottom: 12,
+    flex: 1,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  inviteButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
   },
   statsCard: {
     paddingVertical: 16,
@@ -235,5 +370,58 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 80,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    gap: 20,
+  },
+  modalDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textInput: {
+    padding: 16,
+    fontSize: 16,
+    minHeight: 48,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+  },
+  inviteActionButton: {
+    flex: 1,
   },
 })

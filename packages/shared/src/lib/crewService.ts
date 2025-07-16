@@ -307,6 +307,69 @@ export async function joinCrewByInviteCode(inviteCode: string, userId: string): 
 }
 
 /**
+ * Invite user to crew by username
+ */
+export async function inviteUserToCrew(crewId: string, username: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    // Search for user by username
+    const { data: userProfile, error: searchError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, username')
+      .eq('username', username.toLowerCase())
+      .single()
+
+    if (searchError || !userProfile) {
+      return { success: false, error: 'User not found' }
+    }
+
+    // Check if user is already a member
+    const { data: existingMember, error: checkError } = await supabase
+      .from('crew_members')
+      .select('id, status')
+      .eq('crew_id', crewId)
+      .eq('user_id', userProfile.user_id)
+      .maybeSingle()
+
+    if (checkError) {
+      return { success: false, error: 'Failed to check membership' }
+    }
+
+    if (existingMember) {
+      if (existingMember.status === 'accepted') {
+        return { success: false, error: 'User is already a member' }
+      } else if (existingMember.status === 'pending') {
+        return { success: false, error: 'User already has a pending invitation' }
+      }
+    }
+
+    // Create invitation
+    const { error: inviteError } = await supabase
+      .from('crew_members')
+      .insert({
+        crew_id: crewId,
+        user_id: userProfile.user_id,
+        status: 'pending',
+        invited_by: session.user.id,
+        role: 'member'
+      })
+
+    if (inviteError) {
+      return { success: false, error: 'Failed to send invitation' }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('❌ Error in inviteUserToCrew:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
  * Create a new crew
  */
 export async function createCrew(crewData: {

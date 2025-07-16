@@ -9,7 +9,7 @@ import { useDataFetching } from '@shared/hooks/useDataFetching'
 import { getPublicEvents } from '@shared/lib/eventService'
 import type { RootStackParamList } from '../navigation/AppNavigator'
 import type { EventWithCreator } from '@shared/lib/eventService'
-import { GlassCard } from '../components/ui'
+import { GlassCard, GlassButton } from '../components/ui'
 
 type DiscoverScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -38,6 +38,10 @@ export function DiscoverScreen() {
 
   const handleRefresh = async () => {
     await refetch()
+  }
+
+  const handleCreateEvent = () => {
+    navigation.navigate('CreateEvent')
   }
 
   return (

@@ -435,10 +435,15 @@ export async function createEvent(eventData: {
   location: string
   place_nickname?: string | null
   date_time: string
+  end_time?: string | null
+  drink_type: string
   vibe: string
-  special_notes?: string | null
+  notes?: string | null
   is_private: boolean
   created_by: string
+  cover_image_url?: string | null
+  invited_users?: string[]
+  invited_crews?: string[]
 }): Promise<{ success: boolean; data?: Event; error?: string }> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -446,7 +451,10 @@ export async function createEvent(eventData: {
       return { success: false, error: 'User not authenticated' }
     }
 
-    // Create the event
+    // Determine duration_type based on timing
+    const duration_type = eventData.end_time ? 'custom' : 'now'
+
+    // Create the event (note: description column doesn't exist in events table)
     const { data: event, error } = await supabase
       .from('events')
       .insert({
@@ -454,13 +462,14 @@ export async function createEvent(eventData: {
         location: eventData.location,
         place_nickname: eventData.place_nickname,
         date_time: eventData.date_time,
+        end_time: eventData.end_time,
+        drink_type: eventData.drink_type,
         vibe: eventData.vibe,
-        special_notes: eventData.special_notes,
-        is_private: eventData.is_private,
+        notes: eventData.notes,
+        is_public: !eventData.is_private, // Convert is_private to is_public for database
         created_by: eventData.created_by,
-        // Set default values for required fields
-        duration_type: 'specific_time',
-        cover_image_url: null,
+        cover_image_url: eventData.cover_image_url || null,
+        duration_type: duration_type, // Add proper duration_type
       })
       .select()
       .single()
@@ -479,9 +488,109 @@ export async function createEvent(eventData: {
         status: 'going',
       })
 
+    // Process user invitations if provided
+    if (eventData.invited_users && eventData.invited_users.length > 0) {
+      try {
+        await processEventInvitations(event.id, eventData.invited_users, eventData.created_by)
+      } catch (inviteError) {
+        console.warn('⚠️ Event created but user invitation processing failed:', inviteError)
+        // Don't fail the entire operation if invitations fail
+      }
+    }
+
+    // Process crew invitations if provided
+    if (eventData.invited_crews && eventData.invited_crews.length > 0) {
+      try {
+        await processCrewInvitations(event.id, eventData.invited_crews, eventData.created_by)
+      } catch (inviteError) {
+        console.warn('⚠️ Event created but crew invitation processing failed:', inviteError)
+        // Don't fail the entire operation if invitations fail
+      }
+    }
+
     return { success: true, data: event }
   } catch (error: any) {
     console.error('❌ Error in createEvent:', error)
     return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Process event invitations by username
+ */
+async function processEventInvitations(eventId: string, usernames: string[], invitedBy: string): Promise<void> {
+  try {
+    // Find users by username
+    const { data: userProfiles, error: searchError } = await supabase
+      .from('user_profiles')
+      .select('user_id, username')
+      .in('username', usernames.map(u => u.toLowerCase()))
+
+    if (searchError) {
+      throw new Error(`Failed to find users: ${searchError.message}`)
+    }
+
+    if (!userProfiles || userProfiles.length === 0) {
+      throw new Error('No users found with provided usernames')
+    }
+
+    // Create event member invitations
+    const invitations = userProfiles.map(profile => ({
+      event_id: eventId,
+      user_id: profile.user_id,
+      invited_by: invitedBy,
+      status: 'pending',
+      role: 'attendee'
+    }))
+
+    const { error: inviteError } = await supabase
+      .from('event_members')
+      .insert(invitations)
+
+    if (inviteError) {
+      throw new Error(`Failed to create invitations: ${inviteError.message}`)
+    }
+
+    console.log(`✅ Successfully invited ${userProfiles.length} users to event ${eventId}`)
+  } catch (error: any) {
+    console.error('❌ Error processing event invitations:', error)
+    throw error
+  }
+}
+
+/**
+ * Process crew invitations for an event
+ */
+async function processCrewInvitations(eventId: string, crewIds: string[], invitedBy: string): Promise<void> {
+  try {
+    console.log(`📤 Processing crew invitations for event ${eventId}:`, crewIds)
+
+    // Process each crew invitation
+    for (const crewId of crewIds) {
+      try {
+        // Use RPC function to send invitations to all crew members
+        const { data, error } = await supabase
+          .rpc('send_event_invitations_to_crew', {
+            p_event_id: eventId,
+            p_crew_id: crewId,
+            p_invited_by: invitedBy
+          })
+
+        if (error) {
+          console.error(`❌ Error inviting crew ${crewId}:`, error)
+          throw error
+        }
+
+        console.log(`✅ Successfully invited crew ${crewId} to event ${eventId}:`, data)
+      } catch (crewError) {
+        console.error(`❌ Failed to invite crew ${crewId}:`, crewError)
+        // Continue with other crews even if one fails
+      }
+    }
+
+    console.log(`✅ Completed crew invitation processing for event ${eventId}`)
+  } catch (error: any) {
+    console.error('❌ Error processing crew invitations:', error)
+    throw error
   }
 }

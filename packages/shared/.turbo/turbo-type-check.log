@@ -3,4 +3,123 @@
 > @thirstee/shared@1.0.0 type-check
 > tsc --noEmit
 
-[1G[0K[1G[0K⠙[1G[0K
+[1G[0K[96msrc/lib/crewService.ts[0m:[93m36[0m:[93m40[0m - [91merror[0m[90m TS7006: [0mParameter 'm' implicitly has an 'any' type.
+
+[7m36[0m     const crewIds = membershipData.map(m => m.crew_id)
+[7m  [0m [91m                                       ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m69[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'crew' implicitly has an 'any' type.
+
+[7m69[0m     crewsData.forEach(crew => {
+[7m  [0m [91m                      ~~~~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m75[0m:[93m27[0m - [91merror[0m[90m TS7006: [0mParameter 'member' implicitly has an 'any' type.
+
+[7m75[0m     memberCounts?.forEach(member => {
+[7m  [0m [91m                          ~~~~~~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m79[0m:[93m35[0m - [91merror[0m[90m TS7006: [0mParameter 'c' implicitly has an 'any' type.
+
+[7m79[0m       const crew = crewsData.find(c => c.id === member.crew_id)
+[7m  [0m [91m                                  ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m207[0m:[93m40[0m - [91merror[0m[90m TS7006: [0mParameter 'm' implicitly has an 'any' type.
+
+[7m207[0m     const memberUserIds = members?.map(m => m.user_id) || []
+[7m   [0m [91m                                       ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m220[0m:[93m47[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m220[0m     const creatorProfile = userProfiles?.find(p => p.user_id === crewData.created_by)
+[7m   [0m [91m                                              ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m228[0m:[93m44[0m - [91merror[0m[90m TS7006: [0mParameter 'm' implicitly has an 'any' type.
+
+[7m228[0m     const creatorInMembers = members?.find(m => m.user_id === crewData.created_by)
+[7m   [0m [91m                                           ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m233[0m:[93m46[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m233[0m       const userProfile = userProfiles?.find(p => p.user_id === crewData.created_by)
+[7m   [0m [91m                                             ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m259[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'member' implicitly has an 'any' type.
+
+[7m259[0m       members.forEach(member => {
+[7m   [0m [91m                      ~~~~~~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m262[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m262[0m           const userProfile = userProfiles?.find(p => p.user_id === member.user_id)
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m282[0m:[93m43[0m - [91merror[0m[90m TS6133: [0m'inviteCode' is declared but its value is never read.
+
+[7m282[0m export async function getCrewByInviteCode(inviteCode: string): Promise<Crew | null> {
+[7m   [0m [91m                                          ~~~~~~~~~~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m297[0m:[93m44[0m - [91merror[0m[90m TS6133: [0m'inviteCode' is declared but its value is never read.
+
+[7m297[0m export async function joinCrewByInviteCode(inviteCode: string, userId: string): Promise<{ success: boolean; error?: string }> {
+[7m   [0m [91m                                           ~~~~~~~~~~[0m
+
+[96msrc/lib/crewService.ts[0m:[93m297[0m:[93m64[0m - [91merror[0m[90m TS6133: [0m'userId' is declared but its value is never read.
+
+[7m297[0m export async function joinCrewByInviteCode(inviteCode: string, userId: string): Promise<{ success: boolean; error?: string }> {
+[7m   [0m [91m                                                               ~~~~~~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m319[0m:[93m40[0m - [91merror[0m[90m TS7006: [0mParameter 'm' implicitly has an 'any' type.
+
+[7m319[0m     const memberUserIds = members?.map(m => m.user_id) || []
+[7m   [0m [91m                                       ~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m320[0m:[93m36[0m - [91merror[0m[90m TS7006: [0mParameter 'r' implicitly has an 'any' type.
+
+[7m320[0m     const rsvpUserIds = rsvps?.map(r => r.user_id) || []
+[7m   [0m [91m                                   ~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m350[0m:[93m49[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m350[0m       const creatorProfile = userProfiles?.find(p => p.user_id === eventData.created_by)
+[7m   [0m [91m                                                ~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m367[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'rsvp' implicitly has an 'any' type.
+
+[7m367[0m       rsvps.forEach(rsvp => {
+[7m   [0m [91m                    ~~~~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m370[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m370[0m           const userProfile = userProfiles?.find(p => p.user_id === rsvp.user_id)
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m388[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'member' implicitly has an 'any' type.
+
+[7m388[0m       members.forEach(member => {
+[7m   [0m [91m                      ~~~~~~[0m
+
+[96msrc/lib/eventService.ts[0m:[93m391[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'p' implicitly has an 'any' type.
+
+[7m391[0m           const userProfile = userProfiles?.find(p => p.user_id === member.user_id)
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/lib/userStatsService.ts[0m:[93m183[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'cm' implicitly has an 'any' type.
+
+[7m183[0m     const userCrewIds = userCrewMemberships?.map(cm => cm.crew_id) || []
+[7m   [0m [91m                                                 ~~[0m
+
+
+Found 21 errors in 3 files.
+
+Errors  Files
+    13  src/lib/crewService.ts[90m:36[0m
+     7  src/lib/eventService.ts[90m:319[0m
+     1  src/lib/userStatsService.ts[90m:183[0m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `type-check` failed with error:
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m2[39m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/wpdevrafin/Clink/packages/shared
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @thirstee/shared@1.0.0
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/wpdevrafin/Clink/packages/shared
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c tsc --noEmit
+[1G[0K⠙[1G[0K

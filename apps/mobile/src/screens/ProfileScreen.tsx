@@ -11,6 +11,8 @@ import { getUserStats, getUserEvents } from '@shared/lib/userStatsService'
 import { getUserCrews } from '@shared/lib/crewService'
 import { signOut } from '../lib/authService'
 import { useTheme } from '../hooks/useTheme'
+import { UserAvatar } from '../components/UserAvatar'
+import { GlassButton } from '../components/ui'
 import type { RootStackParamList } from '../navigation/AppNavigator'
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
@@ -105,6 +107,10 @@ export function ProfileScreen() {
     navigation.navigate('CreateCrew')
   }, [navigation])
 
+  const handleCreateEvent = useCallback(() => {
+    navigation.navigate('CreateEvent')
+  }, [navigation])
+
   const handleSignOut = async () => {
     Alert.alert(
       'Sign Out',
@@ -148,10 +154,14 @@ export function ProfileScreen() {
       {/* Profile Header */}
       <View style={styles.header}>
         <View style={styles.profileInfo}>
-          {/* Avatar Placeholder */}
-          <View style={[commonStyles.glassCard, styles.avatar]}>
-            <Ionicons name="person-outline" size={40} color={colors.textMuted} />
-          </View>
+          {/* User Avatar */}
+          <UserAvatar
+            userId={userProfile?.user_id}
+            displayName={userProfile?.display_name}
+            avatarUrl={userProfile?.avatar_url}
+            size="xl"
+            style={styles.avatarContainer}
+          />
 
           <Text style={[commonStyles.heading2, styles.displayName]}>
             {userProfile?.display_name || 'User'}
@@ -199,6 +209,21 @@ export function ProfileScreen() {
             </View>
           </View>
         </View>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <GlassButton
+          variant="primary"
+          size="lg"
+          onPress={handleCreateEvent}
+          style={styles.createEventButton}
+        >
+          <View style={styles.buttonContent}>
+            <Ionicons name="add-outline" size={20} color="#08090A" style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Create Event</Text>
+          </View>
+        </GlassButton>
       </View>
 
       {/* Menu Items */}
@@ -389,12 +414,7 @@ const styles = StyleSheet.create({
   profileInfo: {
     alignItems: 'center',
   },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarContainer: {
     marginBottom: 16,
   },
   displayName: {
@@ -537,5 +557,35 @@ const styles = StyleSheet.create({
   moreText: {
     fontSize: 14,
     fontStyle: 'italic',
+  },
+  createEventButton: {
+    width: '100%',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#08090A',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })
