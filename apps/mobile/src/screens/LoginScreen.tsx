@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native'
+import { View, Text, Alert, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { signInWithGoogle } from '../lib/authService'
 import { useTheme } from '../hooks/useTheme'
+import { GlassButton } from '../components/ui'
 
 export function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false)
@@ -38,17 +39,22 @@ export function LoginScreen() {
         </Text>
       </View>
 
-      {/* Sign In Button - Using PRIMARY button style (WHITE) */}
-      <TouchableOpacity
-        onPress={handleGoogleSignIn}
+      {/* Sign In Button - Using enhanced glass button */}
+      <GlassButton
+        variant="primary"
+        size="lg"
+        loading={isLoading}
         disabled={isLoading}
-        style={[commonStyles.primaryButton, styles.googleButton, { opacity: isLoading ? 0.7 : 1 }]}
+        onPress={handleGoogleSignIn}
+        style={styles.googleButton}
       >
-        <Ionicons name="logo-google" size={24} color="#4285F4" />
-        <Text style={[commonStyles.primaryButtonText, styles.buttonText]}>
-          {isLoading ? 'Signing in...' : 'Continue with Google'}
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.buttonContent}>
+          <Ionicons name="logo-google" size={24} color="#4285F4" />
+          <Text style={[commonStyles.primaryButtonText, styles.buttonText]}>
+            {isLoading ? 'Signing in...' : 'Continue with Google'}
+          </Text>
+        </View>
+      </GlassButton>
 
       {/* Terms */}
       <Text style={[commonStyles.textMuted, styles.termsText]}>
@@ -74,10 +80,14 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   googleButton: {
-    flexDirection: 'row',
     width: '100%',
     maxWidth: 320,
     marginBottom: 32,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     marginLeft: 12,

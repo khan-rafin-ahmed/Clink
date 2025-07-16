@@ -37,6 +37,13 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 }
 
 /**
+ * Get user profile by username (alias for getUserProfileByUsername)
+ */
+export async function getUserByUsername(username: string): Promise<UserProfile | null> {
+  return getUserProfileByUsername(username)
+}
+
+/**
  * Get user profile by username
  */
 export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {

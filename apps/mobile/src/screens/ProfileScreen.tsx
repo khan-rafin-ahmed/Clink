@@ -101,6 +101,10 @@ export function ProfileScreen() {
     navigation.navigate('CrewDetail', { crewId })
   }, [navigation])
 
+  const handleCreateCrew = useCallback(() => {
+    navigation.navigate('CreateCrew')
+  }, [navigation])
+
   const handleSignOut = async () => {
     Alert.alert(
       'Sign Out',
@@ -312,9 +316,23 @@ export function ProfileScreen() {
       )}
 
       {/* Crews Section */}
-      {userCrews.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[commonStyles.heading2, styles.sectionTitle]}>Crews ({userCrews.length})</Text>
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[commonStyles.heading2, styles.sectionTitle]}>
+            Crews ({userCrews.length})
+          </Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateCrew}
+          >
+            <Ionicons name="add" size={20} color={colors.accentPrimary} />
+            <Text style={[commonStyles.textSecondary, { color: colors.accentPrimary, marginLeft: 4 }]}>
+              Create
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {userCrews.length > 0 ? (
           <View style={[commonStyles.glassCard, styles.crewsCard]}>
             {userCrews.slice(0, 3).map((crew: any, index: number) => (
               <TouchableOpacity
@@ -341,8 +359,20 @@ export function ProfileScreen() {
               </View>
             )}
           </View>
-        </View>
-      )}
+        ) : (
+          <View style={[commonStyles.glassCard, styles.emptyCrewsCard]}>
+            <View style={styles.emptyState}>
+              <Ionicons name="people-outline" size={48} color={colors.textMuted} />
+              <Text style={[commonStyles.textSecondary, styles.emptyTitle]}>
+                No Crews Yet
+              </Text>
+              <Text style={[commonStyles.textMuted, styles.emptySubtitle]}>
+                Create your first crew to start organizing events with friends
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Bottom Spacing */}
       <View style={styles.bottomSpacing} />
@@ -428,6 +458,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
   subsection: {
     marginBottom: 16,
   },
@@ -464,6 +508,10 @@ const styles = StyleSheet.create({
   crewsCard: {
     paddingVertical: 0,
     overflow: 'hidden',
+  },
+  emptyCrewsCard: {
+    padding: 32,
+    alignItems: 'center',
   },
   crewItem: {
     flexDirection: 'row',

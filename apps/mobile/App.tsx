@@ -66,12 +66,69 @@ export default function App() {
     return <LoadingScreen />
   }
 
-  // Configure deep linking
+  // Enhanced deep linking configuration
   const linking = {
-    prefixes: ['thirstee://'],
+    prefixes: ['thirstee://', 'https://thirstee.app', 'https://www.thirstee.app'],
     config: {
       screens: {
-        Login: 'auth/callback',
+        // Auth flows
+        Login: {
+          path: 'auth/callback',
+          parse: {
+            // Handle OAuth callback parameters
+            access_token: (token: string) => token,
+            refresh_token: (token: string) => token,
+            code: (code: string) => code,
+          },
+        },
+
+        // Main app navigation
+        Main: {
+          screens: {
+            // Tab navigation
+            Profile: 'profile',
+            Discover: 'discover',
+            Notifications: 'notifications',
+          },
+        },
+
+        // Event deep links
+        EventDetail: {
+          path: 'event/:eventId',
+          parse: {
+            eventId: (eventId: string) => eventId,
+          },
+        },
+
+        // Crew deep links
+        CrewDetail: {
+          path: 'crew/:crewId',
+          parse: {
+            crewId: (crewId: string) => crewId,
+          },
+        },
+
+        // Additional deep link routes
+        ProfileView: {
+          path: 'profile/:username',
+          parse: {
+            username: (username: string) => username,
+          },
+        },
+
+        CrewJoin: {
+          path: 'crew/join/:inviteCode',
+          parse: {
+            inviteCode: (code: string) => code,
+          },
+        },
+
+        InvitationAction: {
+          path: 'invitation/:token',
+          parse: {
+            token: (token: string) => token,
+          },
+        },
       },
     },
   }

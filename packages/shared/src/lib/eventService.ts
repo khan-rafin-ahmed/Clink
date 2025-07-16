@@ -426,3 +426,62 @@ export async function getEventAttendeeCount(eventId: string): Promise<number> {
     return 0
   }
 }
+
+/**
+ * Create a new event
+ */
+export async function createEvent(eventData: {
+  title: string
+  location: string
+  place_nickname?: string | null
+  date_time: string
+  vibe: string
+  special_notes?: string | null
+  is_private: boolean
+  created_by: string
+}): Promise<{ success: boolean; data?: Event; error?: string }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    // Create the event
+    const { data: event, error } = await supabase
+      .from('events')
+      .insert({
+        title: eventData.title,
+        location: eventData.location,
+        place_nickname: eventData.place_nickname,
+        date_time: eventData.date_time,
+        vibe: eventData.vibe,
+        special_notes: eventData.special_notes,
+        is_private: eventData.is_private,
+        created_by: eventData.created_by,
+        // Set default values for required fields
+        duration_type: 'specific_time',
+        cover_image_url: null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Error creating event:', error)
+      return { success: false, error: error.message }
+    }
+
+    // Automatically RSVP the creator as "going"
+    await supabase
+      .from('rsvps')
+      .insert({
+        event_id: event.id,
+        user_id: eventData.created_by,
+        status: 'going',
+      })
+
+    return { success: true, data: event }
+  } catch (error: any) {
+    console.error('❌ Error in createEvent:', error)
+    return { success: false, error: error.message }
+  }
+}

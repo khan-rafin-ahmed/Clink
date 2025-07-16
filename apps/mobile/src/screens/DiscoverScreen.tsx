@@ -9,6 +9,7 @@ import { useDataFetching } from '@shared/hooks/useDataFetching'
 import { getPublicEvents } from '@shared/lib/eventService'
 import type { RootStackParamList } from '../navigation/AppNavigator'
 import type { EventWithCreator } from '@shared/lib/eventService'
+import { GlassCard } from '../components/ui'
 
 type DiscoverScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -62,12 +63,14 @@ export function DiscoverScreen() {
 
       {/* Search Bar */}
       <View style={styles.section}>
-        <TouchableOpacity style={[commonStyles.glassCard, styles.searchBar]}>
-          <Ionicons name="search-outline" size={20} color={colors.textMuted} />
-          <Text style={[commonStyles.textMuted, styles.searchText]}>
-            Search events, locations, or vibes...
-          </Text>
-        </TouchableOpacity>
+        <GlassCard variant="interactive" padding="md" style={styles.searchBar}>
+          <TouchableOpacity style={styles.searchContent}>
+            <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+            <Text style={[commonStyles.textMuted, styles.searchText]}>
+              Search events, locations, or vibes...
+            </Text>
+          </TouchableOpacity>
+        </GlassCard>
       </View>
 
       {/* Filter Chips */}
@@ -96,10 +99,13 @@ export function DiscoverScreen() {
 
         {events && events.length > 0 ? (
           events.map((event) => (
-            <TouchableOpacity
+            <GlassCard
               key={event.id}
-              style={[commonStyles.glassCard, styles.eventCard]}
+              variant="enhanced"
+              padding="lg"
+              style={styles.eventCard}
               onPress={() => handleEventPress(event)}
+              animated={true}
             >
               <View style={styles.eventHeader}>
                 <Text style={[commonStyles.textPrimary, styles.eventTitle]} numberOfLines={1}>
@@ -141,10 +147,10 @@ export function DiscoverScreen() {
                   </View>
                 )}
               </View>
-            </TouchableOpacity>
+            </GlassCard>
           ))
         ) : (
-          <View style={[commonStyles.glassCard, styles.emptyCard]}>
+          <GlassCard variant="subtle" padding="xl" style={styles.emptyCard}>
             <View style={styles.emptyState}>
               <Ionicons name="location-outline" size={48} color={colors.textMuted} />
               <Text style={[commonStyles.textSecondary, styles.emptyTitle]}>
@@ -154,7 +160,7 @@ export function DiscoverScreen() {
                 Be the first to create an event in your area!
               </Text>
             </View>
-          </View>
+          </GlassCard>
         )}
       </View>
 
@@ -181,6 +187,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   searchBar: {
+    marginBottom: 0,
+  },
+  searchContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },

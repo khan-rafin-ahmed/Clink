@@ -14,13 +14,25 @@ import { ProfileScreen } from '../screens/ProfileScreen'
 import { EventDetailScreen } from '../screens/EventDetailScreen'
 import { CrewDetailScreen } from '../screens/CrewDetailScreen'
 import { NotificationsScreen } from '../screens/NotificationsScreen'
+import { ProfileViewScreen } from '../screens/ProfileViewScreen'
+import { CrewJoinScreen } from '../screens/CrewJoinScreen'
+import { InvitationActionScreen } from '../screens/InvitationActionScreen'
+import { CreateCrewScreen } from '../screens/CreateCrewScreen'
 
 export type RootStackParamList = {
   Main: undefined
   EventDetail: { eventId: string }
   CrewDetail: { crewId: string }
   CreateEvent: undefined
-  Login: undefined
+  CreateCrew: undefined
+  Login: {
+    access_token?: string
+    refresh_token?: string
+    code?: string
+  }
+  ProfileView: { username: string }
+  CrewJoin: { inviteCode: string }
+  InvitationAction: { token: string }
 }
 
 export type TabParamList = {
@@ -117,6 +129,26 @@ export function AppNavigator() {
             name="CreateEvent"
             component={CreateEventScreen}
             options={{ title: 'Create Event' }}
+          />
+          <Stack.Screen
+            name="CreateCrew"
+            component={CreateCrewScreen}
+            options={{ title: 'Create Crew' }}
+          />
+          <Stack.Screen
+            name="ProfileView"
+            component={ProfileViewScreen}
+            options={{ title: 'Profile' }}
+          />
+          <Stack.Screen
+            name="CrewJoin"
+            component={CrewJoinScreen}
+            options={{ title: 'Join Crew' }}
+          />
+          <Stack.Screen
+            name="InvitationAction"
+            component={InvitationActionScreen}
+            options={{ title: 'Invitation' }}
           />
         </>
       ) : (

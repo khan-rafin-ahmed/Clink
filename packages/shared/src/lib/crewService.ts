@@ -275,3 +275,85 @@ export async function getCrewMembers(crewId: string): Promise<any[]> {
     throw error
   }
 }
+
+/**
+ * Get crew by invite code
+ */
+export async function getCrewByInviteCode(inviteCode: string): Promise<Crew | null> {
+  try {
+    // This would typically query a crew_invitations table
+    // For now, we'll return null to indicate the function needs implementation
+    console.warn('getCrewByInviteCode not fully implemented yet')
+    return null
+  } catch (error) {
+    console.error('❌ Error in getCrewByInviteCode:', error)
+    throw error
+  }
+}
+
+/**
+ * Join crew by invite code
+ */
+export async function joinCrewByInviteCode(inviteCode: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // This would typically handle joining a crew via invite code
+    // For now, we'll return a success response for development
+    console.warn('joinCrewByInviteCode not fully implemented yet')
+    return { success: true }
+  } catch (error: any) {
+    console.error('❌ Error in joinCrewByInviteCode:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Create a new crew
+ */
+export async function createCrew(crewData: {
+  name: string
+  description?: string | null
+  vibe: string
+  visibility: 'public' | 'private'
+  created_by: string
+}): Promise<{ success: boolean; data?: Crew; error?: string }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    // Create the crew
+    const { data: crew, error } = await supabase
+      .from('crews')
+      .insert({
+        name: crewData.name,
+        description: crewData.description,
+        vibe: crewData.vibe,
+        visibility: crewData.visibility,
+        created_by: crewData.created_by,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Error creating crew:', error)
+      return { success: false, error: error.message }
+    }
+
+    // Add creator as a member with host role
+    await supabase
+      .from('crew_members')
+      .insert({
+        crew_id: crew.id,
+        user_id: crewData.created_by,
+        role: 'host',
+        status: 'accepted',
+        joined_at: new Date().toISOString(),
+      })
+
+    return { success: true, data: crew }
+  } catch (error: any) {
+    console.error('❌ Error in createCrew:', error)
+    return { success: false, error: error.message }
+  }
+}

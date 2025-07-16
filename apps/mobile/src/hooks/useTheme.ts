@@ -82,6 +82,48 @@ export const fontWeight = {
   extrabold: '800',
 }
 
+// Enhanced glass effect variants
+export const glassEffects = {
+  // Basic glass card
+  basic: {
+    backgroundColor: colors.bgGlass,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  // Enhanced glass with stronger effect
+  enhanced: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  // Interactive glass with hover-like effects
+  interactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  // Subtle glass for backgrounds
+  subtle: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  }
+}
+
 // Common style combinations
 export const commonStyles = StyleSheet.create({
   container: {
@@ -96,10 +138,19 @@ export const commonStyles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   glassCard: {
-    backgroundColor: colors.bgGlass,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
+    ...glassEffects.basic,
+    padding: spacing.lg,
+  },
+  glassCardEnhanced: {
+    ...glassEffects.enhanced,
+    padding: spacing.lg,
+  },
+  glassCardInteractive: {
+    ...glassEffects.interactive,
+    padding: spacing.lg,
+  },
+  glassCardSubtle: {
+    ...glassEffects.subtle,
     padding: spacing.lg,
   },
   primaryButton: {
@@ -109,12 +160,33 @@ export const commonStyles = StyleSheet.create({
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  primaryButtonGlass: {
+    ...glassEffects.enhanced,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   secondaryButton: {
     backgroundColor: colors.btnSecondaryBg,  // Dark background
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonGlass: {
+    ...glassEffects.interactive,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     alignItems: 'center',
@@ -167,5 +239,6 @@ export function useTheme() {
     fontSize,
     fontWeight,
     commonStyles,
+    glassEffects,
   }
 }
