@@ -36,6 +36,7 @@ import { TestInvitationTokens } from './pages/TestInvitationTokens'
 import NotificationSystemTest from './pages/NotificationSystemTest'
 import NotificationDebugPage from './pages/debug/notifications'
 import IndividualInvitationsDebug from './pages/debug/individual-invitations'
+import { EmailInvitationDebug } from './pages/debug/EmailInvitationDebug'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -142,6 +143,9 @@ function App() {
 
               {/* Debug route for email system */}
               <Route path="/debug-email" element={<EmailDebugPage />} />
+
+              {/* Debug route for email invitations */}
+              <Route path="/debug/email-invitations" element={<EmailInvitationDebug />} />
 
               {/* Test route for join button functionality */}
               <Route path="/test-join-button" element={<TestJoinButton />} />

@@ -573,30 +573,63 @@ className={cn(
 **Integration**: SendGrid API via Supabase Edge Functions
 
 **Email Types**:
-- Event invitations with RSVP links
+- Event invitations with Accept/Decline buttons
 - Event reminders with event details
-- Crew invitations with join links
+- Crew invitations with Join/Decline buttons
 - Welcome emails for new users
 
-### Email Templates
+### Email Templates - DUAL SYSTEM ARCHITECTURE
 
-**Location**: `frontend/src/lib/emailTemplates.ts`
+**⚠️ IMPORTANT: Two Template Systems Exist**
 
-**Design System**:
-- Dark mode theme (`--bg-base: #08090A`)
-- Glassmorphism containers
-- Responsive design (max-width: 600px)
-- CTA buttons with primary styling
-- Consistent branding
+#### **1. Frontend Templates** (`apps/web/src/lib/emailTemplates.ts`) ✅ **ACTIVE - WITH BUTTONS**
+- **Used by**: `emailService.ts` → Pre-generates HTML → Sends to Edge Function
+- **Features**: Accept/Decline buttons with tokenized URLs
+- **Status**: ✅ **Currently Active and Working**
+
+#### **2. Edge Function Templates** (`supabase/functions/send-email/index.ts`) ❌ **FALLBACK - NO BUTTONS**
+- **Used by**: Only when no HTML provided to Edge Function
+- **Features**: "View Details" button only
+- **Status**: ❌ **Fallback only - Not used for normal invitations**
+
+**Current Email Flow**:
+1. Frontend calls `sendEventInvitationEmail()`
+2. Frontend generates HTML using `generateEventInvitationEmail()` ✅ **WITH ACCEPT/DECLINE BUTTONS**
+3. Frontend sends pre-generated HTML to Edge Function
+4. Edge Function sends HTML via SendGrid
+5. Users receive emails with working Accept/Decline buttons
 
 **Template Structure**:
 ```typescript
 interface EmailTemplate {
-  html: string    // Rich HTML content
-  text: string    // Plain text fallback
+  html: string    // Rich HTML content with Accept/Decline buttons
+  text: string    // Plain text fallback with Accept/Decline URLs
   subject: string // Email subject line
 }
 ```
+
+### Accept/Decline Button System ✅ **WORKING**
+
+**Button URLs Structure**:
+```
+Accept: https://thirstee.app/invitation/event/accept/{secure_token}
+Decline: https://thirstee.app/invitation/event/decline/{secure_token}
+```
+
+**Token Security**:
+- UUID-based secure tokens (48-hour expiration)
+- Single-use tokens prevent replay attacks
+- Action-specific tokens (separate for accept/decline)
+- User-specific validation
+
+**Processing Flow**:
+1. User clicks Accept/Decline in email
+2. Redirected to `/invitation/:type/:action/:token`
+3. `InvitationAction.tsx` component processes token
+4. Calls `processEmailInvitationToken()` service
+5. Database function `process_event_invitation_token()` validates and processes
+6. Updates event_members table and creates notifications
+7. Redirects to event page with success message
 
 ### SendGrid Integration
 
@@ -938,6 +971,30 @@ supabase/
 - **Error Handling**: Graceful failure modes
 
 ## Recent Fixes (January 2025)
+
+### Email Accept/Decline Button Issue Resolution (January 2025)
+
+**Problem**: Users clicking Accept/Decline buttons in emails get error: "An error occurred while processing the invitation"
+
+**Root Cause**: Database function `process_event_invitation_token()` has multiple potential failure points:
+1. **Token Validation**: Expired, used, or invalid tokens
+2. **User Authentication**: Missing or invalid user_id
+3. **Database Constraints**: Status validation or foreign key issues
+4. **Function Dependencies**: Missing or outdated database functions
+
+**Current Status**: ✅ **Accept/Decline buttons ARE present in emails** (frontend templates active)
+
+**Solution Applied**:
+- Updated documentation to reflect dual template system
+- Identified that frontend templates (`emailTemplates.ts`) are being used (with buttons)
+- Edge Function templates (`send-email/index.ts`) are fallback only (no buttons)
+- Need to debug specific database function errors
+
+**Next Steps**:
+1. Debug `process_event_invitation_token()` function with detailed error logging
+2. Check token generation and validation flow
+3. Verify database constraints and function dependencies
+4. Test email-to-notification synchronization
 
 ### Duplicate Notification Issue Resolution
 
