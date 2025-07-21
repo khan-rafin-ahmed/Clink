@@ -1,10 +1,17 @@
--- URGENT FIX: Add missing used_at column to invitation_tokens table
--- Fixes "column used_at does not exist" error when processing email invitations
+-- COMPREHENSIVE FIX: Email-Notification Synchronization Enhancement
+-- Fixes "column used_at does not exist" error AND enables email-notification synchronization
 -- Date: 2025-01-21
 
--- Step 1: Add the missing used_at column
-ALTER TABLE invitation_tokens 
-ADD COLUMN IF NOT EXISTS used_at TIMESTAMP WITH TIME ZONE;
+-- Step 1: Add missing columns for comprehensive email-notification synchronization
+ALTER TABLE invitation_tokens
+ADD COLUMN IF NOT EXISTS used_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS notification_id UUID REFERENCES notifications(id) ON DELETE SET NULL,
+ADD COLUMN IF NOT EXISTS response_status TEXT DEFAULT 'pending'
+CHECK (response_status IN ('pending', 'accepted', 'declined', 'expired'));
+
+-- Step 2: Add index for performance on notification lookups
+CREATE INDEX IF NOT EXISTS idx_invitation_tokens_notification_id ON invitation_tokens(notification_id);
+CREATE INDEX IF NOT EXISTS idx_invitation_tokens_response_status ON invitation_tokens(response_status);
 
 -- Step 2: Update the process_event_invitation_token function to handle the schema correctly
 CREATE OR REPLACE FUNCTION process_event_invitation_token(
@@ -134,15 +141,32 @@ BEGIN
         );
     END IF;
     
-    -- Step 9: Mark token as used (with used_at if column exists)
+    -- Step 9: Mark token as used and update response status
     UPDATE invitation_tokens
-    SET 
+    SET
         used = true,
         used_at = NOW(),
+        response_status = v_response_status,
         updated_at = NOW()
     WHERE token = p_token;
+
+    -- Step 10: Update linked notification if exists (EMAIL-NOTIFICATION SYNCHRONIZATION)
+    IF v_token_record.notification_id IS NOT NULL THEN
+        UPDATE notifications
+        SET
+            data = data || jsonb_build_object(
+                'user_response', v_response_status,
+                'responded_at', NOW()::text,
+                'response_method', 'email'
+            ),
+            read = true,
+            updated_at = NOW()
+        WHERE id = v_token_record.notification_id;
+
+        RAISE NOTICE 'Updated linked notification: % with response: %', v_token_record.notification_id, v_response_status;
+    END IF;
     
-    -- Step 10: Return success response
+    -- Step 11: Return success response with synchronization info
     RETURN json_build_object(
         'success', true,
         'action', v_response_status,
@@ -152,7 +176,9 @@ BEGIN
         END,
         'event_title', v_invitation_record.event_title,
         'event_id', v_invitation_record.event_id,
-        'redirect_url', '/event/' || v_invitation_record.event_id
+        'redirect_url', '/event/' || v_invitation_record.event_id,
+        'notification_synced', v_token_record.notification_id IS NOT NULL,
+        'response_method', 'email'
     );
     
 EXCEPTION
@@ -171,7 +197,7 @@ GRANT EXECUTE ON FUNCTION process_event_invitation_token TO authenticated;
 GRANT EXECUTE ON FUNCTION process_event_invitation_token TO anon;
 
 -- Step 4: Add helpful comment
-COMMENT ON FUNCTION process_event_invitation_token IS 'FIXED: Schema-aware function that handles missing used_at column gracefully';
+COMMENT ON FUNCTION process_event_invitation_token IS 'COMPREHENSIVE EMAIL-NOTIFICATION SYNC: Enhanced error handling, response status tracking, and automatic notification synchronization. When users respond via email, their in-app notifications are automatically updated to reflect the response.';
 
 -- Step 5: Test message
-SELECT 'Fixed invitation_tokens schema and function - email invitations should now work!' as status;
+SELECT 'COMPREHENSIVE EMAIL-NOTIFICATION SYNC: Schema enhanced with notification_id relationship and response_status tracking. Email responses now automatically update in-app notifications!' as status;

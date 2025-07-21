@@ -697,6 +697,29 @@ if (errors.length > 0) {
 - **Database**: Added migration `20250624_invitation_tokens_system.sql`
 - **Expected Results**: Users can accept/decline invitations directly from email with secure, one-click actions
 
+#### **Email-Notification Synchronization System (2025-01-21)**
+- **Issue**: Email invitation responses don't update in-app notifications, causing user confusion
+- **Root Cause**: No relationship between `invitation_tokens` and `notifications` tables
+- **Solution**: Implemented comprehensive dual-column synchronization system
+- **New Features**:
+  - **Direct Notification Linking**: `notification_id` column creates relationship between email tokens and in-app notifications
+  - **Response Status Tracking**: `response_status` column provides audit trail of token usage and response type
+  - **Automatic Synchronization**: Email responses automatically update linked in-app notifications
+  - **Single Source of Truth**: One notification shows current status regardless of response method (email or app)
+- **Database Changes**:
+  - Enhanced `invitation_tokens` table with `notification_id` and `response_status` columns
+  - Updated `process_event_invitation_token()` function to sync notifications on email responses
+  - Updated `process_crew_invitation_token()` function for consistent behavior
+  - Updated `send_event_invitations_to_users()` and `send_event_invitations_to_crew()` functions to link tokens with notifications
+- **User Experience Improvements**:
+  - Email responses show "✅ You accepted this invitation" instead of stale action buttons
+  - No more duplicate response handling or user confusion
+  - Consistent state across email and app interfaces
+- **Migration Files**:
+  - `20250121_fix_invitation_tokens_schema.sql` - Schema enhancement
+  - `20250121_update_invitation_functions_with_sync.sql` - Function updates
+- **Expected Results**: Perfect synchronization between email and in-app invitation responses
+
 #### **Advanced Crew Management & Event Features (2025-06-25)**
 - **Issue**: Limited crew management capabilities and missing live event interaction features
 - **Root Cause**: Basic crew system without role hierarchy and no photo/comment support for ongoing events
@@ -1111,8 +1134,18 @@ The Event Co-Host system is fully implemented, tested, and ready for production 
 | `expires_at`      | `timestamp with time zone`       | NOT NULL                                                                          |
 | `used`            | `boolean`                        | DEFAULT `false`                                                                   |
 | `used_at`         | `timestamp with time zone`       |                                                                                   |
+| `notification_id` | `uuid`                           | FK → `notifications(id)` ON DELETE SET NULL                                      |
+| `response_status` | `text`                           | DEFAULT 'pending', CHECK IN ('pending', 'accepted', 'declined', 'expired')       |
 | `created_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 | `updated_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
+
+**Purpose**: Stores secure tokens for email invitation responses with email-notification synchronization support.
+
+**Key Features**:
+- **Direct Notification Link**: `notification_id` creates relationship with in-app notifications
+- **Response Tracking**: `response_status` tracks token usage and response type
+- **Email-App Sync**: When email tokens are processed, linked notifications are automatically updated
+- **Audit Trail**: Complete tracking of token usage, timing, and response method
 
 ### `public.event_invitations`
 | Column        | Type                             | Constraints                                                                       |

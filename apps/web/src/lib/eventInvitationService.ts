@@ -169,17 +169,44 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         hour12: true
       })
 
-      // Generate secure tokenized URLs for invitation actions
+      // Get existing tokens created by the trigger (instead of generating new ones)
       let acceptToken, declineToken
       try {
-        const [acceptTokenResult, declineTokenResult] = await Promise.all([
-          generateInvitationToken('event', invitation.id, 'accept', invitation.user_id),
-          generateInvitationToken('event', invitation.id, 'decline', invitation.user_id)
-        ])
-        acceptToken = acceptTokenResult
-        declineToken = declineTokenResult
+        console.log('🔍 Looking for existing tokens for invitation:', invitation.id)
+
+        const { data: tokens, error: tokenError } = await supabase
+          .from('invitation_tokens')
+          .select('token, action')
+          .eq('invitation_id', invitation.id)
+          .eq('invitation_type', 'event')
+          .eq('user_id', invitation.user_id)
+          .eq('used', false)
+
+        if (tokenError) {
+          console.error('❌ Error fetching tokens:', tokenError)
+          throw tokenError
+        }
+
+        console.log('🔍 Found tokens:', tokens)
+
+        // Extract accept and decline tokens
+        acceptToken = tokens?.find(t => t.action === 'accept')?.token
+        declineToken = tokens?.find(t => t.action === 'decline')?.token
+
+        if (!acceptToken || !declineToken) {
+          console.warn('⚠️ Missing tokens for invitation:', invitation.id, { acceptToken, declineToken })
+          // Fallback: generate tokens if they don't exist (shouldn't happen with trigger)
+          const [acceptTokenResult, declineTokenResult] = await Promise.all([
+            generateInvitationToken('event', invitation.id, 'accept', invitation.user_id),
+            generateInvitationToken('event', invitation.id, 'decline', invitation.user_id)
+          ])
+          acceptToken = acceptTokenResult
+          declineToken = declineTokenResult
+          console.log('🔧 Generated fallback tokens:', { acceptToken, declineToken })
+        }
+
       } catch (error) {
-        console.error('Failed to generate invitation tokens:', error)
+        console.error('❌ Failed to get invitation tokens:', error)
         // Tokens will be undefined, email template will use fallback URLs
       }
 

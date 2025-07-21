@@ -976,25 +976,101 @@ supabase/
 
 **Problem**: Users clicking Accept/Decline buttons in emails get error: "An error occurred while processing the invitation"
 
-**Root Cause**: Database function `process_event_invitation_token()` has multiple potential failure points:
-1. **Token Validation**: Expired, used, or invalid tokens
-2. **User Authentication**: Missing or invalid user_id
-3. **Database Constraints**: Status validation or foreign key issues
-4. **Function Dependencies**: Missing or outdated database functions
+**Root Cause Identified**: Database schema mismatch - `process_event_invitation_token()` function was trying to update `used_at` column that didn't exist in `invitation_tokens` table.
+
+**Specific Error**: `column "used_at" of relation "invitation_tokens" does not exist (Code: 42703)`
 
 **Current Status**: ✅ **Accept/Decline buttons ARE present in emails** (frontend templates active)
 
-**Solution Applied**:
-- Updated documentation to reflect dual template system
-- Identified that frontend templates (`emailTemplates.ts`) are being used (with buttons)
-- Edge Function templates (`send-email/index.ts`) are fallback only (no buttons)
-- Need to debug specific database function errors
+**Solution Applied** (January 21, 2025):
+- ✅ **Schema Fix**: Added missing `used_at` column to `invitation_tokens` table
+- ✅ **Function Update**: Enhanced `process_event_invitation_token()` with comprehensive error handling
+- ✅ **Documentation**: Updated to reflect dual template system reality
+- ✅ **Debug Tools**: Created debug page at `/debug/email-invitations` for troubleshooting
 
-**Next Steps**:
-1. Debug `process_event_invitation_token()` function with detailed error logging
-2. Check token generation and validation flow
-3. Verify database constraints and function dependencies
-4. Test email-to-notification synchronization
+**Database Changes**:
+```sql
+-- Added missing column
+ALTER TABLE invitation_tokens
+ADD COLUMN IF NOT EXISTS used_at TIMESTAMP WITH TIME ZONE;
+
+-- Enhanced function with detailed error handling and proper schema usage
+CREATE OR REPLACE FUNCTION process_event_invitation_token(...)
+```
+
+**Migration File**: `supabase/migrations/20250121_fix_invitation_tokens_schema.sql`
+
+**Expected Result**: Email Accept/Decline buttons now work without errors, with proper token tracking and notification creation.
+
+### Email-Notification Synchronization Gap (Current Issue)
+
+**Problem**: When users respond to invitations via email Accept/Decline buttons, the corresponding in-app notifications are NOT automatically updated to reflect the response.
+
+**Current Behavior**:
+1. User receives email invitation with Accept/Decline buttons ✅
+2. User clicks Accept in email → Token processed successfully ✅
+3. Event_members table updated with 'accepted' status ✅
+4. New notification created for event host ✅
+5. **Original invitation notification in app still shows Accept/Decline buttons** ❌
+
+**Expected Behavior**:
+- Original invitation notification should update to show "✅ You accepted this invitation"
+- Accept/Decline buttons should be hidden/disabled
+- Notification should reflect current response status
+
+**Root Cause**: No database relationship exists between `invitation_tokens` and `notifications` tables to enable automatic synchronization.
+
+**Impact**: Users see stale invitation notifications in app even after responding via email, leading to confusion and potential duplicate responses.
+
+### Email-Notification Synchronization Solution (January 21, 2025)
+
+**Problem Solved**: ✅ **Email responses now automatically update in-app notifications**
+
+**Solution Applied**: Enhanced `invitation_tokens` table with dual-column approach:
+
+**Database Schema Enhancement**:
+```sql
+-- Added comprehensive synchronization columns
+ALTER TABLE invitation_tokens
+ADD COLUMN notification_id UUID REFERENCES notifications(id) ON DELETE SET NULL,
+ADD COLUMN response_status TEXT DEFAULT 'pending'
+CHECK (response_status IN ('pending', 'accepted', 'declined', 'expired'));
+```
+
+**Key Features**:
+1. **Direct Relationship**: `notification_id` links email tokens to in-app notifications
+2. **Status Tracking**: `response_status` provides audit trail of token usage
+3. **Automatic Sync**: Email responses update linked notifications immediately
+4. **Response Method Tracking**: Notifications show whether response came from email or app
+
+**New Synchronization Flow**:
+1. Invitation sent → Notification created → Tokens created with `notification_id`
+2. User clicks email button → Token processed → Linked notification updated
+3. Notification shows "✅ You accepted this invitation" instead of action buttons
+4. Single source of truth maintained across email and app interfaces
+
+**Migration Files**:
+- `supabase/migrations/20250121_fix_invitation_tokens_schema.sql` - Schema enhancement
+- `supabase/migrations/20250121_fix_notification_sync_properly.sql` - Proper integration fix
+
+**Architecture Decision**: **Trigger-Based Approach**
+- ✅ **Enhanced Trigger**: `handle_event_invitation_notification()` creates notifications + tokens
+- ✅ **Simplified Functions**: `send_event_invitations_to_*()` only create invitations
+- ✅ **Single Source**: Trigger system handles all notification creation
+- ✅ **No Duplicates**: Eliminated conflicting notification creation systems
+
+**Function Updates**:
+- ✅ `handle_event_invitation_notification()` - Enhanced trigger with token linking
+- ✅ `send_event_invitations_to_users()` - Simplified (trigger handles notifications)
+- ✅ `send_event_invitations_to_crew()` - Simplified (trigger handles notifications)
+- ✅ `process_event_invitation_token()` - Updates linked notifications on response
+
+**Expected Results**:
+1. **Single Notification**: One notification per invitation (no duplicates)
+2. **Automatic Tokens**: Email tokens created and linked automatically
+3. **Email Responses**: Update in-app notifications immediately
+4. **App Responses**: Continue working as before
+5. **Better UX**: No more stale invitation notifications
 
 ### Duplicate Notification Issue Resolution
 
