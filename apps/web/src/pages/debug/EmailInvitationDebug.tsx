@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { ArrowLeft, Bug, Mail, Database, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Bug, Mail, Database, CheckCircle, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 interface TokenInfo {
