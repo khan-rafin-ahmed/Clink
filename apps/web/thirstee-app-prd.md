@@ -1110,6 +1110,7 @@ The Event Co-Host system is fully implemented, tested, and ready for production 
 | `user_id`         | `uuid`                           | NOT NULL, FK → `auth.users(id)`                                                   |
 | `expires_at`      | `timestamp with time zone`       | NOT NULL                                                                          |
 | `used`            | `boolean`                        | DEFAULT `false`                                                                   |
+| `used_at`         | `timestamp with time zone`       |                                                                                   |
 | `created_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 | `updated_at`      | `timestamp with time zone`       | DEFAULT `now()`                                                                   |
 
