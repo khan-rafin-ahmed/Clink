@@ -1,6 +1,4 @@
 import { supabase } from './supabase'
-import { sendEventInvitationEmail, type EventInvitationData } from './emailService'
-import { generateInvitationToken } from './invitationTokenService'
 import { toast } from 'sonner'
 
 /**
