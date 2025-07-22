@@ -108,7 +108,8 @@ export async function sendEventInvitationsToUsers(
       throw error
     }
 
-    const invitedCount = data?.[0]?.invited_count || 0
+    // RPC functions return INTEGER directly, not an object with invited_count
+    const invitedCount = data || 0
     console.log('✅ [EventInvitationService] Successfully invited users:', { invitedCount })
 
     // Additional debugging: Check if notifications were actually created
@@ -227,8 +228,8 @@ export async function sendEventInvitationsToCrew(
       throw error
     }
 
-    const result = data?.[0]
-    const invitedCount = result?.invited_count || 0
+    // RPC functions return INTEGER directly, not an object with invited_count
+    const invitedCount = data || 0
 
     console.log('✅ Crew invitations sent:', { invitedCount })
 
