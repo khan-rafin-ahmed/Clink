@@ -592,12 +592,15 @@ className={cn(
 - **Features**: "View Details" button only
 - **Status**: ❌ **Fallback only - Not used for normal invitations**
 
-**Current Email Flow**:
-1. Frontend calls `sendEventInvitationEmail()`
-2. Frontend generates HTML using `generateEventInvitationEmail()` ✅ **WITH ACCEPT/DECLINE BUTTONS**
-3. Frontend sends pre-generated HTML to Edge Function
-4. Edge Function sends HTML via SendGrid
-5. Users receive emails with working Accept/Decline buttons
+**Current Email Flow** (Updated January 22, 2025):
+1. **Database functions** create invitations and notifications (no tokens)
+2. **Frontend email service** creates secure invitation tokens
+3. **Frontend** calls `sendEventInvitationEmail()` with tokenized URLs
+4. **Frontend** generates HTML using `generateEventInvitationEmail()` ✅ **WITH TOKENIZED ACCEPT/DECLINE BUTTONS**
+5. **Frontend** sends pre-generated HTML to Edge Function
+6. **Edge Function** sends HTML via SendGrid
+7. **Users** receive emails with working Accept/Decline buttons
+8. **Button clicks** redirect to `/invitation/:type/:action/:token` for processing
 
 **Template Structure**:
 ```typescript
@@ -1021,6 +1024,106 @@ CREATE OR REPLACE FUNCTION process_event_invitation_token(...)
 **Root Cause**: No database relationship exists between `invitation_tokens` and `notifications` tables to enable automatic synchronization.
 
 **Impact**: Users see stale invitation notifications in app even after responding via email, leading to confusion and potential duplicate responses.
+
+### Frontend Token Creation Implementation (January 22, 2025)
+
+**Problem Solved**: ✅ **Accept/Decline buttons in emails now work with proper tokenized URLs**
+
+**Root Cause**: Database functions were not creating invitation tokens, causing email buttons to fallback to generic event/crew page URLs instead of tokenized Accept/Decline URLs.
+
+**Solution Applied**: **Frontend Token Creation System** - Aligned with notification architecture where frontend handles token generation.
+
+#### **Implementation Details**
+
+**Event Invitations** (`apps/web/src/lib/eventInvitationService.ts`):
+```typescript
+// Frontend creates tokens when sending emails (not database)
+const acceptToken = `event_accept_${crypto.randomUUID().replace(/-/g, '')}`
+const declineToken = `event_decline_${crypto.randomUUID().replace(/-/g, '')}`
+
+// Store tokens in database
+await supabase.from('invitation_tokens').insert([
+  {
+    token: acceptToken,
+    invitation_type: 'event',
+    invitation_id: invitation.id, // UUID type
+    action: 'accept',
+    user_id: invitation.user_id,
+    expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    response_status: 'pending'
+  },
+  // ... decline token
+])
+
+// Generate tokenized URLs
+const emailData: EventInvitationData = {
+  acceptUrl: `https://thirstee.app/invitation/event/accept/${acceptToken}`,
+  declineUrl: `https://thirstee.app/invitation/event/decline/${declineToken}`,
+  // ... other data
+}
+```
+
+**Crew Invitations** (`apps/web/src/lib/crewService.ts`):
+```typescript
+// Uses existing invitationTokenService for consistency
+const urls = await generateTokenizedUrls('crew', invitationId, userId)
+acceptUrl = urls.acceptUrl  // https://thirstee.app/invitation/crew/accept/{token}
+declineUrl = urls.declineUrl // https://thirstee.app/invitation/crew/decline/{token}
+```
+
+#### **Key Architecture Principles**
+1. ✅ **Frontend Responsibility**: Token creation handled by frontend services, not database functions
+2. ✅ **Database Functions**: Only create invitations and notifications (no token logic)
+3. ✅ **Consistent Flow**: Both event and crew invitations follow same token creation pattern
+4. ✅ **UUID Handling**: Proper UUID types maintained throughout the system
+5. ✅ **Error Handling**: Graceful fallbacks and comprehensive logging
+
+#### **Token Security Features**
+- **48-hour expiration**: Automatic token expiry for security
+- **Single-use tokens**: Prevent replay attacks
+- **Action-specific**: Separate tokens for accept/decline actions
+- **User validation**: Tokens linked to specific users
+- **Secure generation**: Uses `crypto.randomUUID()` for entropy
+
+#### **Troubleshooting Email Buttons**
+
+**Problem**: Accept/Decline buttons redirect to generic event/crew pages instead of tokenized URLs
+
+**Debug Steps**:
+1. Check browser console for token creation logs:
+   - `🔑 Creating tokens for invitation:` (events)
+   - `🔑 Creating crew tokens for invitation:` (crews)
+   - `✅ Tokens created successfully`
+
+2. Verify token database insertion:
+   ```sql
+   SELECT * FROM invitation_tokens
+   WHERE invitation_id = 'your-invitation-id'
+   ORDER BY created_at DESC;
+   ```
+
+3. Check email URL generation logs:
+   - `📧 Email URLs for invitation:` should show tokenized URLs
+   - URLs should be `https://thirstee.app/invitation/{type}/{action}/{token}`
+
+**Common Issues**:
+- ❌ **UUID Type Mismatch**: Ensure `invitation_id` is passed as UUID, not string
+- ❌ **Database Function Override**: Later migrations may have removed token creation
+- ❌ **Frontend Service Not Called**: Verify email service is using frontend token creation
+- ❌ **Token Creation Failure**: Check for database constraint violations
+
+**Quick Fix Verification**:
+```typescript
+// Event invitations should use this pattern:
+const acceptToken = `event_accept_${crypto.randomUUID().replace(/-/g, '')}`
+await supabase.from('invitation_tokens').insert({
+  invitation_id: invitation.id, // UUID type, not string
+  // ... other fields
+})
+
+// Crew invitations should use:
+const urls = await generateTokenizedUrls('crew', invitationId, userId)
+```
 
 ### Email-Notification Synchronization Solution (January 21, 2025)
 

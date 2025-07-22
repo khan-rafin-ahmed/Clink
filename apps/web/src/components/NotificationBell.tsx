@@ -55,6 +55,40 @@ export function NotificationBell() {
     }
   }, [user?.id])
 
+  // Handle cache invalidation when user returns to app (fixes email response sync)
+  useEffect(() => {
+    if (!user?.id) return
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // User returned to app - clear cache and refresh notifications
+        // This ensures email responses are reflected in the UI
+        console.log('🔄 [NotificationBell] User returned to app, refreshing notifications')
+        cacheService.delete(getNotificationsCacheKey(user.id))
+        cacheService.delete(getUnreadCacheKey(user.id))
+        loadNotifications()
+        loadUnreadCount()
+      }
+    }
+
+    const handleFocus = () => {
+      // Also refresh on window focus (covers tab switching)
+      console.log('🔄 [NotificationBell] Window focused, refreshing notifications')
+      cacheService.delete(getNotificationsCacheKey(user.id))
+      cacheService.delete(getUnreadCacheKey(user.id))
+      loadNotifications()
+      loadUnreadCount()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user?.id])
+
   // Load notifications when popover opens
   useEffect(() => {
     if (isOpen && user?.id) {
@@ -99,8 +133,9 @@ export function NotificationBell() {
             } else if (notification.type === 'crew_invitation') {
               senderId = notification.data?.inviter_id
             } else if (notification.type === 'event_invitation') {
-              // For event invitations, the sender is the inviter
-              senderId = notification.data?.inviter_id
+              // For event invitations, check both possible field names
+              // Database stores 'invited_by' but some functions might use 'inviter_id'
+              senderId = notification.data?.inviter_id || notification.data?.invited_by
             } else if (notification.type === 'crew_invitation_response') {
               // For crew invitation responses, get the responder's ID
               senderId = notification.data?.joiner_id || notification.data?.user_id
@@ -506,6 +541,19 @@ export function NotificationBell() {
     setIsOpen(false)
   }
 
+  // Handle popover open/close with cache refresh
+  const handlePopoverOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (open && user?.id) {
+      // Always refresh notifications when popover opens to catch email responses
+      console.log('🔔 [NotificationBell] Popover opened, refreshing notifications')
+      cacheService.delete(getNotificationsCacheKey(user.id))
+      cacheService.delete(getUnreadCacheKey(user.id))
+      loadNotifications()
+      loadUnreadCount()
+    }
+  }
+
   // No longer using emoji icons - system now uses user avatars
 
   // Helper function to check if event invitation is expired
@@ -678,7 +726,7 @@ export function NotificationBell() {
   if (!user) return null
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handlePopoverOpenChange}>
       <PopoverTrigger asChild>
         <div className="relative">
           <Button variant="ghost" size="sm" className="p-2">
