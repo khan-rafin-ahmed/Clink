@@ -204,9 +204,9 @@ export function InvitationAction({}: InvitationActionProps) {
 
       // Get current notifications from cache or database
       const cacheKey = `user_notifications_${userId}`
-      let notifications = cacheService.get(cacheKey)
+      let notifications: any[] = cacheService.get(cacheKey) || []
 
-      if (!notifications) {
+      if (!notifications || notifications.length === 0) {
         // Load from database if not in cache
         const { data } = await supabase
           .from('notifications')
@@ -246,7 +246,7 @@ export function InvitationAction({}: InvitationActionProps) {
 
       // Also update unread count cache
       const unreadCacheKey = `unread_count_${userId}`
-      const currentUnreadCount = cacheService.get(unreadCacheKey) || 0
+      const currentUnreadCount: number = (cacheService.get(unreadCacheKey) as number) || 0
       if (currentUnreadCount > 0) {
         cacheService.set(unreadCacheKey, Math.max(0, currentUnreadCount - 1), 60 * 1000)
       }
