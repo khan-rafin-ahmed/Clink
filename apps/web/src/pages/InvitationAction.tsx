@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { useAuth } from '@/lib/auth-context'
 import { processEmailInvitationToken } from '@/lib/eventInvitationService'
+import { supabase } from '@/lib/supabase'
+import { cacheService } from '@/lib/cacheService'
 import {
   CheckCircle,
   XCircle,
@@ -132,6 +134,18 @@ export function InvitationAction({}: InvitationActionProps) {
       if (result.success) {
         toast.success(result.message)
 
+        // CRITICAL: Update notification cache after successful email response
+        // This ensures the notification shows the correct response state when user returns to app
+        if (user?.id && result.data?.action) {
+          console.log('🔄 [InvitationAction] Updating notification cache after email response')
+          await updateNotificationCacheAfterEmailResponse(
+            user.id,
+            result.data.action,
+            result.data.event_id || result.data.crew_id,
+            invitationType
+          )
+        }
+
         // Auto-redirect after successful action
         if (result.data?.redirect_url) {
           setTimeout(() => {
@@ -176,6 +190,72 @@ export function InvitationAction({}: InvitationActionProps) {
 
   const handleGoHome = () => {
     navigate('/events')
+  }
+
+  // Helper function to update notification cache after email response
+  const updateNotificationCacheAfterEmailResponse = async (
+    userId: string,
+    action: string,
+    entityId: string,
+    type: 'event' | 'crew'
+  ) => {
+    try {
+      console.log('📝 [InvitationAction] Updating notification cache:', { userId, action, entityId, type })
+
+      // Get current notifications from cache or database
+      const cacheKey = `user_notifications_${userId}`
+      let notifications = cacheService.get(cacheKey)
+
+      if (!notifications) {
+        // Load from database if not in cache
+        const { data } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(50)
+
+        notifications = data || []
+      }
+
+      // Find and update the relevant invitation notification
+      const updatedNotifications = notifications.map((notification: any) => {
+        const isTargetNotification =
+          notification.type === `${type}_invitation` &&
+          (notification.data?.event_id === entityId ||
+           notification.data?.crew_id === entityId)
+
+        if (isTargetNotification) {
+          console.log('✅ [InvitationAction] Found matching notification to update:', notification.id)
+          return {
+            ...notification,
+            data: {
+              ...notification.data,
+              user_response: action,
+              responded_at: new Date().toISOString(),
+              response_method: 'email'
+            },
+            read: true
+          }
+        }
+        return notification
+      })
+
+      // Update cache with modified notifications
+      cacheService.set(cacheKey, updatedNotifications, 60 * 1000) // 60 second TTL
+
+      // Also update unread count cache
+      const unreadCacheKey = `unread_count_${userId}`
+      const currentUnreadCount = cacheService.get(unreadCacheKey) || 0
+      if (currentUnreadCount > 0) {
+        cacheService.set(unreadCacheKey, Math.max(0, currentUnreadCount - 1), 60 * 1000)
+      }
+
+      console.log('✅ [InvitationAction] Notification cache updated successfully')
+    } catch (error) {
+      console.error('❌ [InvitationAction] Failed to update notification cache:', error)
+      // Don't throw - this is a nice-to-have optimization
+    }
   }
 
   if (loading) {
