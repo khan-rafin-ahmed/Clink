@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { toast } from 'sonner'
+import { sendEventInvitationEmail, type EventInvitationData } from './emailService'
 
 /**
  * Enhanced Event Invitation Service
@@ -9,29 +10,117 @@ import { toast } from 'sonner'
 
 /**
  * Send email invitations to all pending event invitations
- * Uses a database RPC function that calls the proper email service
+ * Uses the frontend email service as per architecture
  */
 async function sendEventInvitationEmails(eventId: string, inviterId: string): Promise<void> {
   try {
     console.log('📧 Starting sendEventInvitationEmails for:', { eventId, inviterId })
 
-    // Use a simplified RPC function that handles email sending properly
-    console.log('📤 Calling send_event_invitation_emails_frontend RPC function')
-    const { data, error } = await supabase
-      .rpc('send_event_invitation_emails_frontend', {
-        p_event_id: eventId,
-        p_inviter_id: inviterId
-      })
+    // Get event details
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single()
 
-    if (error) {
-      console.error('❌ RPC function error:', error)
-      throw error
+    if (eventError || !event) {
+      console.error('❌ Failed to get event details:', eventError)
+      throw new Error('Event not found')
     }
 
-    console.log('✅ Email RPC function result:', data)
-    const emailsSent = data?.emails_sent || 0
-    const emailsFailed = data?.emails_failed || 0
-    console.log(`📧 Emails sent: ${emailsSent}, failed: ${emailsFailed}`)
+    // Get inviter details
+    const { data: inviter, error: inviterError } = await supabase
+      .from('user_profiles')
+      .select('display_name, username')
+      .eq('user_id', inviterId)
+      .single()
+
+    if (inviterError) {
+      console.error('❌ Failed to get inviter details:', inviterError)
+    }
+
+    // Get pending invitations with user IDs
+    const { data: invitations, error: invitationsError } = await supabase
+      .from('event_members')
+      .select('id, user_id')
+      .eq('event_id', eventId)
+      .eq('invited_by', inviterId)
+      .eq('status', 'pending')
+
+    if (invitationsError) {
+      console.error('❌ Failed to get invitations:', invitationsError)
+      throw invitationsError
+    }
+
+    if (!invitations || invitations.length === 0) {
+      console.log('📧 No pending invitations found')
+      return
+    }
+
+    let emailsSent = 0
+    let emailsFailed = 0
+
+    // Process each invitation
+    for (const invitation of invitations) {
+      try {
+        // Get user email using RPC function (avoids direct auth.users access)
+        const { data: userEmailData, error: emailError } = await supabase
+          .rpc('get_user_email', { user_id: invitation.user_id })
+
+        if (emailError || !userEmailData) {
+          console.warn('⚠️ No email found for user:', invitation.user_id)
+          emailsFailed++
+          continue
+        }
+
+        const userEmail = userEmailData
+
+        // Get invitation tokens using RPC function
+        const { data: tokensData, error: tokensError } = await supabase
+          .rpc('get_invitation_tokens', { invitation_id: invitation.id })
+
+        if (tokensError) {
+          console.warn('⚠️ Failed to get tokens for invitation:', invitation.id, tokensError)
+        }
+
+        const acceptToken = tokensData?.accept_token
+        const declineToken = tokensData?.decline_token
+
+        // Prepare email data according to EventInvitationData interface
+        const emailData: EventInvitationData = {
+          inviterName: inviter?.display_name || inviter?.username || 'Someone',
+          eventTitle: event.title,
+          eventDate: new Date(event.date_time).toLocaleDateString(),
+          eventTime: new Date(event.date_time).toLocaleTimeString(),
+          eventLocation: event.location,
+          eventDescription: event.description,
+          acceptUrl: acceptToken
+            ? `https://thirstee.app/invitation/event/accept/${acceptToken}`
+            : `https://thirstee.app/event/${eventId}`,
+          declineUrl: declineToken
+            ? `https://thirstee.app/invitation/event/decline/${declineToken}`
+            : `https://thirstee.app/event/${eventId}`,
+          eventUrl: `https://thirstee.app/event/${eventId}`
+        }
+
+        // Send email using the proper frontend service
+        const result = await sendEventInvitationEmail(userEmail, emailData)
+
+        if (result.success) {
+          emailsSent++
+          console.log('✅ Email sent to:', userEmail)
+        } else {
+          emailsFailed++
+          console.error('❌ Failed to send email to:', userEmail, result.error)
+        }
+
+      } catch (error: any) {
+        emailsFailed++
+        console.error('❌ Error sending email to invitation:', invitation.id, error)
+      }
+    }
+
+    console.log(`📧 Email results: ${emailsSent} sent, ${emailsFailed} failed`)
 
   } catch (error: any) {
     console.error('❌ Failed to send event invitation emails:', error)
