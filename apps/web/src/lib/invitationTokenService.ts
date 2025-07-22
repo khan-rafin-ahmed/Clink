@@ -47,7 +47,7 @@ export async function generateInvitationToken(
       .insert({
         token,
         invitation_type: invitationType,
-        invitation_id: invitationId,
+        invitation_id: invitationId, // Keep as UUID (don't convert to string)
         action,
         user_id: userId,
         expires_at: expiresAt,
@@ -156,11 +156,15 @@ export async function generateTokenizedUrls(
   userId: string
 ): Promise<{ acceptUrl: string; declineUrl: string }> {
   try {
+    console.log('🔑 Generating tokenized URLs:', { invitationType, invitationId, userId })
+
     // Generate tokens for both accept and decline actions
     const [acceptToken, declineToken] = await Promise.all([
       generateInvitationToken(invitationType, invitationId, 'accept', userId),
       generateInvitationToken(invitationType, invitationId, 'decline', userId)
     ])
+
+    console.log('✅ Tokens generated:', { acceptToken, declineToken })
 
     // Use production URL for email links
     const baseUrl = 'https://thirstee.app'

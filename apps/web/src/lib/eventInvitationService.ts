@@ -79,6 +79,8 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
         const acceptToken = `event_accept_${crypto.randomUUID().replace(/-/g, '')}`
         const declineToken = `event_decline_${crypto.randomUUID().replace(/-/g, '')}`
 
+        console.log('🔑 Creating tokens for invitation:', invitation.id, { acceptToken, declineToken })
+
         // Store tokens in database
         const { error: tokenError } = await supabase
           .from('invitation_tokens')
@@ -86,7 +88,7 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
             {
               token: acceptToken,
               invitation_type: 'event',
-              invitation_id: invitation.id.toString(),
+              invitation_id: invitation.id, // Keep as UUID, don't convert to string
               action: 'accept',
               user_id: invitation.user_id,
               expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
@@ -95,7 +97,7 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
             {
               token: declineToken,
               invitation_type: 'event',
-              invitation_id: invitation.id.toString(),
+              invitation_id: invitation.id, // Keep as UUID, don't convert to string
               action: 'decline',
               user_id: invitation.user_id,
               expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
@@ -104,11 +106,19 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
           ])
 
         if (tokenError) {
-          console.warn('⚠️ Failed to create tokens for invitation:', invitation.id, tokenError)
-          // Continue without tokens (fallback to generic URLs)
+          console.error('❌ Failed to create tokens for invitation:', invitation.id, tokenError)
+          emailsFailed++
+          continue // Skip this invitation if token creation fails
         }
 
+        console.log('✅ Tokens created successfully for invitation:', invitation.id)
+
         // Prepare email data according to EventInvitationData interface
+        const acceptUrl = `https://thirstee.app/invitation/event/accept/${acceptToken}`
+        const declineUrl = `https://thirstee.app/invitation/event/decline/${declineToken}`
+
+        console.log('📧 Email URLs for invitation:', invitation.id, { acceptUrl, declineUrl })
+
         const emailData: EventInvitationData = {
           inviterName: inviter?.display_name || inviter?.username || 'Someone',
           eventTitle: event.title,
@@ -116,8 +126,8 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
           eventTime: new Date(event.date_time).toLocaleTimeString(),
           eventLocation: event.location,
           eventDescription: event.description,
-          acceptUrl: `https://thirstee.app/invitation/event/accept/${acceptToken}`,
-          declineUrl: `https://thirstee.app/invitation/event/decline/${declineToken}`,
+          acceptUrl,
+          declineUrl,
           eventUrl: `https://thirstee.app/event/${eventId}`
         }
 

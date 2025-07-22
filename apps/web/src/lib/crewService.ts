@@ -442,13 +442,17 @@ async function sendCrewInvitationEmailToUser(crewId: string, userId: string, inv
     // Generate secure tokenized URLs for invitation actions
     let acceptUrl, declineUrl
     try {
+      console.log('🔑 Creating crew tokens for invitation:', invitationId, 'user:', userId)
       const urls = await generateTokenizedUrls('crew', invitationId, userId)
       acceptUrl = urls.acceptUrl
       declineUrl = urls.declineUrl
+      console.log('✅ Crew tokens created successfully:', { acceptUrl, declineUrl })
     } catch (error) {
+      console.error('❌ Failed to create crew tokens:', error)
       // Fallback to basic URLs if token generation fails
       acceptUrl = `https://thirstee.app/crew/${crew.id}`
       declineUrl = `https://thirstee.app/crew/${crew.id}`
+      console.log('⚠️ Using fallback URLs for crew invitation:', { acceptUrl, declineUrl })
     }
 
     // Prepare email data
