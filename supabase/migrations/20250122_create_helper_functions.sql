@@ -2,6 +2,9 @@
 -- These functions provide safe access to user data without exposing auth.users directly
 -- Date: 2025-01-22
 
+-- Drop existing function if it exists with different return type
+DROP FUNCTION IF EXISTS get_user_email(uuid);
+
 -- Function to get user email safely
 CREATE OR REPLACE FUNCTION get_user_email(user_id UUID)
 RETURNS TEXT
@@ -19,6 +22,9 @@ BEGIN
     RETURN user_email;
 END;
 $$;
+
+-- Drop existing function if it exists with different return type
+DROP FUNCTION IF EXISTS get_invitation_tokens(integer);
 
 -- Function to get invitation tokens safely
 CREATE OR REPLACE FUNCTION get_invitation_tokens(invitation_id INTEGER)

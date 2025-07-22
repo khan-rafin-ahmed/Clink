@@ -75,16 +75,38 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
 
         const userEmail = userEmailData
 
-        // Get invitation tokens using RPC function
-        const { data: tokensData, error: tokensError } = await supabase
-          .rpc('get_invitation_tokens', { invitation_id: invitation.id })
+        // Create invitation tokens (frontend responsibility per architecture)
+        const acceptToken = `event_accept_${crypto.randomUUID().replace(/-/g, '')}`
+        const declineToken = `event_decline_${crypto.randomUUID().replace(/-/g, '')}`
 
-        if (tokensError) {
-          console.warn('⚠️ Failed to get tokens for invitation:', invitation.id, tokensError)
+        // Store tokens in database
+        const { error: tokenError } = await supabase
+          .from('invitation_tokens')
+          .insert([
+            {
+              token: acceptToken,
+              invitation_type: 'event',
+              invitation_id: invitation.id.toString(),
+              action: 'accept',
+              user_id: invitation.user_id,
+              expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
+              response_status: 'pending'
+            },
+            {
+              token: declineToken,
+              invitation_type: 'event',
+              invitation_id: invitation.id.toString(),
+              action: 'decline',
+              user_id: invitation.user_id,
+              expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
+              response_status: 'pending'
+            }
+          ])
+
+        if (tokenError) {
+          console.warn('⚠️ Failed to create tokens for invitation:', invitation.id, tokenError)
+          // Continue without tokens (fallback to generic URLs)
         }
-
-        const acceptToken = tokensData?.accept_token
-        const declineToken = tokensData?.decline_token
 
         // Prepare email data according to EventInvitationData interface
         const emailData: EventInvitationData = {
@@ -94,12 +116,8 @@ async function sendEventInvitationEmails(eventId: string, inviterId: string): Pr
           eventTime: new Date(event.date_time).toLocaleTimeString(),
           eventLocation: event.location,
           eventDescription: event.description,
-          acceptUrl: acceptToken
-            ? `https://thirstee.app/invitation/event/accept/${acceptToken}`
-            : `https://thirstee.app/event/${eventId}`,
-          declineUrl: declineToken
-            ? `https://thirstee.app/invitation/event/decline/${declineToken}`
-            : `https://thirstee.app/event/${eventId}`,
+          acceptUrl: `https://thirstee.app/invitation/event/accept/${acceptToken}`,
+          declineUrl: `https://thirstee.app/invitation/event/decline/${declineToken}`,
           eventUrl: `https://thirstee.app/event/${eventId}`
         }
 
