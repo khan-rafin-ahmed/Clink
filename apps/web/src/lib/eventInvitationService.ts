@@ -10,106 +10,29 @@ import { sendEventInvitationEmail, type EventInvitationData } from './emailServi
 
 /**
  * Send email invitations to all pending event invitations
- * Uses the frontend email service with proper templates and tokens
+ * Uses a database RPC function that calls the proper email service
  */
 async function sendEventInvitationEmails(eventId: string, inviterId: string): Promise<void> {
   try {
     console.log('📧 Starting sendEventInvitationEmails for:', { eventId, inviterId })
 
-    // Get event details
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .single()
+    // Use a simplified RPC function that handles email sending properly
+    console.log('📤 Calling send_event_invitation_emails_frontend RPC function')
+    const { data, error } = await supabase
+      .rpc('send_event_invitation_emails_frontend', {
+        p_event_id: eventId,
+        p_inviter_id: inviterId
+      })
 
-    if (eventError || !event) {
-      console.error('❌ Failed to get event details:', eventError)
-      throw new Error('Event not found')
+    if (error) {
+      console.error('❌ RPC function error:', error)
+      throw error
     }
 
-    // Get inviter details
-    const { data: inviter, error: inviterError } = await supabase
-      .from('user_profiles')
-      .select('display_name, username')
-      .eq('user_id', inviterId)
-      .single()
-
-    if (inviterError) {
-      console.error('❌ Failed to get inviter details:', inviterError)
-    }
-
-    // Get pending invitations with user emails and tokens
-    const { data: invitations, error: invitationsError } = await supabase
-      .from('event_members')
-      .select(`
-        id,
-        user_id,
-        auth.users!inner(email),
-        invitation_tokens!inner(token, action, expires_at, used)
-      `)
-      .eq('event_id', eventId)
-      .eq('invited_by', inviterId)
-      .eq('status', 'pending')
-
-    if (invitationsError) {
-      console.error('❌ Failed to get invitations:', invitationsError)
-      throw invitationsError
-    }
-
-    if (!invitations || invitations.length === 0) {
-      console.log('📧 No pending invitations found')
-      return
-    }
-
-    let emailsSent = 0
-    let emailsFailed = 0
-
-    // Send emails using the proper frontend email service
-    for (const invitation of invitations) {
-      try {
-        const userEmail = invitation.auth?.users?.email
-        if (!userEmail) {
-          console.warn('⚠️ No email found for user:', invitation.user_id)
-          emailsFailed++
-          continue
-        }
-
-        // Get accept/decline tokens
-        const acceptToken = invitation.invitation_tokens?.find(t => t.action === 'accept' && !t.used && new Date(t.expires_at) > new Date())?.token
-        const declineToken = invitation.invitation_tokens?.find(t => t.action === 'decline' && !t.used && new Date(t.expires_at) > new Date())?.token
-
-        // Prepare email data
-        const emailData: EventInvitationData = {
-          inviterName: inviter?.display_name || inviter?.username || 'Someone',
-          eventTitle: event.title,
-          eventDate: new Date(event.date_time).toLocaleDateString(),
-          eventTime: new Date(event.date_time).toLocaleTimeString(),
-          eventLocation: event.location,
-          eventDescription: event.description,
-          acceptUrl: acceptToken ? `https://thirstee.app/invitation/event/accept/${acceptToken}` : `https://thirstee.app/event/${eventId}`,
-          declineUrl: declineToken ? `https://thirstee.app/invitation/event/decline/${declineToken}` : `https://thirstee.app/event/${eventId}`,
-          eventUrl: `https://thirstee.app/event/${eventId}`
-        }
-
-        // Send email using the proper frontend service
-        const result = await sendEventInvitationEmail(userEmail, emailData)
-
-        if (result.success) {
-          emailsSent++
-          console.log('✅ Email sent to:', userEmail)
-        } else {
-          emailsFailed++
-          console.error('❌ Failed to send email to:', userEmail, result.error)
-        }
-
-      } catch (error: any) {
-        emailsFailed++
-        console.error('❌ Error sending email to invitation:', invitation.id, error)
-      }
-    }
-
-    console.log(`📧 Email results: ${emailsSent} sent, ${emailsFailed} failed`)
+    console.log('✅ Email RPC function result:', data)
+    const emailsSent = data?.emails_sent || 0
+    const emailsFailed = data?.emails_failed || 0
+    console.log(`📧 Emails sent: ${emailsSent}, failed: ${emailsFailed}`)
 
   } catch (error: any) {
     console.error('❌ Failed to send event invitation emails:', error)
