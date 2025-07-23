@@ -112,23 +112,7 @@ export function BadgeDashboard() {
     }
   }
 
-  const handleResetToDefault = async () => {
-    try {
-      const targetUserId = userProfile?.user_id || user?.id
-      if (!targetUserId) return
 
-      await BadgeService.resetBadgesToDefault(targetUserId)
-      
-      // Reload user badges
-      const updatedUserBadges = await BadgeService.getUserBadges(targetUserId)
-      setUserBadges(updatedUserBadges)
-
-      toast.success('Badges reset to show 4 most recent')
-    } catch (error) {
-      console.error('Error resetting badges:', error)
-      toast.error('Failed to reset badges')
-    }
-  }
 
   // Create earned badge lookup
   const earnedBadgeIds = new Set(userBadges.map(ub => ub.badge_id))
@@ -169,28 +153,22 @@ export function BadgeDashboard() {
     <div className="min-h-screen bg-bg-base">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={goBackSmart}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                {isPublicView ? `${userProfile?.display_name || userProfile?.username || 'User'}'s Badges` : 'Your Badges'}
-              </h1>
-              <p className="text-muted-foreground">
-                {isPublicView
-                  ? `${earnedCount} badges earned • ${completionPercentage}% completion`
-                  : `${earnedCount} of ${totalCount} earned • ${visibleCount} visible on profile`
-                }
-              </p>
-            </div>
-          </div>
-          
-          <Button variant="outline" size="sm" onClick={handleResetToDefault}>
-            Reset to Default
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="outline" size="sm" onClick={goBackSmart}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {isPublicView ? `${userProfile?.display_name || userProfile?.username || 'User'}'s Badges` : 'Your Badges'}
+            </h1>
+            <p className="text-muted-foreground">
+              {isPublicView
+                ? `${earnedCount} badges earned • ${completionPercentage}% completion`
+                : `${earnedCount} of ${totalCount} earned • ${visibleCount} visible on profile`
+              }
+            </p>
+          </div>
         </div>
 
         {/* Stats Cards */}

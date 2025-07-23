@@ -161,35 +161,7 @@ export class BadgeService {
     }
   }
 
-  static async resetBadgesToDefault(userId: string): Promise<void> {
-    // First, hide all badges
-    await supabase
-      .from('user_badges')
-      .update({ is_visible_on_profile: false })
-      .eq('user_id', userId)
 
-    // Then show the 4 most recent badges
-    const { data: recentBadges } = await supabase
-      .from('user_badges')
-      .select('id')
-      .eq('user_id', userId)
-      .order('earned_at', { ascending: false })
-      .limit(4)
-
-    if (recentBadges && recentBadges.length > 0) {
-      const badgeIds = recentBadges.map(b => b.id)
-      
-      const { error } = await supabase
-        .from('user_badges')
-        .update({ is_visible_on_profile: true })
-        .in('id', badgeIds)
-
-      if (error) {
-        console.error('Error resetting badges to default:', error)
-        throw error
-      }
-    }
-  }
 
   // Achievement checking with notifications (for new badges earned through activity)
   static async checkAndAwardBadges(userId: string): Promise<BadgeAchievement[]> {
