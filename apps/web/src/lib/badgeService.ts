@@ -124,7 +124,7 @@ export class BadgeService {
   }
 
   // Get starter badges for users with no earned badges
-  static async getStarterBadges(): Promise<BadgeType[]> {
+  static async getStarterBadges(): Promise<Badge[]> {
     const starterBadgeNames = [
       'First Sip',
       'Party Starter',
@@ -915,7 +915,7 @@ export class BadgeService {
 
       // Find same day events
       const sameDayEvents = Array.from(eventsByDate.entries())
-        .filter(([date, events]) => events.length >= 2)
+        .filter(([, events]) => events.length >= 2)
         .map(([date, events]) => ({ date, count: events.length, events: events.map(e => e.title) }))
 
       return {

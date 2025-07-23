@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BadgeIcon } from './BadgeIcon'
 import { cn } from '@/lib/utils'
-import type { UserBadge, Badge as BadgeType } from '@/types/badge'
+import type { UserBadge, Badge } from '@/types/badge'
 
 interface BadgePreviewCardProps {
   userBadges: UserBadge[]
-  starterBadges?: BadgeType[]
+  starterBadges?: Badge[]
   maxDisplay?: number
   showViewAll?: boolean
   username: string
@@ -33,10 +33,10 @@ export function BadgePreviewCard({
 
   // If no earned badges, show starter badges as locked
   const showStarterBadges = earnedBadges.length === 0 && starterBadges.length > 0
-  const badgesToShow = showStarterBadges ? starterBadges.slice(0, maxDisplay) : visibleBadges
+  const starterBadgesToShow = showStarterBadges ? starterBadges.slice(0, maxDisplay) : []
 
   // Don't render if no badges to show at all
-  if (badgesToShow.length === 0) {
+  if (visibleBadges.length === 0 && starterBadgesToShow.length === 0) {
     return null
   }
 
@@ -70,7 +70,7 @@ export function BadgePreviewCard({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           {showStarterBadges ? (
             // Show starter badges as locked
-            badgesToShow.map((badge) => (
+            starterBadgesToShow.map((badge) => (
               <div
                 key={badge.id}
                 className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -93,7 +93,7 @@ export function BadgePreviewCard({
             ))
           ) : (
             // Show earned badges
-            badgesToShow.map((userBadge) => {
+            visibleBadges.map((userBadge) => {
               if (!userBadge.badge) return null
 
               return (

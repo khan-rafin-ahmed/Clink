@@ -68,7 +68,7 @@ export function BadgeIcon({
     const finalIconKey = (iconMap[iconName] || iconKey) as keyof typeof Icons
     const IconComponent = Icons[finalIconKey] || Icons.Award
 
-    return IconComponent
+    return IconComponent as React.ComponentType<any>
   }
 
   const IconComponent = getIcon(badge.icon_name)

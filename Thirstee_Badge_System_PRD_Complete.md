@@ -21,12 +21,14 @@ Create a badge system that:
 - Includes hidden/easter egg and streak-based badges
 - Badge names and descriptions are pun-heavy, rebellious, fun
 
-### 👁️ Badge Display & Customization
-- Profile shows **up to 4 badges**: user-selected or system-selected
-- Users can choose which earned badges to display on profile
-- Defaults to:
-  - Most recent or top-tier if no custom
-  - If 0 earned, display 4 locked starter badges
+### 👁️ Badge Display & Customization - **UPDATED**
+- Profile shows **up to 6 badges**: sorted by tier/rarity priority, then by earned date
+- **Enhanced Sorting Logic**:
+  1. Tier/rarity (legendary → epic → rare → common)
+  2. Earned date (most recent first)
+  3. Alphabetical by name (tiebreaker)
+- **Starter Badge Display**: If 0 earned badges, display 6 locked starter badges (First Sip, Party Starter, Crew Member, Comment Commander I, Photo Dropper I, Thirstee OG)
+- **Public Badge Viewing**: Anyone can view others' earned badges via badge dashboard
 
 ---
 
@@ -37,15 +39,20 @@ Create a badge system that:
 **Position:** Between "Upcoming Session" and Stats section
 **Component:** `BadgePreviewCard`
 
-- Displays up to 4 earned or selected badges
-- Each badge: Icon + name + short 1-liner description
+- **Displays up to 6 badges** with enhanced sorting (tier/rarity priority)
+- **Smart Display Logic**: Shows earned badges OR 6 locked starter badges if user has 0 earned
+- **Responsive Grid**: 2 cols mobile, 3 cols tablet, 6 cols desktop
+- Each badge: Icon + name + tier color with locked state support
 - “View All” button links to `/profile/:username/badges`
 
 ---
 
-### 🔐 3.2 Badge Dashboard (`/profile/:username/badges`)
+### 🔐 3.2 Badge Dashboard (`/profile/:username/badges`) - **ENHANCED WITH PUBLIC ACCESS**
 
-- **Private:** Only visible to the logged-in user
+- **Dual Access Control**:
+  - **Own Profile**: Full management dashboard with visibility toggles and settings
+  - **Other Users**: Public read-only view showing only earned badges
+- **Public Badge Viewing**: Anyone can view others' earned badges and achievements
 - **Sections:**
   - **Unlocked Badges:** Full grid with icons, name, earned date, requirements completed
   - **Locked Badges:** Grayed out, with unlock criteria + progress bar
@@ -138,11 +145,14 @@ Create a badge system that:
 
 ---
 
-## 🔐 5. Access Rules
+## 🔐 5. Access Rules - **UPDATED**
 
-- `/badges` route is private
-- Profile badges are public, but only up to 4 selected badges shown
-- Toggling visibility is owner-only
+- **Badge Dashboard Access**:
+  - **Own Profile** (`/profile/{username}/badges`): Full management dashboard with all features
+  - **Other Users** (`/profile/{username}/badges`): Public read-only view with earned badges only
+- **Profile Badge Display**: Public, shows up to 6 badges with tier/rarity sorting
+- **Management Features**: Visibility toggles and settings only available to profile owners
+- **Public Badge Viewing**: Anyone can view others' earned badges and achievements
 
 ---
 
@@ -177,10 +187,15 @@ Create a badge system that:
 
 ---
 
-## 📌 Summary
+## 📌 Summary - **UPDATED**
 
-- ✅ 32 Total Badges
-- ✅ Fully UI-integrated
-- ✅ Earned from actions already tracked
-- ✅ Optional progress + visibility customization
-- ✅ Aligned with Thirstee brand, tone, and frontend system
+- ✅ **47 Total Badges** across 6 categories with comprehensive unlock criteria
+- ✅ **Complete Badge System**: All 14 badge types implemented (drink_type, day_events, live_event, same_day_events, etc.)
+- ✅ **Enhanced Profile Display**: 6 badges with tier/rarity sorting and starter badge support
+- ✅ **Public Badge Viewing**: Anyone can view others' earned badges via public dashboard
+- ✅ **Dual Access Control**: Full management for owners, read-only for others
+- ✅ **Comprehensive Migration**: Existing users automatically receive earned badges
+- ✅ **Fully UI-integrated** with responsive design and glassmorphism styling
+- ✅ **Earned from actions already tracked** with retroactive badge awards
+- ✅ **Smart Badge Display Logic** with locked state support for new users
+- ✅ **Aligned with Thirstee brand, tone, and frontend system**

@@ -28,7 +28,7 @@ import { filterEventsByDate } from '@/lib/eventUtils'
 import { UserProfilePageSkeleton } from '@/components/SkeletonLoaders'
 
 import type { UserProfile, Event, Crew } from '@/types'
-import type { UserBadge } from '@/types/badge'
+import type { UserBadge, Badge } from '@/types/badge'
 
 // Helper function to get drink emoji and label for profile stats
 const getDrinkInfoForStats = (drink: string | null | undefined) => {
@@ -762,7 +762,7 @@ export function UserProfile() {
                 userBadges={userBadges}
                 starterBadges={starterBadges}
                 username={username || user?.id || ''}
-                isOwnProfile={isOwnProfile}
+                isOwnProfile={isOwnProfile || false}
                 maxDisplay={6}
                 showViewAll={true}
               />

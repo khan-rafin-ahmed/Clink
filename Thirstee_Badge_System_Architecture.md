@@ -174,28 +174,33 @@ interface BadgeCardProps {
 - ✅ Expandable details on click
 - ✅ Badge earned date display
 
-#### 3. **BadgePreviewCard** Component ✅
+#### 3. **BadgePreviewCard** Component ✅ - **ENHANCED**
 **File**: `apps/web/src/components/BadgePreviewCard.tsx`
-**Status**: Fully implemented and integrated into user profiles
+**Status**: Fully implemented with enhanced sorting and starter badge support
 ```typescript
 interface BadgePreviewCardProps {
   userBadges: UserBadge[]
-  maxDisplay?: number
+  starterBadges?: BadgeType[]
+  maxDisplay?: number // Default: 6
   showViewAll?: boolean
   username: string
+  isOwnProfile?: boolean
   className?: string
 }
 ```
 **Features Implemented**:
-- ✅ Shows up to 4 visible badges on profile
-- ✅ Grid layout with proper spacing
-- ✅ "View All Badges" navigation link
-- ✅ Empty badge slots with visual placeholders
-- ✅ Call-to-action for profile owners
+- ✅ **Enhanced Badge Sorting**: Tier/rarity priority (legendary → epic → rare → common), then by earned date, then alphabetical
+- ✅ **Starter Badge Display**: Shows 6 locked starter badges for users with 0 earned badges
+- ✅ **Responsive Grid Layout**: 2 cols mobile, 3 cols tablet, 6 cols desktop for 6-badge display
+- ✅ **Smart Badge Display**: Automatically switches between earned badges and starter badges
+- ✅ **Glass card styling** with existing design system
+- ✅ **Badge icons with tooltips** and tier colors with locked state support
+- ✅ **"View All" button** linking to badge dashboard
+- ✅ **Call-to-action messaging** for users with no badges
 
-#### 4. **BadgeDashboard** Page Component ✅
+#### 4. **BadgeDashboard** Page Component ✅ - **ENHANCED WITH PUBLIC ACCESS**
 **File**: `apps/web/src/pages/BadgeDashboard.tsx`
-**Status**: Fully implemented with category filtering and inline controls
+**Status**: Fully implemented with public/private access control and enhanced features
 ```typescript
 interface BadgeDashboardProps {
   userBadges: UserBadge[]
@@ -205,24 +210,44 @@ interface BadgeDashboardProps {
 }
 ```
 **Features Implemented**:
-- ✅ Full page layout with max-w-4xl container
-- ✅ Category filtering (6 badge categories)
-- ✅ Badge statistics cards
-- ✅ Inline visibility toggles
-- ✅ "Reset to Default" functionality
-- ✅ Private route (owner only access)
-- ✅ Mobile-responsive design
+- ✅ **Dual Access Control**: Public read-only view for others, full management for profile owners
+- ✅ **Public Badge Viewing**: Anyone can view earned badges at `/profile/{username}/badges`
+- ✅ **Smart UI Adaptation**: Management features (visibility toggles, settings) only shown to profile owners
+- ✅ **Enhanced Statistics**: Shows completion percentage and badge counts for public viewers
+- ✅ **Category filtering** (6 badge categories) works for both public and private views
+- ✅ **Badge statistics cards** with different content for public vs private access
+- ✅ **Inline visibility toggles** (owner only)
+- ✅ **"Reset to Default" functionality** (owner only)
+- ✅ **Mobile-responsive design** with proper touch targets
+- ✅ **Earned badges only** for public view (no locked badges shown to others)
 
 ---
 
 ## 🚀 **IMPLEMENTATION COMPLETED** - Updated 2025-01-23
 
-### 🔧 **Recent Fixes Applied**
-- ✅ **Badge Dashboard Authentication**: Fixed access control logic in `BadgeDashboard.tsx` (line 42)
-- ✅ **Existing User Badge Migration**: Added `runBadgeCheckForAllUsers()` method to BadgeService
-- ✅ **Silent Badge Awards**: Added `checkAndAwardBadgesSilent()` method to prevent notification spam
-- ✅ **Badge Test Enhancement**: Added "Award Badges to All Users (Silent)" functionality to `/badge-test`
-- ✅ **Migration Script**: Created `20250123_award_existing_user_badges.sql` for retroactive badge awards
+### 🔧 **Recent Major Updates Applied**
+
+#### **Badge Award System Overhaul**
+- ✅ **Comprehensive Badge Logic**: Implemented complete badge checking for all 14 badge types (drink_type, day_events, live_event, same_day_events, etc.)
+- ✅ **Database Function Enhancement**: Created `award_single_badge()` RPC function to bypass RLS permissions
+- ✅ **Silent Migration System**: Added `runBadgeCheckForAllUsers()` with comprehensive logic for existing users
+- ✅ **Badge Test Enhancement**: Added comprehensive badge checking and debug tools to `/badge-test`
+
+#### **Profile Badge Display System**
+- ✅ **Enhanced Badge Sorting**: Implemented tier/rarity priority sorting (legendary → epic → rare → common), then by earned date, then alphabetical
+- ✅ **Starter Badge Display**: Users with 0 earned badges see 6 locked starter badges (First Sip, Party Starter, Crew Member, etc.)
+- ✅ **Profile Display Limit**: Changed from 4 to 6 badges on user profiles with responsive grid layout
+- ✅ **Badge Service Enhancement**: Added `getAllUserBadges()` and `getStarterBadges()` methods
+
+#### **Public Badge Dashboard**
+- ✅ **Public Access**: Badge dashboard now accessible to all users at `/profile/{username}/badges`
+- ✅ **Dual Access Control**: Own profile shows full management dashboard, others see public read-only view
+- ✅ **Management Feature Control**: Visibility toggles and settings only shown to profile owners
+- ✅ **Public Statistics**: Shows badge completion percentage and category breakdowns for public viewers
+
+#### **Technical Fixes**
+- ✅ **Badge Dashboard Authentication**: Fixed access control logic and removed redirect restrictions
+- ✅ **RLS Permission Issues**: Resolved 403 Forbidden errors when awarding badges through comprehensive system
 - ✅ **Notification Control**: Retroactive badge awards do NOT send notifications to existing users
 
 ### ✅ **Files Created/Modified**
@@ -232,6 +257,8 @@ interface BadgeDashboardProps {
 - `supabase/migrations/20250123_seed_badges.sql` - 32 unique badges with Roman numerals
 - `supabase/migrations/20250123_clear_badges.sql` - Reset script for development
 - `supabase/migrations/20250123_award_existing_user_badges.sql` - Retroactive badge awards for existing users
+- `supabase/migrations/20250123_fix_badge_checking_complete.sql` - Complete badge checking function with all 14 badge types
+- `award_single_badge_function.sql` - RPC function to bypass RLS for badge awards
 
 #### TypeScript Types
 - `apps/web/src/types/badge.ts` - Complete type definitions
@@ -240,7 +267,11 @@ interface BadgeDashboardProps {
 - `apps/web/src/lib/badgeService.ts` - Full CRUD operations, achievement logic, and migration utilities
   - `checkAndAwardBadges()` - Normal badge checking WITH notifications (for new activity)
   - `checkAndAwardBadgesSilent()` - Silent badge checking WITHOUT notifications (for migrations)
-  - `runBadgeCheckForAllUsers()` - Batch process all users silently (no notification spam)
+  - `runComprehensiveBadgeCheck()` - Enhanced badge checking with all 14 badge types and detailed logging
+  - `runComprehensiveBadgeCheckSilent()` - Silent version for batch processing
+  - `runBadgeCheckForAllUsers()` - Batch process all users with comprehensive logic (no notification spam)
+  - `getAllUserBadges()` - Get user badges with tier/rarity sorting for profile display
+  - `getStarterBadges()` - Get locked starter badges for users with no earned badges
 
 #### UI Components
 - `apps/web/src/components/BadgeIcon.tsx` - Reusable badge display

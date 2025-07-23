@@ -6,14 +6,14 @@ import { useParams, Navigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+
 import { ArrowLeft, Filter } from 'lucide-react'
 import { BadgeCard } from '@/components/BadgeCard'
 import { BadgeService } from '@/lib/badgeService'
 import { getUserProfileByUsername } from '@/lib/userService'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+
 import type { Badge as BadgeType, UserBadge, BadgeCategory } from '@/types/badge'
 import type { UserProfile } from '@/types'
 

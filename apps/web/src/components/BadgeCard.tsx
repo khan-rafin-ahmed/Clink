@@ -90,7 +90,6 @@ export function BadgeCard({
                   <Switch
                     checked={isVisible}
                     onCheckedChange={handleVisibilityToggle}
-                    size="sm"
                   />
                 </div>
               )}

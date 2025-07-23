@@ -132,10 +132,17 @@
 - **Glass**: Translucent background with backdrop blur
 - **Hover States**: Scale transforms, shadow effects, opacity changes
 
-#### Badge System
+#### Badge System - **COMPREHENSIVE IMPLEMENTATION** ✅
+- **Profile Display**: 6 badges with tier/rarity sorting (legendary → epic → rare → common)
+- **Public Badge Dashboard**: Anyone can view others' earned badges at `/profile/{username}/badges`
+- **Starter Badge Display**: Users with 0 earned badges see 6 locked starter badges
+- **Badge Categories**: 6 categories with 47 total badges across all achievement types
+- **Comprehensive Logic**: All 14 badge types implemented (drink_type, day_events, live_event, same_day_events, etc.)
 - **LIVE Badge**: `#FF5F2E` background with pulse animation
 - **Status Badges**: Pill-shaped with appropriate color coding
 - **Role Badges**: Crown emoji for hosts, co-host indicators
+- **Badge Icons**: Tier-based colors with locked/unlocked states
+- **Management Features**: Visibility toggles for profile owners only
 
 #### Toast Notifications
 - **Position**: Top-right desktop, top-center mobile
@@ -433,6 +440,42 @@ CREATE TABLE public.invitation_tokens (
 - Single-use token validation
 - Email-notification synchronization
 
+### Badge System Tables ✅
+
+#### `badges`
+```sql
+CREATE TABLE public.badges (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  description text NOT NULL,
+  category text NOT NULL CHECK (category IN ('event_participation', 'hosting_crew', 'social_activity', 'streaks_time', 'weekly_sinners', 'drink_devotees')),
+  color_tier text NOT NULL CHECK (color_tier IN ('common', 'rare', 'epic', 'legendary')),
+  unlock_criteria jsonb NOT NULL,
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+#### `user_badges`
+```sql
+CREATE TABLE public.user_badges (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  badge_id uuid NOT NULL REFERENCES public.badges(id) ON DELETE CASCADE,
+  earned_at timestamptz DEFAULT now(),
+  is_visible_on_profile boolean DEFAULT true,
+  display_order integer DEFAULT 0,
+  UNIQUE(user_id, badge_id)
+);
+```
+
+**Key Features**:
+- **47 Total Badges** across 6 categories with comprehensive unlock criteria
+- **Tier-based System**: Common, rare, epic, legendary with color coding
+- **Public Badge Viewing**: Anyone can view others' earned badges
+- **Profile Display**: 6 badges with tier/rarity sorting
+- **Comprehensive Logic**: All 14 badge types implemented (drink_type, day_events, live_event, etc.)
+
 ### Additional Supporting Tables
 
 #### `event_photos`, `event_comments`, `event_ratings`
@@ -453,6 +496,8 @@ CREATE TABLE public.invitation_tokens (
 - **Users → Crews**: Many-to-many (via crew_members)
 - **Crews → Events**: One-to-many (crew events)
 - **Users → Notifications**: One-to-many (notification delivery)
+- **Users → Badges**: Many-to-many (via user_badges) - Badge achievement system
+- **Badges → User Badges**: One-to-many (badge instances)
 
 #### Key Constraints
 - **RLS Policies**: Row Level Security on all tables
