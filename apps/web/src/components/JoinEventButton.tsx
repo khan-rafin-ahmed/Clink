@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { BadgeService } from '@/lib/badgeService'
 import { toast } from 'sonner'
 import { Check, Loader2, Crown } from 'lucide-react'
 
@@ -126,6 +127,9 @@ export function JoinEventButton({
         setIsJoined(true)
         toast.success('Hell yeah! You\'re in! 🍺')
         onJoinChange?.(true)
+
+        // Trigger badge achievement check
+        BadgeService.triggerAchievementCheck(user.id, 'event_join')
       }
     } catch (error) {
       console.error('Error updating join status:', error)

@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { getCurrentUser } from './authUtils'
 import type { Crew, CrewMember, CreateCrewData } from '@/types'
 import { generateTokenizedUrls } from './invitationTokenService'
+import { BadgeService } from './badgeService'
 
 // Disable debug logging to reduce console noise
 const DEBUG_LOGGING = false
@@ -852,6 +853,9 @@ export async function joinCrewByInviteCode(inviteCode: string): Promise<Crew> {
   // Get crew details
   const crew = await getCrewById(invitation.crew_id)
   if (!crew) throw new Error('Crew not found')
+
+  // Trigger badge achievement check for crew joining
+  BadgeService.triggerAchievementCheck(user.id, 'crew_join')
 
   return crew
 }

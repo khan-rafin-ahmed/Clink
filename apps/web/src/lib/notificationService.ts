@@ -12,6 +12,7 @@ export type NotificationType =
   | 'event_cancelled'
   | 'crew_promotion'
   | 'event_promotion'
+  | 'badge_achievement'
 
 export interface NotificationData {
   id?: string
@@ -174,7 +175,8 @@ class NotificationService {
       event_update: '📝',
       event_cancelled: '❌',
       crew_promotion: '👑',
-      event_promotion: '👑'
+      event_promotion: '👑',
+      badge_achievement: '🏅'
     }
     return emojis[type] || '🔔'
   }
@@ -367,6 +369,25 @@ export const notificationTriggers = {
       data: { eventId, eventTitle, role: 'attendee' },
       read: false
     }, { skipToast: true }) // Skip the automatic toast since database function already creates notification
+  },
+
+  /**
+   * Badge achievement notification trigger
+   */
+  async onBadgeEarned(userId: string, badgeName: string, badgeDescription: string): Promise<void> {
+    const notification = NotificationService.getInstance()
+    await notification.createNotification({
+      user_id: userId,
+      type: 'badge_achievement',
+      title: `🏅 Badge Unlocked: ${badgeName}!`,
+      message: `You've earned the "${badgeName}" badge! ${badgeDescription}`,
+      data: {
+        badgeName,
+        badgeDescription,
+        timestamp: new Date().toISOString()
+      },
+      read: false
+    })
   }
 }
 

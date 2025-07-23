@@ -4,6 +4,7 @@ import type { Event, RsvpStatus, UserProfile } from '@/types'
 import { getDefaultCoverImage } from './coverImageUtils'
 import { getEventRatingStats } from '@/lib/eventRatingService'
 import { cacheService, CacheKeys, CacheTTL } from '@/lib/cacheService'
+import { BadgeService } from './badgeService'
 
 
 
@@ -439,6 +440,9 @@ export async function createEventWithShareableLink(eventData: {
   // Generate shareable link using the event code
   const baseUrl = window.location.origin
   const shareUrl = `${baseUrl}/event/${eventCode}`
+
+  // Trigger badge achievement check for hosting
+  BadgeService.triggerAchievementCheck(user.id, 'event_host')
 
   return {
     success: true,

@@ -8,6 +8,7 @@ import { CrewCard } from '@/components/CrewCard'
 import { ActivityTabs } from '@/components/ActivityTabs'
 import { ProfileInfoCard } from '@/components/ProfileInfoCard'
 import { NextEventBanner } from '@/components/NextEventBanner'
+import { BadgePreviewCard } from '@/components/BadgePreviewCard'
 
 import { StatCard } from '@/components/StatCard'
 import { Plus, Users as UsersIcon, ArrowLeft } from 'lucide-react'
@@ -19,6 +20,7 @@ import { useScrollRestoration } from '@/hooks/useScrollToTop'
 import { getUserProfileByUsername } from '@/lib/userService'
 import { Simple404 } from '@/components/Simple404'
 import { getUserCrews } from '@/lib/crewService'
+import { BadgeService } from '@/lib/badgeService'
 import { supabase } from '@/lib/supabase'
 import { useCacheInvalidation } from '@/hooks/useCachedData'
 import { CacheKeys, CacheTTL, cacheService } from '@/lib/cacheService'
@@ -26,6 +28,7 @@ import { filterEventsByDate } from '@/lib/eventUtils'
 import { UserProfilePageSkeleton } from '@/components/SkeletonLoaders'
 
 import type { UserProfile, Event, Crew } from '@/types'
+import type { UserBadge } from '@/types/badge'
 
 // Helper function to get drink emoji and label for profile stats
 const getDrinkInfoForStats = (drink: string | null | undefined) => {
@@ -81,6 +84,9 @@ export function UserProfile() {
   const [userCrews, setUserCrews] = useState<Crew[]>([])
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const [profileError, setProfileError] = useState(false)
+  const [userBadges, setUserBadges] = useState<UserBadge[]>([])
+  const [starterBadges, setStarterBadges] = useState<Badge[]>([])
+  const [badgesLoading, setBadgesLoading] = useState(false)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
 
   // Ensure page scrolls to top when navigating to profiles
@@ -153,6 +159,38 @@ export function UserProfile() {
       fetchUserCrews()
     }
   }, [user?.id, userProfile, crewsRefresh])
+
+  // Fetch user badges and starter badges
+  const fetchUserBadges = async () => {
+    try {
+      const targetUserId = userProfile?.user_id || user?.id
+      if (!targetUserId) return
+
+      setBadgesLoading(true)
+
+      // Get user badges (up to 6 for profile display)
+      const badges = await BadgeService.getAllUserBadges(targetUserId, 6)
+      setUserBadges(badges)
+
+      // Get starter badges for users with no earned badges
+      if (badges.length === 0) {
+        const starters = await BadgeService.getStarterBadges()
+        setStarterBadges(starters)
+      }
+    } catch (error) {
+      console.error('Error fetching user badges:', error)
+      setUserBadges([])
+      setStarterBadges([])
+    } finally {
+      setBadgesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (userProfile || user?.id) {
+      fetchUserBadges()
+    }
+  }, [user?.id, userProfile])
 
   // Cached fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {
@@ -716,6 +754,20 @@ export function UserProfile() {
               })()}
             </div>
           </div>
+
+          {/* Badge Preview Section */}
+          {!badgesLoading && (userBadges.length > 0 || starterBadges.length > 0) && (
+            <div className="mt-6">
+              <BadgePreviewCard
+                userBadges={userBadges}
+                starterBadges={starterBadges}
+                username={username || user?.id || ''}
+                isOwnProfile={isOwnProfile}
+                maxDisplay={6}
+                showViewAll={true}
+              />
+            </div>
+          )}
 
           {/* Activity Tabs - Crews and Sessions with Timeline Layout */}
           <div>

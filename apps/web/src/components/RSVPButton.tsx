@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { notificationTriggers } from '@/lib/notificationService'
+import { BadgeService } from '@/lib/badgeService'
 
 interface RSVPButtonProps {
   eventId: string
@@ -95,6 +96,9 @@ export function RSVPButton({ eventId, eventTitle, eventHostId, initialAttendees 
         }])
         setIsAttending(true)
         toast.success('Added to attendees!')
+
+        // Trigger badge achievement check
+        BadgeService.triggerAchievementCheck(user.id, 'event_join')
       }
     } catch (error) {
       toast.error('Failed to update RSVP')
