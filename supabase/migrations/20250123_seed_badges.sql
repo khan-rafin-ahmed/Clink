@@ -32,7 +32,7 @@ INSERT INTO badges (name, description, category, tier, unlock_criteria, icon_nam
 -- Social Activity Badges
 INSERT INTO badges (name, description, category, tier, unlock_criteria, icon_name, color_tier, sort_order) VALUES
 ('Buzzword Rookie', 'Posted 3 comments – proud of you', 'social_activity', 1, '{"type": "comment_count", "target": 3}', 'message-circle', 'bronze', 30),
-('Buzzword Brawler', '10 comments – you have thoughts', 'social_activity', 2, '{"type": "comment_count", "target": 10}', 'message-circle', 'silver', 31),
+('Buzzword Brawler', '10 comments – you have *thoughts*', 'social_activity', 2, '{"type": "comment_count", "target": 10}', 'message-circle', 'silver', 31),
 ('Buzzword Boss', '25 comments – you need a podcast', 'social_activity', 3, '{"type": "comment_count", "target": 25}', 'message-circle', 'gold', 32),
 ('Photo Bae I', 'Dropped your first pic – nice angle', 'social_activity', 1, '{"type": "photo_count", "target": 1}', 'camera', 'bronze', 33),
 ('Photo Bae II', '5 photos – serving looks', 'social_activity', 2, '{"type": "photo_count", "target": 5}', 'camera', 'silver', 34),
@@ -46,7 +46,7 @@ INSERT INTO badges (name, description, category, tier, unlock_criteria, icon_nam
 ('Streak Seeker I', '3 weeks – we see you, commitment king/queen', 'streaks_time', 1, '{"type": "weekly_streak", "target": 3}', 'flame', 'bronze', false, false, 40),
 ('Streak Seeker II', '6 weeks – okay, that''s dedication', 'streaks_time', 2, '{"type": "weekly_streak", "target": 6}', 'flame', 'silver', false, false, 41),
 ('Streak Seeker III', '12 weeks – you''re legally a regular now', 'streaks_time', 3, '{"type": "weekly_streak", "target": 12}', 'flame', 'gold', false, false, 42),
-('Founding Thirstee', 'One month in – welcome to the jungle', 'streaks_time', 1, '{"type": "days_active", "target": 30}', 'trophy', 'gold', false, false, 43),
+('Thirstee OG', 'One month in – welcome to the jungle', 'streaks_time', 1, '{"type": "days_active", "target": 30}', 'trophy', 'gold', false, false, 43),
 ('No Days Off', '4-day streak – we worry about you', 'streaks_time', 1, '{"type": "daily_streak", "target": 4}', 'zap', 'neon', true, false, 44),
 ('The Midnight One', 'Joined ''Midnight Mischief'' – you know the lore', 'streaks_time', 1, '{"type": "event_title", "target": "Midnight Mischief"}', 'moon', 'neon', false, true, 45);
 

@@ -16,6 +16,7 @@ import { Discover } from './pages/Discover'
 import { UserProfile } from './pages/UserProfile'
 import { BadgeDashboard } from './pages/BadgeDashboard'
 import { BadgeTest } from './pages/BadgeTest'
+import BadgeDebug from './pages/BadgeDebug'
 import { EventDetails } from './pages/EventDetails'
 import { EventDetail } from './pages/EventDetail'
 import { AuthCallback } from './pages/AuthCallback'
@@ -110,6 +111,7 @@ function App() {
               <Route path="/profile/:username" element={<UserProfile />} />
               <Route path="/profile/:username/badges" element={<BadgeDashboard />} />
               <Route path="/badge-test" element={<BadgeTest />} />
+              <Route path="/badge-debug" element={<BadgeDebug />} />
 
               <Route path="/crew/join/:inviteCode" element={<CrewJoin />} />
               <Route path="/crew/:crewId" element={<CrewDetail />} />

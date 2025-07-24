@@ -100,9 +100,9 @@ UPDATE badges SET
   description = 'Posted 3 comments – proud of you'
 WHERE name = 'Comment Commander I';
 
-UPDATE badges SET 
+UPDATE badges SET
   name = 'Buzzword Brawler',
-  description = '10 comments – you have thoughts'
+  description = '10 comments – you have *thoughts*'
 WHERE name = 'Comment Commander II';
 
 UPDATE badges SET 
@@ -156,8 +156,7 @@ UPDATE badges SET
   description = '12 weeks – you''re legally a regular now'
 WHERE name = 'Loyal Drinker III';
 
-UPDATE badges SET 
-  name = 'Founding Thirstee',
+UPDATE badges SET
   description = 'One month in – welcome to the jungle'
 WHERE name = 'Thirstee OG';
 
