@@ -9,12 +9,13 @@ import { BadgeService } from '@/lib/badgeService'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { BadgeCard } from '@/components/BadgeCard'
 import { toast } from 'sonner'
-import type { Badge, UserBadge } from '@/types/badge'
+import type { Badge, UserBadge, BadgeProgress } from '@/types/badge'
 
 export function BadgeTest() {
   const { user } = useAuth()
   const [allBadges, setAllBadges] = useState<Badge[]>([])
   const [userBadges, setUserBadges] = useState<UserBadge[]>([])
+  const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([])
   const [loading, setLoading] = useState(false)
 
   const loadBadgeData = async () => {
@@ -25,13 +26,15 @@ export function BadgeTest() {
 
     try {
       setLoading(true)
-      const [badges, userBadgeData] = await Promise.all([
+      const [badges, userBadgeData, progressData] = await Promise.all([
         BadgeService.getAllBadges(),
-        BadgeService.getUserBadges(user.id)
+        BadgeService.getUserBadges(user.id),
+        BadgeService.getBadgeProgress(user.id)
       ])
 
       setAllBadges(badges)
       setUserBadges(userBadgeData)
+      setBadgeProgress(progressData)
       toast.success(`Loaded ${badges.length} badges, you have ${userBadgeData.length}`)
     } catch (error) {
       console.error('Error loading badge data:', error)
@@ -184,6 +187,56 @@ export function BadgeTest() {
     }
   }
 
+  const createSampleProgressData = async () => {
+    if (!user) {
+      toast.error('Please sign in to create sample progress')
+      return
+    }
+
+    try {
+      setLoading(true)
+      toast.info('Creating sample progress data...')
+
+      await BadgeService.createSampleProgressData(user.id)
+      toast.success('Created sample progress data for 3 badges')
+
+      // Reload data to show progress bars
+      await loadBadgeData()
+    } catch (error) {
+      console.error('Error creating sample progress:', error)
+      if (error instanceof Error && error.message.includes('RLS policies')) {
+        toast.error('Badge progress RLS policies need to be fixed. Please contact an admin.')
+      } else {
+        toast.error('Failed to create sample progress data')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cleanupProgressData = async () => {
+    if (!user) {
+      toast.error('Please sign in to cleanup progress')
+      return
+    }
+
+    try {
+      setLoading(true)
+      toast.info('Cleaning up stale progress records...')
+
+      await BadgeService.cleanupProgressForEarnedBadges(user.id)
+      toast.success('Cleaned up progress records for earned badges')
+
+      // Reload data to refresh display
+      await loadBadgeData()
+    } catch (error) {
+      console.error('Error cleaning up progress:', error)
+      toast.error('Failed to cleanup progress data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-bg-base flex items-center justify-center">
@@ -286,6 +339,26 @@ export function BadgeTest() {
                   🚀 Award Badges to All Users (Silent)
                 </Button>
               </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={createSampleProgressData}
+                  disabled={loading}
+                  variant="secondary"
+                  className="flex-1 md:flex-none"
+                  title="Create sample progress data to test progress bars"
+                >
+                  📊 Create Sample Progress Data
+                </Button>
+                <Button
+                  onClick={cleanupProgressData}
+                  disabled={loading}
+                  variant="outline"
+                  className="flex-1 md:flex-none"
+                  title="Remove progress records for badges you've already earned"
+                >
+                  🧹 Cleanup Progress Data
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -368,6 +441,31 @@ export function BadgeTest() {
                       key={userBadge.id}
                       badge={userBadge.badge}
                       userBadge={userBadge}
+                      variant="detailed"
+                      expandable={true}
+                    />
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Locked Badges with Progress */}
+        {badgeProgress.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Progress Towards Badges ({badgeProgress.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {badgeProgress.map(progress => {
+                  if (!progress.badge) return null
+                  return (
+                    <BadgeCard
+                      key={progress.id}
+                      badge={progress.badge}
+                      progress={progress}
                       variant="detailed"
                       expandable={true}
                     />

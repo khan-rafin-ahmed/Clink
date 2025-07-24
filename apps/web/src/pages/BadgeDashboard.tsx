@@ -14,7 +14,7 @@ import { getUserProfileByUsername } from '@/lib/userService'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
 import { toast } from 'sonner'
 
-import type { Badge as BadgeType, UserBadge, BadgeCategory } from '@/types/badge'
+import type { Badge as BadgeType, UserBadge, BadgeProgress, BadgeCategory } from '@/types/badge'
 import type { UserProfile } from '@/types'
 
 
@@ -38,6 +38,7 @@ export function BadgeDashboard() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [allBadges, setAllBadges] = useState<BadgeType[]>([])
   const [userBadges, setUserBadges] = useState<UserBadge[]>([])
+  const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | 'all'>('all')
   const [profileError, setProfileError] = useState(false)
@@ -74,13 +75,23 @@ export function BadgeDashboard() {
         if (!targetUserId) return
 
         setLoading(true)
-        const [badges, userBadgeData] = await Promise.all([
+        const [badges, userBadgeData, progressData] = await Promise.all([
           BadgeService.getAllBadges(),
-          BadgeService.getUserBadges(targetUserId)
+          BadgeService.getUserBadges(targetUserId),
+          BadgeService.getBadgeProgress(targetUserId)
         ])
 
         setAllBadges(badges)
         setUserBadges(userBadgeData)
+        setBadgeProgress(progressData)
+
+        // Debug logging
+        console.log('Badge Dashboard Data:', {
+          totalBadges: badges.length,
+          earnedBadges: userBadgeData.length,
+          progressRecords: progressData.length,
+          progressData: progressData
+        })
       } catch (error) {
         console.error('Error loading badge data:', error)
         toast.error('Failed to load badges')
@@ -151,7 +162,6 @@ export function BadgeDashboard() {
 
   // For public view, only show earned badges
   if (isPublicView) {
-    const earnedBadgeIds = new Set(userBadges.map(ub => ub.badge_id))
     filteredBadges = filteredBadges.filter(badge => earnedBadgeIds.has(badge.id))
   }
 
@@ -282,12 +292,14 @@ export function BadgeDashboard() {
               {filteredBadges.map(badge => {
                 const userBadge = userBadges.find(ub => ub.badge_id === badge.id)
                 const isEarned = earnedBadgeIds.has(badge.id)
+                const progress = badgeProgress.find(bp => bp.badge_id === badge.id)
 
                 return (
                   <BadgeCard
                     key={badge.id}
                     badge={badge}
                     userBadge={userBadge}
+                    progress={progress}
                     variant="dashboard"
                     expandable={true}
                     showVisibilityToggle={isOwnProfile && isEarned}

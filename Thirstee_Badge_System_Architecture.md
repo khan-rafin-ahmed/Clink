@@ -83,11 +83,53 @@ const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earne
 - `UserProfile.tsx` - Added totalBadgeCount state and fetching logic
 - `BadgePreviewCard.tsx` - Added totalBadgeCount prop and display logic
 
+### ✅ **Enhanced Progress Bar Implementation (January 24, 2025)**
+**Problem**: Basic progress bars lacked tier-specific styling and responsive design optimization.
+
+**Solution**: Implemented comprehensive progress bar system with tier colors and mobile-first responsive design.
+
+**Key Features**:
+- **Tier-Specific Colors**: Dynamic progress bar colors based on badge tier (bronze, silver, gold, neon)
+- **Responsive Heights**: 6px (h-1.5) on mobile, 4px (h-1) on desktop for optimal touch visibility
+- **Enhanced Labels**: "X / Y (Z%)" format on desktop, "X / Y" on mobile for space optimization
+- **Proper Positioning**: Progress bar positioned directly beneath subtitle line
+- **Design Token Consistency**: Uses existing tier color definitions from design system
+
+**Technical Implementation**:
+```typescript
+// Tier-based progress bar colors
+const getTierProgressColor = (colorTier: string) => {
+  const progressColors = {
+    bronze: 'bg-[#CD7F32]',
+    silver: 'bg-[#C0C0C0]',
+    gold: 'bg-[#FFD700]',
+    neon: 'bg-[#00FFA3]'
+  }
+  return progressColors[colorTier as keyof typeof progressColors] || progressColors.neon
+}
+
+// Responsive progress bar styling
+<div className="w-full bg-white/10 rounded-full h-1.5 md:h-1">
+  <div
+    className={cn(
+      'h-1.5 md:h-1 rounded-full transition-all duration-300',
+      getTierProgressColor(badge.color_tier)
+    )}
+    style={{ width: `${progressPercentage}%` }}
+  />
+</div>
+```
+
+**Files Updated**:
+- `BadgeCard.tsx` - Enhanced progress bar with tier colors and responsive design
+- `Thirstee_Badge_System_Architecture.md` - Updated documentation
+
 ### ✅ **Benefits**
 - **User-Focused Content**: Descriptions tell users what they accomplished
 - **Accurate Progress**: Shows real achievement count, not just displayed count
 - **Better UX**: Clear understanding of badge meaning and total progress
 - **Optimal Profile Display**: Shows 4 badges with full subtitles for clean, readable UI
+- **Enhanced Progress Visualization**: Tier-colored progress bars with responsive design
 
 ---
 
@@ -352,7 +394,7 @@ interface BadgeCardProps {
 **Features Implemented**:
 - ✅ Glass card styling with existing design system
 - ✅ Earned/locked badge states
-- ✅ Progress bars for locked badges
+- ✅ **Enhanced Progress bars for locked badges** - Tier-colored, responsive design
 - ✅ Inline visibility toggles (no modals)
 - ✅ Expandable details on click
 - ✅ Badge earned date display

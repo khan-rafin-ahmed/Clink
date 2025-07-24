@@ -225,16 +225,66 @@ export class BadgeService {
       throw error
     }
 
-    return data || []
+    // Filter out progress for badges that have been earned
+    const userBadges = await this.getUserBadges(userId)
+    const earnedBadgeIds = new Set(userBadges.map(ub => ub.badge_id))
+
+    const filteredProgress = (data || []).filter(progress =>
+      !earnedBadgeIds.has(progress.badge_id)
+    )
+
+    return filteredProgress
   }
 
-  static async updateProgress(userId: string, badgeId: string, progress: number): Promise<void> {
+  // Clean up progress records for earned badges
+  static async cleanupProgressForEarnedBadges(userId: string): Promise<void> {
+    try {
+      const userBadges = await this.getUserBadges(userId)
+      const earnedBadgeIds = userBadges.map(ub => ub.badge_id)
+
+      if (earnedBadgeIds.length > 0) {
+        const { error } = await supabase
+          .from('badge_progress')
+          .delete()
+          .eq('user_id', userId)
+          .in('badge_id', earnedBadgeIds)
+
+        if (error) {
+          console.error('Error cleaning up progress records:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Error in cleanup function:', error)
+      // Don't throw - this is a cleanup function
+    }
+  }
+
+  static async updateProgress(userId: string, badgeId: string, progress: number, target?: number): Promise<void> {
+    // Get badge info to determine target if not provided
+    let targetProgress = target
+    if (!targetProgress) {
+      const { data: badge } = await supabase
+        .from('badges')
+        .select('unlock_criteria')
+        .eq('id', badgeId)
+        .single()
+
+      if (badge?.unlock_criteria?.target) {
+        targetProgress = typeof badge.unlock_criteria.target === 'number'
+          ? badge.unlock_criteria.target
+          : parseInt(badge.unlock_criteria.target as string) || 5
+      } else {
+        targetProgress = 5 // Default fallback
+      }
+    }
+
     const { error } = await supabase
       .from('badge_progress')
       .upsert({
         user_id: userId,
         badge_id: badgeId,
         current_progress: progress,
+        target_progress: targetProgress,
         last_updated: new Date().toISOString()
       })
 
@@ -910,6 +960,48 @@ export class BadgeService {
       }
     } catch (error) {
       console.error('Error in debug user activity:', error)
+      throw error
+    }
+  }
+
+  // Create sample progress data using a different approach
+  static async createSampleProgressData(userId: string): Promise<void> {
+    try {
+      // Get unlocked badges
+      const unlockedBadges = await this.getUnlockedBadges(userId)
+
+      if (unlockedBadges.length === 0) {
+        throw new Error('No unlocked badges found to create progress for')
+      }
+
+      // Create sample progress for more unlocked badges (different tiers)
+      const samplesToCreate = unlockedBadges.slice(0, 8)
+
+      // Since we can't directly insert into badge_progress due to RLS,
+      // let's create a database function to handle this
+      for (const badge of samplesToCreate) {
+        const target = typeof badge.unlock_criteria.target === 'number'
+          ? badge.unlock_criteria.target
+          : parseInt(badge.unlock_criteria.target as string) || 5
+
+        const currentProgress = Math.floor(Math.random() * target)
+
+        // Try to use a database function that has SECURITY DEFINER
+        try {
+          await supabase.rpc('create_badge_progress', {
+            p_user_id: userId,
+            p_badge_id: badge.id,
+            p_current_progress: currentProgress,
+            p_target_progress: target
+          })
+        } catch (rpcError) {
+          // If the RPC doesn't exist, we'll need to create the policies manually
+          console.warn('create_badge_progress RPC not found, progress data creation failed')
+          throw new Error('Badge progress RLS policies need to be fixed. Please run the fix_badge_progress_rls.sql migration.')
+        }
+      }
+    } catch (error) {
+      console.error('Error creating sample progress data:', error)
       throw error
     }
   }

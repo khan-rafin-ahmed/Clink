@@ -34,6 +34,15 @@ export function BadgeCard({
   const isEarned = !!userBadge
   const isVisible = userBadge?.is_visible_on_profile ?? false
 
+  // Debug logging for progress bars (commented out to reduce noise)
+  // if (progress && !isEarned) {
+  //   console.log(`Progress bar should show for ${badge.name}:`, {
+  //     badgeName: badge.name,
+  //     colorTier: badge.color_tier,
+  //     progressColor: getTierProgressColor(badge.color_tier)
+  //   })
+  // }
+
   const handleVisibilityToggle = (checked: boolean) => {
     if (onToggleVisibility && isEarned) {
       onToggleVisibility(badge.id, checked)
@@ -47,9 +56,33 @@ export function BadgeCard({
   }
 
   // Progress calculation for locked badges
-  const progressPercentage = progress 
-    ? Math.min((progress.current_progress / progress.target_progress) * 100, 100)
-    : 0
+  // For locked badges, calculate progress based on badge criteria or use provided progress data
+  const getProgressData = () => {
+    if (isEarned) return null // No progress for earned badges
+
+    if (progress) {
+      // Use existing progress data
+      return {
+        current: progress.current_progress,
+        target: progress.target_progress,
+        percentage: Math.min((progress.current_progress / progress.target_progress) * 100, 100)
+      }
+    }
+
+    // For badges without progress data, show 0 progress but still show the bar
+    const target = typeof badge.unlock_criteria.target === 'number'
+      ? badge.unlock_criteria.target
+      : parseInt(badge.unlock_criteria.target as string) || 5
+
+    return {
+      current: 0,
+      target: target,
+      percentage: 0
+    }
+  }
+
+  const progressData = getProgressData()
+  const progressPercentage = progressData?.percentage || 0
 
   // Get tier-based hover glow color
   const getTierGlowColor = (colorTier: string) => {
@@ -60,6 +93,11 @@ export function BadgeCard({
       neon: 'hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]'
     }
     return glowColors[colorTier as keyof typeof glowColors] || glowColors.neon
+  }
+
+  // Use consistent green progress bar color
+  const getProgressColor = () => {
+    return 'bg-[#00FFA3]' // Always use neon green
   }
 
   return (
@@ -87,7 +125,7 @@ export function BadgeCard({
           </div>
 
           {/* Text Block */}
-          <div className="flex-1 min-w-0 space-y-3">
+          <div className="flex-1 min-w-0 space-y-2">
             {/* Title */}
             <h3 className="text-lg font-semibold text-white leading-tight">
               {badge.name}
@@ -98,29 +136,40 @@ export function BadgeCard({
               {badge.description}
             </p>
 
-            {/* Bottom Section - Progress/Date + Toggle */}
+            {/* Progress Bar - Show for all locked badges */}
+            {!isEarned && progressData && (
+              <div className="space-y-2">
+                {/* Progress Track */}
+                <div className="w-full bg-white/10 rounded-full h-1.5 md:h-1">
+                  <div
+                    className={cn(
+                      'h-1.5 md:h-1 rounded-full transition-all duration-300',
+                      getProgressColor()
+                    )}
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+
+                {/* Progress Label */}
+                <div className="text-xs text-muted-foreground">
+                  <span className="hidden sm:inline">
+                    {progressData.current} / {progressData.target} ({Math.round(progressPercentage)}%)
+                  </span>
+                  <span className="sm:hidden">
+                    {progressData.current} / {progressData.target}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Section - Earned Date + Toggle */}
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                {isEarned ? (
+                {isEarned && (
                   <div className="text-xs text-muted-foreground">
                     Earned {userBadge ? new Date(userBadge.earned_at).toLocaleDateString() : ''}
                   </div>
-                ) : progress ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="text-muted-foreground">
-                        {progress.current_progress}/{progress.target_progress}
-                      </span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-1.5">
-                      <div
-                        className="bg-[#00FFA3] h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${progressPercentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : null}
+                )}
               </div>
 
               {/* Visibility Toggle */}
@@ -151,21 +200,7 @@ export function BadgeCard({
 
 
 
-            {/* Progress Bar for Locked Badges */}
-            {!isEarned && progress && (
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>Progress</span>
-                  <span>{progress.current_progress}/{progress.target_progress}</span>
-                </div>
-                <div className="w-full bg-white/10 rounded-full h-2">
-                  <div
-                    className="bg-[#00FFA3] h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-            )}
+
 
             {/* Expanded Details */}
             {expandable && isExpanded && (
