@@ -23,6 +23,8 @@ Create a badge system that:
 
 ### 👁️ Badge Display & Customization - **UPDATED**
 - Profile shows **up to 6 badges**: sorted by tier/rarity priority, then by earned date
+- **Dynamic Badge Count**: Shows actual total earned badges (e.g., "15 Badges Earned") not just displayed count
+- **Description Display**: Shows meaningful badge descriptions instead of color tiers
 - **Enhanced Sorting Logic**:
   1. Tier/rarity (legendary → epic → rare → common)
   2. Earned date (most recent first)
@@ -42,7 +44,8 @@ Create a badge system that:
 - **Displays up to 6 badges** with enhanced sorting (tier/rarity priority)
 - **Smart Display Logic**: Shows earned badges OR 6 locked starter badges if user has 0 earned
 - **Responsive Grid**: 2 cols mobile, 3 cols tablet, 6 cols desktop
-- Each badge: Icon + name + tier color with locked state support
+- **Dynamic Count Display**: Shows total earned badges count (e.g., "15 Badges Earned")
+- **Description-First**: Each badge shows icon + name + description (not color tier)
 - “View All” button links to `/profile/:username/badges`
 
 ---

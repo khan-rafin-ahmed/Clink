@@ -10,6 +10,7 @@ import type { UserBadge, Badge } from '@/types/badge'
 
 interface BadgePreviewCardProps {
   userBadges: UserBadge[]
+  totalBadgeCount?: number
   starterBadges?: Badge[]
   maxDisplay?: number
   showViewAll?: boolean
@@ -20,6 +21,7 @@ interface BadgePreviewCardProps {
 
 export function BadgePreviewCard({
   userBadges,
+  totalBadgeCount,
   starterBadges = [],
   maxDisplay = 6,
   showViewAll = true,
@@ -31,8 +33,11 @@ export function BadgePreviewCard({
   const earnedBadges = userBadges.filter(ub => ub.badge)
   const visibleBadges = earnedBadges.slice(0, maxDisplay)
 
+  // Use totalBadgeCount if provided, otherwise fall back to earnedBadges.length
+  const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earnedBadges.length
+
   // If no earned badges, show starter badges as locked
-  const showStarterBadges = earnedBadges.length === 0 && starterBadges.length > 0
+  const showStarterBadges = actualTotalCount === 0 && starterBadges.length > 0
   const starterBadgesToShow = showStarterBadges ? starterBadges.slice(0, maxDisplay) : []
 
   // Don't render if no badges to show at all
@@ -45,16 +50,13 @@ export function BadgePreviewCard({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-            🏅 Badges
-            <span className="text-sm font-normal text-muted-foreground">
-              ({showStarterBadges ? '0' : earnedBadges.length})
-            </span>
+            🏅 {showStarterBadges ? '0 Badges Earned' : `${actualTotalCount} Badge${actualTotalCount === 1 ? '' : 's'} Earned`}
           </CardTitle>
-          
+
           {showViewAll && (
             <Link to={`/profile/${username}/badges`}>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="text-xs"
               >
@@ -85,8 +87,8 @@ export function BadgePreviewCard({
                   <p className="text-xs font-medium text-white/60 truncate max-w-full">
                     {badge.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {badge.color_tier}
+                  <p className="text-xs text-muted-foreground truncate max-w-full">
+                    {badge.description}
                   </p>
                 </div>
               </div>
@@ -110,8 +112,8 @@ export function BadgePreviewCard({
                     <p className="text-xs font-medium text-white truncate max-w-full">
                       {userBadge.badge.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {userBadge.badge.color_tier}
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                      {userBadge.badge.description}
                     </p>
                   </div>
                 </div>

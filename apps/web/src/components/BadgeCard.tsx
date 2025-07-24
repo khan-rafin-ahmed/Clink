@@ -137,7 +137,7 @@ export function BadgeCard({
                     <span className="font-medium">Category:</span> {badge.category.replace('_', ' ')}
                   </div>
                   <div>
-                    <span className="font-medium">Tier:</span> {badge.color_tier}
+                    <span className="font-medium">Tier:</span> {badge.tier}
                   </div>
                   {badge.is_hidden && (
                     <Badge variant="secondary" size="sm">Hidden Badge</Badge>

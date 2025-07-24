@@ -85,6 +85,7 @@ export function UserProfile() {
   const [crewsRefresh, setCrewsRefresh] = useState(0)
   const [profileError, setProfileError] = useState(false)
   const [userBadges, setUserBadges] = useState<UserBadge[]>([])
+  const [totalBadgeCount, setTotalBadgeCount] = useState(0)
   const [starterBadges, setStarterBadges] = useState<Badge[]>([])
   const [badgesLoading, setBadgesLoading] = useState(false)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
@@ -168,18 +169,24 @@ export function UserProfile() {
 
       setBadgesLoading(true)
 
+      // Get all user badges to get the total count
+      const allBadges = await BadgeService.getAllUserBadges(targetUserId)
+      const totalEarned = allBadges.filter(ub => ub.badge).length
+      setTotalBadgeCount(totalEarned)
+
       // Get user badges (up to 6 for profile display)
-      const badges = await BadgeService.getAllUserBadges(targetUserId, 6)
-      setUserBadges(badges)
+      const displayBadges = allBadges.slice(0, 6)
+      setUserBadges(displayBadges)
 
       // Get starter badges for users with no earned badges
-      if (badges.length === 0) {
+      if (totalEarned === 0) {
         const starters = await BadgeService.getStarterBadges()
         setStarterBadges(starters)
       }
     } catch (error) {
       console.error('Error fetching user badges:', error)
       setUserBadges([])
+      setTotalBadgeCount(0)
       setStarterBadges([])
     } finally {
       setBadgesLoading(false)
@@ -756,10 +763,11 @@ export function UserProfile() {
           </div>
 
           {/* Badge Preview Section */}
-          {!badgesLoading && (userBadges.length > 0 || starterBadges.length > 0) && (
+          {!badgesLoading && (totalBadgeCount > 0 || starterBadges.length > 0) && (
             <div className="mt-6">
               <BadgePreviewCard
                 userBadges={userBadges}
+                totalBadgeCount={totalBadgeCount}
                 starterBadges={starterBadges}
                 username={username || user?.id || ''}
                 isOwnProfile={isOwnProfile || false}
