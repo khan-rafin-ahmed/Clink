@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,31 @@ export function ProfileInfoCard({
   userBadges = [],
   className
 }: ProfileInfoCardProps) {
+  const [activeBadgeTooltip, setActiveBadgeTooltip] = useState<string | null>(null)
+  const [isTouch, setIsTouch] = useState(false)
+  const badgeContainerRef = useRef<HTMLDivElement>(null)
+
+  // Close tooltip when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (badgeContainerRef.current && !badgeContainerRef.current.contains(event.target as Node)) {
+        setActiveBadgeTooltip(null)
+      }
+    }
+
+    if (activeBadgeTooltip) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [activeBadgeTooltip])
+
+  // Reset touch state after a delay to allow mouse interactions
+  useEffect(() => {
+    if (isTouch) {
+      const timer = setTimeout(() => setIsTouch(false), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [isTouch])
   // Helper function to get drink emoji for display names (returns empty if no drink)
   const getDrinkEmojiForDisplay = (drink: string | null | undefined): string => {
     if (!drink || drink === 'none') {
@@ -84,11 +110,30 @@ export function ProfileInfoCard({
 
           {/* Badge Display - 4 most recent badges */}
           {topBadges.length > 0 && (
-            <div className="badges-row flex items-center justify-center space-x-4 gap-2 mt-3">
+            <div ref={badgeContainerRef} className="badges-row flex items-center justify-center space-x-4 gap-2 mt-3">
               {topBadges.map(userBadge => (
                 <div
                   key={userBadge.id}
-                  className="badge-icon w-8 h-8 glass-card backdrop-blur-md rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200 border border-white/10 relative group"
+                  className="badge-icon w-8 h-8 glass-card backdrop-blur-md rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200 border border-white/10 relative"
+                  onTouchStart={() => setIsTouch(true)}
+                  onClick={() => {
+                    setIsTouch(true)
+                    if (activeBadgeTooltip === userBadge.id) {
+                      setActiveBadgeTooltip(null)
+                    } else {
+                      setActiveBadgeTooltip(userBadge.id)
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isTouch) {
+                      setActiveBadgeTooltip(userBadge.id)
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (!isTouch) {
+                      setActiveBadgeTooltip(null)
+                    }
+                  }}
                   title={`${userBadge.badge!.name}: ${userBadge.badge!.description}`}
                 >
                   <BadgeIcon
@@ -97,15 +142,17 @@ export function ProfileInfoCard({
                     className="w-5 h-5"
                   />
 
-                  {/* Custom tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[10000] whitespace-nowrap">
-                    <div className="text-center space-y-1">
-                      <h4 className="font-semibold text-white text-sm">{userBadge.badge!.name}</h4>
-                      <p className="text-xs text-muted-foreground">{userBadge.badge!.description}</p>
+                  {/* Mobile & Desktop Tooltip */}
+                  {activeBadgeTooltip === userBadge.id && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-xl z-[10000] whitespace-nowrap animate-in fade-in-0 zoom-in-95 duration-200">
+                      <div className="text-center space-y-1">
+                        <h4 className="font-semibold text-white text-sm">{userBadge.badge!.name}</h4>
+                        <p className="text-xs text-muted-foreground">{userBadge.badge!.description}</p>
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#1A1A1A]"></div>
                     </div>
-                    {/* Arrow */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#1A1A1A]"></div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
