@@ -60,7 +60,7 @@ Create a badge system that:
 - **Public Badge Viewing**: Anyone can view others' earned badges and achievements
 - **Sections:**
   - **Unlocked Badges:** Full grid with icons, name, earned date, requirements completed
-  - **Locked Badges:** Grayed out, with unlock criteria + progress bar
+  - **Locked Badges:** Grayed out, with unlock criteria + **green progress bars showing current/target progress**
 - “Show/Hide on Profile” toggle for each unlocked badge
 
 ---
@@ -243,3 +243,77 @@ Create a badge system that:
 - ✅ **Earned from actions already tracked** with retroactive badge awards
 - ✅ **Smart Badge Display Logic** with locked state support for new users
 - ✅ **Aligned with Thirstee brand, tone, and frontend system**
+- ✅ **Universal Progress Bars**: All locked badges display green progress bars with current/target progress tracking
+- ✅ **Functional Badge Visibility Toggle**: 4-badge limit with tier-based smart selection and error handling
+
+---
+
+## **🎯 Progress Bar Implementation (January 24, 2025)**
+
+### **Overview**
+All locked badges now display progress bars to enhance user engagement and provide clear progress tracking toward badge completion.
+
+### **Key Features**
+- **Universal Coverage**: Every locked badge shows a progress bar, regardless of database progress records
+- **Consistent Green Styling**: All progress bars use neon green (#00FFA3) for brand consistency
+- **Dynamic Progress Calculation**:
+  - Uses database progress data when available
+  - Shows 0% progress for badges without tracking data
+  - Automatically calculates target values from badge unlock criteria
+- **Responsive Design**: 6px height on mobile, 4px on desktop
+- **Clear Labels**: "X / Y (Z%)" format on desktop, "X / Y" on mobile
+
+### **Technical Implementation**
+- **Component**: Enhanced `BadgeCard.tsx` with universal progress bar logic
+- **Data Source**: `badge_progress` table with RLS policies for user data security
+- **Progress Calculation**: Dynamic target extraction from badge unlock criteria
+- **Cleanup Logic**: Automatic removal of progress records for earned badges
+
+### **User Experience**
+- **Motivation**: Users can see progress toward ALL available badges
+- **Clarity**: Clear current/target progress with percentage completion
+- **Consistency**: Single progress bar per badge with uniform styling
+- **Engagement**: Visual feedback encourages continued participation
+
+---
+
+## **👁️ Badge Visibility Toggle System (January 24, 2025)**
+
+### **Overview**
+Functional badge visibility toggle system with 4-badge limit enforcement and intelligent tier-based selection for optimal profile curation.
+
+### **Business Rules**
+- **Maximum 4 Visible Badges**: Users can display exactly 4 badges on their profile at any time
+- **Tier-Based Priority**: Neon > Gold > Silver > Bronze for automatic selection
+- **Category Diversity**: Prioritizes badges from different categories when possible
+- **Error Prevention**: Clear messaging when attempting to exceed 4-badge limit
+
+### **Toggle Behavior**
+- **Enable Badge (Under Limit)**: Immediately allows toggle ON when < 4 visible badges
+- **Enable Badge (At Limit)**: Shows error: "You already have 4 badges shown in your profile. Please disable another badge first."
+- **Disable Badge**: Always allows toggle OFF, reducing visible count
+- **Auto-Selection**: New badges automatically become visible if under limit
+
+### **Default Selection Logic**
+1. **Sort by Tier**: Highest tier badges get priority (neon → gold → silver → bronze)
+2. **Category Diversity**: Select highest tier badge from each category first
+3. **Fill Remaining Slots**: Use highest available tier badges for remaining positions
+4. **Limit Enforcement**: Never exceed 4 visible badges
+
+### **Technical Features**
+- **Real-Time Synchronization**: Updates across all profile components instantly
+- **Error Handling**: Graceful failure with user-friendly error messages
+- **Smart Replacement**: Higher tier badges can auto-replace lower tier ones
+- **Database Consistency**: Single source of truth via `is_visible_on_profile` field
+
+### **UI Components**
+- **Badge Dashboard**: Toggle switches with error display and "Set Default Visibility" button
+- **Profile Preview**: Shows only visible badges (filtered display)
+- **Profile Info Card**: Displays top 4 visible badges with tier-based sorting
+- **Badge Preview Card**: Respects visibility settings for profile sections
+
+### **User Benefits**
+- **Curated Profiles**: Professional appearance with best badges showcased
+- **User Control**: Full control over badge display with clear feedback
+- **Smart Defaults**: Automatic selection of highest value badges
+- **Error Prevention**: Clear limits prevent user confusion and mistakes

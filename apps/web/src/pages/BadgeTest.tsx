@@ -237,6 +237,31 @@ export function BadgeTest() {
     }
   }
 
+  const testVisibilityToggle = async () => {
+    if (!user) {
+      toast.error('Please sign in to test visibility toggle')
+      return
+    }
+
+    try {
+      setLoading(true)
+      toast.info('Testing badge visibility toggle system...')
+
+      // Set default visibility for current badges
+      await BadgeService.setDefaultBadgeVisibility(user.id)
+
+      // Reload data to show changes
+      await loadBadgeData()
+
+      toast.success('Badge visibility toggle system tested! Check your profile to see the top 4 badges by tier.')
+    } catch (error) {
+      console.error('Error testing visibility toggle:', error)
+      toast.error('Failed to test visibility toggle system')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-bg-base flex items-center justify-center">
@@ -357,6 +382,15 @@ export function BadgeTest() {
                   title="Remove progress records for badges you've already earned"
                 >
                   🧹 Cleanup Progress Data
+                </Button>
+                <Button
+                  onClick={testVisibilityToggle}
+                  disabled={loading}
+                  variant="secondary"
+                  className="flex-1 md:flex-none"
+                  title="Test badge visibility toggle system with 4-badge limit"
+                >
+                  👁️ Test Visibility Toggle
                 </Button>
               </div>
             </div>

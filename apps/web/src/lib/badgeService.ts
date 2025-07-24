@@ -148,16 +148,168 @@ export class BadgeService {
     return data || []
   }
 
-  static async updateBadgeVisibility(userId: string, badgeId: string, visible: boolean): Promise<void> {
-    const { error } = await supabase
-      .from('user_badges')
-      .update({ is_visible_on_profile: visible })
-      .eq('user_id', userId)
-      .eq('badge_id', badgeId)
+  static async updateBadgeVisibility(userId: string, badgeId: string, visible: boolean): Promise<{ success: boolean; error?: string }> {
+    try {
+      // If enabling visibility, check the 4-badge limit
+      if (visible) {
+        const currentVisibleBadges = await this.getVisibleUserBadges(userId)
+        if (currentVisibleBadges.length >= 4) {
+          return {
+            success: false,
+            error: 'You already have 4 badges shown in your profile. Please disable another badge first.'
+          }
+        }
+      }
 
-    if (error) {
-      console.error('Error updating badge visibility:', error)
-      throw error
+      const { error } = await supabase
+        .from('user_badges')
+        .update({ is_visible_on_profile: visible })
+        .eq('user_id', userId)
+        .eq('badge_id', badgeId)
+
+      if (error) {
+        console.error('Error updating badge visibility:', error)
+        return {
+          success: false,
+          error: 'Failed to update badge visibility'
+        }
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error in updateBadgeVisibility:', error)
+      return {
+        success: false,
+        error: 'Failed to update badge visibility'
+      }
+    }
+  }
+
+  // Set default badge visibility based on tier and category diversity
+  static async setDefaultBadgeVisibility(userId: string): Promise<void> {
+    try {
+      const userBadges = await this.getUserBadges(userId)
+
+      if (userBadges.length === 0) return
+
+      // Tier ranking: neon > gold > silver > bronze
+      const tierRanking = { neon: 4, gold: 3, silver: 2, bronze: 1 }
+
+      // Sort badges by tier (highest first), then by category diversity
+      const sortedBadges = userBadges
+        .filter(ub => ub.badge) // Only badges with badge data
+        .sort((a, b) => {
+          const aTier = tierRanking[a.badge!.color_tier as keyof typeof tierRanking] || 0
+          const bTier = tierRanking[b.badge!.color_tier as keyof typeof tierRanking] || 0
+
+          // Primary sort: tier (highest first)
+          if (aTier !== bTier) return bTier - aTier
+
+          // Secondary sort: earned date (most recent first)
+          return new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime()
+        })
+
+      // Select top 4 badges with category diversity preference
+      const selectedBadges: typeof userBadges = []
+      const usedCategories = new Set<string>()
+
+      // First pass: select highest tier badges from different categories
+      for (const badge of sortedBadges) {
+        if (selectedBadges.length >= 4) break
+
+        if (!usedCategories.has(badge.badge!.category)) {
+          selectedBadges.push(badge)
+          usedCategories.add(badge.badge!.category)
+        }
+      }
+
+      // Second pass: fill remaining slots with highest tier badges
+      for (const badge of sortedBadges) {
+        if (selectedBadges.length >= 4) break
+
+        if (!selectedBadges.find(sb => sb.id === badge.id)) {
+          selectedBadges.push(badge)
+        }
+      }
+
+      // Update visibility: selected badges visible, others hidden
+      const updates = userBadges.map(badge => ({
+        id: badge.id,
+        visible: selectedBadges.some(sb => sb.id === badge.id)
+      }))
+
+      // Batch update visibility
+      for (const update of updates) {
+        await supabase
+          .from('user_badges')
+          .update({ is_visible_on_profile: update.visible })
+          .eq('id', update.id)
+      }
+
+    } catch (error) {
+      console.error('Error setting default badge visibility:', error)
+      // Don't throw - this is a helper function
+    }
+  }
+
+  // Auto-set visibility for newly earned badges (called after badge awarding)
+  static async autoSetVisibilityForNewBadge(userId: string, newBadgeId: string): Promise<void> {
+    try {
+      const visibleBadges = await this.getVisibleUserBadges(userId)
+
+      // If user has less than 4 visible badges, automatically make the new badge visible
+      if (visibleBadges.length < 4) {
+        await supabase
+          .from('user_badges')
+          .update({ is_visible_on_profile: true })
+          .eq('user_id', userId)
+          .eq('badge_id', newBadgeId)
+      }
+      // If user already has 4 visible badges, check if new badge should replace a lower-tier one
+      else {
+        const newBadge = await supabase
+          .from('badges')
+          .select('*')
+          .eq('id', newBadgeId)
+          .single()
+
+        if (newBadge.data) {
+          const tierRanking = { neon: 4, gold: 3, silver: 2, bronze: 1 }
+          const newBadgeTier = tierRanking[newBadge.data.color_tier as keyof typeof tierRanking] || 0
+
+          // Find the lowest tier visible badge
+          const userBadges = await this.getUserBadges(userId)
+          const visibleBadgesWithData = userBadges
+            .filter(ub => ub.badge && ub.is_visible_on_profile)
+            .sort((a, b) => {
+              const aTier = tierRanking[a.badge!.color_tier as keyof typeof tierRanking] || 0
+              const bTier = tierRanking[b.badge!.color_tier as keyof typeof tierRanking] || 0
+              return aTier - bTier // Lowest tier first
+            })
+
+          const lowestTierBadge = visibleBadgesWithData[0]
+          const lowestTier = tierRanking[lowestTierBadge?.badge?.color_tier as keyof typeof tierRanking] || 0
+
+          // If new badge is higher tier, replace the lowest tier badge
+          if (newBadgeTier > lowestTier) {
+            // Hide the lowest tier badge
+            await supabase
+              .from('user_badges')
+              .update({ is_visible_on_profile: false })
+              .eq('id', lowestTierBadge.id)
+
+            // Show the new badge
+            await supabase
+              .from('user_badges')
+              .update({ is_visible_on_profile: true })
+              .eq('user_id', userId)
+              .eq('badge_id', newBadgeId)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-setting visibility for new badge:', error)
+      // Don't throw - this is a helper function
     }
   }
 

@@ -2050,6 +2050,7 @@ The Thirstee UI/UX Revamp Phase has been **SUCCESSFULLY COMPLETED** with compreh
 - **JoinEventButton** - Hover state changes, neon green styling
 - **StatCard** - Placeholder support, consistent typography
 - **CrewCard** - Hover effects, member display, action buttons
+- **BadgeCard** - Universal progress bars, green styling, responsive design
 
 ---
 
@@ -4356,6 +4357,100 @@ The Thirstee app now provides a consistent, accessible, and visually polished mo
 
 ### 🎯 **Result:**
 The Thirstee codebase is now completely free of outdated amber/orange colors and fully compliant with the updated monochromatic white/gray design system! All components, documentation, and assets reflect the current design standards. 🤘
+
+---
+
+## 📊 **Progress Bar Component System (January 24, 2025)**
+
+### **Overview**
+Universal progress bar implementation for badge progress tracking with consistent green styling and responsive design.
+
+### **Design Specifications**
+
+#### **Visual Properties**
+```css
+/* Progress Track */
+.progress-track {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  height: 6px; /* Mobile */
+  height: 4px; /* Desktop (md:h-1) */
+}
+
+/* Progress Fill */
+.progress-fill {
+  background: #00FFA3; /* Neon green - brand consistent */
+  border-radius: 9999px;
+  height: 6px; /* Mobile */
+  height: 4px; /* Desktop (md:h-1) */
+  transition: all 300ms ease;
+}
+
+/* Progress Label */
+.progress-label {
+  font-size: 0.75rem; /* text-xs */
+  color: #B3B3B3; /* text-muted-foreground */
+}
+```
+
+#### **Responsive Behavior**
+- **Mobile (default)**: 6px height for better touch visibility
+- **Desktop (md+)**: 4px height for cleaner appearance
+- **Label Format**:
+  - Desktop: "X / Y (Z%)" with percentage
+  - Mobile: "X / Y" space-optimized
+
+#### **Implementation Pattern**
+```typescript
+// Universal progress calculation
+const getProgressData = () => {
+  if (isEarned) return null // No progress for earned badges
+
+  if (progress) {
+    // Use existing progress data
+    return {
+      current: progress.current_progress,
+      target: progress.target_progress,
+      percentage: Math.min((progress.current_progress / progress.target_progress) * 100, 100)
+    }
+  }
+
+  // For badges without progress data, show 0 progress but still show the bar
+  const target = typeof badge.unlock_criteria.target === 'number'
+    ? badge.unlock_criteria.target
+    : parseInt(badge.unlock_criteria.target as string) || 5
+
+  return {
+    current: 0,
+    target: target,
+    percentage: 0
+  }
+}
+```
+
+### **Usage Guidelines**
+
+#### **When to Use**
+- ✅ All locked badges (universal coverage)
+- ✅ Progress tracking toward achievements
+- ✅ User engagement and motivation
+
+#### **When NOT to Use**
+- ❌ Earned badges (show earned date instead)
+- ❌ Loading states (use skeleton loaders)
+- ❌ General progress indicators (use dedicated progress components)
+
+#### **Accessibility**
+- **Color**: High contrast green (#00FFA3) on dark background
+- **Text**: Readable labels with clear current/target values
+- **Touch Targets**: Adequate spacing around interactive elements
+
+### **Brand Consistency**
+- **Color**: Uses primary neon green (#00FFA3) from brand palette
+- **Typography**: Consistent with existing text-muted-foreground
+- **Spacing**: Follows design token spacing patterns
+- **Animation**: Smooth transitions matching other UI elements
 
 ---
 

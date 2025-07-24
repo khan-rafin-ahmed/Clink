@@ -84,28 +84,49 @@ const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earne
 - `BadgePreviewCard.tsx` - Added totalBadgeCount prop and display logic
 
 ### ✅ **Enhanced Progress Bar Implementation (January 24, 2025)**
-**Problem**: Basic progress bars lacked tier-specific styling and responsive design optimization.
+**Problem**: Badge progress visualization was missing for locked badges, limiting user engagement and progress tracking.
 
-**Solution**: Implemented comprehensive progress bar system with tier colors and mobile-first responsive design.
+**Solution**: Implemented comprehensive progress bar system with consistent green styling and universal coverage for all locked badges.
 
 **Key Features**:
-- **Tier-Specific Colors**: Dynamic progress bar colors based on badge tier (bronze, silver, gold, neon)
+- **Universal Coverage**: Progress bars shown on ALL locked badges (not just ones with database progress)
+- **Consistent Green Styling**: All progress bars use neon green (#00FFA3) for brand consistency
 - **Responsive Heights**: 6px (h-1.5) on mobile, 4px (h-1) on desktop for optimal touch visibility
 - **Enhanced Labels**: "X / Y (Z%)" format on desktop, "X / Y" on mobile for space optimization
-- **Proper Positioning**: Progress bar positioned directly beneath subtitle line
-- **Design Token Consistency**: Uses existing tier color definitions from design system
+- **Proper Positioning**: Progress bar positioned directly beneath badge description
+- **Dynamic Progress Calculation**: Uses database progress when available, shows 0% for badges without data
+- **Single Progress Bar**: Eliminated duplicate progress bar implementations
 
 **Technical Implementation**:
 ```typescript
-// Tier-based progress bar colors
-const getTierProgressColor = (colorTier: string) => {
-  const progressColors = {
-    bronze: 'bg-[#CD7F32]',
-    silver: 'bg-[#C0C0C0]',
-    gold: 'bg-[#FFD700]',
-    neon: 'bg-[#00FFA3]'
+// Consistent green progress bar color
+const getProgressColor = () => {
+  return 'bg-[#00FFA3]' // Always use neon green
+}
+
+// Dynamic progress calculation for all locked badges
+const getProgressData = () => {
+  if (isEarned) return null // No progress for earned badges
+
+  if (progress) {
+    // Use existing progress data
+    return {
+      current: progress.current_progress,
+      target: progress.target_progress,
+      percentage: Math.min((progress.current_progress / progress.target_progress) * 100, 100)
+    }
   }
-  return progressColors[colorTier as keyof typeof progressColors] || progressColors.neon
+
+  // For badges without progress data, show 0 progress but still show the bar
+  const target = typeof badge.unlock_criteria.target === 'number'
+    ? badge.unlock_criteria.target
+    : parseInt(badge.unlock_criteria.target as string) || 5
+
+  return {
+    current: 0,
+    target: target,
+    percentage: 0
+  }
 }
 
 // Responsive progress bar styling
@@ -113,7 +134,7 @@ const getTierProgressColor = (colorTier: string) => {
   <div
     className={cn(
       'h-1.5 md:h-1 rounded-full transition-all duration-300',
-      getTierProgressColor(badge.color_tier)
+      getProgressColor()
     )}
     style={{ width: `${progressPercentage}%` }}
   />
@@ -121,15 +142,89 @@ const getTierProgressColor = (colorTier: string) => {
 ```
 
 **Files Updated**:
-- `BadgeCard.tsx` - Enhanced progress bar with tier colors and responsive design
+- `BadgeCard.tsx` - Enhanced progress bar with universal coverage and consistent green styling
+- `BadgeDashboard.tsx` - Fixed earnedBadgeIds scope issue for proper progress bar display
+- `BadgeTest.tsx` - Added sample progress data creation and cleanup functions
+- `badgeService.ts` - Enhanced progress tracking with cleanup and filtering functions
 - `Thirstee_Badge_System_Architecture.md` - Updated documentation
+
+### ✅ **Badge Visibility Toggle System (January 24, 2025)**
+**Problem**: Badge visibility toggles were non-functional and lacked business logic for profile display limits.
+
+**Solution**: Implemented comprehensive visibility toggle system with 4-badge limit and intelligent tier-based selection.
+
+**Key Features**:
+- **4-Badge Limit Enforcement**: Users can display maximum 4 badges on their profile
+- **Smart Error Handling**: Clear error message when trying to exceed limit
+- **Tier-Based Default Selection**: Automatically selects highest tier badges from different categories
+- **Category Diversity**: Prioritizes badges from different categories when possible
+- **Auto-Visibility for New Badges**: Newly earned badges automatically become visible if under limit
+- **Intelligent Replacement**: Higher tier badges can replace lower tier ones when at limit
+- **Real-Time Synchronization**: Updates across all profile components instantly
+
+**Business Logic**:
+```typescript
+// Tier ranking for selection priority
+const tierRanking = { neon: 4, gold: 3, silver: 2, bronze: 1 }
+
+// Selection algorithm:
+1. Sort badges by tier (highest first)
+2. Select highest tier badges from different categories first
+3. Fill remaining slots with highest available tier badges
+4. Limit to maximum 4 visible badges
+```
+
+**Error Handling**:
+- **Enable when at limit**: "You already have 4 badges shown in your profile. Please disable another badge first."
+- **Service errors**: Graceful fallback with user-friendly messages
+- **Network failures**: Proper error states and retry mechanisms
+
+**Technical Implementation**:
+```typescript
+// Enhanced updateBadgeVisibility with limit checking
+static async updateBadgeVisibility(userId: string, badgeId: string, visible: boolean): Promise<{ success: boolean; error?: string }> {
+  if (visible) {
+    const currentVisibleBadges = await this.getVisibleUserBadges(userId)
+    if (currentVisibleBadges.length >= 4) {
+      return {
+        success: false,
+        error: 'You already have 4 badges shown in your profile. Please disable another badge first.'
+      }
+    }
+  }
+  // ... update logic
+}
+
+// Smart default visibility setting
+static async setDefaultBadgeVisibility(userId: string): Promise<void> {
+  // Tier-based selection with category diversity
+  // Automatically selects top 4 badges by tier and category
+}
+```
+
+**UI Components Updated**:
+- **BadgeDashboard**: Enhanced toggle handling with error display and "Set Default Visibility" button
+- **ProfileInfoCard**: Only displays visible badges (filtered)
+- **BadgePreviewCard**: Respects visibility settings for profile display
+- **BadgeCard**: Functional toggle switches with proper state management
+
+**Synchronization**:
+- **Profile Preview**: Shows only visible badges (up to 4)
+- **Badge Dashboard**: Real-time toggle state updates
+- **Profile Pages**: Consistent badge display across all views
+- **Database**: Single source of truth via `is_visible_on_profile` field
 
 ### ✅ **Benefits**
 - **User-Focused Content**: Descriptions tell users what they accomplished
 - **Accurate Progress**: Shows real achievement count, not just displayed count
 - **Better UX**: Clear understanding of badge meaning and total progress
-- **Optimal Profile Display**: Shows 4 badges with full subtitles for clean, readable UI
-- **Enhanced Progress Visualization**: Tier-colored progress bars with responsive design
+- **Optimal Profile Display**: Shows exactly 4 badges with intelligent tier-based selection
+- **Universal Progress Visualization**: All locked badges show progress bars for complete engagement tracking
+- **Consistent Brand Experience**: Single green color scheme maintains design system integrity
+- **Enhanced User Motivation**: Users can see progress toward ALL available badges, not just active ones
+- **Smart Badge Curation**: Automatic selection of highest tier badges with category diversity
+- **User Control**: Full control over which badges to showcase with clear limits and feedback
+- **Professional Profiles**: Curated badge display prevents cluttered profile appearance
 
 ---
 
@@ -394,8 +489,8 @@ interface BadgeCardProps {
 **Features Implemented**:
 - ✅ Glass card styling with existing design system
 - ✅ Earned/locked badge states
-- ✅ **Enhanced Progress bars for locked badges** - Tier-colored, responsive design
-- ✅ Inline visibility toggles (no modals)
+- ✅ **Enhanced Progress bars for locked badges** - Universal green progress bars
+- ✅ **Functional visibility toggles with 4-badge limit** - Smart tier-based selection
 - ✅ Expandable details on click
 - ✅ Badge earned date display
 

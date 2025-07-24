@@ -155,7 +155,11 @@ export const CACHE_KEYS = {
   NAVIGATION_STATE: (path: string) => `nav_state_${path}`,
   DISCOVER_EVENTS: (filters: string) => `discover_events_${filters}`,
   CREW_DETAILS: (crewId: string) => `crew_details_${crewId}`,
-  CREW_MEMBERS: (crewId: string) => `crew_members_${crewId}`
+  CREW_MEMBERS: (crewId: string) => `crew_members_${crewId}`,
+  // Badge caching
+  USER_BADGES: (userId: string) => `user_badges_${userId}`,
+  ALL_BADGES: 'all_badges',
+  BADGE_PROGRESS: (userId: string) => `badge_progress_${userId}`
 }
 
 // Helper function for cached API calls
@@ -199,6 +203,19 @@ export function invalidateEventCaches(): void {
   // Clear all user accessible events caches
   for (const key of cache['cache'].keys()) {
     if (key.includes('accessible_events_') || key.includes('my_events_')) {
+      cache.delete(key)
+    }
+  }
+}
+
+export function invalidateBadgeCaches(userId: string): void {
+  cache.delete(CACHE_KEYS.USER_BADGES(userId))
+  cache.delete(CACHE_KEYS.BADGE_PROGRESS(userId))
+  cache.delete(CACHE_KEYS.ALL_BADGES)
+
+  // Clear all badge-related caches for this user
+  for (const key of cache['cache'].keys()) {
+    if (key.includes(`user_badges_${userId}`) || key.includes(`badge_progress_${userId}`)) {
       cache.delete(key)
     }
   }

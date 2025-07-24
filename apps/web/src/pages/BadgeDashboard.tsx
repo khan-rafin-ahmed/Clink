@@ -12,6 +12,7 @@ import { BadgeCard } from '@/components/BadgeCard'
 import { BadgeService } from '@/lib/badgeService'
 import { getUserProfileByUsername } from '@/lib/userService'
 import { useSmartNavigation } from '@/hooks/useSmartNavigation'
+import { invalidateBadgeCaches } from '@/lib/cache'
 import { toast } from 'sonner'
 
 import type { Badge as BadgeType, UserBadge, BadgeProgress, BadgeCategory } from '@/types/badge'
@@ -110,7 +111,12 @@ export function BadgeDashboard() {
       const targetUserId = userProfile?.user_id || user?.id
       if (!targetUserId) return
 
-      await BadgeService.updateBadgeVisibility(targetUserId, badgeId, visible)
+      const result = await BadgeService.updateBadgeVisibility(targetUserId, badgeId, visible)
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update badge visibility')
+        return
+      }
 
       // Update local state
       setUserBadges(prev =>
@@ -121,10 +127,54 @@ export function BadgeDashboard() {
         )
       )
 
+      // Invalidate badge caches to refresh profile page
+      invalidateBadgeCaches(targetUserId)
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('badgeVisibilityChanged', {
+        detail: { userId: targetUserId, badgeId, visible }
+      }))
+
       toast.success(visible ? 'Badge shown on profile' : 'Badge hidden from profile')
     } catch (error) {
       console.error('Error updating badge visibility:', error)
       toast.error('Failed to update badge visibility')
+    }
+  }
+
+  const handleSetDefaultVisibility = async () => {
+    try {
+      const targetUserId = userProfile?.user_id || user?.id
+      if (!targetUserId) return
+
+      setLoading(true)
+      await BadgeService.setDefaultBadgeVisibility(targetUserId)
+
+      // Reload badge data to reflect changes
+      const [badges, userBadgeData, progressData] = await Promise.all([
+        BadgeService.getAllBadges(),
+        BadgeService.getUserBadges(targetUserId),
+        BadgeService.getBadgeProgress(targetUserId)
+      ])
+
+      setAllBadges(badges)
+      setUserBadges(userBadgeData)
+      setBadgeProgress(progressData)
+
+      // Invalidate badge caches to refresh profile page
+      invalidateBadgeCaches(targetUserId)
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('badgeVisibilityChanged', {
+        detail: { userId: targetUserId, action: 'setDefault' }
+      }))
+
+      toast.success('Default badge visibility set based on tier and category diversity')
+    } catch (error) {
+      console.error('Error setting default visibility:', error)
+      toast.error('Failed to set default badge visibility')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -226,6 +276,20 @@ export function BadgeDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Default Visibility Button - Only for own profile */}
+        {isOwnProfile && earnedCount > 0 && (
+          <div className="mb-6 flex justify-center">
+            <Button
+              onClick={handleSetDefaultVisibility}
+              disabled={loading}
+              variant="outline"
+              className="text-sm"
+            >
+              Set Default Visibility (Top 4 by Tier)
+            </Button>
+          </div>
+        )}
 
         {/* Main Layout - Sidebar + Content */}
         <div className="flex gap-6 relative">

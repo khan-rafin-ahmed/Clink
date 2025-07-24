@@ -88,6 +88,7 @@ export function UserProfile() {
   const [totalBadgeCount, setTotalBadgeCount] = useState(0)
   const [starterBadges, setStarterBadges] = useState<Badge[]>([])
   const [badgesLoading, setBadgesLoading] = useState(false)
+  const [badgeRefresh, setBadgeRefresh] = useState(0)
   const { invalidatePattern, invalidateKey } = useCacheInvalidation()
 
   // Ensure page scrolls to top when navigating to profiles
@@ -174,9 +175,25 @@ export function UserProfile() {
       const totalEarned = allBadges.filter(ub => ub.badge).length
       setTotalBadgeCount(totalEarned)
 
-      // Get user badges (up to 6 for profile display)
-      const displayBadges = allBadges.slice(0, 6)
+      // Prioritize visible badges for profile display
+      const visibleBadges = allBadges.filter(ub => ub.badge && ub.is_visible_on_profile)
+      const hiddenBadges = allBadges.filter(ub => ub.badge && !ub.is_visible_on_profile)
+
+      // Show all visible badges first, then fill with hidden badges up to 6 total
+      const displayBadges = [
+        ...visibleBadges,
+        ...hiddenBadges.slice(0, Math.max(0, 6 - visibleBadges.length))
+      ]
+
       setUserBadges(displayBadges)
+
+      console.log('UserProfile badge data updated:', {
+        totalEarned,
+        totalVisible: visibleBadges.length,
+        totalHidden: hiddenBadges.length,
+        displayBadges: displayBadges.length,
+        visibleInDisplay: displayBadges.filter(ub => ub.is_visible_on_profile).length
+      })
 
       // Get starter badges for users with no earned badges
       if (totalEarned === 0) {
@@ -197,7 +214,26 @@ export function UserProfile() {
     if (userProfile || user?.id) {
       fetchUserBadges()
     }
-  }, [user?.id, userProfile])
+  }, [user?.id, userProfile, badgeRefresh])
+
+  // Listen for badge visibility changes from other components
+  useEffect(() => {
+    const handleBadgeVisibilityChange = (event: CustomEvent) => {
+      const { userId } = event.detail
+      const targetUserId = userProfile?.user_id || user?.id
+
+      // Only refresh if the change is for the current profile user
+      if (userId === targetUserId) {
+        setBadgeRefresh(prev => prev + 1)
+      }
+    }
+
+    window.addEventListener('badgeVisibilityChanged', handleBadgeVisibilityChange as EventListener)
+
+    return () => {
+      window.removeEventListener('badgeVisibilityChanged', handleBadgeVisibilityChange as EventListener)
+    }
+  }, [userProfile?.user_id, user?.id])
 
   // Cached fetch enhanced session data with creator info and RSVP counts
   const fetchEnhancedSessions = async () => {

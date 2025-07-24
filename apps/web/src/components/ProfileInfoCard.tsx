@@ -71,9 +71,9 @@ export function ProfileInfoCard({
   const emoji = getDrinkEmojiForDisplay(userProfile?.favorite_drink)
   const displayNameWithDrink = emoji ? `${displayName} ${emoji}` : displayName
 
-  // Prepare top 4 badges sorted by most recent earned date
+  // Prepare top 4 visible badges sorted by most recent earned date
   const topBadges = userBadges
-    .filter(ub => ub.badge) // Only include badges with badge data
+    .filter(ub => ub.badge && ub.is_visible_on_profile) // Only include visible badges with badge data
     .sort((a, b) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime())
     .slice(0, 4)
   return (

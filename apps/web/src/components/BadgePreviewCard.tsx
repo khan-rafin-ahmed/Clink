@@ -29,9 +29,11 @@ export function BadgePreviewCard({
   isOwnProfile = false,
   className
 }: BadgePreviewCardProps) {
-  // Get badges to display (up to maxDisplay)
+  // Get badges to display (up to maxDisplay) - only visible badges for profile display
   const earnedBadges = userBadges.filter(ub => ub.badge)
-  const visibleBadges = earnedBadges.slice(0, maxDisplay)
+  const visibleBadges = earnedBadges
+    .filter(ub => ub.is_visible_on_profile) // Only show visible badges in profile
+    .slice(0, maxDisplay)
 
   // Use totalBadgeCount if provided, otherwise fall back to earnedBadges.length
   const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earnedBadges.length
