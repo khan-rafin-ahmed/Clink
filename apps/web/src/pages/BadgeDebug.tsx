@@ -30,7 +30,7 @@ export default function BadgeDebug() {
       })
     } catch (error) {
       console.error('Debug error:', error)
-      setDebugInfo({ error: error.message })
+      setDebugInfo({ error: error instanceof Error ? error.message : 'Unknown error occurred' })
     } finally {
       setLoading(false)
     }
