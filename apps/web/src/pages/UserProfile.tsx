@@ -645,6 +645,7 @@ export function UserProfile() {
                   userProfile={userProfile}
                   displayName={displayName}
                   avatarFallback={avatarFallback}
+                  userBadges={userBadges}
                   className="w-full"
                 />
               </div>
