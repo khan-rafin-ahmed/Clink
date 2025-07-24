@@ -143,9 +143,11 @@ const getProgressData = () => {
 
 **Files Updated**:
 - `BadgeCard.tsx` - Enhanced progress bar with universal coverage and consistent green styling
-- `BadgeDashboard.tsx` - Fixed earnedBadgeIds scope issue for proper progress bar display
+- `BadgeDashboard.tsx` - Functional visibility toggles with cache invalidation and event dispatch
 - `BadgeTest.tsx` - Added sample progress data creation and cleanup functions
 - `badgeService.ts` - Enhanced progress tracking with cleanup and filtering functions
+- `UserProfile.tsx` - Real-time badge synchronization with prioritized visible badge display
+- `cache.ts` - Badge cache invalidation system for cross-component synchronization
 - `Thirstee_Badge_System_Architecture.md` - Updated documentation
 
 ### ✅ **Badge Visibility Toggle System (January 24, 2025)**
@@ -213,6 +215,24 @@ static async setDefaultBadgeVisibility(userId: string): Promise<void> {
 - **Badge Dashboard**: Real-time toggle state updates
 - **Profile Pages**: Consistent badge display across all views
 - **Database**: Single source of truth via `is_visible_on_profile` field
+- **Cross-Component Events**: Custom events for real-time synchronization
+- **Cache Invalidation**: Automatic cache clearing when visibility changes
+- **Prioritized Display**: Visible badges always appear first in profile sections
+
+**Real-Time Synchronization Implementation**:
+```typescript
+// Event-driven synchronization
+window.dispatchEvent(new CustomEvent('badgeVisibilityChanged', {
+  detail: { userId: targetUserId, badgeId, visible }
+}))
+
+// Cache invalidation for immediate updates
+invalidateBadgeCaches(targetUserId)
+
+// Prioritized badge display logic
+const visibleBadges = allBadges.filter(ub => ub.badge && ub.is_visible_on_profile)
+const displayBadges = [...visibleBadges, ...hiddenBadges.slice(0, 6 - visibleBadges.length)]
+```
 
 ### ✅ **Benefits**
 - **User-Focused Content**: Descriptions tell users what they accomplished
