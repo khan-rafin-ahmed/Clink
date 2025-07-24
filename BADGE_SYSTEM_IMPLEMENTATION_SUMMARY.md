@@ -70,22 +70,22 @@
 ## 🏆 **Badge Categories Implemented**
 
 ### **1. Event Participation (7 badges)**
-- First Sip, The Regular I-IV, Live & Lit, Double Trouble
+- First Pour, Regular Drip I-IV, Amped & Buzzin', Same Day Double
 
-### **2. Hosting & Crew (9 badges)**
-- Party Starter, Thirst Commander I-IV, Squad Goals, Crew Member, Crew Champion I-III, Co-Captain
+### **2. Hosting & Crew (11 badges)**
+- Vibe Initiator, Host With the Most I-II, Master of Ceremonies, Certified Chaos Curator, Party Pack, Squad Recruit, Ride or Die I-III, Deputy of Debauchery
 
 ### **3. Social Activity (9 badges)**
-- Comment Commander I-III, Photo Dropper I-III, Cheers Machine I-III
+- Buzzword Rookie/Brawler/Boss, Photo Bae I-III, Cheers Clicker I-III
 
 ### **4. Streaks & Time (6 badges)**
-- Loyal Drinker I-III, Thirstee OG, No Breaks Baby, Midnight Mischief
+- Streak Seeker I-III, Founding Thirstee, No Days Off, The Midnight One
 
 ### **5. Weekly Sinners (7 badges)**
-- Monday Mourner, Too Much Tuesday, Wrecked Wednesday, Thirstday God, Friday Fiend, Savage Saturday, Sin-Day Saint
+- Monday Mourner, Tequila Tuesday, Wasted Wednesday, Thirstday Legend, Freaky Friday, Spicy Saturday, Sin-Day Devotee
 
 ### **6. Drink Devotees (7 badges)**
-- Lager Lord, Wino Supremo, Whiskey Wizard, Mixer Monster, Shot Caller, Blend Lord, Wildcard Drinker
+- Lager Royalty, Wine Whisperer, Whiskey Wizard, Cocktail Creature, Shot Sensei, Blend Baron, Wildcard Sipper
 
 ---
 
@@ -117,6 +117,19 @@
 ### **✅ Improved Badge Card Details**
 - **Expanded Details**: Shows numeric tier instead of color tier in dashboard
 - **Consistent Experience**: All badge displays now show descriptions over tiers
+
+### **✅ Badge Naming & Personality Update (January 24, 2025)**
+- **Creative Rebranding**: Updated all 32 badge titles with personality-driven names
+- **Humorous Descriptions**: Replaced generic descriptions with witty, casual commentary
+- **Category Themes**: Added category subtitles with rebellious, fun personality
+- **Examples**:
+  - "First Sip" → "First Pour" ("Made your debut – your glass is now in play")
+  - "Party Starter" → "Vibe Initiator" ("Hosted your first – you brave soul")
+  - "Comment Commander I" → "Buzzword Rookie" ("Posted 3 comments – proud of you")
+- **Files Updated**:
+  - `20250123_seed_badges.sql` - All badge names and descriptions
+  - `badgeService.ts` - Starter badge names
+  - Badge System PRD files with new naming scheme
 
 ---
 

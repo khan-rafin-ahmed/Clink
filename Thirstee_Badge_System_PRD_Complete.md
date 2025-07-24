@@ -29,7 +29,7 @@ Create a badge system that:
   1. Tier/rarity (legendary → epic → rare → common)
   2. Earned date (most recent first)
   3. Alphabetical by name (tiebreaker)
-- **Starter Badge Display**: If 0 earned badges, display 6 locked starter badges (First Sip, Party Starter, Crew Member, Comment Commander I, Photo Dropper I, Thirstee OG)
+- **Starter Badge Display**: If 0 earned badges, display 6 locked starter badges (First Pour, Vibe Initiator, Squad Recruit, Buzzword Rookie, Photo Bae I, Founding Thirstee)
 - **Public Badge Viewing**: Anyone can view others' earned badges via badge dashboard
 
 ---
@@ -76,75 +76,83 @@ Create a badge system that:
 ## 🧱 4. Badge Categories & Catalog
 
 ### 🥂 Event Participation
+*You showed up. That counts for something... right?*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| First Sip | Attend your first event | 1 | Attend 1 event |
-| The Regular | Attend total events | 4 | 5 / 15 / 30 / 60 |
-| Live & Lit | Attend any LIVE event | 1 | Event with `status = live` |
-| Double Trouble | Attend 2+ events same day | 1 | Date-based group logic |
+| First Pour | Made your debut – your glass is now in play | 1 | Attend 1 event |
+| Regular Drip | Attend total events | 4 | 5 / 15 / 30 / 60 |
+| Amped & Buzzin' | Showed up to a LIVE one – you wild | 1 | Event with `status = live` |
+| Same Day Double | Two events, one calendar – you okay? | 1 | Date-based group logic |
 
 ---
 
 ### 🍻 Hosting & Crew
+*Because you weren't content just showing up—you had to organize chaos.*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| Party Starter | Host your first event | 1 | Host 1 event |
-| Thirst Commander | Host multiple events | 4 | 3 / 10 / 25 / 50 |
-| Squad Goals | Host event with 5+ attendees | 1 | Attendee count check |
-| Crew Member | Join your first crew | 1 | Crew join |
-| Crew Champion | Attend events with same crew | 3 | 5 / 15 / 30 |
-| Co-Captain | Get promoted to co-host | 1 | `role = co_host` |
+| Vibe Initiator | Hosted your first – you brave soul | 1 | Host 1 event |
+| Host With the Most | Host multiple events | 2 | 3 / 10 |
+| Master of Ceremonies | 25 under your belt – applause! | 1 | Host 25 events |
+| Certified Chaos Curator | 50 hosted – are you even okay? | 1 | Host 50 events |
+| Party Pack | Threw a bash with 5+ attendees | 1 | Attendee count check |
+| Squad Recruit | Joined your first crew – now it's real | 1 | Crew join |
+| Ride or Die | Attend events with same crew | 3 | 5 / 15 / 30 |
+| Deputy of Debauchery | Got promoted to co-host – power corrupts | 1 | `role = co_host` |
 
 ---
 
 ### 💬 Social Activity
+*Talking, reacting, and posting? You social butterfly.*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| Comment Commander | Post comments | 3 | 3 / 10 / 25 |
-| Photo Dropper | Upload event photos | 3 | 1 / 5 / 10 |
-| Cheers Machine | React to content | 3 | 10 / 50 / 150 |
+| Buzzword Rookie/Brawler/Boss | Post comments | 3 | 3 / 10 / 25 |
+| Photo Bae | Upload event photos | 3 | 1 / 5 / 10 |
+| Cheers Clicker | React to content | 3 | 10 / 50 / 150 |
 
 ---
 
 ### 🔥 Streaks & Time-Based
+*Consistency is sexy. Or... at least mildly impressive.*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| Loyal Drinker | Weekly streak | 3 | 3 / 6 / 12 weeks |
-| Thirstee OG | 1 month active user | 1 | 30 days since signup |
-| No Breaks Baby | 4+ days in a row | 1 (hidden) | Date-streak |
+| Streak Seeker | Weekly streak | 3 | 3 / 6 / 12 weeks |
+| Founding Thirstee | One month in – welcome to the jungle | 1 | 30 days since signup |
+| No Days Off | 4-day streak – we worry about you | 1 (hidden) | Date-streak |
 | Midnight Mischief | Join an event titled “Midnight Mischief” | 1 (easter egg) | Title match logic |
 
 ---
 
 ### 🗓️ Weekly Sinners (Day-Based)
+*Your week, your chaos calendar.*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| Monday Mourner | 5 Monday events | 1 | Date day match |
-| Too Much Tuesday | 5 Tuesday events | 1 | — |
-| Wrecked Wednesday | 5 Wednesday events | 1 | — |
-| Thirstday God | 5 Thursday events | 1 | — |
-| Friday Fiend | 5 Friday events | 1 | — |
-| Savage Saturday | 5 Saturday events | 1 | — |
-| Sin-Day Saint | 5 Sunday events | 1 | — |
+| Monday Mourner | 5 Mondays in – respect the struggle | 1 | Date day match |
+| Tequila Tuesday | 5 Tuesdays – regrettably consistent | 1 | — |
+| Wasted Wednesday | 5 Wednesdays – hump day hero | 1 | — |
+| Thirstday Legend | 5 Thursdays – it's always Thursday somewhere | 1 | — |
+| Freaky Friday | 5 Fridays – you belong in a montage | 1 | — |
+| Spicy Saturday | 5 Saturdays – the main event | 1 | — |
+| Sin-Day Devotee | 5 Sundays – you're spiritually...hydrated? | 1 | — |
 
 ---
 
 ### 🍹 Drink-Type Devotees
+*You're not picky. You're just... passionate.*
 
 | Badge | Description | Tiers | Unlock |
 |-------|-------------|-------|--------|
-| Lager Lord | 10+ beer events | 1 | `drink_type = beer` |
-| Wino Supremo | 10+ wine events | 1 | `drink_type = wine` |
-| Whiskey Wizard | 10+ whiskey events | 1 | — |
-| Mixer Monster | 10+ cocktail events | 1 | — |
-| Shot Caller | 10+ shots events | 1 | — |
-| Blend Lord | 10+ mixed drink events | 1 | — |
-| Wildcard Drinker | 10+ other drinks | 1 | `drink_type = other` |
+| Lager Royalty | 10+ beer events – foamy and faithful | 1 | `drink_type = beer` |
+| Wine Whisperer | 10+ wine events – swirling with purpose | 1 | `drink_type = wine` |
+| Whiskey Wizard | 10+ whiskey events – strong and smoldering | 1 | — |
+| Cocktail Creature | 10+ cocktails – mixed up and thriving | 1 | — |
+| Shot Sensei | 10+ shots – blink and it's gone | 1 | — |
+| Blend Baron | 10+ mixed drinks – chaos in a cup | 1 | — |
+| Wildcard Sipper | 10+ mystery drinks – living dangerously | 1 | `drink_type = other` |
 
 ---
 

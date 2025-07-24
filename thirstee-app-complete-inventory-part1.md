@@ -472,7 +472,7 @@ CREATE TABLE public.user_badges (
 ```
 
 **Key Features**:
-- **47 Total Badges** across 6 categories with comprehensive unlock criteria
+- **32 Total Badges** across 6 categories with comprehensive unlock criteria and personality-driven descriptions
 - **Tier-based System**: Common, rare, epic, legendary with color coding
 - **Dynamic Count Display**: Shows actual total earned badges count
 - **Description-First UI**: Badge descriptions displayed instead of color tiers

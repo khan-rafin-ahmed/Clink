@@ -126,12 +126,12 @@ export class BadgeService {
   // Get starter badges for users with no earned badges
   static async getStarterBadges(): Promise<Badge[]> {
     const starterBadgeNames = [
-      'First Sip',
-      'Party Starter',
-      'Crew Member',
-      'Comment Commander I',
-      'Photo Dropper I',
-      'Thirstee OG'
+      'First Pour',
+      'Vibe Initiator',
+      'Squad Recruit',
+      'Buzzword Rookie',
+      'Photo Bae I',
+      'Founding Thirstee'
     ]
 
     const { data, error } = await supabase
