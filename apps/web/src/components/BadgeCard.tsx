@@ -51,46 +51,89 @@ export function BadgeCard({
     ? Math.min((progress.current_progress / progress.target_progress) * 100, 100)
     : 0
 
+  // Get tier-based hover glow color
+  const getTierGlowColor = (colorTier: string) => {
+    const glowColors = {
+      bronze: 'hover:shadow-[0_0_20px_rgba(205,127,50,0.3)]',
+      silver: 'hover:shadow-[0_0_20px_rgba(192,192,192,0.3)]',
+      gold: 'hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]',
+      neon: 'hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]'
+    }
+    return glowColors[colorTier as keyof typeof glowColors] || glowColors.neon
+  }
+
   return (
-    <Card 
+    <Card
       className={cn(
-        'glass-card hover:border-primary/30 transition-all duration-300',
+        'glass-card backdrop-blur-sm rounded-lg transition-all duration-300 border border-white/10',
         expandable && 'cursor-pointer hover:scale-[1.02]',
         !isEarned && 'opacity-75',
+        variant === 'dashboard' && getTierGlowColor(badge.color_tier),
         className
       )}
       onClick={handleCardClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          {/* Badge Icon */}
-          <BadgeIcon 
-            badge={badge}
-            size={variant === 'preview' ? 'sm' : 'md'}
-            isLocked={!isEarned}
-            showTooltip={variant === 'preview'}
-          />
+      <CardContent className="px-4 py-4 sm:p-4">
+        <div className="flex items-start gap-4">
+          {/* Badge Icon - 64x64 */}
+          <div className="flex-shrink-0">
+            <BadgeIcon
+              badge={badge}
+              size="lg"
+              isLocked={!isEarned}
+              showTooltip={variant === 'preview'}
+              className="w-16 h-16"
+            />
+          </div>
 
-          {/* Badge Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
+          {/* Text Block */}
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-white leading-tight">
+              {badge.name}
+            </h3>
+
+            {/* Subtitle */}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {badge.description}
+            </p>
+
+            {/* Bottom Section - Progress/Date + Toggle */}
+            <div className="flex items-center gap-4">
               <div className="flex-1">
-                <h3 className="font-semibold text-white text-sm sm:text-base">
-                  {badge.name}
-                </h3>
-                <p className="text-muted-foreground text-xs sm:text-sm mt-1">
-                  {badge.description}
-                </p>
+                {isEarned ? (
+                  <div className="text-xs text-muted-foreground">
+                    Earned {userBadge ? new Date(userBadge.earned_at).toLocaleDateString() : ''}
+                  </div>
+                ) : progress ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="text-muted-foreground">
+                        {progress.current_progress}/{progress.target_progress}
+                      </span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-1.5">
+                      <div
+                        className="bg-[#00FFA3] h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Visibility Toggle */}
               {showVisibilityToggle && isEarned && (
-                <div className="flex items-center gap-2 ml-2">
-                  <span className="text-xs text-muted-foreground">Show</span>
-                  <Switch
-                    checked={isVisible}
-                    onCheckedChange={handleVisibilityToggle}
-                  />
+                <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
+                  <span className="text-xs text-muted-foreground hidden sm:inline">Show</span>
+                  <div className="relative">
+                    <Switch
+                      checked={isVisible}
+                      onCheckedChange={handleVisibilityToggle}
+                      className="data-[state=checked]:bg-[#00FFA3] data-[state=unchecked]:bg-white/20 h-4 w-7 sm:h-6 sm:w-11 !min-h-0 !min-w-0 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 sm:[&>span]:h-5 sm:[&>span]:w-5 sm:[&>span]:data-[state=checked]:translate-x-5"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -106,12 +149,7 @@ export function BadgeCard({
               </Badge>
             )}
 
-            {/* Earned Date */}
-            {isEarned && userBadge && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Earned {new Date(userBadge.earned_at).toLocaleDateString()}
-              </p>
-            )}
+
 
             {/* Progress Bar for Locked Badges */}
             {!isEarned && progress && (
@@ -121,8 +159,8 @@ export function BadgeCard({
                   <span>{progress.current_progress}/{progress.target_progress}</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                  <div
+                    className="bg-[#00FFA3] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>

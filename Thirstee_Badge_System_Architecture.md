@@ -385,9 +385,9 @@ interface BadgePreviewCardProps {
 - ✅ **"View All" button** linking to badge dashboard
 - ✅ **Call-to-action messaging** for users with no badges
 
-#### 4. **BadgeDashboard** Page Component ✅ - **ENHANCED WITH PUBLIC ACCESS**
+#### 4. **BadgeDashboard** Page Component ✅ - **ENHANCED WITH VERTICAL SIDEBAR**
 **File**: `apps/web/src/pages/BadgeDashboard.tsx`
-**Status**: Fully implemented with public/private access control and enhanced features
+**Status**: Fully implemented with Crisli-style vertical sidebar and responsive design
 ```typescript
 interface BadgeDashboardProps {
   userBadges: UserBadge[]
@@ -397,15 +397,17 @@ interface BadgeDashboardProps {
 }
 ```
 **Features Implemented**:
-- ✅ **Dual Access Control**: Public read-only view for others, full management for profile owners
+- ✅ **Vertical Sidebar Navigation**: 240px width glass-card with category filtering
+- ✅ **Icon-Based Categories**: Trophy, Calendar, Users, MessageCircle, Zap, Flame, Beer icons
+- ✅ **Single-Column Badge Grid**: Optimized for readability with 64×64 badge icons
+- ✅ **Mobile-Responsive Sidebar**: Collapsible with hamburger toggle and overlay
+- ✅ **Enhanced Badge Cards**: Two-column flex layout with tier-based hover glow effects
+- ✅ **Optimized Mobile Toggles**: 28×16px mobile, 40×24px desktop with proper sizing
 - ✅ **Public Badge Viewing**: Anyone can view earned badges at `/profile/{username}/badges`
-- ✅ **Smart UI Adaptation**: Management features (visibility toggles, settings) only shown to profile owners
+- ✅ **Smart UI Adaptation**: Management features (visibility toggles) only shown to profile owners
 - ✅ **Enhanced Statistics**: Shows completion percentage and badge counts for public viewers
-- ✅ **Category filtering** (6 badge categories) works for both public and private views
-- ✅ **Badge statistics cards** with different content for public vs private access
-- ✅ **Inline visibility toggles** (owner only)
 
-- ✅ **Mobile-responsive design** with proper touch targets
+- ✅ **Mobile-responsive design** with proper touch targets and collapsible sidebar
 - ✅ **Earned badges only** for public view (no locked badges shown to others)
 
 ---
@@ -414,6 +416,9 @@ interface BadgeDashboardProps {
 
 ### 🔄 **Recent Updates (January 2025)**
 - ✅ **Removed "Reset to Default" Button**: Simplified badge dashboard by removing the reset functionality per user request (January 23, 2025)
+- ✅ **ProfileInfoCard Badge Display**: Added 4 most-recent badges under username with custom tooltips (January 24, 2025)
+- ✅ **Vertical Sidebar Refactor**: Converted badge dashboard to Crisli-style vertical sidebar with responsive design (January 24, 2025)
+- ✅ **Mobile Toggle Optimization**: Fixed mobile switch sizing issues with proper responsive scaling (January 24, 2025)
 
 ### 🔧 **Recent Major Updates Applied**
 

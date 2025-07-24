@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { cn } from '@/lib/utils'
 import type { UserProfile } from '@/types'

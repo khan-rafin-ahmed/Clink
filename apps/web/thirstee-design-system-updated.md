@@ -236,7 +236,9 @@ All Profile page components now follow the unified design system with:
 - **Spacing Grid**: Consistent 24px margins and 8pt spacing system
 
 ### 🎯 **Components Now Fully Compliant**
-✅ **Profile Info Card** - Glass effects, hover states, typography
+✅ **Profile Info Card** - Glass effects, hover states, typography, 4-badge display with custom tooltips
+✅ **Badge Dashboard** - Vertical sidebar with glassmorphism, tier-based hover effects, responsive mobile design
+✅ **Badge Cards** - Two-column flex layout, optimized mobile toggles, tier-based glow effects
 ✅ **Next Event Banner** - Consistent styling and interactions
 ✅ **Metric Cards** - Glass backgrounds, hover feedback
 ✅ **CTA Feature Cards** - Interactive states, proper spacing
@@ -4354,6 +4356,117 @@ The Thirstee app now provides a consistent, accessible, and visually polished mo
 
 ### 🎯 **Result:**
 The Thirstee codebase is now completely free of outdated amber/orange colors and fully compliant with the updated monochromatic white/gray design system! All components, documentation, and assets reflect the current design standards. 🤘
+
+---
+
+## 🏅 **Badge System Design System Integration - COMPLETED**
+*Date: January 24, 2025*
+
+### **ProfileInfoCard Badge Display Enhancement**
+
+#### **Problem Solved**
+- Badge tooltips had z-index issues appearing behind profile cards
+- Badge display needed better center alignment under username
+- Tooltip content was too verbose with unnecessary earned dates
+
+#### **Design System Implementation**
+```tsx
+{/* Center-aligned badge display */}
+<div className="badges-row flex items-center justify-center space-x-4 gap-2 mt-3">
+  {topBadges.map(userBadge => (
+    <div className="badge-icon w-8 h-8 glass-card backdrop-blur-md rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200 border border-white/10">
+      <BadgeIcon badge={userBadge.badge!} size="sm" className="w-5 h-5" />
+
+      {/* Custom CSS tooltip with proper z-index */}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[10000] whitespace-nowrap">
+        <h4 className="font-semibold text-white text-sm">{badge.name}</h4>
+        <p className="text-xs text-muted-foreground">{badge.description}</p>
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+### **Badge Dashboard Vertical Sidebar Refactor**
+
+#### **Problem Solved**
+- Horizontal tab bar was cluttered and not mobile-friendly
+- Badge cards needed better visual hierarchy and readability
+- Mobile toggle switches were oversized due to global CSS conflicts
+
+#### **Crisli-Style Implementation**
+```tsx
+{/* Vertical Sidebar - 240px width */}
+<div className="glass-card backdrop-blur-md rounded-xl h-full lg:h-auto lg:sticky lg:top-8 p-4">
+  {SIDEBAR_CATEGORIES.map(category => {
+    const IconComponent = category.icon
+    return (
+      <button className={`
+        w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200
+        ${selectedCategory === category.key
+          ? 'bg-[#00FFA3] text-black shadow-lg font-medium'
+          : 'bg-white/5 text-white hover:bg-white/10 border border-white/40 hover:border-white/60'
+        }
+      `}>
+        <IconComponent className="h-5 w-5 flex-shrink-0" />
+        <span className="text-sm font-medium">{category.label}</span>
+      </button>
+    )
+  })}
+</div>
+
+{/* Enhanced Badge Cards - Two-column flex layout */}
+<Card className="glass-card backdrop-blur-sm rounded-lg transition-all duration-300 border border-white/10 hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]">
+  <CardContent className="px-4 py-4 sm:p-4">
+    <div className="flex items-start gap-4">
+      {/* 64×64 Badge Icon */}
+      <div className="flex-shrink-0">
+        <BadgeIcon badge={badge} size="lg" className="w-16 h-16" />
+      </div>
+
+      {/* Text Block */}
+      <div className="flex-1 min-w-0 space-y-3">
+        <h3 className="text-lg font-semibold text-white leading-tight">{badge.name}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{badge.description}</p>
+
+        {/* Optimized Mobile Toggle */}
+        <div className="relative">
+          <Switch className="h-4 w-7 sm:h-6 sm:w-11 !min-h-0 !min-w-0 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 sm:[&>span]:h-5 sm:[&>span]:w-5 sm:[&>span]:data-[state=checked]:translate-x-5" />
+        </div>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+```
+
+#### **Key Design System Features**
+- ✅ **Glassmorphism**: `backdrop-blur-md`, `glass-card` styling throughout
+- ✅ **Tier-based Hover Effects**: Bronze/silver/gold/neon glow colors on badge cards
+- ✅ **Responsive Design**: Mobile-first with collapsible sidebar and overlay
+- ✅ **Proper Z-indexing**: Custom tooltips with `z-[10000]` for proper layering
+- ✅ **Mobile Optimization**: Override global 44px button rules with `!min-h-0 !min-w-0`
+- ✅ **Icon Integration**: Lucide React icons for consistent category representation
+- ✅ **Typography Hierarchy**: Proper text sizing and color contrast
+- ✅ **Touch Targets**: Adequate sizing for mobile accessibility
+
+#### **Components Updated**
+1. **`ProfileInfoCard.tsx`** - Added 4-badge display with custom tooltips
+2. **`BadgeDashboard.tsx`** - Vertical sidebar refactor with responsive design
+3. **`BadgeCard.tsx`** - Enhanced two-column layout with tier-based hover effects
+
+#### **Files Updated to Fix TypeScript Build Errors**
+1. **`ProfileInfoCard.tsx`** - Removed unused HoverCard imports
+2. **`BadgeDashboard.tsx`** - Removed unused CardHeader, CardTitle, and CATEGORY_LABELS
+
+### 🎯 **Design System Compliance Achieved**
+- ✅ **Complete Glassmorphism Integration**: All badge components use consistent glass effects
+- ✅ **Responsive Mobile Design**: Proper touch targets and collapsible navigation
+- ✅ **Tier-based Visual Hierarchy**: Bronze/silver/gold/neon color system integration
+- ✅ **TypeScript Build Compatibility**: Zero build errors for Vercel deployment
+- ✅ **Accessibility Standards**: Proper contrast ratios and touch target sizing
+- ✅ **Performance Optimization**: Efficient hover effects and smooth transitions
+
+The badge system now fully integrates with the Thirstee design system, providing a cohesive user experience across all badge-related interfaces! 🏅
 
 ---
 
