@@ -771,7 +771,7 @@ export function UserProfile() {
                 starterBadges={starterBadges}
                 username={username || user?.id || ''}
                 isOwnProfile={isOwnProfile || false}
-                maxDisplay={6}
+                maxDisplay={4}
                 showViewAll={true}
               />
             </div>

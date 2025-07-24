@@ -23,7 +23,7 @@ export function BadgePreviewCard({
   userBadges,
   totalBadgeCount,
   starterBadges = [],
-  maxDisplay = 6,
+  maxDisplay = 4,
   showViewAll = true,
   username,
   isOwnProfile = false,
@@ -68,29 +68,28 @@ export function BadgePreviewCard({
       </CardHeader>
 
       <CardContent className="pt-0">
-        {/* Badge Grid - Fixed 6-column responsive grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        {/* Badge Grid - Responsive grid with individual badge cards, 4 badges max */}
+        <div className="badges-preview grid grid-cols-2 md:grid-cols-4 gap-4">
           {showStarterBadges ? (
             // Show starter badges as locked
             starterBadgesToShow.map((badge) => (
               <div
                 key={badge.id}
-                className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors"
+                className="badge-item flex flex-col items-center min-h-[100px] py-3 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <BadgeIcon
                   badge={badge}
                   size="sm"
                   isLocked={true}
                   showTooltip={true}
+                  className="w-8 h-8"
                 />
-                <div className="text-center">
-                  <p className="text-xs font-medium text-white/60 truncate max-w-full">
-                    {badge.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate max-w-full">
-                    {badge.description}
-                  </p>
-                </div>
+                <span className="mt-2 text-sm font-semibold text-white/60 text-center">
+                  {badge.name}
+                </span>
+                <span className="mt-1 text-xs text-muted-foreground text-center leading-tight">
+                  {badge.description}
+                </span>
               </div>
             ))
           ) : (
@@ -101,21 +100,20 @@ export function BadgePreviewCard({
               return (
                 <div
                   key={userBadge.id}
-                  className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors"
+                  className="badge-item flex flex-col items-center min-h-[100px] py-3 rounded-lg hover:bg-white/5 transition-colors"
                 >
                   <BadgeIcon
                     badge={userBadge.badge}
                     size="sm"
                     showTooltip={true}
+                    className="w-8 h-8"
                   />
-                  <div className="text-center">
-                    <p className="text-xs font-medium text-white truncate max-w-full">
-                      {userBadge.badge.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
-                      {userBadge.badge.description}
-                    </p>
-                  </div>
+                  <span className="mt-2 text-sm font-semibold text-white text-center">
+                    {userBadge.badge.name}
+                  </span>
+                  <span className="mt-1 text-xs text-muted-foreground text-center leading-tight">
+                    {userBadge.badge.description}
+                  </span>
                 </div>
               )
             })

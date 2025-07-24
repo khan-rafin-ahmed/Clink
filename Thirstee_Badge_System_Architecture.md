@@ -33,6 +33,22 @@
 
 ## 🎨 **Recent UI/UX Improvements (January 24, 2025)**
 
+### ✅ **Badge Preview Component Refactor**
+**Problem**: Badge preview used separate icon and subtitle sections, causing layout issues on mobile and poor text wrapping.
+
+**Solution**: Refactored to individual badge cards with responsive grid layout.
+- **Before**: Separate icon grid + subtitle strip layout
+- **After**: Individual badge cards with icon → title → subtitle structure
+- **Profile Display**: Shows 4 badges maximum with full subtitles (no truncation)
+- **Responsive Grid**: 2-col mobile → 4-col desktop for optimal 4-badge display
+- **Text Handling**: Full subtitle display with proper text wrapping and leading
+- **Touch Targets**: Minimum 44px height for mobile accessibility
+
+**Files Updated**:
+- `BadgePreviewCard.tsx` - Complete grid layout refactor with individual badge cards, 4-badge limit
+- `UserProfile.tsx` - Updated maxDisplay prop to 4 badges
+- `tailwind.config.js` - Added @tailwindcss/line-clamp plugin for text truncation
+
 ### ✅ **Badge Description Display**
 **Problem**: Badge displays showed backend color tiers (bronze, silver, gold, neon) instead of meaningful descriptions.
 
@@ -45,11 +61,11 @@
 - `BadgeCard.tsx` - Expanded details section (shows numeric tier instead of color tier)
 
 ### ✅ **Dynamic Badge Count Display**
-**Problem**: Badge count showed only displayed badges (max 6), not actual total earned.
+**Problem**: Badge count showed only displayed badges (max 4), not actual total earned.
 
 **Solution**: Implemented separate total count fetching and display.
-- **Before**: "🏅 Badges (6)" - even if user has 15 badges total
-- **After**: "🏅 15 Badges Earned" - shows actual total, displays first 6
+- **Before**: "🏅 Badges (4)" - even if user has 15 badges total
+- **After**: "🏅 15 Badges Earned" - shows actual total, displays first 4
 
 **Implementation**:
 ```typescript
@@ -57,7 +73,7 @@
 const allBadges = await BadgeService.getAllUserBadges(targetUserId)
 const totalEarned = allBadges.filter(ub => ub.badge).length
 setTotalBadgeCount(totalEarned)
-const displayBadges = allBadges.slice(0, 6)
+const displayBadges = allBadges.slice(0, 4)
 
 // BadgePreviewCard.tsx - Use total count in display
 const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earnedBadges.length
@@ -71,7 +87,7 @@ const actualTotalCount = totalBadgeCount !== undefined ? totalBadgeCount : earne
 - **User-Focused Content**: Descriptions tell users what they accomplished
 - **Accurate Progress**: Shows real achievement count, not just displayed count
 - **Better UX**: Clear understanding of badge meaning and total progress
-- **Maintains Performance**: Still displays only 6 badges for clean UI
+- **Optimal Profile Display**: Shows 4 badges with full subtitles for clean, readable UI
 
 ---
 
@@ -341,14 +357,14 @@ interface BadgeCardProps {
 - ✅ Expandable details on click
 - ✅ Badge earned date display
 
-#### 3. **BadgePreviewCard** Component ✅ - **ENHANCED**
+#### 3. **BadgePreviewCard** Component ✅ - **REFACTORED**
 **File**: `apps/web/src/components/BadgePreviewCard.tsx`
-**Status**: Fully implemented with enhanced sorting and starter badge support
+**Status**: Fully refactored with individual badge cards and responsive grid layout
 ```typescript
 interface BadgePreviewCardProps {
   userBadges: UserBadge[]
   starterBadges?: BadgeType[]
-  maxDisplay?: number // Default: 6
+  maxDisplay?: number // Default: 4
   showViewAll?: boolean
   username: string
   isOwnProfile?: boolean
@@ -356,9 +372,13 @@ interface BadgePreviewCardProps {
 }
 ```
 **Features Implemented**:
-- ✅ **Enhanced Badge Sorting**: Tier/rarity priority (legendary → epic → rare → common), then by earned date, then alphabetical
+- ✅ **Individual Badge Cards**: Each badge as its own card with icon → title → subtitle structure
+- ✅ **4-Badge Profile Display**: Shows maximum 4 badges with full subtitles (no truncation)
+- ✅ **Responsive Grid Layout**: 2-col mobile → 4-col desktop for optimal 4-badge display
+- ✅ **Full Subtitle Display**: Complete badge descriptions with proper text wrapping and leading
+- ✅ **Mobile Touch Targets**: Minimum 44px height for accessibility
+- ✅ **Enhanced Badge Sorting**: Tier/rarity priority, then by earned date, then alphabetical
 - ✅ **Starter Badge Display**: Shows 6 locked starter badges for users with 0 earned badges
-- ✅ **Responsive Grid Layout**: 2 cols mobile, 3 cols tablet, 6 cols desktop for 6-badge display
 - ✅ **Smart Badge Display**: Automatically switches between earned badges and starter badges
 - ✅ **Glass card styling** with existing design system
 - ✅ **Badge icons with tooltips** and tier colors with locked state support
@@ -405,8 +425,8 @@ interface BadgeDashboardProps {
 
 #### **Profile Badge Display System**
 - ✅ **Enhanced Badge Sorting**: Implemented tier/rarity priority sorting (legendary → epic → rare → common), then by earned date, then alphabetical
-- ✅ **Starter Badge Display**: Users with 0 earned badges see 6 locked starter badges (First Sip, Party Starter, Crew Member, etc.)
-- ✅ **Profile Display Limit**: Changed from 4 to 6 badges on user profiles with responsive grid layout
+- ✅ **Starter Badge Display**: Users with 0 earned badges see 4 locked starter badges (First Sip, Party Starter, Crew Member, etc.)
+- ✅ **Profile Display Limit**: Shows 4 badges on user profiles with responsive grid layout and full subtitles
 - ✅ **Badge Service Enhancement**: Added `getAllUserBadges()` and `getStarterBadges()` methods
 
 #### **Public Badge Dashboard**
